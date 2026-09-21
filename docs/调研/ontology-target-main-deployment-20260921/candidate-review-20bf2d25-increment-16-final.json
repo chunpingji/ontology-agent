@@ -1,0 +1,35 @@
+{
+  "run_id": "20bf2d25-98f3-4efe-99f0-1e5dbbae5d05",
+  "reviewed_at": "2026-09-21T05:46:52.142097+00:00",
+  "model_calls_by_reviewer": 0,
+  "application_mutations_by_reviewer": 0,
+  "increments": [
+    {
+      "group": 16,
+      "lineage_id": "07b11ded29ac54db00f87e1e01961fc903e69e5338588079f984206bf7048029",
+      "immutable_outcome_key": "8e823d35ff5e146032e790869a76412455b8ab8b732acde81001d37b5d4a4d62",
+      "reviewed_model_turns": [],
+      "previous_turns_in": "candidate-review-20bf2d25-increment-15-16.json",
+      "outcome": {
+        "semantic_outcome": "not_checked",
+        "complete": false,
+        "reason_code": "model_parse_error",
+        "reason": "当前记录的实体和属性识别未完成。",
+        "model_calls": 0
+      },
+      "published_counts": {
+        "nodes": 0,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      },
+      "independent_conclusions": [
+        "继续后在没有新增模型回执时，原来未完成的离心机组取得model_parse_error最终结果；Centrifuge未登记。",
+        "原文较明确的设备端点没有通过完整执行核验；不能拿部分supported作合批前置已完成。"
+      ]
+    }
+  ],
+  "input_file_sha256": {
+    "review-20bf2d25-results-11.json": "b8ef2e26d7c8325a957212da0408f9c098a827f850203b316c3a1cd974270beb"
+  }
+}

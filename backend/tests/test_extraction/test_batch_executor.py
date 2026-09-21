@@ -231,7 +231,7 @@ def test_one_member_failure_preserves_independent_properties_and_incomplete_cove
     assert result.graph.progress.records_incomplete >= 1
     store, run, _token = current_run
     restored = current_state.restore_calls(store, run, run.run_fingerprint)
-    assert max(restored["lineage_calls"].values()) <= 4
+    assert max(restored["lineage_calls"].values()) <= 6
     participations = {}
     for request in requests:
         for member in request["members"]:
@@ -527,6 +527,56 @@ def test_finalizer_reproposal_resumes_same_member_and_publishes_a_new_owned_vers
     assert sorted(latest["lineage_calls"].values()) == sorted([2, 2, expected_calls - 1])
 
 
+def test_exhausted_reproposal_keeps_last_paid_outcome_without_head_conflict(
+    tmp_path, monkeypatch, current_run,
+):
+    args, executor, requests, hooks = setup_batch(
+        tmp_path, monkeypatch, current_run, failure="predicate",
+    )
+    store, run, _token = current_run
+    publish = hooks["batch_hook"]
+    published = []
+
+    def pause_after_publication(batch):
+        publish(batch)
+        published.append(True)
+
+    hooks["batch_hook"] = pause_after_publication
+    paused = executor(progress_hook=lambda _stage: not published).run(**args, **hooks)
+    assert len(requests) == 2
+    assert len(paused.graph.properties) == 2
+    rows = current_state.restore_work(store, run, run.run_fingerprint).work_state
+    control = rows["control"]["current"]
+    calls = current_state.restore_calls(store, run, run.run_fingerprint)
+    unit_id = control["active_unit_ref"]
+    protocol = calls["protocols"][unit_id]
+    task_id = next(task["task_id"] for task in protocol["work_unit"]["members"]
+                   if task["predicate_iri"] == ATTRIBUTES[1][0])
+    state = protocol["member_states"][task_id]
+    assert state["last_participating_request_attempt"] == 1
+    assert state["recovery_used"] and state["recovery_kind"] == "reproposal"
+    previous_ref = protocol["outcome_refs"][task_id]
+
+    result = executor(max_model_calls_per_record=1).run(
+        **args, **hooks, model_call_state=calls,
+        resume_state={"work_state": rows, "frontier": control["frontier_policy"],
+                      "diagnostics": control["diagnostics"]},
+    )
+    assert len(requests) == 2
+    assert len(result.graph.properties) == 2
+    calls = current_state.restore_calls(store, run, run.run_fingerprint)
+    protocol = calls["protocols"][unit_id]
+    state = protocol["member_states"][task_id]
+    assert state["recovery_used"] and state["recovery_kind"] == "none"
+    assert protocol["outcome_refs"][task_id] == previous_ref
+    outcome = current_state.load_protocol_record(
+        store, run, unit_id, protocol["outcome_refs"][task_id], "outcome",
+        member_task_id=task_id,
+    )
+    assert outcome["result_version"]["last_participating_request_attempt"] == 1
+    assert outcome["value"]["reason_code"] != "model_call_budget_exhausted"
+
+
 @pytest.mark.parametrize("reply", ["fixed", "empty", "unchanged"])
 def test_empty_target_reproposal_consumes_its_saved_response_after_cold_resume(
     tmp_path, monkeypatch, current_run, reply,
@@ -797,4 +847,4 @@ def test_same_physical_entity_is_canonical_across_independently_proved_relations
     assert len({edge.object_ref.id for edge in result.graph.edges}) == 1
     assert {edge.predicate_iri for edge in result.graph.edges} == {iri for iri, _label in RELATIONS}
     assert len({edge.proof_ref.id for edge in result.graph.edges}) == 2
-    assert len(requests) == 3
+    assert len(requests) == 2

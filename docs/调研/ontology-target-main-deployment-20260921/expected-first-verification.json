@@ -1,0 +1,94 @@
+{
+  "created_at": "2026-09-21T04:49:30.836093+00:00",
+  "recognition_run_id": "8b97fa57-e2a2-477e-b836-1e8094813dc0",
+  "review_mode": "independent_expected_results_before_reading_verification_output",
+  "verification_outputs_read": false,
+  "source_files": [
+    "/tmp/ontology-target-main-20260921/context-first-verification.json",
+    "/tmp/ontology-target-main-20260921/source-v2.json"
+  ],
+  "input_file_sha256": {
+    "context-first-verification.json": "897f870a5e836a0d19418bed4c24a14c7af63c68de46daa64092b0f5308156f9",
+    "source-v2.json": "864f2c4e72763fef6dd2aea3e7b5c1849a5a2794113360c58a4513a4ebca6265"
+  },
+  "targets": [
+    {
+      "local_id": "e1",
+      "target_id_in_request": "@r:b804520631db",
+      "target_kind": "entity",
+      "expected_final_fact": "undetermined_not_materialized",
+      "type": "undetermined_in_current_window; must_not_be_supported",
+      "referent": "Local HRS-1597 record is locatable; this does not prove global identity or a finished dosage instance.",
+      "subject_role": "The source names a project/product record; its finished dosage instance role is not established.",
+      "reason": "Frozen DrugProduct means a finished dosage form. Chemical identity and powder appearance plus a formulation descriptor do not resolve substance vs finished product."
+    },
+    {
+      "local_id": "p1",
+      "target_id_in_request": "@r:1bddd0cf3755",
+      "target_kind": "property",
+      "expected_final_fact": "unsupported_not_materialized",
+      "field_role": "unsupported",
+      "predicate": "unsupported",
+      "value": "HRS-1597 is quoted exactly but is a project name, not a regulatory submission status.",
+      "reason": "The explicit source label is 项目名称; regulatoryStatus requires a status such as IND submission or acceptance.",
+      "exact_value_quote_in_request_and_document": true,
+      "quote_length": 8
+    },
+    {
+      "local_id": "p3",
+      "target_id_in_request": "@r:1d326d15f034",
+      "target_kind": "property",
+      "expected_final_fact": "dependency_blocked_not_materialized",
+      "local_field_value": "supported: molecularFormula = C23H28N6O5S",
+      "subject_binding": "Can describe the local chemical record; attaching it to a verified finished DrugProduct still depends on e1.",
+      "reason": "Exact field/value is correct. The source does not establish that the finished dosage form as a whole has this formula.",
+      "exact_value_quote_in_request_and_document": true,
+      "quote_length": 11
+    },
+    {
+      "local_id": "p4",
+      "target_id_in_request": "@r:8bcc6aa27eb7",
+      "target_kind": "property",
+      "expected_final_fact": "dependency_blocked_not_materialized",
+      "local_field_value": "supported_as_written: molecularWeight = 500.60",
+      "unit": "Quantity policy is not_declared with no canonical/target unit; do not invent mg or force an absent physical-unit proof.",
+      "reason": "Local numeric evidence is exact. Its chemical form and attachment to a finished DrugProduct still depend on e1.",
+      "exact_value_quote_in_request_and_document": true,
+      "quote_length": 6
+    },
+    {
+      "local_id": "p5",
+      "target_id_in_request": "@r:799f5a7e51ff",
+      "target_kind": "property",
+      "expected_final_fact": "dependency_blocked_not_materialized",
+      "local_field_value": "supported: full English chemical name, not truncated",
+      "reason": "The exact complete chemical name is present; e1 must establish the chemical entity to product binding before this becomes a DrugProduct attribute.",
+      "exact_value_quote_in_request_and_document": true,
+      "quote_length": 150
+    },
+    {
+      "local_id": "p8",
+      "target_id_in_request": "@r:f59fd99d1e3d",
+      "target_kind": "property",
+      "expected_final_fact": "dependency_blocked_not_materialized",
+      "local_field_value": "supported: appearance = 类白色到白色粉末",
+      "reason": "Exact appearance field is correct for the described material; it must not be silently reassigned to the finished oral tablet.",
+      "exact_value_quote_in_request_and_document": true,
+      "quote_length": 8
+    }
+  ],
+  "scope_distinction": {
+    "current_model_context": "Product structure/property section and local binding context only. Introductory supply-form statements and equipment residue table are absent.",
+    "full_document_type_evidence": "Introduction explicitly identifies HRS-1597 as a new molecule and prior supply forms as 原料药; current work changes crystallization/purification. This supports substance/material interpretation and gives no authority to classify it as a finished dosage instance.",
+    "full_document_numeric_evidence": "Basic properties state 500.60; equipment main-residue rows state 500.18. Preserve distinct source role/scope and investigate before globally reconciling. Do not penalize the verifier for missing a table it did not receive."
+  },
+  "acceptance": {
+    "new_supported_DrugProduct_nodes_from_these_targets": 0,
+    "new_supported_DrugProduct_properties_from_these_targets": 0,
+    "regulatoryStatus_must_never_equal_project_name": true,
+    "correct_local_values_must_not_be_reported_as_invented": true,
+    "entity_type_undetermined_must_block_dependent_materialization": true,
+    "verifier_should_not_cite_unprovided_full_document_evidence": true
+  },
+  "limits": "Independent expert-style reference for this fixed window, not a complete document gold set. Property facets may be locally supported while final materialization remains blocked by the entity proof."
+}

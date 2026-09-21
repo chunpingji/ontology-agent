@@ -1,0 +1,47 @@
+{
+  "run_id": "8b97fa57-e2a2-477e-b836-1e8094813dc0",
+  "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+  "paused_revision": 85,
+  "resume_revision": 87,
+  "paused_model_calls": {
+    "calls": 3,
+    "statuses": {
+      "complete": 3
+    },
+    "input_tokens": 30663,
+    "output_tokens": 10853,
+    "request_seconds": 291.984,
+    "queue_seconds": 0.078
+  },
+  "resumed_discovery_calls": {
+    "calls": 3,
+    "statuses": {
+      "complete": 3
+    },
+    "input_tokens": 30663,
+    "output_tokens": 10853,
+    "request_seconds": 291.984,
+    "queue_seconds": 0.078
+  },
+  "existing_request_ledger_unchanged": true,
+  "new_requests": [
+    {
+      "domain": "calls:requests",
+      "request_key": "278ab1ec5740ceea413f03f27cbafb360021a8903e520d2cdcb5fe3a513fca98",
+      "stage": "verification",
+      "dispatch_state": "dispatch_claimed",
+      "actual_cost": null,
+      "cost_status": "unknown",
+      "task_id": "94bacbc48adcc2a798b9dfca882b913d3a0ea3c16e280d82e05f5f2368922992",
+      "record_id": "6ae7f83fa027fe281c8a4e0fd79f2c21d9f069e1132a505b70ef95740c4bbadb",
+      "input_hash": "7e55c3cc09f6ae5c7bd0d7b232cf6951ef11ba08a14eb8df0660d036698745fc"
+    }
+  ],
+  "saved_discovery_scope": {
+    "card_count": 62,
+    "catalog_hash": "875105c6e91d82dbae822b9fecd36c8d15869052b39c195a1ab47ea8949c1ee5",
+    "search_scope_hash": "2c8077461b036dfdb71517899ab309efaedf6506ffcd4ed6f163a9def75d6f6e"
+  },
+  "outcome": "public resume passed strict frozen-card/scope restoration; next request is verification, no discovery replay",
+  "limits": "covers this two-group state (one consumed and one active); other consumption states are covered by regression tests"
+}

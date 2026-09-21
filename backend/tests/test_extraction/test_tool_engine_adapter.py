@@ -30,6 +30,11 @@ from tests.test_extraction.test_tool_engine_freeze import _root_dependency
 pytest_plugins = ["tests.test_extraction.test_tool_engine_freeze"]
 
 
+@pytest.fixture
+def source(tool_source):
+    return tool_source
+
+
 def setup_adapter(
     source, monkeypatch, *, tool_calls=None, stop_at=None, response_status="completed",
     skip_relation_check=False, budget=4,
@@ -178,21 +183,18 @@ def setup_adapter(
 def test_relation_requires_tool_result_before_independent_verifier_and_gate(source, monkeypatch):
     adapter, task, context, predicate, menu, storage, requests = setup_adapter(source, monkeypatch)
     outcome = adapter.inspect(task, context, predicate, menu)
-    assert len(requests) == 3 and len(storage["reservations"]) == 3
+    assert len(requests) == 2 and len(storage["reservations"]) == 2
     assert len(outcome.relationship_groups) == 1
     assert outcome.complete
     assert storage["protocol"]["stage"] == "finalize"
     assert storage["protocol"]["outcome_ref"]
-    assert "reasoning" not in json.dumps(requests[1]["input_items"])
-    assert requests[1]["tool_choice"] == "required"
-    assert [t["name"] for t in requests[1]["tools"]] == ["validate_graph"]
-    assert requests[1]["text_format"] is None
-    initial = requests[1]["input_items"]
-    assert requests[2]["input_items"][:len(initial)] == initial
-    result = next(item for item in requests[2]["input_items"]
-                  if item.get("type") == "function_call_output")
-    assert json.loads(result["output"])["data"]["validation_status"] == "passed"
-    for request in (requests[0], requests[2]):
+    results = [row["value"] for row in storage["results"].values()
+               if row["field"] == "tool_result"]
+    assert len(results) == 1
+    assert results[0]["call_id"].startswith("controller-relation-")
+    assert results[0]["result"]["data"]["validation_status"] == "passed"
+    assert not storage["protocol"]["completed_tool_results"]
+    for request in requests:
         assert request["instructions"]
         assert "阶段回答JSON Schema" not in request["instructions"]
         assert request["text_format"]["schema"]["properties"]
@@ -232,7 +234,7 @@ def test_resume_verified_claims_with_whole_binding_source_needs_no_new_model_cal
     monkeypatch.setattr(local_client, "responses_create", verify_with_binding)
     with pytest.raises(RuntimeError, match="pause after durable commit"):
         adapter.inspect(task, context, predicate, menu)
-    assert len(requests) == 3
+    assert len(requests) == 2
     saved = copy.deepcopy(stored)
     adapter, task, context, predicate, menu, stored, requests = setup_adapter(source, monkeypatch)
     stored.update(saved)
@@ -241,7 +243,7 @@ def test_resume_verified_claims_with_whole_binding_source_needs_no_new_model_cal
     outcome = adapter.inspect(task, context, predicate, menu)
     assert outcome.complete and len(outcome.relationship_groups) == 1
     assert not requests
-    assert stored["protocol"]["request_attempt"] == 3
+    assert stored["protocol"]["request_attempt"] == 2
     assert original.model_dump() == before
 
 
@@ -249,8 +251,8 @@ def test_auto_tool_turn_constrains_answers_to_the_current_stage(source, monkeypa
     adapter, task, context, predicate, menu, storage, requests = setup_adapter(source, monkeypatch)
     outcome = adapter.inspect(task, context, predicate, menu)
     assert outcome.complete
-    assert len(requests) == 3
-    for request in (requests[0], requests[2]):
+    assert len(requests) == 2
+    for request in requests:
         assert request["tools"] and request["tool_choice"] == "auto"
         view = json.loads(request["input_items"][0]["content"][0]["text"])
         answer_format = request["text_format"]
@@ -265,9 +267,15 @@ def test_auto_tool_turn_constrains_answers_to_the_current_stage(source, monkeypa
             assert "subject_id" in relation["required"]
             assert relation["properties"]["predicate_iri"]["enum"] == [predicate.iri]
         else:
-            targets = schema["$defs"]["TargetVerification"]["properties"]["target_id"]["enum"]
-            assert targets == [
-                target["target_id"] for target in view["verification_input"]["targets"]
+            targets = schema["properties"]["verifications"]
+            expected = view["verification_input"]["targets"]
+            assert targets["minItems"] == targets["maxItems"] == len(expected)
+            assert "items" not in targets
+            assert [{field: target["properties"][field]["const"]
+                     for field in ("target_id", "content_hash")}
+                    for target in targets["prefixItems"]] == [
+                {field: target[field] for field in ("target_id", "content_hash")}
+                for target in expected
             ]
 
 
@@ -280,7 +288,7 @@ def test_input_allowance_is_not_total_context(source, monkeypatch, context_limit
     adapter.token_counter = lambda _: 20000
     if accepted:
         assert adapter.inspect(task, context, predicate, menu).complete
-        assert len(requests) == 3
+        assert len(requests) == 2
     else:
         with pytest.raises(RuntimeError, match="context_budget_exceeded"):
             adapter.inspect(task, context, predicate, menu)
@@ -377,7 +385,7 @@ def test_explicit_reasoning_is_transmitted_and_belongs_to_request_hash(source, m
     adapter, task, context, predicate, menu, storage, requests = setup_adapter(source, monkeypatch)
     adapter.reasoning = {"effort": "none"}
     outcome = adapter.inspect(task, context, predicate, menu)
-    assert outcome.complete and len(requests) == 3
+    assert outcome.complete and len(requests) == 2
     turns = sorted([row["value"] for row in storage["results"].values()
                     if row["field"] == "model_turn"], key=lambda row: row["attempt"])
     for request, turn in zip(requests, turns, strict=True):
@@ -433,9 +441,7 @@ def test_invalid_stage_answer_receives_derived_feedback_without_relaxing_parser(
     outcome = adapter.inspect(task, context, predicate, menu)
     assert outcome.complete
     correction_request = requests[0 if cold_resume else 1]
-    assert json.loads(correction_request["input_items"][-2]["content"][0]["text"]) == json.loads(
-        invalid_text,
-    )
+    assert invalid_text not in json.dumps(correction_request["input_items"])
     feedback = json.loads(correction_request["input_items"][-1]["content"][0]["text"])
     assert feedback["kind"] == "stage_answer_invalid"
     if invalid_kind == "schema":
@@ -443,8 +449,8 @@ def test_invalid_stage_answer_receives_derived_feedback_without_relaxing_parser(
     else:
         assert [issue["field_path"] for issue in feedback["issues"]] == ["entities.0.local_id"]
         assert "local_id_conflicts_with_registered_entity" in feedback["issues"][0]["message"]
-    assert stored["protocol"]["request_attempt"] == 4
-    assert len(stored["reservations"]) == 4
+    assert stored["protocol"]["request_attempt"] == 3
+    assert len(stored["reservations"]) == 3
     assert "stage_answer_invalid" not in json.dumps(requests[-1]["input_items"])
 
 
@@ -466,7 +472,7 @@ def test_verifier_protocol_errors_receive_feedback_without_changing_claims(
     def invalid_verifier(client, **kwargs):
         nonlocal invalid_text
         turn = valid_transport(client, **kwargs)
-        if len(requests) == 3:
+        if len(requests) == 2:
             payload = json.loads(turn.output_items[0]["content"][0]["text"])
             if mutation == "target":
                 payload["verifications"].pop()
@@ -485,7 +491,7 @@ def test_verifier_protocol_errors_receive_feedback_without_changing_claims(
         def pause_after_verification(value):
             save(value)
             if any(row["field"] == "model_turn" and row["value"]["stage"] == "verification"
-                   and row["value"]["attempt"] == 3
+                   and row["value"]["attempt"] == 2
                    for row in value.get("result_changes", {}).values()):
                 raise RuntimeError("pause after verifier commit")
 
@@ -501,16 +507,14 @@ def test_verifier_protocol_errors_receive_feedback_without_changing_claims(
         context.remaining_model_calls = 1
     outcome = adapter.inspect(task, context, predicate, menu)
     assert outcome.complete and len(outcome.relationship_groups) == 1
-    correction = requests[0 if cold_resume else 3]
-    assert json.loads(correction["input_items"][-2]["content"][0]["text"]) == json.loads(
-        invalid_text,
-    )
+    correction = requests[0 if cold_resume else 2]
+    assert invalid_text not in json.dumps(correction["input_items"])
     feedback = json.loads(correction["input_items"][-1]["content"][0]["text"])
     assert feedback["stage"] == "verification"
     assert [issue["field_path"] for issue in feedback["issues"]] == [field_path]
     assert reason in feedback["issues"][0]["message"]
-    assert stored["protocol"]["request_attempt"] == 4
-    assert len(stored["reservations"]) == 4
+    assert stored["protocol"]["request_attempt"] == 3
+    assert len(stored["reservations"]) == 3
     assert len([row for row in stored["results"].values() if row["field"] == "discovery"]) == 1
 
 
@@ -531,7 +535,7 @@ def test_error_tool_pairs_preserve_original_call_and_opaque_reasoning(
         tool_calls=[call],
     )
     outcome = adapter.inspect(task, context, predicate, menu)
-    assert len(requests) == 4 and outcome.complete
+    assert len(requests) == 3 and outcome.complete
     continued = requests[1]["input_items"]
     assert continued[1]["encrypted_content"] == "opaque-data"
     assert continued[2] == call
@@ -584,8 +588,8 @@ def test_cold_resume_keeps_paired_results_and_never_repeats_confirmed_tool(
     context.protocol_results = copy.deepcopy(saved["results"])
     context.remaining_model_calls = 4 - len(saved["reservations"])
     outcome = adapter.inspect(task, context, predicate, menu)
-    assert outcome.complete and len(requests) == 3
-    assert storage["protocol"]["request_attempt"] == 4
+    assert outcome.complete and len(requests) == 2
+    assert storage["protocol"]["request_attempt"] == 3
     assert storage["protocol"]["tool_calls_used"] == 2
     results = [value for value in storage["results"].values() if value["field"] == "tool_result"]
     assert len(results) == 2
@@ -623,7 +627,7 @@ def test_observation_uses_actual_request_and_narrowed_card(source, monkeypatch):
     with model_scope(on_harness_event=lambda kind, data: events.append((kind, data))):
         adapter.inspect(task, context, predicate, menu)
     starts = [data for kind, data in events if kind == "model_start"]
-    assert len(starts) == len(requests) == 3
+    assert len(starts) == len(requests) == 2
     assert starts[0]["call_id"] != starts[1]["call_id"]
     for start, request in zip(starts, requests):
         assert start["request"]["input"] == request["input_items"]

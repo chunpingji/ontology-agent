@@ -1,0 +1,3198 @@
+{
+  "run_id": "3d563507-90da-495c-998e-62cb83244521",
+  "captured_at": "2026-09-21T06:49:20.717788+00:00",
+  "run_status": "paused",
+  "work_version": 7,
+  "source_counts": {
+    "paragraph_slots": 124,
+    "nonempty_paragraphs": 78,
+    "tables": 12,
+    "table_rows": 50,
+    "nonempty_grid_cells_including_merged_repetition": 291,
+    "nonempty_regions": 128
+  },
+  "scope_summary": {
+    "source_records": 90,
+    "reading_groups": 43,
+    "record_routing_counts": {
+      "routed": 72,
+      "unrouted": 18
+    },
+    "group_routing_counts": {
+      "routed": 34,
+      "unrouted": 9
+    },
+    "records_with_confirmed_model_call": 16,
+    "records_without_confirmed_model_call": 74,
+    "record_discovery_status_counts": {
+      "unattempted": 74,
+      "incomplete": 16
+    },
+    "record_current_scope_status_counts": {
+      "unattempted": 74,
+      "incomplete": 16
+    },
+    "record_relation_status_counts": {
+      "no_current_relation_plan": 39,
+      "planned_not_model_called": 51
+    },
+    "unique_confirmed_model_calls": 6,
+    "unique_confirmed_model_call_stages": {
+      "discovery": 3,
+      "verification": 3
+    },
+    "unique_unconfirmed_requests": 0,
+    "unmapped_confirmed_calls": 0,
+    "discovery_work_state_counts": {
+      "incomplete": 1,
+      "active": 1
+    },
+    "relation_work_state_counts": {
+      "waiting_endpoints": 2
+    }
+  },
+  "multi_predicate_summary": {
+    "proven_actual_calls": 0,
+    "stage_counts": {},
+    "maximum_distinct_predicates": 0,
+    "explicit_membership_calls": 0,
+    "unmapped_explicit_members": 0
+  },
+  "unrouted_locations": [
+    "P26",
+    "P27",
+    "T1R1",
+    "T1R2",
+    "T1R3",
+    "T1R4",
+    "T2R2",
+    "T8R2",
+    "T8R3",
+    "T8R4",
+    "T8R5",
+    "T8R6",
+    "T8R7",
+    "T8R8",
+    "T8R9",
+    "T8R10",
+    "P90",
+    "P100"
+  ],
+  "raw_region_execution_mapping": [
+    {
+      "location": "P5",
+      "evidence_ids": [
+        "5216a626d98b87e2bed5ca2e4e51261f9f3eee30f3bed2e913ab0fa9fd164409"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P6",
+      "evidence_ids": [
+        "938f7ff9894a703dfd0e43283ebaf7923122ac4cbddc6a505ff438ddac361595"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P7",
+      "evidence_ids": [
+        "7299db1862d0e2de72ffb2e63a265042b672c85818f621acb8598718b13762ca"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P8",
+      "evidence_ids": [
+        "0de578ec2e6c1d6a6d9ee38d8226a99999bb958a0e147e7343beef5e66d88073"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "614a84d58c1a8779bbb89644623eebce601317e8518e0dadd111970cb2bf84b2"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P20",
+      "evidence_ids": [
+        "d160ef9e8df6fb0f2396cf3e980928c6ea933448a77b2e19d962248caf047345"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "8ec13ee276a5ae2bc91af77945da129f082d953243ee1780c1de01d8f0c6aa6c"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P25",
+      "evidence_ids": [
+        "cd1e85e1415660c3ecf3cde9c6f7fa1c71bc0ca4a19b0f253c9dc340b7882edb"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P26",
+      "evidence_ids": [
+        "b6d69cb4621daf609b7bc2e22b99ddcb29d068726e9ec649658aa84cffae6800"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "ddaa7491e4158181d27fa4d96c7dd16613c9a9b6755463f192b898c3b70584d2"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "unrouted": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P27",
+      "evidence_ids": [
+        "5803ac5f6f0aaf0b3bb334a7fa6190c840ed655702e392dc79877c7ac30e65f2"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "ec1ec99bb7c70e32c85061382c92f124b697112fd6c55eec52faacc350e85cc5"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "unrouted": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P28",
+      "evidence_ids": [
+        "20cb967b1c539c4a464ada4f129dbdb9e590fce7d14b7a4175727a176c767407"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P29",
+      "evidence_ids": [
+        "e262cc1353cb25e9ca96490cb45fa0288b2887c1f0e5fd277be31c7d97824e4b"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P31",
+      "evidence_ids": [
+        "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "b7df89f3cf3af96e25008fa7356fde69da0c49c2e80144a774fc3693bdfe0a37"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [
+        "b7df89f3cf3af96e25008fa7356fde69da0c49c2e80144a774fc3693bdfe0a37"
+      ],
+      "source_current_scope_status_counts": {
+        "incomplete": 1
+      },
+      "source_confirmed_call_ids": [
+        "result:3ec3cb2d8374a747d85adc00d64ff9d1f1c599c91d206776ccf20861c3fa26fc",
+        "result:88f5da7caf80e40fa5e835ef33091b5d78914ec64d1de6eda5a6918b58c4ad00",
+        "result:bb3a2691aa041fa1eca95766014261cff8f9cd3f3ab5308e499f388391660e2f",
+        "result:d12db1b3188c95b1d901d1a041582b197fbac0631c42f737ced884751345610e"
+      ]
+    },
+    {
+      "location": "P32",
+      "evidence_ids": [
+        "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "f80887751fb86b87d07e2f792f7606e444214948bd2d77edab2de7cec26ef687"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [
+        "f80887751fb86b87d07e2f792f7606e444214948bd2d77edab2de7cec26ef687"
+      ],
+      "source_current_scope_status_counts": {
+        "incomplete": 1
+      },
+      "source_confirmed_call_ids": [
+        "result:3ec3cb2d8374a747d85adc00d64ff9d1f1c599c91d206776ccf20861c3fa26fc",
+        "result:88f5da7caf80e40fa5e835ef33091b5d78914ec64d1de6eda5a6918b58c4ad00",
+        "result:bb3a2691aa041fa1eca95766014261cff8f9cd3f3ab5308e499f388391660e2f",
+        "result:d12db1b3188c95b1d901d1a041582b197fbac0631c42f737ced884751345610e"
+      ]
+    },
+    {
+      "location": "P33",
+      "evidence_ids": [
+        "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "5de81e6f64b1601fda38679e2d6665b4dd52da2fc6f88d42cced01c79e097ada"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [
+        "5de81e6f64b1601fda38679e2d6665b4dd52da2fc6f88d42cced01c79e097ada"
+      ],
+      "source_current_scope_status_counts": {
+        "incomplete": 1
+      },
+      "source_confirmed_call_ids": [
+        "result:3ec3cb2d8374a747d85adc00d64ff9d1f1c599c91d206776ccf20861c3fa26fc",
+        "result:88f5da7caf80e40fa5e835ef33091b5d78914ec64d1de6eda5a6918b58c4ad00",
+        "result:bb3a2691aa041fa1eca95766014261cff8f9cd3f3ab5308e499f388391660e2f",
+        "result:d12db1b3188c95b1d901d1a041582b197fbac0631c42f737ced884751345610e"
+      ]
+    },
+    {
+      "location": "P34",
+      "evidence_ids": [
+        "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "8e180ae7f9d29d2408469a8b458b52d60b108120d69aa98664f9293b359cff78"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [
+        "8e180ae7f9d29d2408469a8b458b52d60b108120d69aa98664f9293b359cff78"
+      ],
+      "source_current_scope_status_counts": {
+        "incomplete": 1
+      },
+      "source_confirmed_call_ids": [
+        "result:3ec3cb2d8374a747d85adc00d64ff9d1f1c599c91d206776ccf20861c3fa26fc",
+        "result:88f5da7caf80e40fa5e835ef33091b5d78914ec64d1de6eda5a6918b58c4ad00",
+        "result:bb3a2691aa041fa1eca95766014261cff8f9cd3f3ab5308e499f388391660e2f",
+        "result:d12db1b3188c95b1d901d1a041582b197fbac0631c42f737ced884751345610e"
+      ]
+    },
+    {
+      "location": "P35",
+      "evidence_ids": [
+        "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "93cc391906b88a3627544195f5c1e0c8635f81429f6456b3222eecd6ff2e067e"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [
+        "93cc391906b88a3627544195f5c1e0c8635f81429f6456b3222eecd6ff2e067e"
+      ],
+      "source_current_scope_status_counts": {
+        "incomplete": 1
+      },
+      "source_confirmed_call_ids": [
+        "result:3ec3cb2d8374a747d85adc00d64ff9d1f1c599c91d206776ccf20861c3fa26fc",
+        "result:88f5da7caf80e40fa5e835ef33091b5d78914ec64d1de6eda5a6918b58c4ad00",
+        "result:bb3a2691aa041fa1eca95766014261cff8f9cd3f3ab5308e499f388391660e2f",
+        "result:d12db1b3188c95b1d901d1a041582b197fbac0631c42f737ced884751345610e"
+      ]
+    },
+    {
+      "location": "P36",
+      "evidence_ids": [
+        "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "7a0a948e3e8eb49f32f491351874c6a397b16be6d3087e1adf8862e5b3bde8ac"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [
+        "7a0a948e3e8eb49f32f491351874c6a397b16be6d3087e1adf8862e5b3bde8ac"
+      ],
+      "source_current_scope_status_counts": {
+        "incomplete": 1
+      },
+      "source_confirmed_call_ids": [
+        "result:3ec3cb2d8374a747d85adc00d64ff9d1f1c599c91d206776ccf20861c3fa26fc",
+        "result:88f5da7caf80e40fa5e835ef33091b5d78914ec64d1de6eda5a6918b58c4ad00",
+        "result:bb3a2691aa041fa1eca95766014261cff8f9cd3f3ab5308e499f388391660e2f",
+        "result:d12db1b3188c95b1d901d1a041582b197fbac0631c42f737ced884751345610e"
+      ]
+    },
+    {
+      "location": "P37",
+      "evidence_ids": [
+        "b4dabece54e4ed1ff9eab064651ccf18f151de488ad48ef326ca52418b3dacd8"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "1b6796ebae49a51080923d2713b1b26acd5e5ceb4e72cefa327103562014ff7c"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [
+        "1b6796ebae49a51080923d2713b1b26acd5e5ceb4e72cefa327103562014ff7c"
+      ],
+      "source_current_scope_status_counts": {
+        "incomplete": 1
+      },
+      "source_confirmed_call_ids": [
+        "result:3ec3cb2d8374a747d85adc00d64ff9d1f1c599c91d206776ccf20861c3fa26fc",
+        "result:88f5da7caf80e40fa5e835ef33091b5d78914ec64d1de6eda5a6918b58c4ad00",
+        "result:bb3a2691aa041fa1eca95766014261cff8f9cd3f3ab5308e499f388391660e2f",
+        "result:d12db1b3188c95b1d901d1a041582b197fbac0631c42f737ced884751345610e"
+      ]
+    },
+    {
+      "location": "P38",
+      "evidence_ids": [
+        "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "bd1b20eb19d26bf720f145568a78145c98506ae5dda43cb4311a665e9be30196"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [
+        "bd1b20eb19d26bf720f145568a78145c98506ae5dda43cb4311a665e9be30196"
+      ],
+      "source_current_scope_status_counts": {
+        "incomplete": 1
+      },
+      "source_confirmed_call_ids": [
+        "result:3ec3cb2d8374a747d85adc00d64ff9d1f1c599c91d206776ccf20861c3fa26fc",
+        "result:88f5da7caf80e40fa5e835ef33091b5d78914ec64d1de6eda5a6918b58c4ad00",
+        "result:bb3a2691aa041fa1eca95766014261cff8f9cd3f3ab5308e499f388391660e2f",
+        "result:d12db1b3188c95b1d901d1a041582b197fbac0631c42f737ced884751345610e"
+      ]
+    },
+    {
+      "location": "P39",
+      "evidence_ids": [
+        "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "504613c49ad2718bd59a4c614418b180ddfe1962aaa751fa9e4645ab743440a7"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [
+        "504613c49ad2718bd59a4c614418b180ddfe1962aaa751fa9e4645ab743440a7"
+      ],
+      "source_current_scope_status_counts": {
+        "incomplete": 1
+      },
+      "source_confirmed_call_ids": [
+        "result:b2fc3fff07940423fceb0a3d93d04695b599220924f3e566c05a71131e3fadf6",
+        "result:b9d1f2109bc046c8649389f8696ba584ab178060f6d8735ea01f16966acf282a"
+      ]
+    },
+    {
+      "location": "P40",
+      "evidence_ids": [
+        "ae3330d1d1826e10ecff3fd4b56765fe385dfff5a67679fbe22a436480d3276a"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "f2624e6913d38ead3e74fcf2c93ccccb0aa5a4f5eadeccd1e806d20d1f598034"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [
+        "f2624e6913d38ead3e74fcf2c93ccccb0aa5a4f5eadeccd1e806d20d1f598034"
+      ],
+      "source_current_scope_status_counts": {
+        "incomplete": 1
+      },
+      "source_confirmed_call_ids": [
+        "result:b2fc3fff07940423fceb0a3d93d04695b599220924f3e566c05a71131e3fadf6",
+        "result:b9d1f2109bc046c8649389f8696ba584ab178060f6d8735ea01f16966acf282a"
+      ]
+    },
+    {
+      "location": "P41",
+      "evidence_ids": [
+        "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "cb31973a1963b19800fa14748fd2c45aaf8c529c4ae9e9e78ca14f0b1e9315a8"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [
+        "cb31973a1963b19800fa14748fd2c45aaf8c529c4ae9e9e78ca14f0b1e9315a8"
+      ],
+      "source_current_scope_status_counts": {
+        "incomplete": 1
+      },
+      "source_confirmed_call_ids": [
+        "result:b2fc3fff07940423fceb0a3d93d04695b599220924f3e566c05a71131e3fadf6",
+        "result:b9d1f2109bc046c8649389f8696ba584ab178060f6d8735ea01f16966acf282a"
+      ]
+    },
+    {
+      "location": "P42",
+      "evidence_ids": [
+        "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "9e3549601fd1890174992da0819afaf6e78ddc2459ef8e6ab1b645d263ae4656"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [
+        "9e3549601fd1890174992da0819afaf6e78ddc2459ef8e6ab1b645d263ae4656"
+      ],
+      "source_current_scope_status_counts": {
+        "incomplete": 1
+      },
+      "source_confirmed_call_ids": [
+        "result:b2fc3fff07940423fceb0a3d93d04695b599220924f3e566c05a71131e3fadf6",
+        "result:b9d1f2109bc046c8649389f8696ba584ab178060f6d8735ea01f16966acf282a"
+      ]
+    },
+    {
+      "location": "P43",
+      "evidence_ids": [
+        "92a82f158e48683ef179eb2ac947fcc82d319381afcf72457c5bd1e69d8ceaa0"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "365c6729e179e2561787e02e5e91777a051d9ceed9bd783c8a38aa784a0b7dac"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [
+        "365c6729e179e2561787e02e5e91777a051d9ceed9bd783c8a38aa784a0b7dac"
+      ],
+      "source_current_scope_status_counts": {
+        "incomplete": 1
+      },
+      "source_confirmed_call_ids": [
+        "result:b2fc3fff07940423fceb0a3d93d04695b599220924f3e566c05a71131e3fadf6",
+        "result:b9d1f2109bc046c8649389f8696ba584ab178060f6d8735ea01f16966acf282a"
+      ]
+    },
+    {
+      "location": "P44",
+      "evidence_ids": [
+        "bbc77ec05164fc68500520c9b37a410c205318f87e1ac764b7b259be9fb54e35"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "c30ae18921a41ff479485b58eeb97b95de90999587ec7a01217ef60df0a888bf"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [
+        "c30ae18921a41ff479485b58eeb97b95de90999587ec7a01217ef60df0a888bf"
+      ],
+      "source_current_scope_status_counts": {
+        "incomplete": 1
+      },
+      "source_confirmed_call_ids": [
+        "result:b2fc3fff07940423fceb0a3d93d04695b599220924f3e566c05a71131e3fadf6",
+        "result:b9d1f2109bc046c8649389f8696ba584ab178060f6d8735ea01f16966acf282a"
+      ]
+    },
+    {
+      "location": "P45",
+      "evidence_ids": [
+        "0d97b1cfec2e1dd87a225a07abcd15051b595c9a15214fcc518691696dbf917b"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "829e82054693729f674ffd64f08df85f4add18462a773aa6c87904bf770cdaeb"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [
+        "829e82054693729f674ffd64f08df85f4add18462a773aa6c87904bf770cdaeb"
+      ],
+      "source_current_scope_status_counts": {
+        "incomplete": 1
+      },
+      "source_confirmed_call_ids": [
+        "result:b2fc3fff07940423fceb0a3d93d04695b599220924f3e566c05a71131e3fadf6",
+        "result:b9d1f2109bc046c8649389f8696ba584ab178060f6d8735ea01f16966acf282a"
+      ]
+    },
+    {
+      "location": "P46",
+      "evidence_ids": [
+        "a6db68228eb3e4e9f6afb0c51a50528bb8bd5e051ec50d6bd5b2e4fbb70e5316"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "8b5267e2eff148a0a9df200b882f8ad535aa380ae053a65eaf194b57ef401134"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [
+        "8b5267e2eff148a0a9df200b882f8ad535aa380ae053a65eaf194b57ef401134"
+      ],
+      "source_current_scope_status_counts": {
+        "incomplete": 1
+      },
+      "source_confirmed_call_ids": [
+        "result:b2fc3fff07940423fceb0a3d93d04695b599220924f3e566c05a71131e3fadf6",
+        "result:b9d1f2109bc046c8649389f8696ba584ab178060f6d8735ea01f16966acf282a"
+      ]
+    },
+    {
+      "location": "P47",
+      "evidence_ids": [
+        "73fd2ce08c8dda22a7eb3f5217044e5c90a8f50f075b3b0fd6ff1741bcf8732a"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "7fa176f18c739a037025f0ec0d9a50ce0ed10e918e9fa4f5912d886f837e1794"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P48",
+      "evidence_ids": [
+        "fbf4fd8f7cfd9b9066e0a19ae8e5f0feca4677c612af8d61b4eda7b6647f4517"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "87859905736279d2f1484be6770882418ad6c7fad82a5b97e605c1182f8cf2f0"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P49",
+      "evidence_ids": [
+        "12943408020bef0c9efc9d1f0ec34c383d7d0764a250752ee0e52bbb0e72ad95"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "fa1dbe41705659980f2c0e1b155912ff291052016eb975e05ef3c20b181ad01b"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P51",
+      "evidence_ids": [
+        "a9e1cff8c7ae08627f5c153a19bd337c29fb29f8c0fed2b2b6ba1816a85dc9bf"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P52",
+      "evidence_ids": [
+        "990dfa5ac2af7465552f5b38490f48ab922489b76a5e0085708606a5e6d176e9"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P53",
+      "evidence_ids": [
+        "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "b84288cbdfb130f6499c6e4ae7a927060ffce4dd20fc51c34206aca233e410d0"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P66",
+      "evidence_ids": [
+        "9ae57b46ff1a02305203908df4fe50a1f6fe3b4bc1d19125871ce2b1759ae09b"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "0d2f6b7211d94d47823e1dba7da39be4b3dfd363698f40eead9b3ce82f108626"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P67",
+      "evidence_ids": [
+        "4e5f8c5dfb23eea1f0aca5459d1eb46e5938e70315379be81a932e8d3d78f0fc"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T1R1",
+      "evidence_ids": [
+        "eb9ae47dd5c6b18adda384240c1f7032136e69117273a3795413955814415df2",
+        "25b2f474f2ba36213c43e291746e2675a407be26ffe9e24fd5696562dcd433b5",
+        "95740b2aa44859d2606f6dc881d8c5de2e7240d356a6dc5ea12b80fbb62ca433",
+        "58d2870e1b125f3116ab90ae8d7b33856eea38b2cbcd82cb30192a671e25faa2",
+        "96fde791236a9b2c1e5fc1ba9839f60039459b938c378442f9bee26abeb27c26",
+        "3341bdfcd39667597a1ff69f9bf23a40c40852deadfccd4ac38e58d363e2ee27",
+        "3384bc27047c8f0f326eed4796d291bf2dd801ac215e5ce35dc924d89423e191",
+        "badf97b54be3cffce827ce0029cb377572588ccf590ac9f89c6c70318097e56f",
+        "67703544418a6cc96188568e82cc3f79a0450ddbd263726e40451a85ba252bce",
+        "45c60cf03e85eb8170e876595faf9a563a2ad97327327a7fc7b2e773c9a26f3e"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "0fab2c17d9015a2d348b73e9f161230edd3003c8eafa16cea3110a405e7b38ec"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "unrouted": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T1R2",
+      "evidence_ids": [
+        "78f88534f1eaa27284d3130da5bf76abc45f4815ab95184aff919463a0b873cc",
+        "38ea5bdcd145e2255df0d0d3fed810e6f42d00ce686d62af9674cdcca12d1432",
+        "45f5cd2e489caa74a67e131128945ae56a3ff662812e8c59275b4db5ad859768",
+        "94422989bc911bd25e06ab3c7801ddd8e693e535933d8630935a25f04b636a3b"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "dd00d1206ec9106c3995b04cb85504522d1c35ab171bca89687497fc14680f3a"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "unrouted": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T1R3",
+      "evidence_ids": [
+        "d659788a83987613fbc2c5a0ad8744225f5e49a41cf7a02f04b5f93e07710b30",
+        "64e8d57cf406c8e44adbd749c61976097e372de62ff4df58e24fd0106d01f7a2"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "23e577a3ac5b6b6be2ab24958dac625fcd4d0b20ff47604010880900d1fde7f4"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "unrouted": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T1R4",
+      "evidence_ids": [
+        "ea9dbc71dffccfb4518a1be01df208c82cc2fcd7f0f6d7801dc374c083e8421b",
+        "f94a376ffd18cdee213d00e206b4817929a7dce442068a613245258b956efe16"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "db04f398f1d637aed00d55ef27e411cf8598156bf19f1b6f227b60884651af48"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "unrouted": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P70",
+      "evidence_ids": [
+        "1ecd97c1dba019b579e54c57c53186473368b0ee79400e2d54eefdf3e294a02b"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T2R1",
+      "evidence_ids": [
+        "8a00f40f4ed7562a7020b977dc04494adb70d7156140c8f9df164560530397f9",
+        "2aacdca70f01f367c6544c569515e38ad2b7ec66a338048b89c7d69269d4e240",
+        "37c8947ccd85cf0922dcce9ff37c246bc561025b1455eeb8b6af3ac0430a6150"
+      ],
+      "roles": [
+        "table_header_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T2R2",
+      "evidence_ids": [
+        "026c1f21b00225a5c216dae85b1b951200d7d49404a8ef501f8d0240124c8b2c",
+        "6a1ab4ac2abc4f99b1845a7a21dbc2c2a78ac093b2f71fc241784cdeaf5a47f5",
+        "373ceb8d513468bae4cac73a2b703e3b5753ce37872b74d953e33e96040800b1"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "c25a4f5544281c31de541af36373187d913093ec870b519b10420e8def6190b1"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "unrouted": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P72",
+      "evidence_ids": [
+        "e2079d5cbd5832a75f741c3631fbf8264b79c337051563377589cca037902f57"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T3R1",
+      "evidence_ids": [
+        "7f8db465edbdac3a5699c7efe44193af5639fb3eeee3158445be1befe89c679c",
+        "88b371c19a105d9422ec0797bee705d7e6244521bf6ec6e78b6c5e254057e81d",
+        "a3597d4de545847db6e41c86555f51680649679b08cba1e926b4ee2a53ccc090",
+        "ef59d3d634d4b39e018539c6ef2ce3c5df6ced14cd4bda019491b03aaad13d9d"
+      ],
+      "roles": [
+        "table_header_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T3R2",
+      "evidence_ids": [
+        "1746fe2d8b46899fb2d25255c3e086f586ea721d270cd82d123d8d569b9bdb0b",
+        "8c6df52c14b9ce8c7bf8e4f6a4daf5b692fe81be3e40f9623d13024764484b77",
+        "7b15fc2b9bb831986f38781f49eb6a242b2d462ad03ceebd6aee44805b1019e4",
+        "a33f540c8c23eba49a1b152fe957728409a129321758c31e4df238356cb1c446"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "a73c534d4350a3621c765aeedbfc5b58a0eb027d62d159e98be0e18eaa308d6b"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P73",
+      "evidence_ids": [
+        "3cd84acd68bf5c0318dd651dfde7f22e63312d486e4830767b785e03b91ea21b"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P74",
+      "evidence_ids": [
+        "985f615a249cbdc006c6a8b32b073821b4ce7146e381426f943f1d257f0c5df9"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "c697113d16e9eb6cbde2d10c1a516badab3e36a2bb6fb485f71c06d8945bf445"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T4R1",
+      "evidence_ids": [
+        "32e73ba633a2f7243ca61239f5931f7ececbfdba0b3b56c6af5b4cbc995712e8",
+        "84f10931c2ae63a183d2615bd768975e453c10ac01c6f7864a35e9b94c5c04bd",
+        "585a126b83fedd3cb8cdbe3f6d34684fab6c5f8bc49dee75431884d0412342c5",
+        "8eaf886ee65935279108894229989b68b6be25581d12c90989864d32ed37b5b1"
+      ],
+      "roles": [
+        "table_header_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T4R2",
+      "evidence_ids": [
+        "27470ea4e6925a36eeb075ca2e0f45ba7621a3d627edbda7d5b0a6dc6f5a63ca",
+        "be4178e3dd93f48462ae20a9cab75a57905b2aa76281b443a459cb369b038425",
+        "28119fd68f734c49dcada7eb9bcbc5e8c303ce5d47c5fd76fecbf4fc61ecfbdd",
+        "4fead2cdfee4e6dc0ff7786b3f8227c95fa2d66f69aa01e2fe837dd8b7076186"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "9e1f15c21b9bef1dc2f3b2fa3188fc50b12670e6b6cc2008f4f4ef4409d11273"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P76",
+      "evidence_ids": [
+        "a7fbc1c9c3c1c8c2655a7ec87a4ab40f3748e7b44e6a735f84850cfb7285aecc"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P77",
+      "evidence_ids": [
+        "2a8a38acf7f5aedcc1446c0cdbffcf9fd663d6046b0a434b5282f6030043589c"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "473f15a2ef066fbd53ca7d8fc2969ccd6468dc0186b92e8c4f612756c6424531"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P78",
+      "evidence_ids": [
+        "ad2a1f8c290f406eb9c939e8f194ec2609e835977a20af3247979de2747f0932"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T5R1",
+      "evidence_ids": [
+        "ba6366fcdea608dd24969ce9bb9df2026567c93ede13830d1d18596eb4b69a41",
+        "763de93ff9caa71184e1862e9a88a8e09f65d61cf7efa552735c435d062f6cba",
+        "aea0b9ee955d6b95c334cadd8ec9f7f19a5982dccaf0f5047b3292fccfbed70f",
+        "ff0eac84ab192c80a617f91fce2298ea7b3d99a81a08b7c6f6ef55b6ae3651af",
+        "6252a961854638ec41083102ca3374b6b1b25aaa5b5e74395279c2d3cdddbce5"
+      ],
+      "roles": [
+        "table_header_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T5R2",
+      "evidence_ids": [
+        "ac7a64378f8e9cd0c0c3c7253469474ae5c36d10d92d0731f2d43490188ae08a",
+        "648caab35017a15569496710b86dbe695e1839d86069501b829802e680a28f3e",
+        "31b7ceabf1cc6d75d1fedd39209a670a6e0adfd859fb58b58c3dc20ac7313b6b",
+        "efadb8fa814a79aabbb35523fe790092dce3161953e8589d482c0467fc5145bc",
+        "ed30d2676989d803ad45bb430d36431aec3e53fe51a8d8cb4af695f6ba784d3e"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "b4b298d324317682932e390c40d18433d30e1c3d549697b7a9fb43f293ff0d53"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P79",
+      "evidence_ids": [
+        "9a071231d4cfdaf0ee4139f11601a6e06dff750f8781bacfdc3bf894146e29f3"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P80",
+      "evidence_ids": [
+        "6ff01fa7a49cf38d76b188268e5434bd828c2c297482c2e096f775ea292f27be"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "62c0dccee4a6db98d9eaf66031a442249f8ac3e14200816676324c4b1a304b70"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P81",
+      "evidence_ids": [
+        "a7afc7cb8964c2d34e440827adae1cb470c0250ea0569ea3e1c6adbaddf06814"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T6R1",
+      "evidence_ids": [
+        "3aa6e0bf9b2a806a5feaaee1dd2ad046dfb223e59640e1599a89df0582a12d36",
+        "c08aa8b9404cdb0fe62dfc77b2693cce9fad2de32e86c7e4b7bd4813eccf75a6",
+        "d7d98e5feb87e073e8162bbe470001765b02888218c641e4121b4ba44c4b556d"
+      ],
+      "roles": [
+        "table_header_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T6R2",
+      "evidence_ids": [
+        "cbd145dfbfc047b7e2a6805e2306ea7b5c1408b5ad566ddd8f712f3dd8a2325b",
+        "024c46963aeafc6972c99c6df561468527483a61b4e809b1aab519da4c03edb3",
+        "a4a11125d9aeb2e5a72a92b1a7b948b21a323629ccb2b3d1091d27bacc8adea6",
+        "0a9912b120fd015fd69778da70c9797f297d30974d55d26e1a3ef07bf86914f6",
+        "2a0bb322dcf93451369b4c6f2aca65b0c6dbc2b57e9932cf5a2fe0fb399dce5f",
+        "11655cccc0717c68b0901fab5610a1ba16851d9a3b4dd244192e5078d87ed7c6",
+        "1fae71449dee9b694ad8564eff8599e4b824db8fb66b1340120e38569e310f80",
+        "6334c0ed30a73e127c00ed8b580cdd54d85ecd31ec63a853721379c348c2b5aa"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "a0157008fd4d92e1ebbe84ac2cc60a677e11074bf3980c58fc76edacb5012e85"
+      ],
+      "shared_cell_record_ids": [
+        "7151b6e397038cd147f790b740f0b89ab6876bf34306a75b0a1b7fc4fe423dc8",
+        "30fad75b4bf17c22ac59a61c73b039cd5c945e26c713c1503f1e55f9e0bddec3",
+        "49cc50c09af592901ac426e7865b8d525352ff6d4d3990423efd7c8d9338ac2c"
+      ],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T6R3",
+      "evidence_ids": [
+        "758e52bd053252210d40b2fb2588a161754666a34f29e92115b8b63ead60991d",
+        "0d92e9fa3a0ab6eb36b37ae58b2c3d8a13dbfc106941fe8e59f4774e28ceca9f",
+        "1816c47e0763bc1d35352de13ba3aeaf6c3c3274f3486caa91fdd559cde81ebb",
+        "dab6e7e4277e438bfed9f21373227d91b96cfc0eac7344aecd467d5ddea69c8e",
+        "9c204a3218cdcb55c0f8041860b93b0cdf5e455072cb2880013cd53623fb48ee",
+        "da0b2be02bcf65896380801e3de686d9acefb83ee68ea3270873de8dc86924fa",
+        "edf7eb8b4550441ac1c45b1a98c7fbcf45658a2908f60f8ba57e8bb7b8d81f80"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "7151b6e397038cd147f790b740f0b89ab6876bf34306a75b0a1b7fc4fe423dc8"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T6R4",
+      "evidence_ids": [
+        "34196fc3efa85ccbbbcafb623302eb8e810f873b31a61b349688cbc87354bbe0",
+        "153eb948d8188c8efbc1531d65b2682c402e49cc6f9e665fce5fc979d5839723",
+        "53f0b6293382665acf7f6ec3be0b7b864f46aeed1e443a1b468b421d9d4f0d58",
+        "c75d70c6602dbe9cc3fbb6ed5bae2fb895a0523a1acc362eb8e300c2b2914fa3",
+        "4c02ccb3a8ab2c564453ae3aec41a2adf7a0f1756e269c9eae974f6a74f864e0",
+        "946ccf0fd541ff292b479c0b83f90f5145a0ab398418b550b86b0f22aaeca7ec",
+        "36f582ccf7d45e2458c8c2666c3350facec251a3416a8c3d1bb5060b9a2d5196"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "30fad75b4bf17c22ac59a61c73b039cd5c945e26c713c1503f1e55f9e0bddec3"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T6R5",
+      "evidence_ids": [
+        "5a8beb280d4ddcf33a56f2f5aa73488c2345da52a12b57f6cd84cbd489511f6a",
+        "4906e713669ae7f353c8cdbeb4f57d8afab2c6154e769d13a95c66cb4c988d0f",
+        "bbb07f37df79958209b89f00981a2bcb79df33f7cb410085bc0295c6faf47822",
+        "944fbb8f8030c5a47cfecfc188298dc719cb95ebd397772ecc407f197347727f",
+        "0ddb5df6ef3c516031194c0c03551d8433fdac2079b13dd170889e5c15170c7a",
+        "b7297780716c6f8889864c183bd144e4b624fe083759ca1906f472c5470b4354",
+        "8ebac02f421cf9c790726c0293e24c89ff8dd5ffe4ab70498d84ba7e9f283b23",
+        "79e26666ee87c30322134425c479dc9abb30a24bd28b54e7da62e8dad66206fd"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "49cc50c09af592901ac426e7865b8d525352ff6d4d3990423efd7c8d9338ac2c"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P84",
+      "evidence_ids": [
+        "179de52902efa06934a1672e0c9e4b328b42a1381d9d663709e5378d049d82e4"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T7R1",
+      "evidence_ids": [
+        "5d36998b40b0eb82df40c0bad24df14f858e074c622ce8112493ca599f0e683a",
+        "4e809dd568373c335aad4e5eddda16174d7d21d0cc6dbafad19be28c262b5495",
+        "afc97535bfb6e0ea18eb9999ac92cc7d4fda76c598e4c76c36663b2835e09e79",
+        "715355307cf6059930e06a1272a66d4b8fc4a9e0defc2595fba9611e0db6e143",
+        "bd7688d93adc9c3e0bea2b71ef03d657b3562edf7e1ebf371599a13d2309500f",
+        "51860b75909ae3f8fafb3b9d13ae3ad8657edee5f8f99250838234f8e87fba14",
+        "26a3cc9c83d0e718de655cd1540719cfe075937ed4ac30e2d869993f3d4ec227",
+        "0f401fd37f9fbfd09da0a03dfdda0523e52778b11c7ac190250b4b60c0c524f9",
+        "fc96e66ca25f2102ff6795f482cf68cd821f393c2212d066184c0d80ddd396cc",
+        "66c40e41d50c48870951ddc7ed36c64a876ae14680c452c496e30a8927c80742",
+        "72a7770416de64992b4458917fa74b7b37d80352210059cab135c1e960f260bb",
+        "aae58910f58eb511d32f715e61acd1011c521c5ef0158e61e306b07ad46911b4",
+        "8548ff9e501bb00fc92d58d1251eb4bd37f32cc4af6633590c0760d89577189b"
+      ],
+      "roles": [
+        "table_header_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T7R2",
+      "evidence_ids": [
+        "b62cc51e3ed0dace3aa38988215eb0b28c471b3a65215b4b744f7f9e5ad16ab4",
+        "5f3d55b11d96ce22ebc5efc49bf0b5810a71d96f36ef00487d4f9733f03f737e",
+        "e3d9753a5ae45da7564c245ded7c8020c251b4f349f7c20d30311bcf94b57cd5",
+        "3f4df77f78e66be2a6d4ec32ee80612eddf73c49fc01b37395dfe886911d1103",
+        "d98d3fd959353d4f0000ad0c86148bbf7f5621d1ff15debf390a2a160d888b94",
+        "1721dbdefcbfa6c09ccef0b0cc0398cd9633fb411dbf6f2b3dd3cd163a206dce",
+        "4cffe7d1bc69200f8c54d4b7ba95ab9668f04735d5d7a8155ed6d9c4ddf1dff0",
+        "0ee66055b4bad839be037d94af415cd3b9f90e448d6ed5b37de52b4438fef415",
+        "5baca9a241aee069bf70cd435868c6925ea4c73840574aec1d67a64bd26df073",
+        "9068f3c8f0975fbdace22ffcbb30bf779ed4f1339b4b2dba82595ec840b7b044",
+        "1516be466c5a5ab1ba6d311202f0735d793ad80d9739cc0c5b386e52534b706f",
+        "34bca29eb71f87998a39bc73e3f665731e9faa77932be1204532488c948370ce",
+        "ee87c72ecf688dfebf36474cd127f63d22a9b3adaf4bf0e30e2efadae46b4c22",
+        "291beea2e41ba50ae088875416e214f7e9b2280b9a24c805ce5bfac5b4494146"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "e434ca61f5647e2d1470c77c52c405abeb6d6e67862be4a185dcdc6b59cbc5c7"
+      ],
+      "shared_cell_record_ids": [
+        "9611d33f9a75622fe52338401dc8b114df1ba5d13f788dadb4b49170d9179aaf",
+        "4f36adc1e8a20c860dbe82abaa8860178e6978b0426c7097b4fb454bc6a10d0b",
+        "c05424206c558901645dfdddd55dbb6a644a2ddfdbaf4ecafdfcf90f101bd430",
+        "a834f88ce21415098fe34ec422665233dd56fe4ee00cc00917827d9a0246f3d5"
+      ],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T7R3",
+      "evidence_ids": [
+        "8dff335a39ed7305d12e2262d931e2d7f8790a0cc4d47c2d961c86ce0cfc8741",
+        "caca89b6b960b6f061c2b4ddc23a3b8db53ea255a36ee6bc5eeabeb453710991",
+        "e51e4960abf5f5ca1394f4e957c629b29fa4e9c260f73fcd16d127ae0666d1fe",
+        "4908841a6cc55ebb398a272814ff190ea27f1cf5e112bae18af33c4e74c896af",
+        "71ab1a2985e053281ffc394e5a6e6e57034bc6e8a186e926d663e167fc797862",
+        "533d48c2d30625b0d87b52a3d7c85b493fc66b20b1bbbf10a65bb1515212108c",
+        "ab02112b4859e69a8a89e2ab6daab9f9d4c87e5a1b7d1d868d5704941f14717a",
+        "bc52d5f96ab07f395f242f20d83e7c39e08a4ddb3053648358b475a21d8ee980",
+        "b1f5aaf92696a0950397b9c43af152bd3119c08e5a10bafce0cbfe10f5ebdde4",
+        "04607666a16195c128ce6f66f0515011c4cb00fbd4a06b26f526f8cf29653ad3",
+        "9791c1de817dfc3173ec000d22a7a8254d9a254247014fd19547195903f3907e",
+        "a2aec4ef6926ee4de23c915af54e7714ca3d82b87e865ce1be28c6fad66c4c84",
+        "9ef256f8aeb9c6e81ea9c53fc0165050c23e834534795955c151a7fe5cbff171"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "9611d33f9a75622fe52338401dc8b114df1ba5d13f788dadb4b49170d9179aaf"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T7R4",
+      "evidence_ids": [
+        "bfb05cc1a50e6215d68951b2c52c9791b7d961385240b31056290ac4ba45b558",
+        "c708adb2c268a7780fdea6e1e4f2a6ab5c224663602995441e2ee58aea4e72b9",
+        "ba6f58d8d45e7d37053426fc7480fd8224bc7a5833c25e354243a3bec2a96c87",
+        "efe7b3933f31ff2ec8421ba1882c2717df8742f75173840ae0402575dfea70dc",
+        "05a92d0c12d0242e65d6a815e6d9948c9c36db4b23f4453bae5466fe60755b83",
+        "06df6eada050d5f842a04f80aee83e0f19f75c375e4608451722b7cb5bb0807f",
+        "1570386909b5d70d842124f3dc964099fe843045186013bd61a2ce2b9f41f032",
+        "19bd3c7459a25b47adf4b659dc8a0b0faf72d72ecad838be0d71504c9eaa4eb5",
+        "eb3a1f729dc8677e81aa3741bd8859fd16a470d2296f8df57558ddd3c0167e4d",
+        "f96bc72807019105439a04a797acd352382ec003a3892500cef8f3ff38866119",
+        "4f1b4c56bf92b5952c4b73d6d428e1d5d990318b9eede7bb82ef3090687ea4c0",
+        "0b3a42a696caafca9bf9a5ffd30d1a774c534ec3faad28b15c3dcedfa9d1bd7d",
+        "1aa396bdfdb4e973743fd455b14243bd43a5c1d547eef45d74283556325c1364",
+        "20754b5905da67f8ab4ca9185461b077bdd0ade2093459d91ea8b0303d2d1692"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "4f36adc1e8a20c860dbe82abaa8860178e6978b0426c7097b4fb454bc6a10d0b"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T7R5",
+      "evidence_ids": [
+        "4ec9ebd6f013e8da2e2732c3c5f873d22ffdd83919ac8d10459ec33f7e9b2ee5",
+        "3b2041f0956d7678f915572bd525ce6bb1fdebab1345fea3ddf309bb8c58e8b4",
+        "2a752274dd95369afedda3168c415946e01dc3a83feccba8fee9bca535ff4a98",
+        "588a54e2c3ed67600fb2156501e42166c530e4da5c674b629af3c4d5110218f0",
+        "b873cb0ca4692b856d83a7459623fc121f49f2a8715f5c5a11e2a5c9759d84ae",
+        "d9feda8cb9e98e5d8553c1ecc3e47ee22dcbcc506d1b80a543d5736dcda8877c",
+        "6e540fa33b28bc4eb606d3f530429b53cc45369d9bed97c3a99daa4227a21940",
+        "19953db1c9154636d0c7031d8d013fa0e1115a23dedd12eee281bf5dd65a0159",
+        "eac05b51c3ce1303e4b60ec774105d41f483eb8ecbec2783a56cf3e25b380391",
+        "83f583f999869db954383593b20c4cdde7af696757a3bc9a007613b5d728196d",
+        "ff7d021a8cd7d3eda358513d66e214fcbba655e2e06160ef8a6a501f8265ba7b",
+        "89e893e79038ff237ee6c472b993b7043ff1d2a8d8d5f43b42cdff05f213ba26",
+        "0c3fba24123a77f6adf7d1eb2c889643d972a8f56f68a9fd3964b9babb4b9800"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "c05424206c558901645dfdddd55dbb6a644a2ddfdbaf4ecafdfcf90f101bd430"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T7R6",
+      "evidence_ids": [
+        "63587cdd2839ed46f31b539efff6f7ac4583d7079ba86d3622a6beb6b8778dd3",
+        "c1962c603e4cdf26cfdf50a1ddff5f6aacb88e637a178bf763bfee049399da8b",
+        "94120eb4a5461f9c55177087a34c071b0297f7dd8b1cae94a788d6ba92cf474a",
+        "df7a8dd05757386719428e36b93f60b3c060de6d81b55650f48d349b463be0d2",
+        "a2f745e2dd04267d4d37d423e433301eb17b166dfc8c397c956a95d88e63a10d",
+        "d2aa0773c2dd725475b2153e5c640c9b81238909a9d3ecc8c5c3f27ccf02ac6d",
+        "947ede1932553b586e2cb561f861221348708222768187da6e40177914df3596",
+        "41ee2ecada7e2a08b94d9596ab0627d6aa3cbde3d5092f7b209be489a0575888",
+        "14d5691fe4e92b50856c4acb3f54d0aae8900a4e996abc8e45da73fd6415c115",
+        "7477db04f67362ac0aace02d8ad466e27a5537c06857431b7552326bf8abff46",
+        "36cab2d5846f5997d1ae3baf8664e60fa3dab286fa5742bf2f8f26a646dfdeb7",
+        "f235bd2b0b44cd18379505bf8aa39838892e6ae926b99e22f94abeec3dad50dc",
+        "3c0b81b3582e21256d8b33b06ca534bfad64761a923c74e5ca53d446e8237a8b"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "a834f88ce21415098fe34ec422665233dd56fe4ee00cc00917827d9a0246f3d5"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P86",
+      "evidence_ids": [
+        "6f373120059d3cdeb113379f4f09c3cdea882fefb6fddccc03202c1e9fff1438"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T8R1",
+      "evidence_ids": [
+        "d88f49403d0976c5740ae1d9c9f52fa31bf38915abb571a48170288cb0b2a346",
+        "ec8e4f92c9440516d5437cf956ea150f68f38500e35641179f1999a8bc523924",
+        "f371cd1295cc35e208bcd632aeffb69095df82f1ce93a67b97a444e9020059c9",
+        "057aa7a6e453ccc3688c5d8f269821886c83cca02cafe7633a6bceeb7b62ebf0",
+        "2d0c0883d8d08ccef54c5c58bed995101ffc6ef9f972c5fb8eb55ed096a88ba0",
+        "0445e4171ebab89bc998b5d9a7567837cc421e7c4e0b2047563ace712824b0ce",
+        "eb2628f308e70781ca9b9b5e744f225f2243f2a3f8458b4b4a1627272f683b8b"
+      ],
+      "roles": [
+        "table_header_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T8R2",
+      "evidence_ids": [
+        "7848a5216e91eb717d206df340b5bce6e72daa63a5f5668a0b69429c6146463b",
+        "3a975658cb47993beb93f1c13c97d3f077a034c758f99013fd16c62339095a8b",
+        "3899cea66c8983beb51bd65e4f7bfc6f346235ed309b8446cf0c857423707e64",
+        "6ed3f7c727ae598c62062329c0de4d03cdf9de29f7ed47bc9ff8c986f7f6011e",
+        "070aa0ce738a3f462feb0bee38cc0bb69475ce71b8f1b79933ef085746d9213c",
+        "5c1bc8b4e66cb22a1a9dbf96e502879d6cf65c73a77f0fe2e913480db7e33e67",
+        "f0d79ccd367bdd181668ab433c4affa375d3e71063b57cf3ac9deb9f5b94ceb5"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "5e5c12c8cf2773b575baa89cede527b8160f02987e9f2ee205d5b1a3c9d2bee9"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "unrouted": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T8R3",
+      "evidence_ids": [
+        "0780ba16176b8f9844a3c37413d102bff2c0bc70be1db19c923d37a52cec3a13",
+        "186c16b7d8502695ce07579fbf906d6b656152e44401ec01b736060cd399560e",
+        "c97c6cc1c5700c325c54373cfe165900d034207c2339c6c2202d0f89b6353afb",
+        "fe0afa9e99487fe682a7e3473f8725b9db37855495a51c07b56caadcf353d8d1",
+        "fb3896ba08bff50263fd3250f510738913a4a54cd9178c2e6bdf090a884a7d01",
+        "fbec9e6d529f0bf47417c7236a4945e23776b5e46246454af7277557ecba0ba4",
+        "a97b109a8e16a68149010756df03c5dd51342255bfa15f4cbeaf174615768ad3"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "6865f4d0becd850fe9e4cd0338f2159b3ad10b0e260e21fabbaaef948f9045f1"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "unrouted": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T8R4",
+      "evidence_ids": [
+        "b00f4e8e42360f046e255e70444b7697a573e421f1916a9e2d9756c136d8e338",
+        "f9cd724aac1a0e1134bbf25ca155700aab7cfe778cbf2b63e2e62ec39ca33a4b",
+        "8373c4bae6230121ac6b663b9d9b9c268b21026fdbb9db1e63badb32a242bdfb",
+        "4c48b93c3ab079df09f77c80d01554100e2753b46ebbfd83c4af67b8e932c370",
+        "5ccc42b3a4551346ff0e6ef9154211d03cd43b7c8284716e06aaa7c2068a18d7",
+        "428d11d491f28f0a1f4e3d85caa770fa5f2c722792b0f280939c8a0a1a5b9c42",
+        "ab42d733ee2c2a82f880b4d0d0483064f2eecbd00f2cd2d5b853b6d9569d742d"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "58117a33e5fda159f5fc5a45521c54373d80c2ab0c3ccc3604e64cd3b44b1212"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "unrouted": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T8R5",
+      "evidence_ids": [
+        "e7ccff82ba7a45a678d5e0f6f2e422c0431a03aa01edd1210a148a31d7050175",
+        "36e2a175b0f9e8d2be2f8a46746ec440fd0598f907ff2bde82b4d1f6f54e7b50",
+        "7c1e38c5688690bef6e7ab277fd93730a7222393b868a480ff22ce2837043c4a",
+        "63946abe0c63e3b96c8f923349d46344fe30c0c0bb7d88c89865844820a4a81e",
+        "98fc9c5004656988b94e47db0cde8d4b8bed19fba03dbfbd77bd5e5ef2e026d6",
+        "ce4aba00f6744a804b384b6ee838689fc9f87366c023e2f1a16390a8c3548e6e",
+        "b4dd2589ed5a4be8056d6ebf1f784e510ca4579d7dacc9920698ec4608f5f7a2"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "5f7c5211ef4ca09be883b856be128f7caa1c56aa24ee5dc8ce833abc2dd70a28"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "unrouted": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T8R6",
+      "evidence_ids": [
+        "07ece23c708ac46791870379770082424e2e765e69708ac438ccb2ec7db0bf56",
+        "beb56eebd31abac41b14f42ffbb63766970b66a1b45c953031b64194bd232204",
+        "ad1d54b6484c83cb6587104e38e2e28a92b1d3fc649dba935e053e9c1b803665",
+        "565fafe5a42cdd418bfadd2a16e4d20f8db7be492b6af42a123155438475b9cd",
+        "31194455fc5a52186aeec0b5c4a9bcea8b077993b39866b7739938b20f2c6f7e",
+        "7e69bd2d68a0e5cd642bb0928895e1b3f1277bdc9834adc0a00f3f328d8b39bd",
+        "96d11bd2740729565ccacdfc2bb18d137f240a7ac7a4c1e394d0cb65eae0dbd3"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "0aca1d7ee1dd4670db803ae76e56a8a8c5cec6abd797de3d0581364dbba95b3e"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "unrouted": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T8R7",
+      "evidence_ids": [
+        "24660a1b3925aab4586b0c15701eb124060b8086be5e21f308e7d7bfbb975e83",
+        "781095fab103c45f159ca0f2eb78bbbf04898e3da6505e6cc1cd1b2279eeab83",
+        "29dd9e8712b0b9f31ce367f624c51a9252af9376ee2aedb8fc2586ab1c31edc4",
+        "d0b27b99e59e09c78de86e56828356f07cc873e1f7452261bdf23d878d372cfc",
+        "40a3a68fd1ca7feac6c3b845f342a72efe2f28ac25d2cdd21c33a546dd943d5e",
+        "c7a1ca909e6f929e95b454aaf98fb9f5768671ca4482d06358db61a368dad896",
+        "561c3ca35b2a24963078340cf53ad810b32cd2df571a907ccc95f4d8cf4fe424"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "67c4b4cc7b19f0ae8dd76e6a1948122d8e3ec218e853ad14bf4eb7a4d4195948"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "unrouted": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T8R8",
+      "evidence_ids": [
+        "9a1f90de26860478ff57ce11d3ded1b99abc5dec2fe98b6877ebd55653f45c1a",
+        "1b1e9fcda5634ab10964809182cca21a975de0bf1479d2d1d7869e2520150ee2",
+        "2da412862c57e06f9610f63991a68be716d4358a8a9ae6b070cd3c953734bd38",
+        "2198f27b692b1006ba6c86b5765ae0bfdf1f2e22c50d0902019d43d7782624e9",
+        "25eae0a29bd21a986ffd9556e11738557dec76c8279de51f7ac03b89825a8c5f",
+        "efadee46959fba8027c817fb56ce955ea35a7ef9ee187923c31d4aef531aaf38",
+        "9667f919a0c35e987705fdacd5a50fae575695e59e84ff0c0fe9a6a371d6dca8"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "8667b31932bd6f1cacf5f5083f7e06be7d2f9d4687b3dd4d5fb364f91093bdf1"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "unrouted": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T8R9",
+      "evidence_ids": [
+        "a5803fb238629121c6d5aa1e3ed17f22a8567f2312dde3397b5d706c7224b695",
+        "9839648964b55fe4fa7c0952948e57d41ed953e6c7247d222cf30b7428056215",
+        "ee3e550dce6c836832b32582a8691845b63f591260c684007436597d123939bd",
+        "e872e3216bb202963416ca9d26fc78f1699c6daeb82aa48f3fc306a6e6d6b2ab",
+        "b383d736895d79fc54be7426d80d55cb3cd3a60ec81123cf9a7bafa8f99acf4d",
+        "c2c5cefa050b9ff021ff05102dc7fbb7da0f52648ba10e285d04f25e79040d58",
+        "7d2f5c9607df362d964aa4cbcd80e127839724cb6181be9d99c92369a64c73b2"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "beff00590da4b7fd5fb14bc487bfb92ce85b5e9ba8a529901c7a2b24e192f5db"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "unrouted": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T8R10",
+      "evidence_ids": [
+        "44ef9c13e7039d019cef29917da55581efad5173aec2820833bf72b372e1e9aa",
+        "893d527af28271b7f6f3eeec7d7da50cf9678a48d3f15ab39463bf935e9bcc80",
+        "406b5f5d85b9ab73a2bd62e97fd087f8485280a2784caf91bdf19221086738a7",
+        "4de5af474779d1e41953ca91cab32e957028dac44330ae14c11fbffd891fcd30",
+        "eb78dd35e1eba904ba688a85b5f2a8288d0655b8036e6253150c7bbbd06092f1",
+        "e4eb9f5b218a23fbd55ba51439f14f1f2323db66a45211e0d3715642a5aee867",
+        "5e6043eefca09d9fbeaf75c58ea0b6786bb285ce8be94ce1df9c60597415464c",
+        "3ff48a230d5b82e7fd8800cdf1e8a885d6f28f23389fc91c785f9fd4c4b53e06",
+        "d6fe86646099f5a070fa936a66e38186a3ad4c06cd90dc5e90c22a78949d8144"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "dee4ac9a564291047107e21de7edf091e65379b3706fbd05d636bf546b25d8b3"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "unrouted": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P87",
+      "evidence_ids": [
+        "31996b3c1ff1d4c82c7f02c97497fa71ba4892d5c21e07cbf108d2eeae544df4"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T9R1",
+      "evidence_ids": [
+        "08ba498fafac11b6aeda65a3c8fbb4e7c6fe5b21344ddfa45b4bf608c38f4eff",
+        "c0c7829e491854ff28117aa531cd4e5a9939cee7f46885d60251495cb1932e9f",
+        "b338c126cbdaba9dba5605426c49df378a6964dad03ef30867799b250f9c025e",
+        "3078aeff6f4bf1b73267fb415ed148be0b4164727398fc203e300649374e4685"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "303f9f97208df63d0fd9fce6d0ebbed5296022f51d3ecca64527843d6dcc6c5a"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T9R2",
+      "evidence_ids": [
+        "377d08a2b86b26d1711fab0dbcef28c3788d2ede20febf60ef28be679f44aa24",
+        "8806282909bc6cf6f9ee2b3bf7a5eaec14df191048910eafeef4c2fb3f75346a",
+        "af136dae8a989c94289487648d2704c441ad220e4efb0dd1df1c3001259a7783",
+        "33456f14dea2d0b41a825cb9c1fdf4e57d11cb40a5037e19c1a7f4a53eb632c1"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "02ad3e01f238f0eaef61d1374283c1f4eb66aab781c6644e4049746ade156484"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T9R3",
+      "evidence_ids": [
+        "6a587955ec53bcc33d707247998c3501aefec624fa1718cd0b5a2172cfe37c2b",
+        "9534183369f1fd1d6d1106f261a594c08da716997a4920e0c707eea1f9cedf68",
+        "ddbb695dc68062f46944b38a7f1f5435b42ace600a9b750f5c079e20a752b570",
+        "65fbd29d0fe766f1c43c5dc6395903b26aad852544207d768de174930dc848a8"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "c85426b0e388a42b1588204875847b4f0403f9d85d275a34006b617d210d32e6"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T9R4",
+      "evidence_ids": [
+        "350fcba41d9fd34ebf8dcb70a3d82f51a7ee00df02ade79cebc4c052ad294a54",
+        "2f2addabf96764f011f047118553b368c4470ce73120d635d9e3f2ffe93419e1",
+        "7dc738689e48b2a7cbf4d921deb8df871c4c6b333698edb28024310910ab8663",
+        "ab5e41f94ed644bd86a59611cbf49dc6670d9cd927f3593bdb02242deb9957fd"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "03ecf6fd0c427f28aa9e052a64a4df603a94de32b2c742caca34685b01946699"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T9R5",
+      "evidence_ids": [
+        "cfc9c833abdf5f4aa00d35704aeb0944a0ff653e962e62065495e7e4226188fe",
+        "f1eca29f588641df4fc4bdb4437cfd7d4064a981c44cfd1adbc8c95a492e3e40",
+        "a8eaa00ef1ab89841eb19a5826ec4844218a903e34d36dd385caec77b7e5457e",
+        "44e2ba2aeb527a958f01760d1e88f2921ed11b58ad09ae5307d76b3665a483cc"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "60c50077f7c64ffe770b80600fe747c95f6e7a301a13c2faea688480b5862149"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T9R6",
+      "evidence_ids": [
+        "29c7739b3b5406162c8c696622bbd66c0d5794e45b3c7f573bef10d54eb35e2e",
+        "26e1429804afe9768d1ed71ff673486c25b0543a4bcf319b4bde0f8daef6ad35",
+        "9a1336d9eec9812cf384a667e4814d6e371dc810fa2d6d07f8a94f43bbf81646",
+        "aa9baae1cc8d46911bcab92152399e46d4733b766f25eb2a90e9da5ea1998f9e"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "b10834c7bebf6568264b1be7405c624b5a872b27a08f6f406955790dc0442f38"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T9R7",
+      "evidence_ids": [
+        "6419463e903e001861c3043b102e8ede85703f7382b96057fd4cf66595c3f0bb",
+        "c520078095b6aa66c3a46d41169bdd8c1a88be1a6f4a6ec199b4373b69d5e4c6",
+        "0928cd9287c623a8d04ca9ee304231005c18e5060f6df92a6e9ff3b01f9bee4d",
+        "d0d1351665e37d423adf37e59c1ba5be0876a3d1e5cfe2997330429203c60eff"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "3915465b6ac0631b310e722fd240f340bfe87b3029a4c5f7e4e2c2097d72eace"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T9R8",
+      "evidence_ids": [
+        "bb7ea475299f5203b8b14db7e86befd133113aeffda0cbbe0b418dcd87ff9127",
+        "8990231476578125b4cccf1fa79264195e36502bbbcaf29e5be21aab4e980511",
+        "3316e895ea23e3685d2a794e2a056123f352873f2f73dc64546e63decf6d8f10",
+        "f8a021af731775c1c607053672f88985fc2e1d965c1fb51fcb36f1c3fdeb6773"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "f508c29c53b29a6dea19b8df109d4db96c4326559b49964d4fe8fcfbe31ec5e2"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T9R9",
+      "evidence_ids": [
+        "64f559698e4a1cbebcb85b06ead58190263b7fd27106a3baa0c70d6231205663",
+        "59670fe8ec5008cad0a00f4149daa8f23e0438575574f8c8928d1e4a23f5afa1",
+        "22d3e54b80d46fbf9551adf23d72e04865029a605e2d87e7117debf12c9fa332",
+        "20a254c80557f28209e88f8247b4633e10595da2c4c04a5e2c67cace87194526"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "e5d35bf8239a66a83bde02c678afccc044415691457a5d89a269b4e05b48a9fb"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P88",
+      "evidence_ids": [
+        "5e1d671a9bad8167e1712c646e087452783eef450485277bc1436ce030aed305"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "b297f5c4d9725c2725fb49169ff16e0030f80270286ba8870b2ab4e96acc0b52"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P89",
+      "evidence_ids": [
+        "3c3a926b2886b814bb6ac4030b0c4a5339a5cbdd1298aae86c926e402cc6dbb8"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P90",
+      "evidence_ids": [
+        "469126a6161696d8c96138b76a9736bf4e8df55273b62b4b85094aa2d512bf85"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "48a8e9ee5a849ccfe85185d46576609059f6f85a8655498dac2b7950da1d601b"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "unrouted": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P91",
+      "evidence_ids": [
+        "0d7d98c150c8b15f03b4080919c93ec6af399f22c2803b98d3bc03f5b030aed2"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P92",
+      "evidence_ids": [
+        "f24fbeb6e35ec82a0c37f937a0f733f20d7b79b2c3f47328f1075c74a2d79c2c"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T10R1",
+      "evidence_ids": [
+        "7fc8ae0709ec1d3b52a550c4aae5671cce70dddce6819602c70fa120e435f661",
+        "db4e4b7e50f67e24104309d6155879a2f29c954931c582b038cedb8fa63c81b9",
+        "c2b6969304d242a08aab9af1cf59632ddaba7477c7019b0369782d4dbb41bd1b"
+      ],
+      "roles": [
+        "table_header_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T10R2",
+      "evidence_ids": [
+        "6b86d64141e33d99209d1d369c3fb6416f1ae893b7804a1882242287246d3ab7",
+        "0ff4b3b94e2c7046b08e05ced0ac0d31d205e65737b8b449df6db7b46894a051",
+        "2e83a196b5d85ed3920fd2119586fa5c65061c4e19ba0e20276dc5a801657ad4"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "c35257909375ef5f14de773f32db427e200f942f6defcf9272fe98751834f29b"
+      ],
+      "shared_cell_record_ids": [
+        "07dd812e6528bd4921d0f1f10f5f0a4dfed01925a50a98684a1b3e319605f11e"
+      ],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T10R3",
+      "evidence_ids": [
+        "70a66be65fb4d91c2138813f0067e3dc86c6651873d98f18e875676ca8829e67"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "07dd812e6528bd4921d0f1f10f5f0a4dfed01925a50a98684a1b3e319605f11e"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P94",
+      "evidence_ids": [
+        "bcf7cc0a6c2c4f5e83e8ce3011acdc50a1c0471c308c37ae25c8ee7ebe7b353e"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P95",
+      "evidence_ids": [
+        "fc118458cbf41f5385aa2e4a83bfeee06cbd6ccf810983db6209b45b1b6147d4"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P96",
+      "evidence_ids": [
+        "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "5d10148e2bb8f002c900138f92b003a4f5f3d43d3f2dc7002ba93ef3f1aad060"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P97",
+      "evidence_ids": [
+        "3ec46b335096714334daa7af02aef7c0d56370d61508eaa47ce8cdedb376629e"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "edf55e35963b43c1850afa5219fa5329536e3561febe42a473aee9a733ad1029"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P98",
+      "evidence_ids": [
+        "1f6f8cbdce7a6221020991a3a61c5263116934d914afebfc475387a254e06d93"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P99",
+      "evidence_ids": [
+        "ba09efa279a6f781e30a6ddf77336c82b687a1dac2486aade7afbca154af845c"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P100",
+      "evidence_ids": [
+        "06c886b93b882cdfa8e5bf5d52cabc0c848098da1a65a18f7fdb9b1525b8d7e5"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "45d03462b45691dfcbce1db88d1fec1efe120e4d9ce3a2442043d55f11f8dd05"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "unrouted": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P101",
+      "evidence_ids": [
+        "093b7647aab8aa3a43f2ecfd58930a4f30a8999c361791428e4bf19ac4f87a52"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P102",
+      "evidence_ids": [
+        "63778d2013fc6bc8257a44b17aecd87f5ee8434b329b22393c4994843920c2a0"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "fe4a1a4d32705485ea322ba793a1a3249c2d6a94077e8309fedfc2a9c7e2a52e"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T11R1",
+      "evidence_ids": [
+        "3de6a66ff79b48cec94bc7c3c681264c5e246d76e843519063d58dd8a0e94455",
+        "75bb4be8cefd30319ad06cc5f77897f7e83333bbd2cba794cbc09a8321663afe",
+        "97efab7c1187f8f9d07816e7883cdcf3a3fdf3f5320cf09998cc446fbd73ef72",
+        "cf93d11079147b10e7656b9c5c2e8ad092282efbd393d404affa04368646c075",
+        "8516670d5d387eab5221e09fdbfa7d74d9d940b4cd082d348d6714982551c8ad",
+        "23f3ae1c0cfe55cbf136a4c2b4c28829823d12341776ed44ccf13d6fcb38fe53",
+        "bbf7215e10f1f86e1cd66a611436847f10343d3344fcac4d6c5b11a0fc056582",
+        "8ea37f37556fe351d0ca97e30e821cc2379a1b74b79a6e7f02ab2315385f120b",
+        "08abee8dc07052d407c298bdec425df109ee1011627642d76ba2c8987a3a8e77",
+        "2c29fad921977423f34ddf96afe0e8cba0a4c9c31dd847c3a3915792e381252b",
+        "03cb80c796f9b97ffa6ec3c8272f3df0f943104f88691b5a0dcd1d74ba21de98",
+        "727a8972fb3529284c7604d2d63a1bea4195a62d319b50e3916162a83f1e574a"
+      ],
+      "roles": [
+        "table_header_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T11R2",
+      "evidence_ids": [
+        "b9395108ded6b7546ed322f7d7faaefa824d79d14ab31bd2b03632e64335adfc",
+        "cb768a7db96dff03b7089f6ebf1f23c95fcf6f7e7e79dfaf6294bf202756ce75",
+        "1493883db733a99101da0b15ec00fa7c5533e1058d77fea364a89643f5a040f9",
+        "584028e6acb344354491d0ca7d5fc4e96993dad3086d733377acdffdf3538478",
+        "de998b1dfdc760ea4abc1a983518d9ffc44434510ddcd5251e60473009bc6fde",
+        "0e8ce4b5032cc01ec99bfea127a1052a4054d921b0bf239cddddb01cf8924ccf",
+        "740ab16b19fdef2bf620a5fafe935c805fd0b4b72ca723a450e0757c6dbea043",
+        "a7bf0b68cb8846498fb646311aa43a7e2112e259f04c35ff2c47976bbc7f34f9",
+        "cf4d0ccff379805eb07cb72f4876ac915d113ac3e1272389f81519e5de6f4962",
+        "a89adb640edc0ca3f88ad933220f19debe902aaf881b9f2e025567d4e9b9cd26",
+        "19d1ca46aa890306ad55efd27d298ce693c7633f7bf2db4a4dafd036808b9d0b"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "fb56bfe53bad37e6f6f7402423bc2684013919421f384de7a834d60f90de5fc6"
+      ],
+      "shared_cell_record_ids": [
+        "68fcea5af78d58ad7c93873cd4d4868cb2550e740966c40484af97bfe96a0bfa"
+      ],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T11R3",
+      "evidence_ids": [
+        "297a6d6cd00b40324732627bd9168e4f6150215c5d082063aeacd9622e55a872",
+        "c28e94b69d9e607e8921fdf8da9e84ed68ba10b4dd391cd10c14dcf6959d1cd0",
+        "39068dade66e5dd9e5878acb1d699e561187980afcb050018a3d7590790c9d5f",
+        "8137094e82aa30e26b5f87ffafa403f0e20db41482a6d1565a176445faadf7af",
+        "91344d29d2fac19b13c4de61cbd3c8419cbfce37068abca5dc88596a21c6f2be",
+        "26aa4bf8329d1ced3338e564bbbaa54f209acea06d547a3ce892cb4c485d372b",
+        "8b6728db8efb745199ab0273fb1c58d29be4ae0d2a1bf1ada93a547d2c1b27a7",
+        "a6672d83782d2478d61c11a17dfe395a1a88abcbfd763dff23a0b185400e3b69",
+        "c1aed92068ac87d8c2a41283130abeaaae1c12f3e01325494796f083a7e1aef4",
+        "22f9d9411c280a3381f5becd293738ea16fd1d49ba106fdddfd3c563199ca202"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "68fcea5af78d58ad7c93873cd4d4868cb2550e740966c40484af97bfe96a0bfa"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P103",
+      "evidence_ids": [
+        "845887e0ea8be9f88bdb9c90a913eb1c0997740141fd5e2f5839f5652da44785"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "b141a5ed4d0a8d09eda99c6e4d24516601ad914ce661c1ebff37cab2b667fe71"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P104",
+      "evidence_ids": [
+        "a1db227e4ec775596a1f141d1a4f60728948600d558191a17e956bea374a8ecc"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "77a7211739b5c1cf9a29244d62f6e9fddc06711ae7070c6690c0f6688affd522"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P105",
+      "evidence_ids": [
+        "fb9235445161af5a952b80b728b4c8293b7468d0aa61df27df36dea954937634"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "ae4af4ae02e12cf83bd6c6d7edd57bdc2d5e6733a7d09f85f8e74d22863b8bae"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P106",
+      "evidence_ids": [
+        "0569093793114c200ae349a930bbbde16fed4c4d70580457825ca79af3f95b8d"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "7217a2ffa351b20291e6b4337557f3d0c922d0acbc93604bc232cb297ccc217b"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P107",
+      "evidence_ids": [
+        "439a2e95aa3e769301021de75275058c18671edb36bfee4b721adc5a568d251d"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "50c37bdcf2de388b3abd3d6025c5cb0744cc0bb238a50fa5d931a82f4ff7b657"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P108",
+      "evidence_ids": [
+        "c4d696c9f94f6ad7b733721f7ba3f22ac01534e2b7c15cd2b3d3187a88ec2833"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "a9b7f3d8a51a14c83fcde62bb90224ed212040a128cbb01c234f872258c68de8"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P109",
+      "evidence_ids": [
+        "8b7fd9f14d9ae94c4ffd3ca0efa40d524d8e778e4a9a19e38668762dd5b5b288"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "faecc36a09b1d8e9934fb542316710393b59f8dcc680c1c58ceae8d3867e697e"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P110",
+      "evidence_ids": [
+        "a13a68e07c93f5d0302f8cc5091363c67a81246ea584de7bef79a8003974de48"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "18304627eb452bbf13f5ee2d77353be5958a6c7fe8e7ecfef4c70a3d88a398c0"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P111",
+      "evidence_ids": [
+        "012a27f9363a0db92d0e55d01a40429f8272ed0647d2adcf121081e4bb741951"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "aa48edfc9ad22ebeba39f1c9a84295542461de90997550e73620e19f45ed6182"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P112",
+      "evidence_ids": [
+        "02916c814699f42acdd2e0de47c679aa86c98a8b7adacaf204dea5b4711a045f"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "6c9a8b6a78c0d24c72cb831c6ead47eab7792d15292e4e4e9a4e3106d0752213"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P113",
+      "evidence_ids": [
+        "055c19198f8a57bbc242e37dd618e1aaf78c414ea86bf0a4267a609db35b468f"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "55862febbae4234a5e34431f438aee3eb331c0139afd649ee5ad65733156fc20"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P115",
+      "evidence_ids": [
+        "6db53a5fdb82bf61885eeeeee4224e225f7b8609c05299b3498257a1dc9a8ccb"
+      ],
+      "roles": [
+        "heading_navigation_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P116",
+      "evidence_ids": [
+        "4c3fd5ac4caa2faf00d1b43c45101bb33f3a2fb63617b9499b50d265f55aa1a4"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "6ee03f0c377f222c4ef2547d82752727293efeb6a3bf204fba0c10c6c9779f28"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T12R1",
+      "evidence_ids": [
+        "5bf4984b0ecb55b664e5a1c4f7b2f551574efb0d67b7036a53a30bb3e4ec009b",
+        "a60658fc5cccaeddb8d9faa0760ee48d5fdad5ab0f678bd0e0d15775e6837b06",
+        "b040ef1101fda5fad8475f111b42a1c8c2df04f13f61d0e3f65e2d21ba3491eb",
+        "a632e0e4e40942797fe9f172474f4e9271d3d54c07ab599f27825801200c3d6b",
+        "8f11688c66b24eb5323e8fa3fd6258cc81cc881cb62489dc68d28cf4f081dbc2"
+      ],
+      "roles": [
+        "table_header_context"
+      ],
+      "primary_record_ids": [],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {},
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {},
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "T12R2",
+      "evidence_ids": [
+        "5b2d23615a443c4fc6743bd727a0ad989ef32d0b906e71c9fced2309a73d7cc3",
+        "7806db70c857437d1b7591ce1fdfc6b8cf76d1351918f0dcfa6ea05567d79c9e",
+        "f8699b3584593daeee19724a6bab2d7c3053154c4490addb40961d1f650174ec",
+        "c965a34b559b12f8024266b198a7a9f259405b46b95882ff8d2e7799ef97f08f",
+        "46dc0ed0652990dbeadfa95c7bcc7f08caee842cd967ca7a034da1b2c9e5aea3"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "ef31b2fcd4fa256e852e78179a8b4c36deabddd32d3a55868b5747a7c74f17b0"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P117",
+      "evidence_ids": [
+        "3ceaa7c8fba8c013544dbe194c3ebdee343221b1c020d2961f198afd74280257"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "78ba035b082b5b62782556544acf3ce1d45275247213bcd2a2302c1229252af9"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P122",
+      "evidence_ids": [
+        "a32e770a61e3ce884813e1bdb97916b1463a15d590c18a6e1fee5d1517de0bf4"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "a396a65fce673cf61d829c27655faf7b7beb6e4a685b698a27576dfb7188b769"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P123",
+      "evidence_ids": [
+        "e33357734fcb9ff9e46b25896ff2cd3a5c8fcf7565b6fc8e0fbbea560e9071e8"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "c33fbf94086f37807bcbe5cc08dbc40eb9fe510139d892c80e13dce92cf1e8b3"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    },
+    {
+      "location": "P124",
+      "evidence_ids": [
+        "34cf7293bb4cfb979563383ee96e7e2cd5d3710ba2100a7c6000b1f0934c8f02"
+      ],
+      "roles": [
+        "record_source"
+      ],
+      "primary_record_ids": [
+        "bf1dd35a9e07eef1f844b9bd9f5436fe83c717c901f06217e6bde2eadc828911"
+      ],
+      "shared_cell_record_ids": [],
+      "source_record_routing_counts": {
+        "routed": 1
+      },
+      "source_records_with_confirmed_call": [],
+      "source_current_scope_status_counts": {
+        "unattempted": 1
+      },
+      "source_confirmed_call_ids": []
+    }
+  ],
+  "call_membership_evidence": [
+    {
+      "call_id": "result:88f5da7caf80e40fa5e835ef33091b5d78914ec64d1de6eda5a6918b58c4ad00",
+      "confirmed": true,
+      "confirmation_basis": "persisted_model_turn",
+      "stage": "discovery",
+      "task_ids": [
+        "534c62345373639e982f42ab3a2b585b436f135e4c1a214b8fe5c10735bbf302"
+      ],
+      "lineage_id": "e25ceed79220303e478b45a0d8e8054996817b505049d186fb63a5c8b4d6ec09",
+      "response_status": "completed",
+      "attempt": 1,
+      "request_storage_keys": [
+        "e590c12112009f25d257181474a10ccdcae69ad844d5b775cb9a13b1a0f65881"
+      ],
+      "request_dispatch_states": [
+        "completed"
+      ],
+      "source_record_ids": [
+        "1b6796ebae49a51080923d2713b1b26acd5e5ceb4e72cefa327103562014ff7c",
+        "5de81e6f64b1601fda38679e2d6665b4dd52da2fc6f88d42cced01c79e097ada",
+        "7a0a948e3e8eb49f32f491351874c6a397b16be6d3087e1adf8862e5b3bde8ac",
+        "8e180ae7f9d29d2408469a8b458b52d60b108120d69aa98664f9293b359cff78",
+        "93cc391906b88a3627544195f5c1e0c8635f81429f6456b3222eecd6ff2e067e",
+        "b7df89f3cf3af96e25008fa7356fde69da0c49c2e80144a774fc3693bdfe0a37",
+        "bd1b20eb19d26bf720f145568a78145c98506ae5dda43cb4311a665e9be30196",
+        "f80887751fb86b87d07e2f792f7606e444214948bd2d77edab2de7cec26ef687"
+      ],
+      "request_member_task_ids": [],
+      "model_turn_member_task_ids": [],
+      "request_turn_member_ids_agree": null,
+      "explicit_member_count": 0,
+      "distinct_explicit_predicates": [],
+      "members": [],
+      "unmapped_member_ids": [],
+      "actual_multi_predicate_batch": false,
+      "input_hashes": [
+        "fa3357518bc35e9ca842212afe73fa8ea8f78d9bb4576ea551c73cf4fba6d52b"
+      ],
+      "request_actual_cost": [
+        1
+      ]
+    },
+    {
+      "call_id": "result:b9d1f2109bc046c8649389f8696ba584ab178060f6d8735ea01f16966acf282a",
+      "confirmed": true,
+      "confirmation_basis": "persisted_model_turn",
+      "stage": "discovery",
+      "task_ids": [
+        "b1f593086b48b21ea7242390218c68c068d71ea9afb7348c5db5e039671632d1"
+      ],
+      "lineage_id": "7aeb1a5bdfd0229315674308e7422ec53a6223a096f790ec054823f9187a1c9e",
+      "response_status": "completed",
+      "attempt": 1,
+      "request_storage_keys": [
+        "9f6da6dfbe1634d165a78e481f467c607dc12f40e1d49fb4b47e165bf8bb0fb1"
+      ],
+      "request_dispatch_states": [
+        "completed"
+      ],
+      "source_record_ids": [
+        "365c6729e179e2561787e02e5e91777a051d9ceed9bd783c8a38aa784a0b7dac",
+        "504613c49ad2718bd59a4c614418b180ddfe1962aaa751fa9e4645ab743440a7",
+        "829e82054693729f674ffd64f08df85f4add18462a773aa6c87904bf770cdaeb",
+        "8b5267e2eff148a0a9df200b882f8ad535aa380ae053a65eaf194b57ef401134",
+        "9e3549601fd1890174992da0819afaf6e78ddc2459ef8e6ab1b645d263ae4656",
+        "c30ae18921a41ff479485b58eeb97b95de90999587ec7a01217ef60df0a888bf",
+        "cb31973a1963b19800fa14748fd2c45aaf8c529c4ae9e9e78ca14f0b1e9315a8",
+        "f2624e6913d38ead3e74fcf2c93ccccb0aa5a4f5eadeccd1e806d20d1f598034"
+      ],
+      "request_member_task_ids": [],
+      "model_turn_member_task_ids": [],
+      "request_turn_member_ids_agree": null,
+      "explicit_member_count": 0,
+      "distinct_explicit_predicates": [],
+      "members": [],
+      "unmapped_member_ids": [],
+      "actual_multi_predicate_batch": false,
+      "input_hashes": [
+        "cdd523fedf7894bfe77e3220a054520cc5d5ded41a152ecd8e21ef39a6347550"
+      ],
+      "request_actual_cost": [
+        1
+      ]
+    },
+    {
+      "call_id": "result:3ec3cb2d8374a747d85adc00d64ff9d1f1c599c91d206776ccf20861c3fa26fc",
+      "confirmed": true,
+      "confirmation_basis": "persisted_model_turn",
+      "stage": "discovery",
+      "task_ids": [
+        "534c62345373639e982f42ab3a2b585b436f135e4c1a214b8fe5c10735bbf302"
+      ],
+      "lineage_id": "e25ceed79220303e478b45a0d8e8054996817b505049d186fb63a5c8b4d6ec09",
+      "response_status": "completed",
+      "attempt": 2,
+      "request_storage_keys": [
+        "8272d97893df2cd5ff63acc960c6e792bdee65f1dbe3e80d0044c7b9d4bfd0d0"
+      ],
+      "request_dispatch_states": [
+        "completed"
+      ],
+      "source_record_ids": [
+        "1b6796ebae49a51080923d2713b1b26acd5e5ceb4e72cefa327103562014ff7c",
+        "5de81e6f64b1601fda38679e2d6665b4dd52da2fc6f88d42cced01c79e097ada",
+        "7a0a948e3e8eb49f32f491351874c6a397b16be6d3087e1adf8862e5b3bde8ac",
+        "8e180ae7f9d29d2408469a8b458b52d60b108120d69aa98664f9293b359cff78",
+        "93cc391906b88a3627544195f5c1e0c8635f81429f6456b3222eecd6ff2e067e",
+        "b7df89f3cf3af96e25008fa7356fde69da0c49c2e80144a774fc3693bdfe0a37",
+        "bd1b20eb19d26bf720f145568a78145c98506ae5dda43cb4311a665e9be30196",
+        "f80887751fb86b87d07e2f792f7606e444214948bd2d77edab2de7cec26ef687"
+      ],
+      "request_member_task_ids": [],
+      "model_turn_member_task_ids": [],
+      "request_turn_member_ids_agree": null,
+      "explicit_member_count": 0,
+      "distinct_explicit_predicates": [],
+      "members": [],
+      "unmapped_member_ids": [],
+      "actual_multi_predicate_batch": false,
+      "input_hashes": [
+        "cb1a086d30100a815ef04d623ac67160d512c97e0f6d9f6d9d15d9f00530ab4b"
+      ],
+      "request_actual_cost": [
+        1
+      ]
+    },
+    {
+      "call_id": "result:b2fc3fff07940423fceb0a3d93d04695b599220924f3e566c05a71131e3fadf6",
+      "confirmed": true,
+      "confirmation_basis": "persisted_model_turn",
+      "stage": "verification",
+      "task_ids": [
+        "b1f593086b48b21ea7242390218c68c068d71ea9afb7348c5db5e039671632d1"
+      ],
+      "lineage_id": "7aeb1a5bdfd0229315674308e7422ec53a6223a096f790ec054823f9187a1c9e",
+      "response_status": "completed",
+      "attempt": 2,
+      "request_storage_keys": [
+        "7cd8b5c9a57bdcd880f2c5ab7443b3a583b1621df0708b8324c1667a96840547"
+      ],
+      "request_dispatch_states": [
+        "completed"
+      ],
+      "source_record_ids": [
+        "365c6729e179e2561787e02e5e91777a051d9ceed9bd783c8a38aa784a0b7dac",
+        "504613c49ad2718bd59a4c614418b180ddfe1962aaa751fa9e4645ab743440a7",
+        "829e82054693729f674ffd64f08df85f4add18462a773aa6c87904bf770cdaeb",
+        "8b5267e2eff148a0a9df200b882f8ad535aa380ae053a65eaf194b57ef401134",
+        "9e3549601fd1890174992da0819afaf6e78ddc2459ef8e6ab1b645d263ae4656",
+        "c30ae18921a41ff479485b58eeb97b95de90999587ec7a01217ef60df0a888bf",
+        "cb31973a1963b19800fa14748fd2c45aaf8c529c4ae9e9e78ca14f0b1e9315a8",
+        "f2624e6913d38ead3e74fcf2c93ccccb0aa5a4f5eadeccd1e806d20d1f598034"
+      ],
+      "request_member_task_ids": [],
+      "model_turn_member_task_ids": [],
+      "request_turn_member_ids_agree": null,
+      "explicit_member_count": 0,
+      "distinct_explicit_predicates": [],
+      "members": [],
+      "unmapped_member_ids": [],
+      "actual_multi_predicate_batch": false,
+      "input_hashes": [
+        "3576e5943b2c388368ce10594566f4ee82f345480dcb15cb6299bcc2592193cb"
+      ],
+      "request_actual_cost": [
+        1
+      ]
+    },
+    {
+      "call_id": "result:d12db1b3188c95b1d901d1a041582b197fbac0631c42f737ced884751345610e",
+      "confirmed": true,
+      "confirmation_basis": "persisted_model_turn",
+      "stage": "verification",
+      "task_ids": [
+        "534c62345373639e982f42ab3a2b585b436f135e4c1a214b8fe5c10735bbf302"
+      ],
+      "lineage_id": "e25ceed79220303e478b45a0d8e8054996817b505049d186fb63a5c8b4d6ec09",
+      "response_status": "completed",
+      "attempt": 3,
+      "request_storage_keys": [
+        "b61a295d80b7155756a5f21780da973749ed08305c4b2807480c5ce07c41dec2"
+      ],
+      "request_dispatch_states": [
+        "completed"
+      ],
+      "source_record_ids": [
+        "1b6796ebae49a51080923d2713b1b26acd5e5ceb4e72cefa327103562014ff7c",
+        "5de81e6f64b1601fda38679e2d6665b4dd52da2fc6f88d42cced01c79e097ada",
+        "7a0a948e3e8eb49f32f491351874c6a397b16be6d3087e1adf8862e5b3bde8ac",
+        "8e180ae7f9d29d2408469a8b458b52d60b108120d69aa98664f9293b359cff78",
+        "93cc391906b88a3627544195f5c1e0c8635f81429f6456b3222eecd6ff2e067e",
+        "b7df89f3cf3af96e25008fa7356fde69da0c49c2e80144a774fc3693bdfe0a37",
+        "bd1b20eb19d26bf720f145568a78145c98506ae5dda43cb4311a665e9be30196",
+        "f80887751fb86b87d07e2f792f7606e444214948bd2d77edab2de7cec26ef687"
+      ],
+      "request_member_task_ids": [],
+      "model_turn_member_task_ids": [],
+      "request_turn_member_ids_agree": null,
+      "explicit_member_count": 0,
+      "distinct_explicit_predicates": [],
+      "members": [],
+      "unmapped_member_ids": [],
+      "actual_multi_predicate_batch": false,
+      "input_hashes": [
+        "7376dfbc38761fb6ad0ccba9b25f55f74323d2544f601dc212bacbaa950b9b0c"
+      ],
+      "request_actual_cost": [
+        1
+      ]
+    },
+    {
+      "call_id": "result:bb3a2691aa041fa1eca95766014261cff8f9cd3f3ab5308e499f388391660e2f",
+      "confirmed": true,
+      "confirmation_basis": "persisted_model_turn",
+      "stage": "verification",
+      "task_ids": [
+        "534c62345373639e982f42ab3a2b585b436f135e4c1a214b8fe5c10735bbf302"
+      ],
+      "lineage_id": "e25ceed79220303e478b45a0d8e8054996817b505049d186fb63a5c8b4d6ec09",
+      "response_status": "completed",
+      "attempt": 4,
+      "request_storage_keys": [
+        "5eb7514b52878bb48e8c66c4ba906eca730e2ac444368762c609e8033dad5a4f"
+      ],
+      "request_dispatch_states": [
+        "completed"
+      ],
+      "source_record_ids": [
+        "1b6796ebae49a51080923d2713b1b26acd5e5ceb4e72cefa327103562014ff7c",
+        "5de81e6f64b1601fda38679e2d6665b4dd52da2fc6f88d42cced01c79e097ada",
+        "7a0a948e3e8eb49f32f491351874c6a397b16be6d3087e1adf8862e5b3bde8ac",
+        "8e180ae7f9d29d2408469a8b458b52d60b108120d69aa98664f9293b359cff78",
+        "93cc391906b88a3627544195f5c1e0c8635f81429f6456b3222eecd6ff2e067e",
+        "b7df89f3cf3af96e25008fa7356fde69da0c49c2e80144a774fc3693bdfe0a37",
+        "bd1b20eb19d26bf720f145568a78145c98506ae5dda43cb4311a665e9be30196",
+        "f80887751fb86b87d07e2f792f7606e444214948bd2d77edab2de7cec26ef687"
+      ],
+      "request_member_task_ids": [],
+      "model_turn_member_task_ids": [],
+      "request_turn_member_ids_agree": null,
+      "explicit_member_count": 0,
+      "distinct_explicit_predicates": [],
+      "members": [],
+      "unmapped_member_ids": [],
+      "actual_multi_predicate_batch": false,
+      "input_hashes": [
+        "a7be0d774ba46f755169413d2cb287d4716a2859393496c426048c6bfbdb8962"
+      ],
+      "request_actual_cost": [
+        1
+      ]
+    }
+  ],
+  "inputs": [
+    {
+      "path": "/tmp/ontology-target-main-20260921/final-scope-capture-v4-paused-final.json",
+      "sha256": "f5cdb7265fa259f7231f6669aa97e666a9475f50fdc083e88d215bbf2af79d3d"
+    },
+    {
+      "path": "/opt/dev/chen/ontology-agent/docs/调研/ontology-target-main-deployment-20260921/v4/final-scope-review-v4-paused-final.json",
+      "sha256": "ffb7a671ebaf8b586a707e0fd35ccfbc072473cee561f4c193e8e6a0acb504f7"
+    },
+    {
+      "path": "/opt/dev/chen/ontology-agent/docs/调研/ontology-target-main-deployment-20260921/v4/original-scope.json",
+      "sha256": "708a4951eadc07ac6d78c4dc2ace1d59be2f48a27391ff1109df0416cdbe841e"
+    }
+  ],
+  "limitations": [
+    "Explicit member_task_ids must resolve to more than one distinct predicate in one confirmed real call; a multi-record discovery or multiple calls alone is not proof.",
+    "A verification call is not semantic acceptance; examined covers current scheduled work, not all ontology relationships/properties.",
+    "原件范围、路由覆盖、调用覆盖与语义正确性分别报告。未路由、未尝试、等待端点和技术失败不得按阴性事实处理。",
+    "Compared runs differ in covered scope, schema/prompt/parser, retries, cache and call budget. Raw wall time or call counts do not establish speed or accuracy improvement.",
+    "Original table cell counts include merged-grid repetition; record source evidence counts use physical IR units."
+  ]
+}

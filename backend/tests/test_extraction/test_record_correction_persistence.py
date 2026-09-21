@@ -43,7 +43,7 @@ def record_mistake(stage):
     return mistake
 
 
-@pytest.mark.parametrize("stage", ["discovery", "verification"])
+@pytest.mark.parametrize("stage", ["discovery"])
 @pytest.mark.parametrize("pause_after_answer", [False, True])
 def test_record_correction_commits_and_cold_resume_preserves_paid_results(
     tmp_path, monkeypatch, current_run, stage, pause_after_answer,
@@ -108,7 +108,7 @@ def test_record_correction_commits_and_cold_resume_preserves_paid_results(
     assert all(results[key] == value for key, value in paid_results.items())
 
 
-@pytest.mark.parametrize("stage", ["discovery", "verification"])
+@pytest.mark.parametrize("stage", ["discovery"])
 @pytest.mark.parametrize("mutation", [
     "evidence_units", "previous_answer", "completed_attempts", "repeat_correction",
 ])
@@ -180,3 +180,29 @@ def test_record_correction_rejects_changed_authority_answer_cost_or_repeated_cor
     assert stopped and "execution_pause_requested" in paused.diagnostics
     expected_paid = (1 if stage == "discovery" else 2) + int(mutation == "repeat_correction")
     assert len(requests) == expected_paid
+
+
+def test_invalid_verification_is_downgraded_without_answer_correction(
+    tmp_path, monkeypatch, current_run,
+):
+    args, executor, requests, hooks = record_setup(
+        tmp_path,
+        monkeypatch,
+        current_run,
+        empty_relations=True,
+        transform=record_mistake("verification"),
+    )
+    result = executor(max_model_calls_per_record=4).run(**args, **hooks)
+    record_requests = [request for request in requests if "members" not in request]
+    assert record_requests
+    assert all("answer_correction" not in request for request in record_requests)
+    assert {prop.raw_value for prop in result.graph.properties} == {"B"}
+
+    store, run, _ = current_run
+    calls = current_state.restore_calls(store, run, run.run_fingerprint)
+    protocols = [value for value in calls["protocols"].values()
+                 if value["version"] == RECORD_PROTOCOL]
+    assert protocols
+    assert all(protocol["stage"] == "finalize" for protocol in protocols)
+    assert all(not correction_input(protocol) for protocol in protocols)
+    assert calls["reservation_sequence"] == len(requests)

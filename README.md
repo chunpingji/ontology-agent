@@ -102,6 +102,11 @@ echo 'TRANSFORMERS_OFFLINE=1' >> .env         # transformers 全程离线
 
 ## 关系图谱语义排序（默认 GPU，显式启用）
 
+文档分析的 `/analysis` →「图谱分析」默认启用第一阶段候选图：保留实体登记及原文关系发现，
+关闭关系证明/核验和属性处理；已登记实体可直接探索下层合法关系。关系全部用虚线显示，
+保留关系与端点原文定位，候选数量不计为实证完整度。新阶段须新建运行，旧运行按其冻结策略展示。
+实施与验收见 [候选图 quickstart](specs/034-schema-region-routing/quickstart.md)。
+
 应用 Settings 与基础 Compose 默认使用 `cuda:0`、`float16`、CUDA `12.6`，
 batch 4、排序超时 1200 秒、文档执行并发 1。默认 GPU 镜像为
 `ontology-agent-backend:cuda12-2.7.1`；旧 NER 与实体对齐继续使用各自的 CPU 加载策略。

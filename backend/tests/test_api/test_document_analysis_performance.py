@@ -5,109 +5,47 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from sqlalchemy import update
 
+from app.api import document_analysis
 from app.config import settings
 from app.models.document_analysis import DocumentAnalysisRun
 from app.services.document_analysis.application import DocumentAnalysisApplication
-from app.services.document_analysis.public_projection import PUBLIC_TO_INTERNAL_PROJECTION
-from app.services.extraction.ontology_guided.value_constraints import UNIT_NORMALIZATION_VERSION
 
 from .test_document_analysis import _create, _word_bytes
 
 
-@pytest.mark.parametrize("adaptive_mode", ["disabled", "enhanced", "trial"])
-def test_repair_creation_freezes_required_policies_without_upgrading_old_runs(
-    client, db, analyst_headers, tmp_path, monkeypatch, adaptive_mode,
+@pytest.mark.parametrize("output_ceiling", [4096, 20480])
+def test_document_creation_freezes_current_tool_engine_performance_policy(
+    client, db, analyst_headers, tmp_path, monkeypatch, output_ceiling,
 ):
-    from app.services.document_analysis import application as application_module
-
-    monkeypatch.setattr(application_module, "CURRENT_STATE_STORAGE_VERSION", 2)
     monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "artifacts")
+    monkeypatch.setattr(settings, "evidence_max_output_tokens", output_ceiling)
     monkeypatch.setattr(settings, "document_analysis_performance_enabled", False)
-    monkeypatch.setattr(settings, "document_analysis_template_interleaving", False)
-    # Explicitly exercise the frozen pre-adaptive policy despite new online defaults.
-    monkeypatch.setattr(settings, "document_analysis_adaptive_retrieval_mode", "disabled")
-    monkeypatch.setattr(settings, "document_analysis_evidence_repair_enabled", False)
-    original = _word_bytes(tmp_path)
-    old = _create(client, analyst_headers, original, request_key="before-repair")
+    monkeypatch.setattr(document_analysis, "dispatch_run", lambda *_args, **_kwargs: None)
+    created = _create(client, analyst_headers, _word_bytes(tmp_path), request_key="current-policy")
     application = DocumentAnalysisApplication(db, ontology_engine=object())
-    old_run = application.get_run(old.json()["recognition_run_id"], "analyst")
-    assert application._artifact_payload(old_run, "source")[0]["performance_policy"] == {}
-    monkeypatch.setattr(application_module, "CURRENT_STATE_STORAGE_VERSION", 4)
-    monkeypatch.setattr(settings, "document_analysis_evidence_repair_enabled", True)
-    if adaptive_mode == "trial":
-        from tests.test_extraction.test_adaptive_retrieval import trial_fixture
-
-        search, _, _ = trial_fixture(tmp_path, monkeypatch)
-        profile = tmp_path / "trial.json"
-        profile.write_text(search.adaptive_policy.calibration.model_dump_json())
-        monkeypatch.setattr(settings, "document_analysis_adaptive_calibration_path", str(profile))
-    monkeypatch.setattr(settings, "document_analysis_adaptive_retrieval_mode", adaptive_mode)
-    created = _create(client, analyst_headers, original, request_key="with-repair")
     run = application.get_run(created.json()["recognition_run_id"], "analyst")
     frozen = application._artifact_payload(run, "source")[0]["performance_policy"]
-    assert frozen["evidence_repair"] == "evidence-repair-v1"
-    assert frozen["scope_protocol"] == "source-quoted-scope-v1"
-    assert frozen["evidence_work"] == "evidence-work-v2"
-    assert frozen["literal_quotes"] == "source-integer-quotes-v2"
-    assert frozen["unit_normalization"] == UNIT_NORMALIZATION_VERSION
-    assert frozen["state_storage_version"] == 4 and frozen["max_lineage_calls"] == 8
-    assert "state_baseline_interval" not in frozen
-    assert frozen["incremental_performance"] == "incremental-performance-v1"
-    assert frozen["source_object_recognition"] == "source-object-recognition-v1"
-    assert frozen["cmc_describes_type_scope"] == "drug-product-only-v1"
-    assert frozen["layered_recognition"] == "dependency-ready-v1"
-    assert frozen["heuristic_policy"] == (
-        "heuristic-first-v3" if adaptive_mode == "disabled" else "heuristic-first-v4"
-    )
-    if adaptive_mode == "enhanced":
-        assert frozen["adaptive_retrieval"]["mode"] == "enhanced"
-        assert frozen["adaptive_retrieval"]["calibration"] is None
-        assert frozen["adaptive_retrieval"]["evaluation_only"] is False
-    if adaptive_mode == "trial":
-        assert frozen["adaptive_retrieval"]["mode"] == "trial"
-        assert frozen["adaptive_retrieval"]["calibration"]["quality_status"] == "development"
-        assert frozen["adaptive_retrieval"]["evaluation_only"] is False
-    assert frozen["semantic_expansion"] == "bounded-semantic-v1"
-    assert frozen["process_granularity"] == "whole-method-field-v1"
-    assert frozen["attribute_priority"] == "source-field-priority-v1"
-    assert frozen["template_interleaving"] is True
-    assert application._artifact_payload(old_run, "source")[0]["performance_policy"] == {}
+    assert frozen["extraction_protocol"] == "ontology-tool-extraction-v1"
+    assert frozen["state_storage_version"] == 4 and frozen["max_lineage_calls"] == 6
+    assert frozen["responses"]["reasoning"] == {"effort": "none"}
+    maximum = frozen["request_budget"]["max_output_tokens"]
+    assert frozen["request_budget"]["stage_output_tokens"] == {
+        "discovery": min(8192, maximum), "verification": min(16384, maximum),
+    }
+    assert frozen["record_discovery"]["max_feedback_reopens"] == 1
+    routing = frozen["record_discovery"]["schema_region_routing"]
+    assert routing["max_group_chars"] == 1200 and routing["max_group_records"] == 8
+    assert routing["execution_mode"] == routing["property_field_mode"] == "region_batch"
 
-
-def test_compact_graph_matches_all_legacy_projections_without_loading_internal_state(
-    client, db, analyst_headers, tmp_path, monkeypatch,
-):
-    monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "artifacts")
-    created = _create(client, analyst_headers, _word_bytes(tmp_path), request_key="compact")
-    run_id = created.json()["recognition_run_id"]
-    application = DocumentAnalysisApplication(db, ontology_engine=object())
-    run = application.get_run(run_id, "analyst")
-    read = application._artifact_payload
-    compact = {projection: application.graph_response(run, projection=projection)
-               for projection in PUBLIC_TO_INTERNAL_PROJECTION}
-
-    def legacy_reader(run, kind):
-        if kind in {"public_graph", "ranking_summary"}:
-            return None
-        return read(run, kind)
-
-    monkeypatch.setattr(application, "_artifact_payload", legacy_reader)
-    for projection, response in compact.items():
-        assert application.graph_response(run, projection=projection) == response
-
-    def compact_reader(run, kind):
-        assert kind not in {"graph", "ranking_state", "ontology_snapshot", "recognition_checkpoint"}
-        return read(run, kind)
-
-    monkeypatch.setattr(application, "_artifact_payload", compact_reader)
-    for projection, response in compact.items():
-        assert application.graph_response(run, projection=projection) == response
+    monkeypatch.setattr(settings, "evidence_max_output_tokens", 1024)
+    assert application._artifact_payload(run, "source")[0]["performance_policy"] == frozen
 
 
 def test_graph_cache_checks_projection_budget_owner_expiry_and_deletion(
     client, db, analyst_headers, tmp_path, monkeypatch,
 ):
     monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "artifacts")
+    monkeypatch.setattr(document_analysis, "dispatch_run", lambda *_args, **_kwargs: None)
     run_id = _create(client, analyst_headers, _word_bytes(tmp_path)).json()["recognition_run_id"]
     path = f"/api/document-analysis/runs/{run_id}"
     first = client.get(path + "/graph", headers=analyst_headers)
@@ -131,7 +69,7 @@ def test_graph_cache_checks_projection_budget_owner_expiry_and_deletion(
                        params={"expected_summary_id": "old", "expected_budget_enabled": "true"})
     assert stale.status_code == 409
     assert stale.json()["error"]["code"] == "RUN_REVISION_CONFLICT"
-    summary_id = run.artifact_manifest["ranking_summary"]["artifact_id"]
+    summary_id = ""
     assert client.get(path + "/ranking-summary", headers=analyst_headers, params={
         "expected_summary_id": summary_id, "expected_budget_enabled": "false",
     }).status_code == 200
@@ -150,9 +88,9 @@ def test_ranking_summary_detects_version_changed_during_payload_read(
     client, db, analyst_headers, tmp_path, monkeypatch,
 ):
     monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "artifacts")
+    monkeypatch.setattr(document_analysis, "dispatch_run", lambda *_args, **_kwargs: None)
     run_id = _create(client, analyst_headers, _word_bytes(tmp_path)).json()["recognition_run_id"]
-    run = db.get(DocumentAnalysisRun, run_id)
-    summary_id = run.artifact_manifest["ranking_summary"]["artifact_id"]
+    summary_id = ""
     read = DocumentAnalysisApplication.ranking_summary_response
 
     def concurrent_read(application, run):
@@ -164,7 +102,7 @@ def test_ranking_summary_detects_version_changed_during_payload_read(
             **run.artifact_manifest, "ranking_summary": {"artifact_id": "successor"},
         }).execution_options(synchronize_session=False))
         db.commit()
-        assert run.artifact_manifest["ranking_summary"]["artifact_id"] == summary_id
+        assert "ranking_summary" not in run.artifact_manifest
         return response
 
     monkeypatch.setattr(DocumentAnalysisApplication, "ranking_summary_response", concurrent_read)

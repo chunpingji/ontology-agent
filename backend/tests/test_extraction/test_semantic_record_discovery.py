@@ -79,6 +79,15 @@ def search(tmp_path, *, texts, extra_types=0, limit=1):
     return frontier, index
 
 
+def clone_search(frontier, index):
+    """Rebuild the search over the same immutable analysis for restore tests."""
+    slots = [([record.record_id], [], None) for record in index.records]
+    return RecordSearch(
+        slots, cards=dict(frontier.cards), ordinary_cards=list(frontier.ordinary_cards),
+        ontology=frontier.ontology, index=index, policy=frontier.policy,
+    )
+
+
 def test_semantic_synonym_outranks_cover_and_queue_shrinks_without_global_type_removal(tmp_path):
     frontier, index = search(tmp_path, texts=["时间：2026年02月", "机械机组甲。", "装置乙。"])
     ranking = service()
@@ -115,13 +124,13 @@ def test_vector_results_survive_cold_restore_and_low_scores_are_not_examined(tmp
     assert persisted and persisted[-1]["cache"]
     frontier.take()
     rows = frontier.rows.drain()
-    restored, _ = search(tmp_path, texts=["时间：2026年02月", "装置甲。"])
+    restored = clone_search(frontier, frontier.index)
     restored.restore(rows)
     restored.prepare(service(), lambda: pytest.fail("completed ranking repeated"))
     assert restored.pending == 0
     diagnostic = restored.diagnostics("semantic")
     assert diagnostic["unselected_groups"] == 1 and diagnostic["admitted_pairs"] == 1
-    uncached_work, _ = search(tmp_path, texts=["时间：2026年02月", "装置甲。"])
+    uncached_work = clone_search(frontier, frontier.index)
     model = Embeddings()
     recovered_ranking = RankingService(ranking.policy, model, state=persisted[-1])
     uncached_work.prepare(recovered_ranking, lambda: None)
@@ -165,6 +174,20 @@ def test_endpoint_priority_uses_existing_pair_without_expanding_candidates(tmp_p
     assert not frontier.prioritize(index.records[1].record_id, {"urn:part"})
 
 
+def test_planned_relation_dependency_admits_one_unselected_range_card(tmp_path):
+    frontier, index = search(tmp_path, texts=["与候选类型无关的段落。"])
+    frontier.prepare(service(), lambda: None)
+    record_id = index.records[0].record_id
+    assert frontier.pending == 0
+
+    assert frontier.admit_dependency(record_id, {"urn:part"}, set())
+    selected = frontier.take()
+    assert selected[0] == [record_id]
+    assert frontier.cards[selected[1]].class_iris == ["urn:part"]
+    assert not frontier.admit_dependency(record_id, {"urn:part"}, {selected[1]})
+    assert frontier.pending == 0
+
+
 def test_discovery_rotates_type_opportunities_and_cold_restore_keeps_order(tmp_path):
     texts = ["装置甲。", "装置乙。", "部件丙。"]
     frontier, index = search(tmp_path, texts=texts)
@@ -172,7 +195,7 @@ def test_discovery_rotates_type_opportunities_and_cold_restore_keeps_order(tmp_p
     first = frontier.take()
     assert first[0] == [index.records[0].record_id]
     snapshot = frontier.rows.drain()
-    restored, _ = search(tmp_path, texts=texts)
+    restored = clone_search(frontier, index)
     restored.restore(snapshot)
     next_source = [index.records[2].record_id]
     assert restored.take()[0] == frontier.take()[0] == next_source
@@ -204,7 +227,7 @@ def test_shared_top_card_does_not_delay_other_selected_type_for_a_full_round(tmp
     first = frontier.take()
     assert first[0] == [index.records[0].record_id]
     snapshot = frontier.rows.drain()
-    restored, _ = search(tmp_path, texts=texts, limit=2)
+    restored = clone_search(frontier, index)
     restored.restore(snapshot)
     second = frontier.take()
     assert restored.take() == second
@@ -213,7 +236,7 @@ def test_shared_top_card_does_not_delay_other_selected_type_for_a_full_round(tmp
     assert frontier.unselected == restored.unselected == 0
 
 
-def test_real_coordinator_discovers_body_before_cover_and_cold_resume_keeps_paid_results(
+def test_real_coordinator_batches_same_section_and_cold_resume_keeps_paid_results(
     tmp_path, monkeypatch, current_run,
 ):
     args, factory, requests, hooks = setup_contextual(
@@ -237,8 +260,8 @@ def test_real_coordinator_discovers_body_before_cover_and_cold_resume_keeps_paid
     first = runner.run(**args, **{**hooks, "model_call_hook": calls})
     first_sources = [unit["text"] for unit in requests[0]["evidence_units"]
                      if unit["fact_eligible"]]
-    assert first_sources == ["装置甲。"]
-    assert first.graph.progress.record_discovery.unselected_groups == 1
+    assert first_sources == ["时间：2026年02月", "装置甲。", "部件乙。"]
+    assert first.graph.progress.record_discovery.unselected_groups == 0
     saved_calls = current_state.restore_calls(store, run, run.run_fingerprint)
     saved_ranking = current_state.restore_ranking(store, run, run.run_fingerprint)
     assert saved_ranking["service"]["cache"]
@@ -255,7 +278,7 @@ def test_real_coordinator_discovers_body_before_cover_and_cold_resume_keeps_paid
     run.progress = result.graph.progress.model_dump(mode="json")
     public_progress = RunProgress.model_validate(application._progress(run))
     assert public_progress.record_discovery == result.graph.progress.record_discovery
-    assert diagnostic_payload(result.graph.progress)["record_discovery"]["unselected_groups"] == 1
+    assert diagnostic_payload(result.graph.progress)["record_discovery"]["unselected_groups"] == 0
 
 
 def test_discovery_timeout_stops_before_embedding_and_resets_shared_deadline(

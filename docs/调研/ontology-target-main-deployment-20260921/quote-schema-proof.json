@@ -1,0 +1,135 @@
+{
+  "verified_at": "2026-09-21T04:36:29.163396+00:00",
+  "run_id": "2abc7075-276d-41b6-b8a8-33f25af66465",
+  "mode": "offline_schema_conversion_and_local_validation",
+  "model_requests": 0,
+  "application_runs_modified": false,
+  "converter": {
+    "path": "/opt/llama.cpp/examples/json_schema_to_grammar.py",
+    "sha256": "ee451dc460aa31185226e58988626f64e75ab735169fa3e484fcf16889475ae3",
+    "allow_fetch": false,
+    "implementation": "installed llama.cpp Python SchemaConverter"
+  },
+  "original_real_request_schema": {
+    "schema_sha256": "f61279c8c9325787fce732e5d67328cebe84c1e2056449b30ca09e00f1ca0f2a",
+    "status": "rejected",
+    "error_type": "AssertionError",
+    "error": "Pattern must start with \"^\" and end with \"$\""
+  },
+  "changed_schema_paths": [
+    "$defs.Quote.properties.text.pattern",
+    "$defs.FactQuote.properties.text.pattern"
+  ],
+  "fixed_real_request_schema": {
+    "schema_sha256": "e23b2d0d039325ad820e1ed34118fca1cab6251659b94abcc4ebd70975b0009f",
+    "status": "converted",
+    "grammar_rules": 117,
+    "grammar_bytes": 14372,
+    "grammar_sha256": "bffeafb8308cfbc2f48c7e8b4499b4a39e4f7a9b04afbdcf49a045ea1988f2da"
+  },
+  "current_generated_schemas": {
+    "current_compiled_discovery": {
+      "schema_sha256": "077570d50f9d05b7279dd9dcc3d40a87d817432175fb18d700225b6401add7d0",
+      "status": "converted",
+      "grammar_rules": 175,
+      "grammar_bytes": 21557,
+      "grammar_sha256": "b35f7d1687d8dea935811ad356e7882e6085bed00721248d73603a0fd5bfbd21"
+    },
+    "current_compacted_discovery": {
+      "schema_sha256": "c79019adedf5b5734cea8b41ecf258217090b7e86c788833a779c34bc458c032",
+      "status": "converted",
+      "grammar_rules": 114,
+      "grammar_bytes": 14078,
+      "grammar_sha256": "97951f111c7d62d924e86dffc85a751d52c1646a0c9ec2667167af8a85420615"
+    },
+    "current_discovery_envelope": {
+      "schema_sha256": "773f52d6c2f64f91f877b14417ce7b276891d2ce3001da961ee964a8f135fdc9",
+      "status": "converted",
+      "grammar_rules": 161,
+      "grammar_bytes": 18198,
+      "grammar_sha256": "81ed8860bb6dbf4a5ed1b707edf51c643d5bd13602e4e04c63e0cc4925595d2b"
+    },
+    "current_verification_envelope": {
+      "schema_sha256": "e176baecdc8290a129db0af1ac85b91f367ee5976d8b8b71e6654fef1941c756",
+      "status": "converted",
+      "grammar_rules": 33,
+      "grammar_bytes": 3475,
+      "grammar_sha256": "1e51a9e0067beab86cb67fa88a36de81c12cc4bf269220da42ca681eea722ecd"
+    },
+    "current_compacted_verification_envelope": {
+      "schema_sha256": "ac67b90c345ede26d096b89ec18141683cf52d264f7bd889f10cf01b686c6810",
+      "status": "converted",
+      "grammar_rules": 33,
+      "grammar_bytes": 3475,
+      "grammar_sha256": "1e51a9e0067beab86cb67fa88a36de81c12cc4bf269220da42ca681eea722ecd"
+    }
+  },
+  "quote_boundaries": [
+    {
+      "case": "empty",
+      "accepted": false,
+      "exact_text_preserved": null
+    },
+    {
+      "case": "space",
+      "accepted": false,
+      "exact_text_preserved": null
+    },
+    {
+      "case": "newline_tab",
+      "accepted": false,
+      "exact_text_preserved": null
+    },
+    {
+      "case": "crlf",
+      "accepted": false,
+      "exact_text_preserved": null
+    },
+    {
+      "case": "nonbreaking_space",
+      "accepted": false,
+      "exact_text_preserved": null
+    },
+    {
+      "case": "ideographic_space",
+      "accepted": false,
+      "exact_text_preserved": null
+    },
+    {
+      "case": "ascii",
+      "accepted": true,
+      "exact_text_preserved": true
+    },
+    {
+      "case": "chinese",
+      "accepted": true,
+      "exact_text_preserved": true
+    },
+    {
+      "case": "multiline_chinese",
+      "accepted": true,
+      "exact_text_preserved": true
+    },
+    {
+      "case": "multiline_crlf",
+      "accepted": true,
+      "exact_text_preserved": true
+    },
+    {
+      "case": "surrounding_whitespace",
+      "accepted": true,
+      "exact_text_preserved": true
+    }
+  ],
+  "regression": {
+    "result": "67 passed, 4 existing warnings",
+    "command": ".venv/bin/python -m pytest -p no:cacheprovider -q tests/test_extraction/test_candidate_semantics.py tests/test_extraction/test_tool_engine_contracts.py tests/test_extraction/test_model_context_projection.py tests/test_extraction/test_compact_model_transport.py",
+    "ruff": "passed",
+    "git_diff_check": "passed"
+  },
+  "limitations": [
+    "No model or HTTP request was executed.",
+    "The Python converter was executed; the running C++ provider was not invoked.",
+    "Nonblank semantics are enforced locally after generation; provider schema keeps minLength=1."
+  ]
+}

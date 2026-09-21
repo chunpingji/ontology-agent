@@ -187,6 +187,51 @@ def test_public_normalized_unit_supports_quantity_and_legacy_records(
     assert response.properties[0].normalization_record == normalization
 
 
+@pytest.mark.parametrize(("raw_value", "normalized", "available"), [
+    ("0", 0, True), ("否", False, True), ("尚待测定", None, False),
+])
+def test_public_review_fields_preserve_false_zero_and_unavailable_normalization(
+    tool_graph_payload, raw_value, normalized, available,
+):
+    prop = tool_graph_payload["graph"]["properties"][0]
+    prop.update(
+        raw_value=raw_value, raw_unit="g", normalized_value=normalized,
+        normalization_available=available, normalization_record={"target_unit": "mg"},
+        policy_eligible=False, decision_status="supported",
+        validation_diagnostics=[{
+            "check": "shacl", "status": "failed", "reason_codes": ["range_warning"],
+            "message": "原文值与本体约束不一致。",
+        }],
+    )
+    response = _read_tool_graph(tool_graph_payload, "all_candidates")
+    value = response.properties[0]
+    assert value.decision_status == "supported"
+    assert value.normalization_available is available
+    assert value.normalized_value is normalized
+    assert value.raw_value == raw_value and value.raw_unit == "g" and value.unit == "mg"
+    assert value.validation_diagnostics[0].status == "failed"
+    assert value.validation_diagnostics[0].reason_codes == ["range_warning"]
+    assert value.proof_ref.id == "proof:temperature" and value.source_selection_refs.value
+
+
+def test_public_relationship_and_group_review_diagnostics_are_not_lost(tool_graph_payload):
+    group = tool_graph_payload["graph"]["relationship_groups"][0]
+    diagnostic = {"check": "relation_graph", "status": "failed",
+                  "reason_codes": ["direction_mismatch"], "message": "方向缺少原文依据。"}
+    group.update(decision_status="unsupported", model_supported=False, policy_eligible=False,
+                 reason="原文关系候选未采信。", validation_diagnostics=[diagnostic])
+    edge = {key: value for key, value in group.items()
+            if key not in {"object_refs", "selection", "selection_evidence_refs"}}
+    edge.update(candidate_id="edge", object_ref=group["object_refs"][0])
+    tool_graph_payload["graph"]["edges"] = [edge]
+    response = _read_tool_graph(tool_graph_payload, "all_candidates")
+    for item in [response.relationships[0], response.relationship_groups[0]]:
+        assert item.decision_status == "unsupported"
+        assert item.reason == "原文关系候选未采信。"
+        assert item.validation_diagnostics[0].model_dump() == diagnostic
+        assert item.source_selection_refs.predicate_bridge
+
+
 def test_public_projection_registers_role_specific_opaque_source_refs(tmp_path):
     document = Document()
     document.add_heading("产品", level=1)

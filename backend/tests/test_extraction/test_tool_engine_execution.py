@@ -101,7 +101,7 @@ def setup(tmp_path, monkeypatch, current_run, *, polarity="affirmed", identity_l
                 subject = view["subject_ref"]["id"]
                 answer["external_links"] = [{
                     "local_id": "archive-link", "subject_id": subject,
-                    "external_candidate_id": f"archive:{subject}",
+                    "external_candidate_id": "archive-candidate",
                     "identity_support": [quote(unit.text)],
                 }]
         else:
@@ -140,7 +140,7 @@ def setup(tmp_path, monkeypatch, current_run, *, polarity="affirmed", identity_l
             if subject["root"]:
                 return []
             return [ExternalCandidate(
-                candidate_id=f"archive:{subject['entity_id']}", source_id="test-archive",
+                candidate_id="archive-candidate", source_id="test-archive",
                 system="mock", dataset="objects", record_key=subject["entity_id"],
                 record_version="v1", class_iri=CHILD,
                 matches=[dict(predicate_iri="urn:key", document_quote=quote(subject["label"]),
@@ -170,7 +170,7 @@ def setup(tmp_path, monkeypatch, current_run, *, polarity="affirmed", identity_l
 def test_identity_append_preserves_entity_and_requires_exact_finalized_target(
     tmp_path, monkeypatch, current_run, tamper,
 ):
-    args, executor, _requests, _contexts, load = setup(
+    args, executor, requests, _contexts, load = setup(
         tmp_path, monkeypatch, current_run, identity_links=True,
     )
     store, run, token = current_run
@@ -227,7 +227,7 @@ def test_identity_append_preserves_entity_and_requires_exact_finalized_target(
             index=RecordIndex(args["ir"]), expected_version=run.work_version,
         ),
     )
-    assert len(enriched) == 2 and len(set(enriched)) == 2
+    assert len(enriched) == 2 and len(set(enriched)) == 2, result.diagnostics
     assert len(result.graph.relationship_groups) == 1
     root = next(node for node in result.graph.nodes if node.root)
     assert root.entity_id == result.graph.root_ref.id and root.class_iri == ROOT
@@ -307,7 +307,7 @@ def test_group_scope_and_exact_entity_source_survive_cold_pause(
                  work_hook=work, batch_hook=batch)
     result = executor(progress_hook=lambda _stage: not pause_now).run(**args, **hooks)
     if pause:
-        assert len(requests) == (3 if pause == "root_batch" else 1)
+        assert len(requests) == (2 if pause == "root_batch" else 1)
         assert not result.graph.progress.model_calls_unresolved
         assert result.graph.artifact_status == "partial"
         rows = current_state.restore_work(store, run, run.run_fingerprint).work_state
@@ -318,7 +318,7 @@ def test_group_scope_and_exact_entity_source_survive_cold_pause(
             ), resume_state={"work_state": rows, "frontier": control["frontier_policy"],
                              "diagnostics": control["diagnostics"]},
         )
-    assert len([r for r in requests if r["predicate_iri"] == LINK]) == 3
+    assert len([r for r in requests if r["predicate_iri"] == LINK]) == 2
     assert len(result.graph.relationship_groups) == 1
     assert result.graph.edges == []
     assert result.graph.projection == "verified"
@@ -340,6 +340,55 @@ def test_group_scope_and_exact_entity_source_survive_cold_pause(
     display = current_state.read_display(store, run)
     assert display["graph"]["relationship_groups"] == [group.model_dump(mode="json")]
     assert len({item["scope"]["scope_id"] for item in display["graph"]["coverage"]}) == 3
+
+
+def test_semantic_plan_collision_executes_only_the_canonical_plan(
+    tmp_path, monkeypatch, current_run,
+):
+    from app.services.extraction.ontology_guided import executor as executor_module
+
+    store, run, token = current_run
+    args, executor, _requests, contexts, load = setup(tmp_path, monkeypatch, current_run)
+    identity = executor_module.semantic_retrieval_plan_key
+
+    def equivalent_child_search(plan, *, dependency_refs, generation):
+        if plan.subject.class_iri == CHILD:
+            record_hash = (
+                plan.search_scope_ref["record_hash"]
+                if plan.search_scope_ref is not None else plan.frozen_record_hash
+            )
+            return evidence_hash({
+                "predicate_iri": plan.predicate_iri,
+                "record_hash": record_hash,
+                "proof_generation": generation,
+            })
+        return identity(
+            plan,
+            dependency_refs=dependency_refs,
+            generation=generation,
+        )
+
+    monkeypatch.setattr(
+        executor_module,
+        "semantic_retrieval_plan_key",
+        equivalent_child_search,
+    )
+    result = executor().run(
+        **args,
+        protocol_result_loader=load,
+        model_call_hook=lambda state: current_state.persist_calls(
+            store, run, token, run.run_fingerprint, state,
+        ),
+    )
+    created = [value for kind, value in result.events
+               if kind == "retrieval_plan_created"
+               and value["subject"]["class_iri"] == CHILD]
+    deduplicated = [value for kind, value in result.events
+                    if kind == "retrieval_plan_deduplicated"]
+    assert len(created) == 1 and len(deduplicated) == 1
+    assert deduplicated[0]["canonical_slot"] != deduplicated[0]["duplicate_slot"]
+    assert len([task for task, _values in contexts if not task.subject.is_document_root]) == 1
+    assert len(result.graph.relationship_groups) == 1
 
 
 def test_verified_negative_group_does_not_expand_member_tasks(tmp_path, monkeypatch, current_run):

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { ArrowDown, Brain, FileText, Network, Radio, Terminal, Wrench } from "lucide-react";
+import { ArrowDown, Brain, Check, Copy, FileText, Network, Radio, Terminal, Wrench } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -32,7 +32,7 @@ const ATTRIBUTE_REASONS: Record<string, string> = {
   attribute_answer_outside_scope: "模型回答超出授权字段或候选范围",
 };
 const TOOL_NAMES: Record<string, string> = {
-  get_schema_card: "读取本体约束", inspect_evidence: "读取原文证据", propose_mentions: "实体提及识别",
+  get_schema_card: "读取本体约束", inspect_evidence: "读取原文证据",
   resolve_source_anchor: "定位原文引用", query_instances: "查询外部实体", retrieve_evidence: "检索证据",
   check_claim_binding: "校验主体与关系归属", validate_metric: "校验数值与单位",
   validate_graph: "本体与图谱约束校验", propose_repair: "提出修正",
@@ -74,8 +74,57 @@ export function useDocumentHarness(runId: string | null, status: DocumentAnalysi
   return { data: data?.recognition_run_id === runId ? data : null, error, applySnapshot };
 }
 
-function JsonBlock({ value }: { value: unknown }) {
-  return <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-all rounded-md bg-muted/40 p-3 font-mono text-xs leading-6">{json(value) ?? "未提供"}</pre>;
+function CopyOutputButton({ text, truncated = false }: { text: string; truncated?: boolean }) {
+  const [feedback, setFeedback] = useState<{ text: string; status: "copied" | "error" } | null>(null);
+  useEffect(() => {
+    if (!feedback) return;
+    const timer = setTimeout(() => setFeedback(null), 2500);
+    return () => clearTimeout(timer);
+  }, [feedback]);
+  const status = feedback?.text === text ? feedback.status : null;
+  const label = truncated ? "复制当前内容（源内容已截断）" : "复制完整内容";
+  return <div className="flex items-center justify-end gap-2">
+    <span role="status" className={cn("text-xs", status === "error" ? "text-destructive" : "sr-only")}>
+      {status === "copied" ? "已复制" : status === "error" ? "复制失败，请手动选择内容复制。" : ""}
+    </span>
+    <Button type="button" size="icon" variant="ghost" className="size-7 shrink-0"
+      aria-label={label} title={status === "copied" ? "已复制" : label} disabled={!text}
+      onClick={async (event) => {
+        event.stopPropagation();
+        const button = event.currentTarget;
+        try {
+          if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
+          else {
+            // Intranet HTTP pages may not expose the Clipboard API.
+            const textarea = document.createElement("textarea");
+            textarea.value = text;
+            textarea.readOnly = true;
+            textarea.tabIndex = -1;
+            textarea.style.cssText = "position:fixed;opacity:0;pointer-events:none";
+            (button.closest('[role="dialog"]') ?? document.body).appendChild(textarea);
+            const focused = document.activeElement;
+            try {
+              textarea.select();
+              if (!document.execCommand("copy")) throw new Error("Copy failed");
+            } finally {
+              textarea.remove();
+              if (focused instanceof HTMLElement) focused.focus({ preventScroll: true });
+            }
+          }
+          setFeedback({ text, status: "copied" });
+        } catch { setFeedback({ text, status: "error" }); }
+      }}>
+      {status === "copied" ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
+    </Button>
+  </div>;
+}
+
+function JsonBlock({ value, truncated = false }: { value: unknown; truncated?: boolean }) {
+  const text = json(value) ?? "未提供";
+  return <div className="mt-2 rounded-md bg-muted/40">
+    <div className="px-2 pt-1"><CopyOutputButton text={text} truncated={truncated} /></div>
+    <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-all p-3 pt-0 font-mono text-xs leading-6">{text}</pre>
+  </div>;
 }
 function Fold({ title, children }: { title: string; children: ReactNode }) {
   return <details className="border-t py-3"><summary className="cursor-pointer text-xs font-medium">{title}</summary>{children}</details>;
@@ -86,7 +135,7 @@ export function HarnessConfiguration({ data }: { data: DocumentHarness | null })
   return <div className="grid min-w-0 gap-3 md:grid-cols-2">
     <section className="space-y-2 rounded-md bg-muted/40 p-3" aria-label="模型与工具配置">
       <p className="font-medium text-foreground">模型与工具</p><p className="break-words">{config?.model || "尚无冻结模型信息"} {config?.api_protocol && `· ${config.api_protocol}`}</p>
-      <div className="flex flex-wrap gap-2">{config && [["GLiNER", config.gliner_enabled], ["Mock", config.mock_enabled], ["实验词表", config.vocabulary_enabled]].map(([name, enabled]) => <Badge variant="outline" key={String(name)}>{name} · {enabled ? "已启用" : "未启用"}</Badge>)}</div>
+      <div className="flex flex-wrap gap-2">{config && [["Mock", config.mock_enabled], ["实验词表", config.vocabulary_enabled]].map(([name, enabled]) => <Badge variant="outline" key={String(name)}>{name} · {enabled ? "已启用" : "未启用"}</Badge>)}</div>
       <p>本次观察期间实际工具调用：{Object.entries(data?.snapshot?.tool_counts || {}).map(([name, count]) => `${TOOL_NAMES[name] || name} ${count} 次`).join("、") || "暂无"}</p>
     </section>
     <section className="space-y-2 rounded-md bg-muted/40 p-3" aria-label="请求预算与用量">
@@ -217,7 +266,7 @@ function Prompt({ context }: { context: HarnessContext }) {
       : "当前任务";
   return <><div className="flex items-center justify-between"><h4 className="font-semibold">提示词</h4><Button size="sm" variant="ghost" onClick={() => setRaw(!raw)}>{raw ? "结构化" : "原始输入"}</Button></div>
     {raw ? <><p className="text-xs text-muted-foreground">实际提交字段；不透明推理字段已隐藏。</p><JsonBlock value={context.request} /></> : <div className="space-y-4 pt-3">
-      <section className="rounded-md bg-muted/40 p-4"><p className="mb-2 text-xs font-medium">指令 · instructions</p><p className="whitespace-pre-wrap break-words text-xs leading-6">{instructionText}</p></section>
+      <section className="rounded-md bg-muted/40 p-4"><div className="mb-2 flex items-center justify-between gap-2"><p className="text-xs font-medium">指令 · instructions</p><CopyOutputButton text={instructionText} /></div><p className="whitespace-pre-wrap break-words text-xs leading-6">{instructionText}</p></section>
       <p className="text-xs font-medium">当前任务输入 · {phaseLabel(task.stage as keyof typeof PHASES, taskKind) || "见原始输入"}</p>
       <Fold title={title}><JsonBlock value={sections.task} /><p className="mt-2 text-xs text-muted-foreground">本体约束见“本体 Schema 卡片”页。</p></Fold>
       <Fold title="授权原文与摘要 · 查看输入片段"><JsonBlock value={sections.sources} /></Fold>
@@ -261,7 +310,7 @@ export function DocumentHarnessStream({ status, data, connected, error }: {
   return <section aria-label="Harness实时输出" className="mb-3 min-w-0 overflow-hidden rounded-lg border bg-background">
     <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3 text-xs">
       <div className="flex flex-wrap items-center gap-2"><Radio className={cn("size-4", writing ? "text-primary" : "text-muted-foreground")} /><strong>LLM 实时输出</strong><span className="text-muted-foreground">{call ? `${call.model} · ${phaseLabel(call.stage, call.task_kind)}` : "等待模型调用"}</span></div>
-      <Badge title={snapshot?.updated_at ? `最近返回 ${new Date(snapshot.updated_at).toLocaleTimeString()}` : undefined} variant="outline">{live ? connected ? "实时已连接" : "实时未连接 · 定时读取" : "实时已停止"}</Badge>
+      <div className="flex items-center gap-2"><Badge title={snapshot?.updated_at ? `最近返回 ${new Date(snapshot.updated_at).toLocaleTimeString()}` : undefined} variant="outline">{live ? connected ? "实时已连接" : "实时未连接 · 定时读取" : "实时已停止"}</Badge><CopyOutputButton text={snapshot?.output || ""} truncated={snapshot?.truncated.includes("output")} /></div>
     </div>
     <div className="relative px-4 py-2">
       <div ref={outputRef} onScroll={(event) => { const element = event.currentTarget;
@@ -281,7 +330,7 @@ export function DocumentHarnessStream({ status, data, connected, error }: {
 
 export function DocumentHarnessInformation({ runId, status, data, error, children }: {
   runId: string; status: DocumentAnalysisStatus; data: DocumentHarness | null;
-  error: string | null; children: ReactNode;
+  error: string | null; children?: ReactNode;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
@@ -299,12 +348,12 @@ export function DocumentHarnessInformation({ runId, status, data, error, childre
       <HarnessConfiguration data={data} />
       <HarnessAttributeDisambiguations data={data} status={status} />
       <div className="flex flex-wrap items-start gap-x-6 border-t text-foreground">
-        <details className="min-w-0 py-2 open:w-full"><summary className="cursor-pointer text-xs font-medium"><Brain className="mr-2 inline size-4 text-muted-foreground" />Thinking <span className="ml-2 font-normal text-muted-foreground">{snapshot?.thinking ? "模型返回内容" : "暂无内容"}</span></summary><JsonBlock value={snapshot?.thinking || "模型尚未返回可读 Thinking 内容。"} />{snapshot?.truncated.includes("thinking") && <p className="text-xs text-muted-foreground">仅显示末尾 128 Ki 字符。</p>}</details>
+        <details className="min-w-0 py-2 open:w-full"><summary className="cursor-pointer text-xs font-medium"><Brain className="mr-2 inline size-4 text-muted-foreground" />Thinking <span className="ml-2 font-normal text-muted-foreground">{snapshot?.thinking ? "模型返回内容" : "暂无内容"}</span></summary><JsonBlock value={snapshot?.thinking || "模型尚未返回可读 Thinking 内容。"} truncated={snapshot?.truncated.includes("thinking")} />{snapshot?.truncated.includes("thinking") && <p className="text-xs text-muted-foreground">仅显示末尾 128 Ki 字符。</p>}</details>
         <details className="min-w-0 py-2 open:w-full"><summary className="cursor-pointer text-xs font-medium"><Wrench className="mr-2 inline size-4 text-muted-foreground" />操作 <span className="ml-2 font-normal text-muted-foreground">最近 {snapshot?.operations.length || 0} 项</span></summary>
           <div className="mt-3 max-h-96 space-y-2 overflow-auto">{snapshot?.operations.length ? [...snapshot.operations].reverse().map((operation) => <details key={operation.id} className="rounded-md border p-3 text-xs">
             <summary className="cursor-pointer"><span className="mr-2 text-muted-foreground">{{ model: "模型请求", tool: "工具调用", validation: "确定性校验", graph: "图谱更新" }[operation.kind]}</span><strong>{TOOL_NAMES[operation.name] || operation.name}</strong><span className="ml-3">{operation.status === "running" && !live ? "执行已停止" : STATUS[operation.status] || operation.status}</span><span className="ml-2 text-muted-foreground">{operation.elapsed_ms == null ? "" : `${(operation.elapsed_ms / 1000).toFixed(1)}s`}</span></summary>
-            {operation.arguments && <><p className="mt-3">参数{operation.arguments.truncated && "（已截断）"}</p><JsonBlock value={operation.arguments.text} /></>}
-            {operation.result && <><p className="mt-3">结果{operation.result.truncated && "（已截断）"}</p><JsonBlock value={operation.result.text} /></>}
+            {operation.arguments && <><p className="mt-3">参数{operation.arguments.truncated && "（已截断）"}</p><JsonBlock value={operation.arguments.text} truncated={operation.arguments.truncated} /></>}
+            {operation.result && <><p className="mt-3">结果{operation.result.truncated && "（已截断）"}</p><JsonBlock value={operation.result.text} truncated={operation.result.truncated} /></>}
           </details>) : <p className="text-xs text-muted-foreground">尚无操作记录</p>}</div><p className="mt-2 text-xs text-muted-foreground">模型和工具返回需经完整校验后才进入关系图谱。</p>
         </details>
         <details className="min-w-0 py-2 open:w-full" onToggle={(event) => { if (event.target === event.currentTarget) setContextOpen(event.currentTarget.open); }}><summary className="cursor-pointer text-xs font-medium"><Terminal className="mr-2 inline size-4 text-muted-foreground" />上下文 <span className="ml-2 font-normal text-muted-foreground">当前调用 · 只读</span></summary>
@@ -312,7 +361,7 @@ export function DocumentHarnessInformation({ runId, status, data, error, childre
           <ContextPanel runId={runId} callId={call?.call_id} open={expanded && contextOpen} />
         </details>
       </div>
-      {children}
+      {children && <div className="border-t pt-3">{children}</div>}
     </div>
   </details>;
 }

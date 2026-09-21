@@ -1,0 +1,67 @@
+{
+  "baseUrl": "http://sldpr-demo.infilake.com:8081",
+  "runId": "e3763123-4c23-4cbf-8276-19825b0782d5",
+  "newTabVisible": true,
+  "selected": true,
+  "targetGraphInitialStatus": 404,
+  "targetGraphRefreshStatus": 404,
+  "writes": [],
+  "errors": [],
+  "api": [
+    {
+      "path": "/api/document-analysis/runs/e3763123-4c23-4cbf-8276-19825b0782d5/target-graph",
+      "status": 404
+    },
+    {
+      "path": "/api/document-analysis/runs",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/e3763123-4c23-4cbf-8276-19825b0782d5",
+      "status": 200
+    },
+    {
+      "path": "/api/entities",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/e3763123-4c23-4cbf-8276-19825b0782d5/target-graph",
+      "status": 404
+    },
+    {
+      "path": "/api/document-analysis/runs/e3763123-4c23-4cbf-8276-19825b0782d5",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/e3763123-4c23-4cbf-8276-19825b0782d5/source",
+      "status": 200
+    }
+  ],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "requestFailures": [
+    {
+      "path": "/api/entities",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "path": "/api/document-analysis/runs/e3763123-4c23-4cbf-8276-19825b0782d5",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "path": "/api/document-analysis/runs/e3763123-4c23-4cbf-8276-19825b0782d5/target-graph",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "path": "/api/document-analysis/runs",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "path": "/api/document-analysis/runs/e3763123-4c23-4cbf-8276-19825b0782d5/source",
+      "error": "net::ERR_ABORTED"
+    }
+  ]
+}

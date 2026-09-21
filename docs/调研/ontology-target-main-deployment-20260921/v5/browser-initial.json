@@ -1,0 +1,66 @@
+{
+  "runId": "84956c8a-6988-43cb-bab6-e4ad7e3d026d",
+  "phase": "candidate_graph",
+  "candidates": 0,
+  "subjects": 0,
+  "dashed": 12,
+  "solid": 0,
+  "selectedText": null,
+  "summary": {
+    "relationships": {
+      "total": 12,
+      "supported": 0,
+      "completed": 0,
+      "percent": null
+    },
+    "properties": {
+      "total": 0,
+      "supported": 0,
+      "completed": 0,
+      "percent": null
+    },
+    "pending_expansion_count": 0,
+    "notes": [
+      "当前仅发现实体与原文关系候选；关系全部以虚线显示，尚未核验。",
+      "本体关系目标不是原文事实，未连接的实体也可选择并展开。",
+      "本阶段不识别或校验属性，也不计算关系或属性的实证完整度。",
+      "候选的否定、条件、计划及备选成员保留原文标签。"
+    ]
+  },
+  "writes": [],
+  "errors": [],
+  "api": [
+    {
+      "path": "/api/document-analysis/runs/84956c8a-6988-43cb-bab6-e4ad7e3d026d",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs",
+      "status": 200
+    },
+    {
+      "path": "/api/entities",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/84956c8a-6988-43cb-bab6-e4ad7e3d026d/target-graph",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/84956c8a-6988-43cb-bab6-e4ad7e3d026d/source",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/84956c8a-6988-43cb-bab6-e4ad7e3d026d",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/84956c8a-6988-43cb-bab6-e4ad7e3d026d/source",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/84956c8a-6988-43cb-bab6-e4ad7e3d026d/target-graph",
+      "status": 200
+    }
+  ]
+}

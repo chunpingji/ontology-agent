@@ -1,0 +1,1025 @@
+{
+  "run_id": "3d563507-90da-495c-998e-62cb83244521",
+  "reviewed_at": "2026-09-21T06:18:30.485726+00:00",
+  "review_kind": "independent_post_hoc_source_review",
+  "model_calls_by_reviewer": 0,
+  "application_mutations_by_reviewer": 0,
+  "source_hashes": {
+    "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+    "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+    "parser_version": "9"
+  },
+  "ontology_snapshot_id": "54c748b83397a74fd7268f96c8f72826c572bc0b5a457fec8e8e18da055831f2",
+  "increments": [
+    {
+      "group": 1,
+      "lineage_id": "7aeb1a5bdfd0229315674308e7422ec53a6223a096f790ec054823f9187a1c9e",
+      "immutable_results": {
+        "discovery": "7fa4d999acdeeef8306bcc00e2cc4b83c2402ef804cdbf1f02c2962b367efa33",
+        "verification": "75786dcd5f007bc1940db9959ab0f5f55920e58c230e82ea95ba5f2d4095a1c0",
+        "outcome": "f08befdf1eb62d33b9d984279010ec78909134f264dfbf1fd80501c5b61e49fd"
+      },
+      "reviewed_model_turns": [
+        {
+          "immutable_result_key": "b5790e358af83b702d28be0bed29b829527711ae54e1401299add84b18cf0cee",
+          "lineage_id": "7aeb1a5bdfd0229315674308e7422ec53a6223a096f790ec054823f9187a1c9e",
+          "attempt": 1,
+          "stage": "discovery",
+          "input_hash": "cdd523fedf7894bfe77e3220a054520cc5d5ded41a152ecd8e21ef39a6347550",
+          "response_id": "resp_1KduJWtHFcXBworh3TK6DorWKkD98z11",
+          "response_status": "completed",
+          "incomplete_details": null,
+          "error": null,
+          "usage": {
+            "input_tokens": 10010,
+            "input_tokens_details": {
+              "cached_tokens": 1573
+            },
+            "output_tokens": 565,
+            "total_tokens": 10575
+          },
+          "output_text_sha256": "567feb9b9713d42c820913b1da12d5e7239675fa0c00e6a588242d94625cd38c",
+          "model_output": {
+            "entities": [
+              {
+                "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+                "identifier_claims": [],
+                "local_id": "e1",
+                "mentions": [
+                  {
+                    "context_text": null,
+                    "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                    "text": "DCM易溶，H2O、Heptane难溶"
+                  }
+                ],
+                "record_components": [],
+                "representation": "mention"
+              }
+            ],
+            "external_links": [],
+            "observations": [
+              {
+                "kind": "unbound",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/dosageForm",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                  "text": "制剂剂型：口服片剂"
+                },
+                "reason": "实体e1由溶解性属性定义，但原文未建立其作为DrugProduct与口服片剂属性的直接归属联系，且存在多个属性片段指向同一未明确类型的主体。",
+                "subject_id": "e1"
+              }
+            ],
+            "properties": [
+              {
+                "bridge_kind": "explicit_assertion",
+                "bridge_ref_ids": [],
+                "field_support": [
+                  {
+                    "context_text": null,
+                    "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                    "text": "溶解性："
+                  }
+                ],
+                "local_id": "p1",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/solubility",
+                "qualifiers": {
+                  "condition_support": [],
+                  "modality": "asserted",
+                  "polarity": "affirmed",
+                  "scope_qualifiers": []
+                },
+                "subject_id": "e1",
+                "unit_support": [],
+                "value_quote": {
+                  "context_text": null,
+                  "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                  "text": "DCM易溶，H2O、Heptane难溶"
+                }
+              }
+            ],
+            "reference_bindings": [],
+            "relations": []
+          }
+        },
+        {
+          "immutable_result_key": "c09f8b0b64f0836575a57ac552b5e244c7953bda474fa6147f315f97030ea045",
+          "lineage_id": "7aeb1a5bdfd0229315674308e7422ec53a6223a096f790ec054823f9187a1c9e",
+          "attempt": 2,
+          "stage": "verification",
+          "input_hash": "3576e5943b2c388368ce10594566f4ee82f345480dcb15cb6299bcc2592193cb",
+          "response_id": "resp_ZVbaoQF8LM59Hva7VmWbyXcpw1JxSmCi",
+          "response_status": "completed",
+          "incomplete_details": null,
+          "error": null,
+          "usage": {
+            "input_tokens": 10855,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 1679,
+            "total_tokens": 12534
+          },
+          "output_text_sha256": "95fd6a48730ca31a06487321bcab56ab4e3e3afff3dc5cb2dfaea7f9284bed1f",
+          "model_output": {
+            "verifications": [
+              {
+                "content_hash": "327235afe6ad5f087e3110b02827c4097a70702219df19734cf0a4222cc73a5f",
+                "facets": [
+                  {
+                    "counterevidence_support": [],
+                    "name": "type",
+                    "reason": "原文记载‘制剂剂型：口服片剂’及‘性状：类白色到白色粉末’，证明该实体为具有明确形态和剂型的药物产品(DrugProduct)。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                        "text": "制剂剂型：口服片剂"
+                      },
+                      {
+                        "context_text": null,
+                        "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+                        "text": "性状：类白色到白色粉末"
+                      }
+                    ],
+                    "verdict": "supported"
+                  },
+                  {
+                    "counterevidence_support": [],
+                    "name": "referent",
+                    "reason": "原文通过唯一的项目名称、代码及明确化学名和分子式，将实体锚定至具体化学实体及其制剂。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+                        "text": "项目名称：HRS-1597"
+                      },
+                      {
+                        "context_text": null,
+                        "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+                        "text": "项目代码：HRXS-P-2419"
+                      },
+                      {
+                        "context_text": null,
+                        "evidence_id": "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+                        "text": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide"
+                      },
+                      {
+                        "context_text": null,
+                        "evidence_id": "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+                        "text": "分子式：C23H28N6O5S"
+                      }
+                    ],
+                    "verdict": "supported"
+                  },
+                  {
+                    "counterevidence_support": [],
+                    "name": "subject_role",
+                    "reason": "溶解性作为物质固有物理属性，直接归属于实体本身，实体作为属性的拥有者(subject_role)成立。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                        "text": "溶解性： DCM易溶，H2O、Heptane难溶"
+                      }
+                    ],
+                    "verdict": "supported"
+                  }
+                ],
+                "target_id": "87b4cc6aeae3029efd9e84f287268060580f13f1cbffad886de27745349ee31a"
+              },
+              {
+                "content_hash": "e06fe7b37bc6050df0187d27992fd3be5ea6013ac992bb3fcd8e224f3e2d33bc",
+                "facets": [
+                  {
+                    "counterevidence_support": [],
+                    "name": "subject_binding",
+                    "reason": "属性记录明确归属于实体e1的同一原文单元，主体绑定成立。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                        "text": "溶解性： DCM易溶，H2O、Heptane难溶"
+                      }
+                    ],
+                    "verdict": "supported"
+                  },
+                  {
+                    "counterevidence_support": [],
+                    "name": "field_role",
+                    "reason": "原文字段标签‘溶解性’与属性iri对应的描述‘记录药物产品...的溶解性’完全一致。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                        "text": "溶解性： DCM易溶，H2O、Heptane难溶"
+                      }
+                    ],
+                    "verdict": "supported"
+                  },
+                  {
+                    "counterevidence_support": [],
+                    "name": "predicate",
+                    "reason": "属性谓词与原文记录的物理性状字段对应，声明合法。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                        "text": "溶解性： DCM易溶，H2O、Heptane难溶"
+                      }
+                    ],
+                    "verdict": "supported"
+                  },
+                  {
+                    "counterevidence_support": [],
+                    "name": "bridge",
+                    "reason": "属性值直接源自原文声明，无中间推理桥梁，为显式断言。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                        "text": "溶解性： DCM易溶，H2O、Heptane难溶"
+                      }
+                    ],
+                    "verdict": "supported"
+                  },
+                  {
+                    "counterevidence_support": [],
+                    "name": "value",
+                    "reason": "原文逐字记录了溶解性描述，与声明值一致。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                        "text": "溶解性： DCM易溶，H2O、Heptane难溶"
+                      }
+                    ],
+                    "verdict": "supported"
+                  },
+                  {
+                    "counterevidence_support": [],
+                    "name": "qualifiers",
+                    "reason": "原文为肯定陈述，无否定、条件或模态修饰， qualifiers 声明为 asserted/affirmed 成立。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                        "text": "溶解性： DCM易溶，H2O、Heptane难溶"
+                      }
+                    ],
+                    "verdict": "supported"
+                  },
+                  {
+                    "counterevidence_support": [],
+                    "name": "counterevidence",
+                    "reason": "经核查同一字段及关联理化性质记录，未发现关于溶解性的相反陈述或矛盾数据。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                        "text": "溶解性： DCM易溶，H2O、Heptane难溶"
+                      }
+                    ],
+                    "verdict": "supported"
+                  }
+                ],
+                "target_id": "9790bbda16a01512a6b2f59abeb2be0bfbe98b379f3b8c7b60586c0066e063dd"
+              }
+            ]
+          }
+        }
+      ],
+      "frozen_discovery": {
+        "entities": [
+          {
+            "local_id": "e1",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+            "representation": "mention",
+            "mentions": [
+              {
+                "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                "text": "DCM易溶，H2O、Heptane难溶",
+                "context_text": null
+              }
+            ],
+            "record_components": [],
+            "identifier_claims": []
+          }
+        ],
+        "properties": [
+          {
+            "local_id": "p1",
+            "subject_id": "e1",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/solubility",
+            "value_quote": {
+              "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+              "text": "DCM易溶，H2O、Heptane难溶",
+              "context_text": null
+            },
+            "field_support": [
+              {
+                "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                "text": "溶解性：",
+                "context_text": null
+              }
+            ],
+            "unit_support": [],
+            "qualifiers": {
+              "polarity": "affirmed",
+              "modality": "asserted",
+              "condition_support": [],
+              "scope_qualifiers": []
+            },
+            "bridge_kind": "explicit_assertion",
+            "bridge_ref_ids": []
+          }
+        ],
+        "relations": [],
+        "external_links": [],
+        "observations": [
+          {
+            "subject_id": "e1",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/dosageForm",
+            "quote": {
+              "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+              "text": "制剂剂型：口服片剂",
+              "context_text": null
+            },
+            "kind": "unbound",
+            "reason": "实体e1由溶解性属性定义，但原文未建立其作为DrugProduct与口服片剂属性的直接归属联系，且存在多个属性片段指向同一未明确类型的主体。"
+          }
+        ],
+        "reference_bindings": [],
+        "assertion_generation": 1,
+        "evidence_revision": 1,
+        "content_hash": "ef7fbbfb611bdb80ebf651534dce61dda142c8bf3038592295e4babe04a96a7c",
+        "local_ref_map": {
+          "e1": {
+            "id": "9c6e2926cf9c54a9d6ee3b6f6db4e265fa79ba5233b6aa71d6fecccde9bc3475",
+            "revision": 1
+          },
+          "p1": {
+            "id": "14e23ccaa6e43af162fde7a30b186b3385b6bdd9da698a17bbf402760992d7b9",
+            "revision": 1
+          }
+        },
+        "claim_issues": {}
+      },
+      "quote_checks": [
+        {
+          "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+          "paragraph_1_based": 39,
+          "quote": "DCM易溶，H2O、Heptane难溶",
+          "source_text": "溶解性： DCM易溶，H2O、Heptane难溶",
+          "matching_intervals": [
+            [
+              5,
+              24
+            ]
+          ],
+          "unique_exact_quote": true
+        },
+        {
+          "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+          "paragraph_1_based": 42,
+          "quote": "制剂剂型：口服片剂",
+          "source_text": "制剂剂型：口服片剂 ",
+          "matching_intervals": [
+            [
+              0,
+              9
+            ]
+          ],
+          "unique_exact_quote": true
+        },
+        {
+          "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+          "paragraph_1_based": 39,
+          "quote": "溶解性：",
+          "source_text": "溶解性： DCM易溶，H2O、Heptane难溶",
+          "matching_intervals": [
+            [
+              0,
+              4
+            ]
+          ],
+          "unique_exact_quote": true
+        },
+        {
+          "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+          "paragraph_1_based": 38,
+          "quote": "性状：类白色到白色粉末",
+          "source_text": "性状：类白色到白色粉末",
+          "matching_intervals": [
+            [
+              0,
+              11
+            ]
+          ],
+          "unique_exact_quote": true
+        },
+        {
+          "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+          "paragraph_1_based": 33,
+          "quote": "项目名称：HRS-1597",
+          "source_text": "项目名称：HRS-1597",
+          "matching_intervals": [
+            [
+              0,
+              13
+            ]
+          ],
+          "unique_exact_quote": true
+        },
+        {
+          "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+          "paragraph_1_based": 34,
+          "quote": "项目代码：HRXS-P-2419",
+          "source_text": "项目代码：HRXS-P-2419",
+          "matching_intervals": [
+            [
+              0,
+              16
+            ]
+          ],
+          "unique_exact_quote": true
+        },
+        {
+          "evidence_id": "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+          "paragraph_1_based": 35,
+          "quote": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+          "source_text": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+          "matching_intervals": [
+            [
+              0,
+              157
+            ]
+          ],
+          "unique_exact_quote": true
+        },
+        {
+          "evidence_id": "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+          "paragraph_1_based": 31,
+          "quote": "分子式：C23H28N6O5S",
+          "source_text": "分子式：C23H28N6O5S",
+          "matching_intervals": [
+            [
+              0,
+              15
+            ]
+          ],
+          "unique_exact_quote": true
+        },
+        {
+          "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+          "paragraph_1_based": 39,
+          "quote": "溶解性： DCM易溶，H2O、Heptane难溶",
+          "source_text": "溶解性： DCM易溶，H2O、Heptane难溶",
+          "matching_intervals": [
+            [
+              0,
+              24
+            ]
+          ],
+          "unique_exact_quote": true
+        }
+      ],
+      "stored_verification_summary": [
+        {
+          "target_id": "87b4cc6aeae3029efd9e84f287268060580f13f1cbffad886de27745349ee31a",
+          "content_hash": "327235afe6ad5f087e3110b02827c4097a70702219df19734cf0a4222cc73a5f",
+          "missing_facets": [],
+          "validation_issues": [],
+          "decisions": [
+            {
+              "decision_id": "68cc1c922f3696a982a3e39216fab85d963a0368ae7a2fd200668d4591855622",
+              "check_kind": "type",
+              "verdict": "supported",
+              "reason": "原文记载‘制剂剂型：口服片剂’及‘性状：类白色到白色粉末’，证明该实体为具有明确形态和剂型的药物产品(DrugProduct)。",
+              "support_refs": [
+                {
+                  "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                  "parser_version": "9",
+                  "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                  "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                  "section_node_id": "section:28",
+                  "block_id": "paragraph:41:0",
+                  "paragraph_index": 41,
+                  "fragment_index": 0,
+                  "table_path": null,
+                  "row_index": null,
+                  "column_index": null,
+                  "span_start": 0,
+                  "span_end": 9,
+                  "physical_page_number": 3
+                },
+                {
+                  "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                  "parser_version": "9",
+                  "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                  "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+                  "section_node_id": "section:28",
+                  "block_id": "paragraph:37:0",
+                  "paragraph_index": 37,
+                  "fragment_index": 0,
+                  "table_path": null,
+                  "row_index": null,
+                  "column_index": null,
+                  "span_start": 0,
+                  "span_end": 11,
+                  "physical_page_number": 3
+                }
+              ],
+              "counterevidence_refs": []
+            },
+            {
+              "decision_id": "3e6f998725b4409e3aff7853644bc7fd0e28a20cea5c59148b38e65f05f91f62",
+              "check_kind": "referent",
+              "verdict": "supported",
+              "reason": "原文通过唯一的项目名称、代码及明确化学名和分子式，将实体锚定至具体化学实体及其制剂。",
+              "support_refs": [
+                {
+                  "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                  "parser_version": "9",
+                  "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                  "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+                  "section_node_id": "section:28",
+                  "block_id": "paragraph:32:0",
+                  "paragraph_index": 32,
+                  "fragment_index": 0,
+                  "table_path": null,
+                  "row_index": null,
+                  "column_index": null,
+                  "span_start": 0,
+                  "span_end": 13,
+                  "physical_page_number": 3
+                },
+                {
+                  "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                  "parser_version": "9",
+                  "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                  "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+                  "section_node_id": "section:28",
+                  "block_id": "paragraph:33:0",
+                  "paragraph_index": 33,
+                  "fragment_index": 0,
+                  "table_path": null,
+                  "row_index": null,
+                  "column_index": null,
+                  "span_start": 0,
+                  "span_end": 16,
+                  "physical_page_number": 3
+                },
+                {
+                  "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                  "parser_version": "9",
+                  "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                  "evidence_id": "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+                  "section_node_id": "section:28",
+                  "block_id": "paragraph:34:0",
+                  "paragraph_index": 34,
+                  "fragment_index": 0,
+                  "table_path": null,
+                  "row_index": null,
+                  "column_index": null,
+                  "span_start": 0,
+                  "span_end": 157,
+                  "physical_page_number": 3
+                },
+                {
+                  "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                  "parser_version": "9",
+                  "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                  "evidence_id": "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+                  "section_node_id": "section:28",
+                  "block_id": "paragraph:30:0",
+                  "paragraph_index": 30,
+                  "fragment_index": 0,
+                  "table_path": null,
+                  "row_index": null,
+                  "column_index": null,
+                  "span_start": 0,
+                  "span_end": 15,
+                  "physical_page_number": 3
+                }
+              ],
+              "counterevidence_refs": []
+            },
+            {
+              "decision_id": "3591b2239ee30bb4213c15ccebfab37d7d790a3d7a8d19cc87f7a7a9897d4819",
+              "check_kind": "subject_role",
+              "verdict": "supported",
+              "reason": "溶解性作为物质固有物理属性，直接归属于实体本身，实体作为属性的拥有者(subject_role)成立。",
+              "support_refs": [
+                {
+                  "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                  "parser_version": "9",
+                  "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                  "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                  "section_node_id": "section:28",
+                  "block_id": "paragraph:38:0",
+                  "paragraph_index": 38,
+                  "fragment_index": 0,
+                  "table_path": null,
+                  "row_index": null,
+                  "column_index": null,
+                  "span_start": 0,
+                  "span_end": 24,
+                  "physical_page_number": 3
+                }
+              ],
+              "counterevidence_refs": []
+            }
+          ]
+        },
+        {
+          "target_id": "9790bbda16a01512a6b2f59abeb2be0bfbe98b379f3b8c7b60586c0066e063dd",
+          "content_hash": "e06fe7b37bc6050df0187d27992fd3be5ea6013ac992bb3fcd8e224f3e2d33bc",
+          "missing_facets": [],
+          "validation_issues": [],
+          "decisions": [
+            {
+              "decision_id": "00c2a96b637b6a67b71e62335ddb1b998f48857733e409ec4a318bed8cc25bf7",
+              "check_kind": "subject_binding",
+              "verdict": "supported",
+              "reason": "属性记录明确归属于实体e1的同一原文单元，主体绑定成立。",
+              "support_refs": [
+                {
+                  "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                  "parser_version": "9",
+                  "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                  "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                  "section_node_id": "section:28",
+                  "block_id": "paragraph:38:0",
+                  "paragraph_index": 38,
+                  "fragment_index": 0,
+                  "table_path": null,
+                  "row_index": null,
+                  "column_index": null,
+                  "span_start": 0,
+                  "span_end": 24,
+                  "physical_page_number": 3
+                }
+              ],
+              "counterevidence_refs": []
+            },
+            {
+              "decision_id": "baadad8eaced5872d4f5c13907c1c2f5d4b202f05322b79bb70fbec3ef49bebe",
+              "check_kind": "field_role",
+              "verdict": "supported",
+              "reason": "原文字段标签‘溶解性’与属性iri对应的描述‘记录药物产品...的溶解性’完全一致。",
+              "support_refs": [
+                {
+                  "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                  "parser_version": "9",
+                  "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                  "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                  "section_node_id": "section:28",
+                  "block_id": "paragraph:38:0",
+                  "paragraph_index": 38,
+                  "fragment_index": 0,
+                  "table_path": null,
+                  "row_index": null,
+                  "column_index": null,
+                  "span_start": 0,
+                  "span_end": 24,
+                  "physical_page_number": 3
+                }
+              ],
+              "counterevidence_refs": []
+            },
+            {
+              "decision_id": "bfd9ba0ed48e7c7d8bddff5eb6c66994693ef4f6e7a891ee7f8acf27f49254c5",
+              "check_kind": "predicate",
+              "verdict": "supported",
+              "reason": "属性谓词与原文记录的物理性状字段对应，声明合法。",
+              "support_refs": [
+                {
+                  "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                  "parser_version": "9",
+                  "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                  "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                  "section_node_id": "section:28",
+                  "block_id": "paragraph:38:0",
+                  "paragraph_index": 38,
+                  "fragment_index": 0,
+                  "table_path": null,
+                  "row_index": null,
+                  "column_index": null,
+                  "span_start": 0,
+                  "span_end": 24,
+                  "physical_page_number": 3
+                }
+              ],
+              "counterevidence_refs": []
+            },
+            {
+              "decision_id": "040939e07967fe3e56142e099d56479c628674fe6877397b2c36974830211be2",
+              "check_kind": "bridge",
+              "verdict": "supported",
+              "reason": "属性值直接源自原文声明，无中间推理桥梁，为显式断言。",
+              "support_refs": [
+                {
+                  "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                  "parser_version": "9",
+                  "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                  "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                  "section_node_id": "section:28",
+                  "block_id": "paragraph:38:0",
+                  "paragraph_index": 38,
+                  "fragment_index": 0,
+                  "table_path": null,
+                  "row_index": null,
+                  "column_index": null,
+                  "span_start": 0,
+                  "span_end": 24,
+                  "physical_page_number": 3
+                }
+              ],
+              "counterevidence_refs": []
+            },
+            {
+              "decision_id": "350009c75cfafe6a10310e36c2b4dc60215b50574c5e69f78a121d13da074e1a",
+              "check_kind": "value",
+              "verdict": "supported",
+              "reason": "原文逐字记录了溶解性描述，与声明值一致。",
+              "support_refs": [
+                {
+                  "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                  "parser_version": "9",
+                  "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                  "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                  "section_node_id": "section:28",
+                  "block_id": "paragraph:38:0",
+                  "paragraph_index": 38,
+                  "fragment_index": 0,
+                  "table_path": null,
+                  "row_index": null,
+                  "column_index": null,
+                  "span_start": 0,
+                  "span_end": 24,
+                  "physical_page_number": 3
+                }
+              ],
+              "counterevidence_refs": []
+            },
+            {
+              "decision_id": "997b4bba9f7a1976e16162ef9a702ce2cc24eeff3d761fb4457bb8361b063afa",
+              "check_kind": "qualifiers",
+              "verdict": "supported",
+              "reason": "原文为肯定陈述，无否定、条件或模态修饰， qualifiers 声明为 asserted/affirmed 成立。",
+              "support_refs": [
+                {
+                  "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                  "parser_version": "9",
+                  "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                  "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                  "section_node_id": "section:28",
+                  "block_id": "paragraph:38:0",
+                  "paragraph_index": 38,
+                  "fragment_index": 0,
+                  "table_path": null,
+                  "row_index": null,
+                  "column_index": null,
+                  "span_start": 0,
+                  "span_end": 24,
+                  "physical_page_number": 3
+                }
+              ],
+              "counterevidence_refs": []
+            },
+            {
+              "decision_id": "f2c405e633fccec3a66b841b4f39392722c45ab0550995fe820b644806738622",
+              "check_kind": "counterevidence",
+              "verdict": "supported",
+              "reason": "经核查同一字段及关联理化性质记录，未发现关于溶解性的相反陈述或矛盾数据。",
+              "support_refs": [
+                {
+                  "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                  "parser_version": "9",
+                  "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                  "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                  "section_node_id": "section:28",
+                  "block_id": "paragraph:38:0",
+                  "paragraph_index": 38,
+                  "fragment_index": 0,
+                  "table_path": null,
+                  "row_index": null,
+                  "column_index": null,
+                  "span_start": 0,
+                  "span_end": 24,
+                  "physical_page_number": 3
+                }
+              ],
+              "counterevidence_refs": []
+            }
+          ]
+        }
+      ],
+      "outcome": {
+        "semantic_outcome": "supported",
+        "complete": false,
+        "reason_code": "field_column_mismatch",
+        "reason": "field_column_mismatch；shacl_not_evaluated；binding_not_passed；metric_not_passed；shacl_not_passed",
+        "controller_checks": {
+          "binding": 1,
+          "metric": 1,
+          "shacl": 1,
+          "elapsed_seconds": 0.09272106201387942
+        }
+      },
+      "published_counts": {
+        "nodes": 1,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      },
+      "published_nodes": [
+        {
+          "entity_id": "f19a38135b25443931cc0a8cd5eee581b7273fe945d296495947c0c69982c979",
+          "revision": 1,
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+          "class_label": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+          "label": "DCM易溶，H2O、Heptane难溶",
+          "root": false,
+          "root_origin": "recognized",
+          "identity_status": "document_local",
+          "decision_status": "supported",
+          "independent_review": "unreviewed",
+          "evidence_refs": [
+            {
+              "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+              "parser_version": "9",
+              "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+              "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+              "section_node_id": "section:28",
+              "block_id": "paragraph:38:0",
+              "paragraph_index": 38,
+              "fragment_index": 0,
+              "table_path": null,
+              "row_index": null,
+              "column_index": null,
+              "span_start": 5,
+              "span_end": 24,
+              "physical_page_number": 3
+            }
+          ],
+          "referent_ref": {
+            "id": "8087572366daa9f91b94528226fb8076f55b3e341c5c5d080bdf3098d65c6897",
+            "revision": 1
+          },
+          "type_decision_ref": {
+            "id": "68cc1c922f3696a982a3e39216fab85d963a0368ae7a2fd200668d4591855622",
+            "revision": 1
+          },
+          "referent_decision_ref": {
+            "id": "3e6f998725b4409e3aff7853644bc7fd0e28a20cea5c59148b38e65f05f91f62",
+            "revision": 1
+          },
+          "dependency_refs": [
+            {
+              "id": "68cc1c922f3696a982a3e39216fab85d963a0368ae7a2fd200668d4591855622",
+              "revision": 1
+            },
+            {
+              "id": "3e6f998725b4409e3aff7853644bc7fd0e28a20cea5c59148b38e65f05f91f62",
+              "revision": 1
+            },
+            {
+              "id": "3591b2239ee30bb4213c15ccebfab37d7d790a3d7a8d19cc87f7a7a9897d4819",
+              "revision": 1
+            },
+            {
+              "id": "9c6e2926cf9c54a9d6ee3b6f6db4e265fa79ba5233b6aa71d6fecccde9bc3475",
+              "revision": 1
+            }
+          ],
+          "grounding_kind": "mention",
+          "composition_decision_ref": null
+        }
+      ],
+      "attribute_candidates": [
+        {
+          "candidate_id": "bb403a43de3b0c74becbb2cc59126585f830572b64fabc4177717dde8dea85d7",
+          "record_id": "504613c49ad2718bd59a4c614418b180ddfe1962aaa751fa9e4645ab743440a7",
+          "field_id": null,
+          "field_label": "溶解性：",
+          "raw_value": "DCM易溶，H2O、Heptane难溶",
+          "parsed_value": {
+            "value": "DCM易溶，H2O、Heptane难溶",
+            "datatype_iri": "http://www.w3.org/2001/XMLSchema#string",
+            "quantity": null,
+            "precision": null,
+            "issues": []
+          },
+          "label_refs": [
+            {
+              "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+              "parser_version": "9",
+              "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+              "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+              "section_node_id": "section:28",
+              "block_id": "paragraph:38:0",
+              "paragraph_index": 38,
+              "fragment_index": 0,
+              "table_path": null,
+              "row_index": null,
+              "column_index": null,
+              "span_start": 0,
+              "span_end": 4,
+              "physical_page_number": 3
+            }
+          ],
+          "value_refs": [
+            {
+              "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+              "parser_version": "9",
+              "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+              "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+              "section_node_id": "section:28",
+              "block_id": "paragraph:38:0",
+              "paragraph_index": 38,
+              "fragment_index": 0,
+              "table_path": null,
+              "row_index": null,
+              "column_index": null,
+              "span_start": 5,
+              "span_end": 24,
+              "physical_page_number": 3
+            }
+          ],
+          "options": [
+            {
+              "subject_ref": {
+                "id": "f19a38135b25443931cc0a8cd5eee581b7273fe945d296495947c0c69982c979",
+                "revision": 1
+              },
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/solubility",
+              "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct"
+            }
+          ],
+          "status": "pending",
+          "reason_codes": [
+            "field_column_mismatch",
+            "shacl_not_evaluated",
+            "binding_not_passed",
+            "metric_not_passed",
+            "shacl_not_passed"
+          ],
+          "checks": {
+            "binding": "failed",
+            "metric": "failed",
+            "shacl": "not_checked"
+          },
+          "source_claim_id": "14e23ccaa6e43af162fde7a30b186b3385b6bdd9da698a17bbf402760992d7b9"
+        }
+      ],
+      "independent_conclusions": [
+        "发现将P39的属性值DCM易溶，H2O、Heptane难溶提为DrugProduct mention；文字真实但没有表达成品药物实例，类型/指称粒度不成立。",
+        "核验type借P42口服片剂和P38粉末，referent借P33项目名、P34项目代码、P35化学名、P31分子式，均未证明这些属于被冻结的属性值指称；附近字段和唯一项目标签不能补足该绑定。",
+        "发现观察已说明剂型归属unbound，核验仍全部supported并发布该实体；这延续了v3的类型与实例归属错误。",
+        "2个目标的3+7个facet全部返回、无missing_facets及validation_issues；该样本验证了结构完整，不能据此推断后续所有请求或语义质量。",
+        "真实node.evidence_refs仅P39[5,24)一个原始提及；type/referent支持留在独立decisions，没有混入物理来源，来源角色修复在该节点输出生效。",
+        "solubility的值和标签能逐字回原文，但当前主体未成立，系统另以field_column_mismatch等拒绝属性映射；不能将该机械原因当作原文缺少溶解性。",
+        "本组0关系，不构成端点绑定或关系实线成功样本，也没有多谓词批次。"
+      ]
+    }
+  ],
+  "latest_graph_snapshot": {
+    "run_revision": 87,
+    "event_head": 6,
+    "summary": {
+      "relationships": {
+        "total": 12,
+        "supported": 0,
+        "completed": 0,
+        "percent": 0.0
+      },
+      "properties": {
+        "total": 34,
+        "supported": 0,
+        "completed": 0,
+        "percent": 0.0
+      },
+      "pending_expansion_count": 13,
+      "notes": [
+        "分母是冻结本体在当前主体与范围上的识别目标，不表示每个字段在文档中必填。",
+        "完整度按完成目标数计算；候选记录覆盖不等于开放文档召回率。",
+        "未知多值成员总数保持未完成；待展开分支不计为已完成。",
+        "否定、条件、计划及备选关系保留原图标签；虚拟目标不是事实。"
+      ]
+    },
+    "counts": {
+      "entities": 2,
+      "properties": 0,
+      "attribute_candidates": 1,
+      "relationships": 0,
+      "relationship_groups": 0
+    }
+  },
+  "input_file_sha256": {
+    "review-3d563507-results-03.json": "ab3321664d33874bc9af3eb2c1dc6a22b186f467f2f27bf3809ab23178fcb524",
+    "review-3d563507-source.json": "810c134f55ef837fec9150ee5cca403ca3c7d14c3548017db0416e55ec90e0b3",
+    "review-3d563507-target-03.json": "591d768c85ea9f9ba490ca2d4a547fd4f279f516bf08e10e2301ec45fbc548ad"
+  }
+}

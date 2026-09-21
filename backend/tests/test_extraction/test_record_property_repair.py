@@ -8,6 +8,9 @@ from app.models.document_analysis_review import DocumentPropertyRepair, Document
 from app.services.document_analysis import current_state
 from app.services.extraction.evidence_identity import evidence_hash
 from app.services.extraction.ontology_guided.contracts import SubjectRef
+from app.services.extraction.ontology_guided.model_reference_projection import (
+    project_reference_payload,
+)
 from app.services.extraction.ontology_guided.record_discovery import RECORD_PROTOCOL
 from tests.test_extraction.test_record_executor import VALUE, A, record_setup
 
@@ -98,7 +101,10 @@ def test_record_property_review_repairs_isolated_entity_using_actual_property_ta
     )
     assert len(requests) == paid_before + 2, repaired.diagnostics
     assert all(len(view["members"]) == 1 for view in requests[paid_before:])
-    assert all(view["members"][0]["subject_ref"] == candidate.subject_ref.model_dump(mode="json")
+    wire_subject = project_reference_payload({
+        "subject_ref": candidate.subject_ref.model_dump(mode="json"),
+    })["subject_ref"]
+    assert all(view["members"][0]["subject_ref"] == wire_subject
                and view["members"][0]["predicate_iri"] == VALUE
                for view in requests[paid_before:])
     after_calls = current_state.restore_calls(store, run, run.run_fingerprint)

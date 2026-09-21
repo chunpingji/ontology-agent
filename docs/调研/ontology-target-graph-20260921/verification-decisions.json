@@ -1,0 +1,213 @@
+[
+  {
+    "lineage_id": "d7b26272864faccf6145cadf084d2172fdd5cd89a501571dc5ea3be811e048aa",
+    "target_id": "1bf6b414821c535b2f0f59b038ff10f46fe279d0fb67704b1c09823596fcb0db",
+    "decisions": [
+      {
+        "check_kind": "type",
+        "verdict": "supported",
+        "reason_code": "facet_supported",
+        "reason": "实体e1具备分子式、分子量等药物产品属性，符合DrugProduct类型定义。",
+        "attempt_id": "ca4eaebe9973a1a942874af4de874324d33498ccd07cc5598d700ef2b8fb8f76"
+      },
+      {
+        "check_kind": "referent",
+        "verdict": "undetermined",
+        "reason_code": "record_composition_source_coverage_missing",
+        "reason": "实体e1由项目名称“HRS-1597”唯一标识，原文提供了明确的化学结构和理化参数，指向具体的化学实体。",
+        "attempt_id": "ca4eaebe9973a1a942874af4de874324d33498ccd07cc5598d700ef2b8fb8f76"
+      },
+      {
+        "check_kind": "subject_role",
+        "verdict": "supported",
+        "reason_code": "facet_supported",
+        "reason": "在声明@r:34fb809f84af中，e1被定义为subject，引用项目名称作为身份标识。",
+        "attempt_id": "ca4eaebe9973a1a942874af4de874324d33498ccd07cc5598d700ef2b8fb8f76"
+      }
+    ],
+    "missing_facets": [
+      "referent"
+    ],
+    "validation_issues": [
+      "record_composition_source_coverage_missing"
+    ]
+  },
+  {
+    "lineage_id": "d7b26272864faccf6145cadf084d2172fdd5cd89a501571dc5ea3be811e048aa",
+    "target_id": "7260ce7475f62f7b69b07c925af6575273d2f928f91415fb4ddaeac8e34ed895",
+    "decisions": [
+      {
+        "check_kind": "subject_binding",
+        "verdict": "supported",
+        "reason_code": "facet_supported",
+        "reason": "声明@r:0cd4fc1ee7c9的subject为e1，e1由项目名称HRS-1597标识，两者一致。",
+        "attempt_id": "3c30727c9d53bd21296d08da3a92b2c607db11b981a5471e7b5e238ca12daffc"
+      },
+      {
+        "check_kind": "field_role",
+        "verdict": "supported",
+        "reason_code": "facet_supported",
+        "reason": "原文@r:76a957cb6204中“分子式：”作为字段标签，指向属性molecularFormula。",
+        "attempt_id": "3c30727c9d53bd21296d08da3a92b2c607db11b981a5471e7b5e238ca12daffc"
+      },
+      {
+        "check_kind": "predicate",
+        "verdict": "supported",
+        "reason_code": "facet_supported",
+        "reason": "声明声明谓词为molecularFormula，与原文字段“分子式”对应。",
+        "attempt_id": "3c30727c9d53bd21296d08da3a92b2c607db11b981a5471e7b5e238ca12daffc"
+      },
+      {
+        "check_kind": "bridge",
+        "verdict": "supported",
+        "reason_code": "facet_supported",
+        "reason": "原文以陈述句式直接提供分子式数据，确认为显式断言。",
+        "attempt_id": "3c30727c9d53bd21296d08da3a92b2c607db11b981a5471e7b5e238ca12daffc"
+      },
+      {
+        "check_kind": "value",
+        "verdict": "supported",
+        "reason_code": "facet_supported",
+        "reason": "原文明确记载分子式为C23H28N6O5S。",
+        "attempt_id": "3c30727c9d53bd21296d08da3a92b2c607db11b981a5471e7b5e238ca12daffc"
+      },
+      {
+        "check_kind": "qualifiers",
+        "verdict": "supported",
+        "reason_code": "facet_supported",
+        "reason": "原文无附加条件或模态修饰，默认为asserted/affirmed。",
+        "attempt_id": "3c30727c9d53bd21296d08da3a92b2c607db11b981a5471e7b5e238ca12daffc"
+      },
+      {
+        "check_kind": "counterevidence",
+        "verdict": "supported",
+        "reason_code": "facet_supported",
+        "reason": "核查全文无其他分子式数据作为反证。",
+        "attempt_id": "3c30727c9d53bd21296d08da3a92b2c607db11b981a5471e7b5e238ca12daffc"
+      }
+    ],
+    "missing_facets": [],
+    "validation_issues": []
+  },
+  {
+    "lineage_id": "d7b26272864faccf6145cadf084d2172fdd5cd89a501571dc5ea3be811e048aa",
+    "target_id": "d6c2ed141c58cedebbcedad8682b81467c36b52e79879cfc982c11bd0ed63d8a",
+    "decisions": [
+      {
+        "check_kind": "subject_binding",
+        "verdict": "supported",
+        "reason_code": "facet_supported",
+        "reason": "声明@r:11c0f3de8fa1的subject为e1，与实体身份一致。",
+        "attempt_id": "bac35777f94fec4650eb2b340c7722701a5270bac0fd1552867d0dc4dd44ae5b"
+      },
+      {
+        "check_kind": "field_role",
+        "verdict": "supported",
+        "reason_code": "facet_supported",
+        "reason": "原文@r:0055f2cd5712中“分子量：”作为字段标签，指向属性molecularWeight。",
+        "attempt_id": "bac35777f94fec4650eb2b340c7722701a5270bac0fd1552867d0dc4dd44ae5b"
+      },
+      {
+        "check_kind": "predicate",
+        "verdict": "supported",
+        "reason_code": "facet_supported",
+        "reason": "声明声明谓词为molecularWeight，与原文字段“分子量”对应。",
+        "attempt_id": "bac35777f94fec4650eb2b340c7722701a5270bac0fd1552867d0dc4dd44ae5b"
+      },
+      {
+        "check_kind": "bridge",
+        "verdict": "supported",
+        "reason_code": "facet_supported",
+        "reason": "原文以陈述句式直接提供分子量数据，确认为显式断言。",
+        "attempt_id": "bac35777f94fec4650eb2b340c7722701a5270bac0fd1552867d0dc4dd44ae5b"
+      },
+      {
+        "check_kind": "value",
+        "verdict": "supported",
+        "reason_code": "facet_supported",
+        "reason": "原文明确记载分子量为500.60。",
+        "attempt_id": "bac35777f94fec4650eb2b340c7722701a5270bac0fd1552867d0dc4dd44ae5b"
+      },
+      {
+        "check_kind": "unit",
+        "verdict": "supported",
+        "reason_code": "facet_supported",
+        "reason": "molecularWeight属性定义中unit_requirement为not_declared，且原文未提供单位，符合schema_card定义。",
+        "attempt_id": "bac35777f94fec4650eb2b340c7722701a5270bac0fd1552867d0dc4dd44ae5b"
+      },
+      {
+        "check_kind": "qualifiers",
+        "verdict": "supported",
+        "reason_code": "facet_supported",
+        "reason": "原文无附加条件或模态修饰，默认为asserted/affirmed。",
+        "attempt_id": "bac35777f94fec4650eb2b340c7722701a5270bac0fd1552867d0dc4dd44ae5b"
+      },
+      {
+        "check_kind": "counterevidence",
+        "verdict": "supported",
+        "reason_code": "facet_supported",
+        "reason": "核查全文无其他分子量数据作为反证。",
+        "attempt_id": "bac35777f94fec4650eb2b340c7722701a5270bac0fd1552867d0dc4dd44ae5b"
+      }
+    ],
+    "missing_facets": [],
+    "validation_issues": []
+  },
+  {
+    "lineage_id": "d7b26272864faccf6145cadf084d2172fdd5cd89a501571dc5ea3be811e048aa",
+    "target_id": "3f90aa6fb819dce68e5aa43610ac8a3e66ab17f06733de9eca7055d2226c7cb2",
+    "decisions": [
+      {
+        "check_kind": "subject_binding",
+        "verdict": "supported",
+        "reason_code": "facet_supported",
+        "reason": "声明@r:072dcb062249的subject为e1，与实体身份一致。",
+        "attempt_id": "c2bcd5b1b34c01aa0e3e711a89286dbe632831dc4babd080296e5bd2329e9de8"
+      },
+      {
+        "check_kind": "field_role",
+        "verdict": "supported",
+        "reason_code": "facet_supported",
+        "reason": "原文@r:017eabaef27b中“项目名称：”作为字段标签。",
+        "attempt_id": "c2bcd5b1b34c01aa0e3e711a89286dbe632831dc4babd080296e5bd2329e9de8"
+      },
+      {
+        "check_kind": "predicate",
+        "verdict": "supported",
+        "reason_code": "facet_supported",
+        "reason": "声明声明谓词为productIdentifier（产品或原料药唯一标识）。虽然原文标签为“项目名称”，但根据任务逻辑及e1的身份定义，此处将HRS-1597视为该实体的唯一标识符进行绑定核验。",
+        "attempt_id": "c2bcd5b1b34c01aa0e3e711a89286dbe632831dc4babd080296e5bd2329e9de8"
+      },
+      {
+        "check_kind": "bridge",
+        "verdict": "supported",
+        "reason_code": "facet_supported",
+        "reason": "原文以陈述句式提供标识，确认为显式断言。",
+        "attempt_id": "c2bcd5b1b34c01aa0e3e711a89286dbe632831dc4babd080296e5bd2329e9de8"
+      },
+      {
+        "check_kind": "value",
+        "verdict": "supported",
+        "reason_code": "facet_supported",
+        "reason": "原文明确记载项目名称（即此处标识的值）为HRS-1597。",
+        "attempt_id": "c2bcd5b1b34c01aa0e3e711a89286dbe632831dc4babd080296e5bd2329e9de8"
+      },
+      {
+        "check_kind": "qualifiers",
+        "verdict": "supported",
+        "reason_code": "facet_supported",
+        "reason": "原文无附加条件或模态修饰，默认为asserted/affirmed。",
+        "attempt_id": "c2bcd5b1b34c01aa0e3e711a89286dbe632831dc4babd080296e5bd2329e9de8"
+      },
+      {
+        "check_kind": "counterevidence",
+        "verdict": "supported",
+        "reason_code": "facet_supported",
+        "reason": "核查全文无其他冲突的唯一标识数据。",
+        "attempt_id": "c2bcd5b1b34c01aa0e3e711a89286dbe632831dc4babd080296e5bd2329e9de8"
+      }
+    ],
+    "missing_facets": [],
+    "validation_issues": []
+  }
+]

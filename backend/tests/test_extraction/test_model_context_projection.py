@@ -20,6 +20,11 @@ from tests.test_extraction.test_tool_engine_adapter import setup_adapter
 pytest_plugins = ["tests.test_extraction.test_tool_engine_freeze"]
 
 
+@pytest.fixture
+def source(tool_source):
+    return tool_source
+
+
 def member(task_id="task-1", *, section_id="section-a", count=22):
     ref = {"id": "subject", "revision": 3}
     return {
@@ -202,4 +207,8 @@ def test_resume_preserves_saved_legacy_input_and_only_compacts_a_new_stage(sourc
     verification = json.loads(requests[-1]["input_items"][0]["content"][0]["text"])
     assert verification["stage"] == "verification"
     assert "shared_context" in verification
-    assert len(requests) == 3
+    assert len(requests) == 2
+    results = [row["value"] for row in storage["results"].values()
+               if row["field"] == "tool_result"
+               and row["value"]["call_id"].startswith("controller-relation-")]
+    assert len(results) == 1

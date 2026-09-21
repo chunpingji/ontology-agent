@@ -59,13 +59,17 @@ def test_failed_record_response_publishes_incomplete_outcome_and_keeps_paid_resu
     )
     assert outcome["complete"] is False
     assert outcome["semantic_outcome"] == "not_checked"
-    assert outcome["reason_code"] == "model_response_incomplete"
+    discovery_rejected_tool = stage == "discovery" and tool_first
+    assert outcome["reason_code"] == (
+        "model_tool_protocol_invalid" if discovery_rejected_tool
+        else "model_output_truncated"
+    )
 
     paid = current_state.read_rows(store, run, DocumentRunResult)["calls:results"]
     turns = [r["value"] for r in paid.values() if r["field"] == "model_turn"]
     tools = [r["value"] for r in paid.values() if r["field"] == "tool_result"]
     assert len(turns) == len(requests)
-    assert len(tools) == int(tool_first)
+    assert len(tools) == int(tool_first and not discovery_rejected_tool)
     reservations = current_state.read_rows(store, run, DocumentRunRequest)["calls:requests"]
     assert len(reservations) == len(requests)
     assert all(r["dispatch_state"] == "completed" and r["result_ref"] in paid

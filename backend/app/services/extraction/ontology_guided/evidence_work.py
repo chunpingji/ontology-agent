@@ -111,8 +111,6 @@ class EvidenceWorkQueue:
             "field_column_mismatch" in issues
             or predicate.kind == "property" and "datatype_mismatch" in issues
             or "entity_reference_not_specific" in issues
-            or "partial_cleaning_method" in issues
-            or "cleaning_method_scope_incomplete" in issues
             or "bridge_entailment_not_supported" in issues
             and any(r.get("bridge_verdict") == "unsupported" for r in reviews)
             or "applicability_not_supported" in issues
@@ -267,8 +265,6 @@ class EvidenceWorkQueue:
                 "owner_original_source_missing",
                 "owner_field_source_missing",
                 "entity_reference_not_specific",
-                "partial_cleaning_method",
-                "cleaning_method_scope_incomplete",
                 "field_column_mismatch",
                 "field_role_not_supported",
                 "field_role_source_missing",

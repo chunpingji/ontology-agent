@@ -67,6 +67,8 @@ def validate_source_assertion(
     payload = claim.payload
     assertion = getattr(payload, "source_assertion", None)
     if assertion is None:
+        if context.tool_inputs.get("graph_phase") == "evidence_review":
+            result.issues.append("source_assertion_required")
         return result
     issues = result.issues
     by_kind = {decision.check_kind: decision for decision in decisions}
@@ -182,7 +184,14 @@ def validate_source_assertion(
         object_grounded = role_grounded("object", object_sources, object_id)
         if not subject_grounded or not object_grounded or not predicate_sources:
             continue
-        if document_description:
+        if context.tool_inputs.get("graph_phase") == "evidence_review":
+            # Review the complete source bundle; no single sentence or physical
+            # field mapping must repeat all endpoints and the predicate.
+            connected = _covered(
+                by_kind["predicate"].support_refs if "predicate" in by_kind else [],
+                [*subject_sources, *object_sources, *predicate_sources],
+            )
+        elif document_description:
             connected = _covered(predicate_sources, object_sources)
         else:
             connected = (

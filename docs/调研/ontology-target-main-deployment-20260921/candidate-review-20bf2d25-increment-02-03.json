@@ -1,0 +1,2069 @@
+{
+  "run_id": "20bf2d25-98f3-4efe-99f0-1e5dbbae5d05",
+  "reviewed_at": "2026-09-21T05:24:49.562006+00:00",
+  "review_kind": "independent_post_hoc_source_review",
+  "previous_review": "candidate-review-20bf2d25-evidence.json",
+  "model_calls_by_reviewer": 0,
+  "application_mutations_by_reviewer": 0,
+  "source_hashes": {
+    "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+    "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+    "parser_version": "9"
+  },
+  "increments": [
+    {
+      "group": 2,
+      "lineage_id": "a9860bc85d4285b672d26fdc6b9abd5082f9486dea522af8805d66ef0c6791fa",
+      "immutable_results": {
+        "discovery": "c68381b1fad2589824644db32742f960622a69fd133595fce674080d2c364a16",
+        "verification": "5ef03ff9c264ef88160ac4ed968c0be5872f3b5be7a6e4f09309de82a879f8be",
+        "outcome": "f358d666a6b7be10b9e644d0222002f9b163ec4173c4621a080f1cca0aa5155a"
+      },
+      "reviewed_model_turns": [
+        {
+          "immutable_result_key": "11dbc319acb760e30e65951319caf20513f5b6cea679c3e814936c1d5c241811",
+          "lineage_id": "a9860bc85d4285b672d26fdc6b9abd5082f9486dea522af8805d66ef0c6791fa",
+          "attempt": 1,
+          "stage": "discovery",
+          "usage": {
+            "input_tokens": 10617,
+            "input_tokens_details": {
+              "cached_tokens": 1573
+            },
+            "output_tokens": 3049,
+            "total_tokens": 13666
+          },
+          "response_status": "completed"
+        },
+        {
+          "immutable_result_key": "6b9eee7dd8ebb31c09260f2c454a960012df8b3217e93a4d6b88f76dee62ccae",
+          "lineage_id": "a9860bc85d4285b672d26fdc6b9abd5082f9486dea522af8805d66ef0c6791fa",
+          "attempt": 2,
+          "stage": "verification",
+          "usage": {
+            "input_tokens": 13147,
+            "input_tokens_details": {
+              "cached_tokens": 1897
+            },
+            "output_tokens": 7025,
+            "total_tokens": 20172
+          },
+          "response_status": "completed"
+        }
+      ],
+      "discovery_claim_issues": {
+        "p6": [
+          "attribute_value_missing"
+        ]
+      },
+      "raw_model_verification_summary": [
+        {
+          "target_id": "ac8ef1f7f5bb530038ebb2fd5e722428ebd45e58e79bc7337959fc30075ac0b2",
+          "facets": [
+            {
+              "name": "type",
+              "verdict": "supported",
+              "reason": "实体具有明确化学实体身份（分子式、化学名）及制剂形态（口服片剂、粉末状），符合DrugProduct定义。",
+              "support_count": 14,
+              "support_evidence_ids": [
+                "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+                "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+                "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+                "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c",
+                "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+                "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e",
+                "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+                "92a82f158e48683ef179eb2ac947fcc82d319381afcf72457c5bd1e69d8ceaa0",
+                "bbc77ec05164fc68500520c9b37a410c205318f87e1ac764b7b259be9fb54e35",
+                "0d97b1cfec2e1dd87a225a07abcd15051b595c9a15214fcc518691696dbf917b",
+                "a6db68228eb3e4e9f6afb0c51a50528bb8bd5e051ec50d6bd5b2e4fbb70e5316",
+                "73fd2ce08c8dda22a7eb3f5217044e5c90a8f50f075b3b0fd6ff1741bcf8732a",
+                "fbf4fd8f7cfd9b9066e0a19ae8e5f0feca4677c612af8d61b4eda7b6647f4517"
+              ]
+            },
+            {
+              "name": "referent",
+              "verdict": "supported",
+              "reason": "通过项目名称和项目代码唯一标识。",
+              "support_count": 2,
+              "support_evidence_ids": [
+                "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+                "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f"
+              ]
+            },
+            {
+              "name": "subject_role",
+              "verdict": "supported",
+              "reason": "作为本记录的核心实体被引用。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3"
+              ]
+            }
+          ]
+        },
+        {
+          "target_id": "f838eab87d1bf5189d1e4ff21783d4f0125682496dd0ee191dd288b046cab98f",
+          "facets": [
+            {
+              "name": "subject_binding",
+              "verdict": "supported",
+              "reason": "属性值归属于HRS-1597实体。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f"
+              ]
+            },
+            {
+              "name": "field_role",
+              "verdict": "supported",
+              "reason": "原文标签“项目代码”对应属性“项目代码”。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f"
+              ]
+            },
+            {
+              "name": "predicate",
+              "verdict": "supported",
+              "reason": "属性为projectCode，在DrugProduct类型定义中。",
+              "support_count": 0,
+              "support_evidence_ids": []
+            },
+            {
+              "name": "bridge",
+              "verdict": "supported",
+              "reason": "直接字段声明。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f"
+              ]
+            },
+            {
+              "name": "value",
+              "verdict": "supported",
+              "reason": "原文逐字值为HRXS-P-2419。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f"
+              ]
+            },
+            {
+              "name": "qualifiers",
+              "verdict": "supported",
+              "reason": "原文为肯定陈述，无特殊条件或模态。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f"
+              ]
+            },
+            {
+              "name": "counterevidence",
+              "verdict": "supported",
+              "reason": "无反证。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f"
+              ]
+            }
+          ]
+        },
+        {
+          "target_id": "11678aed5102f789ebd864e46183d6554a2b500465148112a28e6590f72c0753",
+          "facets": [
+            {
+              "name": "subject_binding",
+              "verdict": "supported",
+              "reason": "属性值归属于HRS-1597实体。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e"
+              ]
+            },
+            {
+              "name": "field_role",
+              "verdict": "supported",
+              "reason": "原文标签“分子式”对应属性“分子式”。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e"
+              ]
+            },
+            {
+              "name": "predicate",
+              "verdict": "supported",
+              "reason": "属性为molecularFormula，在DrugProduct类型定义中。",
+              "support_count": 0,
+              "support_evidence_ids": []
+            },
+            {
+              "name": "bridge",
+              "verdict": "supported",
+              "reason": "直接字段声明。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e"
+              ]
+            },
+            {
+              "name": "value",
+              "verdict": "supported",
+              "reason": "原文逐字值为C23H28N6O5S。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e"
+              ]
+            },
+            {
+              "name": "qualifiers",
+              "verdict": "supported",
+              "reason": "原文为肯定陈述，无特殊条件或模态。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e"
+              ]
+            },
+            {
+              "name": "counterevidence",
+              "verdict": "supported",
+              "reason": "无反证。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e"
+              ]
+            }
+          ]
+        },
+        {
+          "target_id": "9fdcb2364eed2d06d31df3b02ded5ba9ab3d1dcc6324ff83135ddb3db94a89fd",
+          "facets": [
+            {
+              "name": "subject_binding",
+              "verdict": "supported",
+              "reason": "属性值归属于HRS-1597实体。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c"
+              ]
+            },
+            {
+              "name": "field_role",
+              "verdict": "supported",
+              "reason": "原文标签“分子量”对应属性“分子量”。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c"
+              ]
+            },
+            {
+              "name": "predicate",
+              "verdict": "supported",
+              "reason": "属性为molecularWeight，在DrugProduct类型定义中。",
+              "support_count": 0,
+              "support_evidence_ids": []
+            },
+            {
+              "name": "bridge",
+              "verdict": "supported",
+              "reason": "直接字段声明。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c"
+              ]
+            },
+            {
+              "name": "value",
+              "verdict": "supported",
+              "reason": "原文逐字值为500.60。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c"
+              ]
+            },
+            {
+              "name": "unit",
+              "verdict": "supported",
+              "reason": "属性定义要求单位不声明，原文未提供单位。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c"
+              ]
+            },
+            {
+              "name": "qualifiers",
+              "verdict": "supported",
+              "reason": "原文为肯定陈述，无特殊条件或模态。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c"
+              ]
+            },
+            {
+              "name": "counterevidence",
+              "verdict": "supported",
+              "reason": "无反证。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c"
+              ]
+            }
+          ]
+        },
+        {
+          "target_id": "b8d33c3f658f4d710183f7e72ff3211ffd14b825d5e931d588141a059a40378a",
+          "facets": [
+            {
+              "name": "subject_binding",
+              "verdict": "supported",
+              "reason": "属性值归属于HRS-1597实体。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756"
+              ]
+            },
+            {
+              "name": "field_role",
+              "verdict": "supported",
+              "reason": "原文标签“化学名：英文：”对应属性“化学名英文”。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756"
+              ]
+            },
+            {
+              "name": "predicate",
+              "verdict": "supported",
+              "reason": "属性为chemicalNameEn，在DrugProduct类型定义中。",
+              "support_count": 0,
+              "support_evidence_ids": []
+            },
+            {
+              "name": "bridge",
+              "verdict": "supported",
+              "reason": "直接字段声明。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756"
+              ]
+            },
+            {
+              "name": "value",
+              "verdict": "supported",
+              "reason": "原文逐字值为(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756"
+              ]
+            },
+            {
+              "name": "qualifiers",
+              "verdict": "supported",
+              "reason": "原文为肯定陈述，无特殊条件或模态。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756"
+              ]
+            },
+            {
+              "name": "counterevidence",
+              "verdict": "supported",
+              "reason": "无反证。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756"
+              ]
+            }
+          ]
+        },
+        {
+          "target_id": "b82b862564c0c0825b64bb5dd36b8d782f5dcb8362c2b579fe00f615a3a2a07e",
+          "facets": [
+            {
+              "name": "subject_binding",
+              "verdict": "supported",
+              "reason": "属性值归属于HRS-1597实体。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e"
+              ]
+            },
+            {
+              "name": "field_role",
+              "verdict": "supported",
+              "reason": "原文标签“中文：”对应属性“化学名中文”。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e"
+              ]
+            },
+            {
+              "name": "predicate",
+              "verdict": "supported",
+              "reason": "属性为chemicalNameZh，在DrugProduct类型定义中。",
+              "support_count": 0,
+              "support_evidence_ids": []
+            },
+            {
+              "name": "bridge",
+              "verdict": "supported",
+              "reason": "直接字段声明。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e"
+              ]
+            },
+            {
+              "name": "value",
+              "verdict": "supported",
+              "reason": "原文逐字值为(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e"
+              ]
+            },
+            {
+              "name": "qualifiers",
+              "verdict": "supported",
+              "reason": "原文为肯定陈述，无特殊条件或模态。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e"
+              ]
+            },
+            {
+              "name": "counterevidence",
+              "verdict": "supported",
+              "reason": "无反证。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e"
+              ]
+            }
+          ]
+        },
+        {
+          "target_id": "81e26f01ed39179f5dbd53cefe62e432d634734e7b8af3daa0aa215ccc02043d",
+          "facets": [
+            {
+              "name": "subject_binding",
+              "verdict": "supported",
+              "reason": "属性值归属于HRS-1597实体。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44"
+              ]
+            },
+            {
+              "name": "field_role",
+              "verdict": "supported",
+              "reason": "原文标签“性状”对应属性“性状”。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44"
+              ]
+            },
+            {
+              "name": "predicate",
+              "verdict": "supported",
+              "reason": "属性为appearance，在DrugProduct类型定义中。",
+              "support_count": 0,
+              "support_evidence_ids": []
+            },
+            {
+              "name": "bridge",
+              "verdict": "supported",
+              "reason": "直接字段声明。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44"
+              ]
+            },
+            {
+              "name": "value",
+              "verdict": "supported",
+              "reason": "原文逐字值为类白色到白色粉末。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44"
+              ]
+            },
+            {
+              "name": "qualifiers",
+              "verdict": "supported",
+              "reason": "原文为肯定陈述，无特殊条件或模态。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44"
+              ]
+            },
+            {
+              "name": "counterevidence",
+              "verdict": "supported",
+              "reason": "无反证。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44"
+              ]
+            }
+          ]
+        }
+      ],
+      "stored_verification_summary": [
+        {
+          "target_id": "ac8ef1f7f5bb530038ebb2fd5e722428ebd45e58e79bc7337959fc30075ac0b2",
+          "missing_facets": [],
+          "validation_issues": [],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "实体具有明确化学实体身份（分子式、化学名）及制剂形态（口服片剂、粉末状），符合DrugProduct定义。"
+            },
+            {
+              "check_kind": "referent",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "通过项目名称和项目代码唯一标识。"
+            },
+            {
+              "check_kind": "subject_role",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "作为本记录的核心实体被引用。"
+            }
+          ]
+        },
+        {
+          "target_id": "f838eab87d1bf5189d1e4ff21783d4f0125682496dd0ee191dd288b046cab98f",
+          "missing_facets": [
+            "predicate"
+          ],
+          "validation_issues": [
+            "predicate:support_missing"
+          ],
+          "decisions": [
+            {
+              "check_kind": "subject_binding",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "属性值归属于HRS-1597实体。"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文标签“项目代码”对应属性“项目代码”。"
+            },
+            {
+              "check_kind": "predicate",
+              "verdict": "undetermined",
+              "reason_code": "predicate:support_missing",
+              "reason": "属性为projectCode，在DrugProduct类型定义中。"
+            },
+            {
+              "check_kind": "bridge",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "直接字段声明。"
+            },
+            {
+              "check_kind": "value",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文逐字值为HRXS-P-2419。"
+            },
+            {
+              "check_kind": "qualifiers",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文为肯定陈述，无特殊条件或模态。"
+            },
+            {
+              "check_kind": "counterevidence",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "无反证。"
+            }
+          ]
+        },
+        {
+          "target_id": "11678aed5102f789ebd864e46183d6554a2b500465148112a28e6590f72c0753",
+          "missing_facets": [
+            "predicate"
+          ],
+          "validation_issues": [
+            "predicate:support_missing"
+          ],
+          "decisions": [
+            {
+              "check_kind": "subject_binding",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "属性值归属于HRS-1597实体。"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文标签“分子式”对应属性“分子式”。"
+            },
+            {
+              "check_kind": "predicate",
+              "verdict": "undetermined",
+              "reason_code": "predicate:support_missing",
+              "reason": "属性为molecularFormula，在DrugProduct类型定义中。"
+            },
+            {
+              "check_kind": "bridge",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "直接字段声明。"
+            },
+            {
+              "check_kind": "value",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文逐字值为C23H28N6O5S。"
+            },
+            {
+              "check_kind": "qualifiers",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文为肯定陈述，无特殊条件或模态。"
+            },
+            {
+              "check_kind": "counterevidence",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "无反证。"
+            }
+          ]
+        },
+        {
+          "target_id": "9fdcb2364eed2d06d31df3b02ded5ba9ab3d1dcc6324ff83135ddb3db94a89fd",
+          "missing_facets": [
+            "predicate"
+          ],
+          "validation_issues": [
+            "predicate:support_missing"
+          ],
+          "decisions": [
+            {
+              "check_kind": "subject_binding",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "属性值归属于HRS-1597实体。"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文标签“分子量”对应属性“分子量”。"
+            },
+            {
+              "check_kind": "predicate",
+              "verdict": "undetermined",
+              "reason_code": "predicate:support_missing",
+              "reason": "属性为molecularWeight，在DrugProduct类型定义中。"
+            },
+            {
+              "check_kind": "bridge",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "直接字段声明。"
+            },
+            {
+              "check_kind": "value",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文逐字值为500.60。"
+            },
+            {
+              "check_kind": "unit",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "属性定义要求单位不声明，原文未提供单位。"
+            },
+            {
+              "check_kind": "qualifiers",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文为肯定陈述，无特殊条件或模态。"
+            },
+            {
+              "check_kind": "counterevidence",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "无反证。"
+            }
+          ]
+        },
+        {
+          "target_id": "b8d33c3f658f4d710183f7e72ff3211ffd14b825d5e931d588141a059a40378a",
+          "missing_facets": [
+            "predicate"
+          ],
+          "validation_issues": [
+            "predicate:support_missing"
+          ],
+          "decisions": [
+            {
+              "check_kind": "subject_binding",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "属性值归属于HRS-1597实体。"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文标签“化学名：英文：”对应属性“化学名英文”。"
+            },
+            {
+              "check_kind": "predicate",
+              "verdict": "undetermined",
+              "reason_code": "predicate:support_missing",
+              "reason": "属性为chemicalNameEn，在DrugProduct类型定义中。"
+            },
+            {
+              "check_kind": "bridge",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "直接字段声明。"
+            },
+            {
+              "check_kind": "value",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文逐字值为(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide。"
+            },
+            {
+              "check_kind": "qualifiers",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文为肯定陈述，无特殊条件或模态。"
+            },
+            {
+              "check_kind": "counterevidence",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "无反证。"
+            }
+          ]
+        },
+        {
+          "target_id": "b82b862564c0c0825b64bb5dd36b8d782f5dcb8362c2b579fe00f615a3a2a07e",
+          "missing_facets": [
+            "predicate"
+          ],
+          "validation_issues": [
+            "predicate:support_missing"
+          ],
+          "decisions": [
+            {
+              "check_kind": "subject_binding",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "属性值归属于HRS-1597实体。"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文标签“中文：”对应属性“化学名中文”。"
+            },
+            {
+              "check_kind": "predicate",
+              "verdict": "undetermined",
+              "reason_code": "predicate:support_missing",
+              "reason": "属性为chemicalNameZh，在DrugProduct类型定义中。"
+            },
+            {
+              "check_kind": "bridge",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "直接字段声明。"
+            },
+            {
+              "check_kind": "value",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文逐字值为(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺。"
+            },
+            {
+              "check_kind": "qualifiers",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文为肯定陈述，无特殊条件或模态。"
+            },
+            {
+              "check_kind": "counterevidence",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "无反证。"
+            }
+          ]
+        },
+        {
+          "target_id": "81e26f01ed39179f5dbd53cefe62e432d634734e7b8af3daa0aa215ccc02043d",
+          "missing_facets": [
+            "predicate"
+          ],
+          "validation_issues": [
+            "predicate:support_missing"
+          ],
+          "decisions": [
+            {
+              "check_kind": "subject_binding",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "属性值归属于HRS-1597实体。"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文标签“性状”对应属性“性状”。"
+            },
+            {
+              "check_kind": "predicate",
+              "verdict": "undetermined",
+              "reason_code": "predicate:support_missing",
+              "reason": "属性为appearance，在DrugProduct类型定义中。"
+            },
+            {
+              "check_kind": "bridge",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "直接字段声明。"
+            },
+            {
+              "check_kind": "value",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文逐字值为类白色到白色粉末。"
+            },
+            {
+              "check_kind": "qualifiers",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文为肯定陈述，无特殊条件或模态。"
+            },
+            {
+              "check_kind": "counterevidence",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "无反证。"
+            }
+          ]
+        }
+      ],
+      "outcome": {
+        "semantic_outcome": "supported",
+        "complete": false,
+        "reason_code": "attribute_value_missing",
+        "reason": "attribute_value_missing；predicate:support_missing；field_column_mismatch；shacl_not_evaluated；predicate_not_supported；binding_not_passed；metric_not_passed；shacl_not_passed；quantity_representation_missing",
+        "controller_checks": {
+          "binding": 6,
+          "metric": 6,
+          "shacl": 6,
+          "elapsed_seconds": 0.2882293430157006
+        }
+      },
+      "published_counts": {
+        "nodes": 1,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      },
+      "discovery_entities": [
+        {
+          "local_id": "e1",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+          "representation": "mention",
+          "mentions": [
+            {
+              "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+              "text": "项目名称：HRS-1597",
+              "context_text": null
+            }
+          ],
+          "record_components": [],
+          "identifier_claims": []
+        }
+      ],
+      "source_field_checks": [
+        {
+          "local_id": "p1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/projectCode",
+          "value": {
+            "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+            "paragraph_1_based": 34,
+            "source_text": "项目代码：HRXS-P-2419",
+            "quote": "HRXS-P-2419",
+            "interval": [
+              5,
+              16
+            ],
+            "unique_exact_quote": true
+          },
+          "fields": [
+            {
+              "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+              "paragraph_1_based": 34,
+              "source_text": "项目代码：HRXS-P-2419",
+              "quote": "项目代码：",
+              "interval": [
+                0,
+                5
+              ],
+              "unique_exact_quote": true
+            }
+          ],
+          "qualifiers": {
+            "polarity": "affirmed",
+            "modality": "asserted",
+            "condition_support": [],
+            "scope_qualifiers": []
+          }
+        },
+        {
+          "local_id": "p2",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/molecularFormula",
+          "value": {
+            "evidence_id": "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+            "paragraph_1_based": 31,
+            "source_text": "分子式：C23H28N6O5S",
+            "quote": "C23H28N6O5S",
+            "interval": [
+              4,
+              15
+            ],
+            "unique_exact_quote": true
+          },
+          "fields": [
+            {
+              "evidence_id": "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+              "paragraph_1_based": 31,
+              "source_text": "分子式：C23H28N6O5S",
+              "quote": "分子式：",
+              "interval": [
+                0,
+                4
+              ],
+              "unique_exact_quote": true
+            }
+          ],
+          "qualifiers": {
+            "polarity": "affirmed",
+            "modality": "asserted",
+            "condition_support": [],
+            "scope_qualifiers": []
+          }
+        },
+        {
+          "local_id": "p3",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/molecularWeight",
+          "value": {
+            "evidence_id": "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c",
+            "paragraph_1_based": 32,
+            "source_text": "分子量：500.60",
+            "quote": "500.60",
+            "interval": [
+              4,
+              10
+            ],
+            "unique_exact_quote": true
+          },
+          "fields": [
+            {
+              "evidence_id": "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c",
+              "paragraph_1_based": 32,
+              "source_text": "分子量：500.60",
+              "quote": "分子量：",
+              "interval": [
+                0,
+                4
+              ],
+              "unique_exact_quote": true
+            }
+          ],
+          "qualifiers": {
+            "polarity": "affirmed",
+            "modality": "asserted",
+            "condition_support": [],
+            "scope_qualifiers": []
+          }
+        },
+        {
+          "local_id": "p4",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/chemicalNameEn",
+          "value": {
+            "evidence_id": "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+            "paragraph_1_based": 35,
+            "source_text": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+            "quote": "(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+            "interval": [
+              7,
+              157
+            ],
+            "unique_exact_quote": true
+          },
+          "fields": [
+            {
+              "evidence_id": "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+              "paragraph_1_based": 35,
+              "source_text": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+              "quote": "化学名：英文：",
+              "interval": [
+                0,
+                7
+              ],
+              "unique_exact_quote": true
+            }
+          ],
+          "qualifiers": {
+            "polarity": "affirmed",
+            "modality": "asserted",
+            "condition_support": [],
+            "scope_qualifiers": []
+          }
+        },
+        {
+          "local_id": "p5",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/chemicalNameZh",
+          "value": {
+            "evidence_id": "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e",
+            "paragraph_1_based": 36,
+            "source_text": "中文：(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺",
+            "quote": "(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺",
+            "interval": [
+              3,
+              90
+            ],
+            "unique_exact_quote": true
+          },
+          "fields": [
+            {
+              "evidence_id": "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e",
+              "paragraph_1_based": 36,
+              "source_text": "中文：(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺",
+              "quote": "中文：",
+              "interval": [
+                0,
+                3
+              ],
+              "unique_exact_quote": true
+            }
+          ],
+          "qualifiers": {
+            "polarity": "affirmed",
+            "modality": "asserted",
+            "condition_support": [],
+            "scope_qualifiers": []
+          }
+        },
+        {
+          "local_id": "p6",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/casNumber",
+          "value": {
+            "evidence_id": "b4dabece54e4ed1ff9eab064651ccf18f151de488ad48ef326ca52418b3dacd8",
+            "paragraph_1_based": 37,
+            "source_text": "CAS：N/A",
+            "quote": "N/A",
+            "interval": [
+              4,
+              7
+            ],
+            "unique_exact_quote": true
+          },
+          "fields": [
+            {
+              "evidence_id": "b4dabece54e4ed1ff9eab064651ccf18f151de488ad48ef326ca52418b3dacd8",
+              "paragraph_1_based": 37,
+              "source_text": "CAS：N/A",
+              "quote": "CAS：",
+              "interval": [
+                0,
+                4
+              ],
+              "unique_exact_quote": true
+            }
+          ],
+          "qualifiers": {
+            "polarity": "affirmed",
+            "modality": "asserted",
+            "condition_support": [],
+            "scope_qualifiers": []
+          }
+        },
+        {
+          "local_id": "p7",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/appearance",
+          "value": {
+            "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+            "paragraph_1_based": 38,
+            "source_text": "性状：类白色到白色粉末",
+            "quote": "类白色到白色粉末",
+            "interval": [
+              3,
+              11
+            ],
+            "unique_exact_quote": true
+          },
+          "fields": [
+            {
+              "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+              "paragraph_1_based": 38,
+              "source_text": "性状：类白色到白色粉末",
+              "quote": "性状：",
+              "interval": [
+                0,
+                3
+              ],
+              "unique_exact_quote": true
+            }
+          ],
+          "qualifiers": {
+            "polarity": "affirmed",
+            "modality": "asserted",
+            "condition_support": [],
+            "scope_qualifiers": []
+          }
+        }
+      ],
+      "missing_observations": [
+        {
+          "subject_id": "e1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/dosageForm",
+          "quote": {
+            "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+            "text": "制剂剂型：口服片剂 ",
+            "context_text": null
+          },
+          "kind": "missing",
+          "reason": "fact_eligible=false"
+        },
+        {
+          "subject_id": "e1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/routeOfAdministration",
+          "quote": {
+            "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+            "text": "制剂剂型：口服片剂 ",
+            "context_text": null
+          },
+          "kind": "missing",
+          "reason": "fact_eligible=false"
+        },
+        {
+          "subject_id": "e1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/solubility",
+          "quote": {
+            "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+            "text": "溶解性： DCM易溶，H2O、Heptane难溶",
+            "context_text": null
+          },
+          "kind": "missing",
+          "reason": "fact_eligible=false"
+        },
+        {
+          "subject_id": "e1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isOncologyDrug",
+          "quote": {
+            "evidence_id": "92a82f158e48683ef179eb2ac947fcc82d319381afcf72457c5bd1e69d8ceaa0",
+            "text": "是否是肿瘤药物：否",
+            "context_text": null
+          },
+          "kind": "missing",
+          "reason": "fact_eligible=false"
+        },
+        {
+          "subject_id": "e1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isCytotoxic",
+          "quote": {
+            "evidence_id": "bbc77ec05164fc68500520c9b37a410c205318f87e1ac764b7b259be9fb54e35",
+            "text": "是否细胞毒药物：否",
+            "context_text": null
+          },
+          "kind": "missing",
+          "reason": "fact_eligible=false"
+        },
+        {
+          "subject_id": "e1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isHighlySensitizing",
+          "quote": {
+            "evidence_id": "0d97b1cfec2e1dd87a225a07abcd15051b595c9a15214fcc518691696dbf917b",
+            "text": "是否是高致敏药物：否",
+            "context_text": null
+          },
+          "kind": "missing",
+          "reason": "fact_eligible=false"
+        },
+        {
+          "subject_id": "e1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isHormonal",
+          "quote": {
+            "evidence_id": "a6db68228eb3e4e9f6afb0c51a50528bb8bd5e051ec50d6bd5b2e4fbb70e5316",
+            "text": "是否是激素类药物：否",
+            "context_text": null
+          },
+          "kind": "missing",
+          "reason": "fact_eligible=false"
+        },
+        {
+          "subject_id": "e1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isPenicillinType",
+          "quote": {
+            "evidence_id": "73fd2ce08c8dda22a7eb3f5217044e5c90a8f50f075b3b0fd6ff1741bcf8732a",
+            "text": "是否是青霉素类药物：否",
+            "context_text": null
+          },
+          "kind": "missing",
+          "reason": "fact_eligible=false"
+        },
+        {
+          "subject_id": "e1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isHighlyActive",
+          "quote": {
+            "evidence_id": "fbf4fd8f7cfd9b9066e0a19ae8e5f0feca4677c612af8d61b4eda7b6647f4517",
+            "text": "是否是高毒高活药物：否",
+            "context_text": null
+          },
+          "kind": "missing",
+          "reason": "fact_eligible=false"
+        },
+        {
+          "subject_id": "e1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/inactivationMethod",
+          "quote": {
+            "evidence_id": "12943408020bef0c9efc9d1f0ec34c383d7d0764a250752ee0e52bbb0e72ad95",
+            "text": "是否需要灭活：否 ",
+            "context_text": null
+          },
+          "kind": "missing",
+          "reason": "fact_eligible=false"
+        },
+        {
+          "subject_id": "e1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/casNumber",
+          "quote": {
+            "evidence_id": "b4dabece54e4ed1ff9eab064651ccf18f151de488ad48ef326ca52418b3dacd8",
+            "text": "N/A",
+            "context_text": null
+          },
+          "kind": "missing",
+          "reason": "原文完整字段值为缺失或未知标记，不能作为已识别属性实值。"
+        }
+      ],
+      "attribute_candidates": [
+        {
+          "candidate_id": "8b844082f94b08a17ac6a46cf721c222ea22a5fa30d95c39cf365ef4e5c0b055",
+          "field_label": "项目代码：",
+          "raw_value": "HRXS-P-2419",
+          "parsed_value": {
+            "value": "HRXS-P-2419",
+            "datatype_iri": "http://www.w3.org/2001/XMLSchema#string",
+            "quantity": null,
+            "precision": null,
+            "issues": []
+          },
+          "status": "rejected_mapping",
+          "reason_codes": [
+            "field_column_mismatch",
+            "shacl_not_evaluated",
+            "predicate:support_missing",
+            "predicate_not_supported",
+            "binding_not_passed",
+            "metric_not_passed",
+            "shacl_not_passed"
+          ],
+          "checks": {
+            "binding": "failed",
+            "metric": "failed",
+            "shacl": "not_checked"
+          },
+          "source_claim_id": "818426c65b0b8667a6291b9039115589ab897ce0d82607a11bb10c6522598acf"
+        },
+        {
+          "candidate_id": "175970dadc1ab6a736217a86ae0e0b9dd5789f7b8b6107ad15c9863b1a7e4e67",
+          "field_label": "分子式：",
+          "raw_value": "C23H28N6O5S",
+          "parsed_value": {
+            "value": "C23H28N6O5S",
+            "datatype_iri": "http://www.w3.org/2001/XMLSchema#string",
+            "quantity": null,
+            "precision": null,
+            "issues": []
+          },
+          "status": "rejected_mapping",
+          "reason_codes": [
+            "field_column_mismatch",
+            "shacl_not_evaluated",
+            "predicate:support_missing",
+            "predicate_not_supported",
+            "binding_not_passed",
+            "metric_not_passed",
+            "shacl_not_passed"
+          ],
+          "checks": {
+            "binding": "failed",
+            "metric": "failed",
+            "shacl": "not_checked"
+          },
+          "source_claim_id": "641040e87bffe7eabe8d3b4159cae7319a72e66478232365521e094c2d567665"
+        },
+        {
+          "candidate_id": "ef51a3d8cb54da68842a717a77fd0f430cfce2c524f8538b43375b04c7be16ba",
+          "field_label": "分子量：",
+          "raw_value": "500.60",
+          "parsed_value": {
+            "value": "500.6",
+            "datatype_iri": "http://www.w3.org/2001/XMLSchema#decimal",
+            "quantity": {
+              "kind": "number",
+              "operator": "eq",
+              "scalar": "500.6",
+              "lower": null,
+              "upper": null,
+              "lower_inclusive": null,
+              "upper_inclusive": null,
+              "source_unit": null,
+              "dimension": null
+            },
+            "precision": null,
+            "issues": []
+          },
+          "status": "rejected_mapping",
+          "reason_codes": [
+            "field_column_mismatch",
+            "shacl_not_evaluated",
+            "predicate:support_missing",
+            "predicate_not_supported",
+            "binding_not_passed",
+            "metric_not_passed",
+            "shacl_not_passed",
+            "quantity_representation_missing"
+          ],
+          "checks": {
+            "binding": "failed",
+            "metric": "failed",
+            "shacl": "not_checked"
+          },
+          "source_claim_id": "216d7ac48c80f2b7608c847ae19c1f30a8433d34ead865ce496a40a82678bfd9"
+        },
+        {
+          "candidate_id": "91d67303397ea13cf476005b6ab6b65c3ad066c0421a74ab7456a13e1b48b020",
+          "field_label": "化学名：英文：",
+          "raw_value": "(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+          "parsed_value": {
+            "value": "(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+            "datatype_iri": "http://www.w3.org/2001/XMLSchema#string",
+            "quantity": null,
+            "precision": null,
+            "issues": []
+          },
+          "status": "rejected_mapping",
+          "reason_codes": [
+            "field_column_mismatch",
+            "shacl_not_evaluated",
+            "predicate:support_missing",
+            "predicate_not_supported",
+            "binding_not_passed",
+            "metric_not_passed",
+            "shacl_not_passed"
+          ],
+          "checks": {
+            "binding": "failed",
+            "metric": "failed",
+            "shacl": "not_checked"
+          },
+          "source_claim_id": "1364c0dc1ac7d396b1e4aecdf6c294ce2c0f149021d2d5b6f0ab5c20315460e1"
+        },
+        {
+          "candidate_id": "877fcf9cd11923415b68bf593b1f112e254e0bfae77c96c396e884fb68be0f71",
+          "field_label": "中文：",
+          "raw_value": "(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺",
+          "parsed_value": {
+            "value": "(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺",
+            "datatype_iri": "http://www.w3.org/2001/XMLSchema#string",
+            "quantity": null,
+            "precision": null,
+            "issues": []
+          },
+          "status": "rejected_mapping",
+          "reason_codes": [
+            "field_column_mismatch",
+            "shacl_not_evaluated",
+            "predicate:support_missing",
+            "predicate_not_supported",
+            "binding_not_passed",
+            "metric_not_passed",
+            "shacl_not_passed"
+          ],
+          "checks": {
+            "binding": "failed",
+            "metric": "failed",
+            "shacl": "not_checked"
+          },
+          "source_claim_id": "9f888a6b7793f8aee4b703b7e98aa65cc0c0fa2e87c66c328c72ee5129ae4fd1"
+        },
+        {
+          "candidate_id": "c040ab7f6da13cf92473c79c18215bf2f69a879148fef30a61241648ff55e455",
+          "field_label": "性状：",
+          "raw_value": "类白色到白色粉末",
+          "parsed_value": {
+            "value": "类白色到白色粉末",
+            "datatype_iri": "http://www.w3.org/2001/XMLSchema#string",
+            "quantity": null,
+            "precision": null,
+            "issues": []
+          },
+          "status": "rejected_mapping",
+          "reason_codes": [
+            "field_column_mismatch",
+            "shacl_not_evaluated",
+            "predicate:support_missing",
+            "predicate_not_supported",
+            "binding_not_passed",
+            "metric_not_passed",
+            "shacl_not_passed"
+          ],
+          "checks": {
+            "binding": "failed",
+            "metric": "failed",
+            "shacl": "not_checked"
+          },
+          "source_claim_id": "fd933d698e47043f386319cd034b510a183169e7ca9d1426d1ae80f1b028bc2b"
+        }
+      ],
+      "independent_conclusions": [
+        "全部7个值及字段引文逐字唯一匹配；这不证明主体类型、身份或归属。",
+        "CAS=N/A没有发布为实值，正确进入缺失标记门。",
+        "6个非缺失属性均rejected_mapping，其中predicate没有核验支持锚点；不是已识别属性。",
+        "项目名称实体被系统接受为DrugProduct，但化学属性、粉末性状及剂型字段仍未充分证明该具体实例满足冻结类定义。",
+        "以fact_eligible=false作为missing理由混淆本轮引用权限与原文缺失；未把该发现观察认作已发布缺失事实。",
+        "没有对象关系端点对或多谓词合批样本。"
+      ]
+    },
+    {
+      "group": 3,
+      "lineage_id": "49da0e1c56be84ced7720e23f061df41b51d7e717e24b61f61fa860b2dcb3285",
+      "immutable_results": {
+        "verification": "a0d5a1af3f30e029439f5832d2e79a930cd5e8d51deef43eec934067088d9ea5",
+        "discovery": "dad22ee97e3316a43edbe24850403deb8c0121eb8565841acdac4508d3e96cb3",
+        "tool_result": "6e6a581a6b854539056e3cb7be890c5cb3388f9ee682b9ad6ae97ca005b02d1e",
+        "outcome": "c7d52d9891538ff3947a5ddec6045a5d48c8411dac02d5b9bc4d8ed97a8c2826"
+      },
+      "reviewed_model_turns": [
+        {
+          "immutable_result_key": "af64713cc9feb6fa7633448b73071aec3863c30d747a801a16f2e9fb6e7c3945",
+          "lineage_id": "49da0e1c56be84ced7720e23f061df41b51d7e717e24b61f61fa860b2dcb3285",
+          "attempt": 1,
+          "stage": "discovery",
+          "usage": {
+            "input_tokens": 9754,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 2705,
+            "total_tokens": 12459
+          },
+          "response_status": "completed"
+        },
+        {
+          "immutable_result_key": "40222678276d676cc1c162538829097f7500c33a8344da128b8b631c43f1072e",
+          "lineage_id": "49da0e1c56be84ced7720e23f061df41b51d7e717e24b61f61fa860b2dcb3285",
+          "attempt": 2,
+          "stage": "verification",
+          "usage": {
+            "input_tokens": 12693,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 4086,
+            "total_tokens": 16779
+          },
+          "response_status": "completed"
+        }
+      ],
+      "discovery_claim_issues": {},
+      "raw_model_verification_summary": [
+        {
+          "target_id": "ed897d02ff9f291ea8fe3debab4ebd3479c642d23dfad28f2f24eb6a4a9d19e3",
+          "facets": [
+            {
+              "name": "subject_binding",
+              "verdict": "supported",
+              "reason": "声明主体为文档根节点，bridge_kind为document_subject_description。原文定位项目名称即指代本文档，归属正确。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3"
+              ]
+            },
+            {
+              "name": "object_binding",
+              "verdict": "supported",
+              "reason": "对象e1 (HRS-1597)的原文提及完整覆盖所有source_assertion.object_support字段，包括项目名、分子式、CAS、性状、溶解性及各类否定的属性值。",
+              "support_count": 19,
+              "support_evidence_ids": [
+                "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+                "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+                "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c",
+                "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+                "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+                "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e",
+                "b4dabece54e4ed1ff9eab064651ccf18f151de488ad48ef326ca52418b3dacd8",
+                "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+                "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                "ae3330d1d1826e10ecff3fd4b56765fe385dfff5a67679fbe22a436480d3276a",
+                "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                "92a82f158e48683ef179eb2ac947fcc82d319381afcf72457c5bd1e69d8ceaa0",
+                "bbc77ec05164fc68500520c9b37a410c205318f87e1ac764b7b259be9fb54e35",
+                "0d97b1cfec2e1dd87a225a07abcd15051b595c9a15214fcc518691696dbf917b",
+                "a6db68228eb3e4e9f6afb0c51a50528bb8bd5e051ec50d6bd5b2e4fbb70e5316",
+                "73fd2ce08c8dda22a7eb3f5217044e5c90a8f50f075b3b0fd6ff1741bcf8732a",
+                "fbf4fd8f7cfd9b9066e0a19ae8e5f0feca4677c612af8d61b4eda7b6647f4517",
+                "12943408020bef0c9efc9d1f0ec34c383d7d0764a250752ee0e52bbb0e72ad95"
+              ]
+            },
+            {
+              "name": "predicate",
+              "verdict": "supported",
+              "reason": "原文包含项目名称，确立了文档与实体的描述关系，符合describes谓词要求。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3"
+              ]
+            },
+            {
+              "name": "bridge",
+              "verdict": "supported",
+              "reason": "文档通过包含所有指定实体属性字段（名称、分子式、CAS、化学名等）来描述目标药物产品，bridge_support完整覆盖。",
+              "support_count": 19,
+              "support_evidence_ids": [
+                "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+                "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+                "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c",
+                "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+                "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+                "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e",
+                "b4dabece54e4ed1ff9eab064651ccf18f151de488ad48ef326ca52418b3dacd8",
+                "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+                "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                "ae3330d1d1826e10ecff3fd4b56765fe385dfff5a67679fbe22a436480d3276a",
+                "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                "92a82f158e48683ef179eb2ac947fcc82d319381afcf72457c5bd1e69d8ceaa0",
+                "bbc77ec05164fc68500520c9b37a410c205318f87e1ac764b7b259be9fb54e35",
+                "0d97b1cfec2e1dd87a225a07abcd15051b595c9a15214fcc518691696dbf917b",
+                "a6db68228eb3e4e9f6afb0c51a50528bb8bd5e051ec50d6bd5b2e4fbb70e5316",
+                "73fd2ce08c8dda22a7eb3f5217044e5c90a8f50f075b3b0fd6ff1741bcf8732a",
+                "fbf4fd8f7cfd9b9066e0a19ae8e5f0feca4677c612af8d61b4eda7b6647f4517",
+                "12943408020bef0c9efc9d1f0ec34c383d7d0764a250752ee0e52bbb0e72ad95"
+              ]
+            },
+            {
+              "name": "qualifiers",
+              "verdict": "supported",
+              "reason": "原文直接陈述项目名称，无否定、条件或模态修饰，确认为asserted affirmed。",
+              "support_count": 1,
+              "support_evidence_ids": [
+                "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3"
+              ]
+            },
+            {
+              "name": "counterevidence",
+              "verdict": "supported",
+              "reason": "核查所有授权原文单元，未发现与声明主体归属、对象属性及描述关系相冲突的内容。",
+              "support_count": 19,
+              "support_evidence_ids": [
+                "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+                "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+                "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c",
+                "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+                "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+                "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e",
+                "b4dabece54e4ed1ff9eab064651ccf18f151de488ad48ef326ca52418b3dacd8",
+                "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+                "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                "ae3330d1d1826e10ecff3fd4b56765fe385dfff5a67679fbe22a436480d3276a",
+                "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                "92a82f158e48683ef179eb2ac947fcc82d319381afcf72457c5bd1e69d8ceaa0",
+                "bbc77ec05164fc68500520c9b37a410c205318f87e1ac764b7b259be9fb54e35",
+                "0d97b1cfec2e1dd87a225a07abcd15051b595c9a15214fcc518691696dbf917b",
+                "a6db68228eb3e4e9f6afb0c51a50528bb8bd5e051ec50d6bd5b2e4fbb70e5316",
+                "73fd2ce08c8dda22a7eb3f5217044e5c90a8f50f075b3b0fd6ff1741bcf8732a",
+                "fbf4fd8f7cfd9b9066e0a19ae8e5f0feca4677c612af8d61b4eda7b6647f4517",
+                "12943408020bef0c9efc9d1f0ec34c383d7d0764a250752ee0e52bbb0e72ad95"
+              ]
+            }
+          ]
+        }
+      ],
+      "stored_verification_summary": [
+        {
+          "target_id": "ed897d02ff9f291ea8fe3debab4ebd3479c642d23dfad28f2f24eb6a4a9d19e3",
+          "missing_facets": [],
+          "validation_issues": [],
+          "decisions": [
+            {
+              "check_kind": "subject_binding",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "声明主体为文档根节点，bridge_kind为document_subject_description。原文定位项目名称即指代本文档，归属正确。"
+            },
+            {
+              "check_kind": "object_binding",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "对象e1 (HRS-1597)的原文提及完整覆盖所有source_assertion.object_support字段，包括项目名、分子式、CAS、性状、溶解性及各类否定的属性值。"
+            },
+            {
+              "check_kind": "predicate",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文包含项目名称，确立了文档与实体的描述关系，符合describes谓词要求。"
+            },
+            {
+              "check_kind": "bridge",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "文档通过包含所有指定实体属性字段（名称、分子式、CAS、化学名等）来描述目标药物产品，bridge_support完整覆盖。"
+            },
+            {
+              "check_kind": "qualifiers",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文直接陈述项目名称，无否定、条件或模态修饰，确认为asserted affirmed。"
+            },
+            {
+              "check_kind": "counterevidence",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "核查所有授权原文单元，未发现与声明主体归属、对象属性及描述关系相冲突的内容。"
+            }
+          ]
+        }
+      ],
+      "outcome": {
+        "semantic_outcome": "undetermined",
+        "complete": false,
+        "reason_code": "source_assertion_endpoint_chain_not_closed",
+        "reason": "source_assertion_endpoint_chain_not_closed",
+        "controller_checks": {
+          "binding": 1,
+          "metric": 0,
+          "shacl": 0,
+          "elapsed_seconds": 0.07909110002219677
+        }
+      },
+      "published_counts": {
+        "nodes": 0,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      },
+      "relation": {
+        "local_id": "rel1",
+        "subject_id": "c5b309b1d300ceb7d3a9c94b0dd7f5ef7f59b1c59c7768a8e2e5c633d02eee4a",
+        "object_ids": [
+          "095ae2bf2de1123f0ce134d918879f98df1bcb4eeab0b7e1cc91d18f86fd9bac"
+        ],
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+        "bridge_kind": "document_subject_description",
+        "qualifiers": {
+          "polarity": "affirmed",
+          "modality": "asserted",
+          "condition_support": [],
+          "scope_qualifiers": []
+        },
+        "selection": "all"
+      },
+      "source_assertion_checks": {
+        "subject_support_count": 0,
+        "predicate_support": [
+          {
+            "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+            "paragraph_1_based": 33,
+            "source_text": "项目名称：HRS-1597",
+            "quote": "项目名称：HRS-1597",
+            "interval": [
+              0,
+              13
+            ],
+            "unique_exact_quote": true
+          }
+        ],
+        "object_support": [
+          {
+            "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+            "paragraph_1_based": 33,
+            "source_text": "项目名称：HRS-1597",
+            "quote": "项目名称：HRS-1597",
+            "interval": [
+              0,
+              13
+            ],
+            "unique_exact_quote": true,
+            "covered_by_predicate_support": true
+          },
+          {
+            "evidence_id": "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+            "paragraph_1_based": 31,
+            "source_text": "分子式：C23H28N6O5S",
+            "quote": "分子式：C23H28N6O5S",
+            "interval": [
+              0,
+              15
+            ],
+            "unique_exact_quote": true,
+            "covered_by_predicate_support": false
+          },
+          {
+            "evidence_id": "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c",
+            "paragraph_1_based": 32,
+            "source_text": "分子量：500.60",
+            "quote": "分子量：500.60",
+            "interval": [
+              0,
+              10
+            ],
+            "unique_exact_quote": true,
+            "covered_by_predicate_support": false
+          },
+          {
+            "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+            "paragraph_1_based": 34,
+            "source_text": "项目代码：HRXS-P-2419",
+            "quote": "项目代码：HRXS-P-2419",
+            "interval": [
+              0,
+              16
+            ],
+            "unique_exact_quote": true,
+            "covered_by_predicate_support": false
+          },
+          {
+            "evidence_id": "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+            "paragraph_1_based": 35,
+            "source_text": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+            "quote": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+            "interval": [
+              0,
+              157
+            ],
+            "unique_exact_quote": true,
+            "covered_by_predicate_support": false
+          },
+          {
+            "evidence_id": "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e",
+            "paragraph_1_based": 36,
+            "source_text": "中文：(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺",
+            "quote": "中文：(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺",
+            "interval": [
+              0,
+              90
+            ],
+            "unique_exact_quote": true,
+            "covered_by_predicate_support": false
+          },
+          {
+            "evidence_id": "b4dabece54e4ed1ff9eab064651ccf18f151de488ad48ef326ca52418b3dacd8",
+            "paragraph_1_based": 37,
+            "source_text": "CAS：N/A",
+            "quote": "CAS：N/A",
+            "interval": [
+              0,
+              7
+            ],
+            "unique_exact_quote": true,
+            "covered_by_predicate_support": false
+          },
+          {
+            "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+            "paragraph_1_based": 38,
+            "source_text": "性状：类白色到白色粉末",
+            "quote": "性状：类白色到白色粉末",
+            "interval": [
+              0,
+              11
+            ],
+            "unique_exact_quote": true,
+            "covered_by_predicate_support": false
+          },
+          {
+            "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+            "paragraph_1_based": 39,
+            "source_text": "溶解性： DCM易溶，H2O、Heptane难溶",
+            "quote": "溶解性： DCM易溶，H2O、Heptane难溶",
+            "interval": [
+              0,
+              24
+            ],
+            "unique_exact_quote": true,
+            "covered_by_predicate_support": false
+          },
+          {
+            "evidence_id": "ae3330d1d1826e10ecff3fd4b56765fe385dfff5a67679fbe22a436480d3276a",
+            "paragraph_1_based": 40,
+            "source_text": "结构特点：三氮唑类化合物，含有磺胺结构 ",
+            "quote": "结构特点：三氮唑类化合物，含有磺胺结构 ",
+            "interval": [
+              0,
+              20
+            ],
+            "unique_exact_quote": true,
+            "covered_by_predicate_support": false
+          },
+          {
+            "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+            "paragraph_1_based": 41,
+            "source_text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+            "quote": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+            "interval": [
+              0,
+              54
+            ],
+            "unique_exact_quote": true,
+            "covered_by_predicate_support": false
+          },
+          {
+            "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+            "paragraph_1_based": 42,
+            "source_text": "制剂剂型：口服片剂 ",
+            "quote": "制剂剂型：口服片剂 ",
+            "interval": [
+              0,
+              10
+            ],
+            "unique_exact_quote": true,
+            "covered_by_predicate_support": false
+          },
+          {
+            "evidence_id": "92a82f158e48683ef179eb2ac947fcc82d319381afcf72457c5bd1e69d8ceaa0",
+            "paragraph_1_based": 43,
+            "source_text": "是否是肿瘤药物：否",
+            "quote": "是否是肿瘤药物：否",
+            "interval": [
+              0,
+              9
+            ],
+            "unique_exact_quote": true,
+            "covered_by_predicate_support": false
+          },
+          {
+            "evidence_id": "bbc77ec05164fc68500520c9b37a410c205318f87e1ac764b7b259be9fb54e35",
+            "paragraph_1_based": 44,
+            "source_text": "是否细胞毒药物：否",
+            "quote": "是否细胞毒药物：否",
+            "interval": [
+              0,
+              9
+            ],
+            "unique_exact_quote": true,
+            "covered_by_predicate_support": false
+          },
+          {
+            "evidence_id": "0d97b1cfec2e1dd87a225a07abcd15051b595c9a15214fcc518691696dbf917b",
+            "paragraph_1_based": 45,
+            "source_text": "是否是高致敏药物：否",
+            "quote": "是否是高致敏药物：否",
+            "interval": [
+              0,
+              10
+            ],
+            "unique_exact_quote": true,
+            "covered_by_predicate_support": false
+          },
+          {
+            "evidence_id": "a6db68228eb3e4e9f6afb0c51a50528bb8bd5e051ec50d6bd5b2e4fbb70e5316",
+            "paragraph_1_based": 46,
+            "source_text": "是否是激素类药物：否",
+            "quote": "是否是激素类药物：否",
+            "interval": [
+              0,
+              10
+            ],
+            "unique_exact_quote": true,
+            "covered_by_predicate_support": false
+          },
+          {
+            "evidence_id": "73fd2ce08c8dda22a7eb3f5217044e5c90a8f50f075b3b0fd6ff1741bcf8732a",
+            "paragraph_1_based": 47,
+            "source_text": "是否是青霉素类药物：否",
+            "quote": "是否是青霉素类药物：否",
+            "interval": [
+              0,
+              11
+            ],
+            "unique_exact_quote": true,
+            "covered_by_predicate_support": false
+          },
+          {
+            "evidence_id": "fbf4fd8f7cfd9b9066e0a19ae8e5f0feca4677c612af8d61b4eda7b6647f4517",
+            "paragraph_1_based": 48,
+            "source_text": "是否是高毒高活药物：否",
+            "quote": "是否是高毒高活药物：否",
+            "interval": [
+              0,
+              11
+            ],
+            "unique_exact_quote": true,
+            "covered_by_predicate_support": false
+          },
+          {
+            "evidence_id": "12943408020bef0c9efc9d1f0ec34c383d7d0764a250752ee0e52bbb0e72ad95",
+            "paragraph_1_based": 49,
+            "source_text": "是否需要灭活：否 ",
+            "quote": "是否需要灭活：否 ",
+            "interval": [
+              0,
+              9
+            ],
+            "unique_exact_quote": true,
+            "covered_by_predicate_support": false
+          }
+        ],
+        "object_quote_count": 19,
+        "object_quotes_covered_by_predicate": 1,
+        "bridge_support_count": 19,
+        "binding_ids": [],
+        "binding_dependency_refs": []
+      },
+      "endpoint_origin": {
+        "subject": {
+          "entity_id": "c5b309b1d300ceb7d3a9c94b0dd7f5ef7f59b1c59c7768a8e2e5c633d02eee4a",
+          "revision": 1,
+          "grounding_kind": "document_root",
+          "configured_root": true
+        },
+        "object": {
+          "entity_id": "095ae2bf2de1123f0ce134d918879f98df1bcb4eeab0b7e1cc91d18f86fd9bac",
+          "revision": 1,
+          "grounding_kind": "mention",
+          "origin_lineage": "a9860bc85d4285b672d26fdc6b9abd5082f9486dea522af8805d66ef0c6791fa",
+          "origin_local_id": "e1",
+          "frozen_mention": {
+            "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+            "paragraph_1_based": 33,
+            "source_text": "项目名称：HRS-1597",
+            "quote": "项目名称：HRS-1597",
+            "interval": [
+              0,
+              13
+            ],
+            "unique_exact_quote": true
+          }
+        }
+      },
+      "gate": {
+        "file": "backend/app/services/extraction/ontology_guided/source_assertions.py",
+        "subject_exemption_lines": [
+          173,
+          178
+        ],
+        "coverage_check_lines": [
+          180,
+          195
+        ],
+        "coverage_function_lines": [
+          220,
+          221
+        ],
+        "predicate_covers_object_mention": true,
+        "predicate_covers_all_submitted_object_support": false,
+        "uncovered_object_field_paragraphs": [
+          31,
+          32,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49
+        ],
+        "interpretation": "不是文档根提及缺失或冻结对象未绑定。补查实际保存的核验输入确认：原始项目名称提及1个，实体type/facet支持并入node后登记source_refs为14个，发现指令要求对象角色完整覆盖登记来源；模型覆盖14个并额外加入5个单元，最终19个。谓词只覆盖P33，实际1/19，若严格只输出登记来源仍仅1/14。来源角色在输入构造阶段已经混合，不能仅归因于模型自行加入背景；不应放松链门，类型语义缺口仍需独立处理。",
+        "local_and_deployed_source_sha256": "be1635ef5edd3c4ad8634ea271106906b2a324300376366ee4d8b9317ebd500b",
+        "pure_function_check": {
+          "function": "_covered",
+          "inputs": "stored verification predicate/object_binding support_refs",
+          "predicate_anchor_count": 1,
+          "object_anchor_count": 19,
+          "full_role_covered": false,
+          "individually_covered_paragraphs": [
+            33
+          ],
+          "model_calls": 0,
+          "application_mutations": 0
+        },
+        "source_role_followup_evidence": "entity-source-role-review-20bf2d25.json",
+        "source_role_counts": {
+          "original_physical_sources": 1,
+          "registered_input_source_refs": 14,
+          "submitted_object_sources": 19,
+          "extra_output_source_units": 5
+        }
+      },
+      "independent_conclusions": [
+        "全部19个对象角色引文与原文唯一匹配；谓词引文仅项目名称一个字段。",
+        "报告描述HRS-1597的方向与基本性质区域相符，但对象DrugProduct类型仍不足，不能整体接受为已证关系。",
+        "主语为当前文档根，空subject_support被合法文档桥显式允许；不应解释为要求正文出现报告名称。",
+        "当前payload的endpoint_chain_not_closed由predicate覆盖1/19对象角色锚点触发，非角色facet拒绝。",
+        "本组只含一个describes谓词和一个对象；不支持多谓词关系合批完成结论。",
+        "后续实际输入补查确认1个物理提及被实体type/facet支持扩为14个登记来源，再成为19个对象角色引文；输入构造角色混合是独立可修复原因，详见entity-source-role-review-20bf2d25.json。"
+      ]
+    }
+  ],
+  "latest_graph_snapshot": {
+    "run_revision": 139,
+    "event_head": 11,
+    "summary": {
+      "relationships": {
+        "total": 12,
+        "supported": 0,
+        "completed": 0,
+        "percent": 0.0
+      },
+      "properties": {
+        "total": 196,
+        "supported": 2,
+        "completed": 0,
+        "percent": 0.0
+      },
+      "pending_expansion_count": 19,
+      "notes": [
+        "分母是冻结本体在当前主体与范围上的识别目标，不表示每个字段在文档中必填。",
+        "完整度按完成目标数计算；候选记录覆盖不等于开放文档召回率。",
+        "未知多值成员总数保持未完成；待展开分支不计为已完成。",
+        "否定、条件、计划及备选关系保留原图标签；虚拟目标不是事实。"
+      ]
+    },
+    "counts": {
+      "entities": 8,
+      "properties": 2,
+      "attribute_candidates": 6,
+      "relationships": 0,
+      "relationship_groups": 0
+    }
+  },
+  "input_file_sha256": {
+    "review-20bf2d25-results-04.json": "9cd20e9ba8dc1c46543219b5f498f7b2b764f1eefeb0dbb92cadfd7e33c94958",
+    "review-20bf2d25-source.json": "89bdffa8677a7eab1ee1b3ba0b5844ce7257f2635383d3091c92d636fbff5651",
+    "review-20bf2d25-target-03.json": "35d4737162ed34f4f35094ba82737d82e8967646a1d946a521d40936db64ad31",
+    "review-20bf2d25-target-04.json": "1acac284d699aed8a51b2432ba42662fa2aaba57693d54234b693b9e0e822523"
+  }
+}

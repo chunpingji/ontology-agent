@@ -18,6 +18,11 @@ from tests.test_extraction.test_tool_engine_adapter import setup_adapter
 pytest_plugins = ["tests.test_extraction.test_tool_engine_freeze"]
 
 
+@pytest.fixture
+def source(tool_source):
+    return tool_source
+
+
 def rejected_turn(source, *, kind, members=()):
     if kind == "tool":
         arguments = {"evidence_id": "f" * 64, "quote": "原文", "context_text": None}

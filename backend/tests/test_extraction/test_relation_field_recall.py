@@ -24,6 +24,9 @@ from app.services.extraction.ontology_guided.contracts import (
     VerificationTarget,
     VersionedRef,
 )
+from app.services.extraction.ontology_guided.model_reference_projection import (
+    project_reference_payload,
+)
 from app.services.extraction.ontology_guided.ontology_plan import compile_local_menu
 from app.services.extraction.ontology_guided.records import RecordIndex
 from app.services.extraction.ontology_guided.scheduler import RecognitionTask
@@ -242,10 +245,14 @@ def test_field_recall_record_requires_independent_source_verification(
             if item.get("type") == "function_call_output":
                 tools_seen.append(json.loads(item["output"]))
         if len(requests) == 1:
-            args = dict(evidence_ids=[source["source_unit"].evidence_id],
-                        schema_card_id=card.schema_card_id)
+            args = project_reference_payload(dict(
+                evidence_ids=[source["source_unit"].evidence_id],
+                schema_card_id=card.schema_card_id,
+            ))
             if batching:
-                args["member_task_id"] = task_id
+                args["member_task_id"] = project_reference_payload({
+                    "task_id": task_id,
+                })["task_id"]
             response = replace(response, output_items=[{
                 "type": "function_call", "call_id": "recall-fields",
                 "name": "propose_mentions", "arguments": json.dumps(args),
@@ -274,12 +281,13 @@ def test_field_recall_record_requires_independent_source_verification(
         outcome = outcomes[0]
     else:
         outcome = adapter.inspect(task, context, predicate, menu)
-    recalls = [result for result in tools_seen if "mentions" in result.get("data", {})]
-    assert recalls
+    recalls = [result for result in tools_seen if "units" in result.get("data", {})]
+    assert recalls, tools_seen
+    roles = [role for unit in recalls[0]["data"]["units"]
+             for mention in unit["mentions"] for role in mention["roles"]]
     if recall_hits:
-        assert recalls[0]["data"]["mentions"]
-        assert all(hit["role"] in ("field_label", "field_value")
-                   for hit in recalls[0]["data"]["mentions"])
+        assert roles
+        assert all(role["role"] in ("field_label", "field_value") for role in roles)
     else:
         assert recalls[0]["status"] == "no_match"
     assert any(target["target_kind"] == "entity" and target["payload"]["representation"] == "record"

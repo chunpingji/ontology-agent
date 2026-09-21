@@ -266,6 +266,7 @@ class ProofGate:
         )
 
         payload = claim.payload
+        evidence_review = context.tool_inputs.get("graph_phase") == "evidence_review"
         issues = list(checks.issues)
         if (proof_menu.get("version") != "ontology-tool-proof-v1"
                 or proof_menu.get("context_hash") != context.target.context_hash
@@ -283,8 +284,17 @@ class ProofGate:
             for anchor in [*decision.support_refs, *decision.counterevidence_refs]:
                 if not any(_anchor_covers(allowed, anchor) for allowed in allowed_anchors):
                     issues.append("proof_source_outside_context")
-            if decision.verdict != "supported" or not decision.support_refs:
+            from .claim_protocol import facet_requires_quote
+
+            if decision.verdict != "supported" or (not decision.support_refs and (
+                facet_requires_quote(claim, decision.check_kind, context)
+                or decision.counterevidence_refs or not decision.reason.strip()
+            )):
                 issues.append(f"{decision.check_kind}_not_supported")
+            if (decision.verdict == "supported" and not decision.support_refs
+                    and (decision.searched_context_refs != allowed_anchors
+                         or decision.reason_code != f"scope_checked_no_{decision.check_kind}")):
+                issues.append(f"{decision.check_kind}_checked_scope_mismatch")
 
         predicate = getattr(payload, "predicate_iri", None)
         if claim.target_kind == "external_link":
@@ -386,14 +396,15 @@ class ProofGate:
                 issues.append("entity_dependency_not_verified")
 
         required_checks = {"binding"} if claim.target_kind in {"property", "relation"} else set()
-        if claim.target_kind == "property":
+        if claim.target_kind == "property" and not evidence_review:
             required_checks.update({"metric", "shacl"})
-        if claim.target_kind == "relation":
+        if claim.target_kind == "relation" and not evidence_review:
             required_checks.add("relation_graph")
         for check in sorted(required_checks):
             if checks.checks.get(check) is not True:
                 issues.append(f"{check}_not_passed")
-        if predicate in proof_menu.get("quantity_predicates", []) and checks.quantity is None:
+        if (not evidence_review and predicate in proof_menu.get("quantity_predicates", [])
+                and checks.quantity is None):
             issues.append("quantity_representation_missing")
 
         source_assertion = None
@@ -524,7 +535,10 @@ class ProofGate:
                     applicability_refs=decision_ref("qualifiers"),
                     unit_evidence_refs=refs("unit"), selection_support_refs=refs("selection"),
                     modality_support_refs=refs("qualifiers"), verdict="supported" if not issues
-                    else "undetermined", proof_policy_version="ontology-tool-proof-v1",
+                    else "undetermined", proof_policy_version=(
+                        "ontology-evidence-review-v1" if evidence_review
+                        else "ontology-tool-proof-v1"
+                    ),
                     normalization_record=(checks.quantity.model_dump(mode="json")
                                           if checks.quantity else {}),
                 )

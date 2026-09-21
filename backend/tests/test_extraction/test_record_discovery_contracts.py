@@ -12,7 +12,7 @@ from app.services.extraction.ontology_guided.contracts import (
 from app.services.extraction.ontology_guided.record_discovery import (
     RecordDiscoveryTask,
     compile_record_schema_card,
-    resolve_record_property,
+    resolve_record_predicate,
 )
 
 
@@ -48,14 +48,14 @@ def test_same_property_iri_keeps_each_class_datatype_and_unit():
         ontology, class_iris=["urn:A", "urn:B"],
         analysis_scope_ref="scope", profile=ExtractionProfile(),
     )
-    assert resolve_record_property(card, "urn:A", "urn:value").canonical_unit == "mg"
-    assert resolve_record_property(card, "urn:B", "urn:value").datatype_iris == [
+    assert resolve_record_predicate(card, "urn:A", "urn:value").canonical_unit == "mg"
+    assert resolve_record_predicate(card, "urn:B", "urn:value").datatype_iris == [
         "http://www.w3.org/2001/XMLSchema#string"
     ]
     with pytest.raises(ValueError, match="class_outside_menu"):
-        resolve_record_property(card, "urn:foreign", "urn:value")
+        resolve_record_predicate(card, "urn:foreign", "urn:value")
     with pytest.raises(ValueError, match="predicate_outside_menu"):
-        resolve_record_property(card, "urn:A", "urn:foreign")
+        resolve_record_predicate(card, "urn:A", "urn:foreign")
 
 
 def test_catalog_preserves_inherited_fields_and_limits_formal_focus_routes():

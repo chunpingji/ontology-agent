@@ -29,6 +29,11 @@ from tests.test_extraction.test_tool_engine_adapter import setup_adapter
 pytest_plugins = ["tests.test_extraction.test_tool_engine_freeze"]
 
 
+@pytest.fixture
+def source(tool_source):
+    return tool_source
+
+
 def batch_setup(source, monkeypatch, *, size=3, relation=False, stop_at=None, transform=None):
     members, tasks, proposals = [], [], {}
     for position in range(size):
@@ -278,7 +283,7 @@ def test_mixed_batch_verifies_only_nonempty_members(source, monkeypatch, relatio
     )
     reviewed = adapter.inspect_work_unit(unit, context, menu)
     assert not reviewed.member_errors and len(reviewed.member_result_refs) == 2
-    assert len(requests) == (3 if relation else 2)
+    assert len(requests) == 2
     for request in requests[1:]:
         view = json.loads(request["input_items"][0]["content"][0]["text"])
         assert [m["task_id"] for m in view["members"]] == project_reference_payload(
@@ -552,7 +557,7 @@ def test_mixed_members_share_relation_check_round_without_leaking_tool_owner(sou
     )
     result = adapter.inspect_work_unit(unit, context, menu)
     assert not result.member_errors and len(result.member_result_refs) == 2
-    assert len(requests) == 3
+    assert len(requests) == 2
     tools = [row["value"] for row in stored["results"].values() if row["field"] == "tool_result"]
     assert len(tools) == 1 and tools[0]["member_task_id"] == unit.members[0].task_id
     assert context.protocol_state["member_states"][unit.members[1].task_id]["tool_calls_used"] == 0
@@ -587,7 +592,7 @@ def test_two_relations_reuse_identical_canonical_nodes_after_sequential_finalize
     reviewed = adapter.inspect_work_unit(unit, context, menu)
     assert not reviewed.member_errors
     outcomes = finalize(adapter, unit, context)
-    assert len(requests) == 3
+    assert len(requests) == 2
     assert all(len(outcome.relationship_groups) == 1 for outcome in outcomes)
     first = {node.entity_id: node for node in outcomes[0].nodes}
     assert first
@@ -631,6 +636,16 @@ def test_truncated_verification_is_saved_then_split_without_rediscovery(source, 
     assert incomplete[0]["response_status"] == "incomplete"
     assert all(row["result_version"]["last_participating_request_attempt"] != 2
                for row in stored["results"].values() if row["field"] == "verification")
+
+
+def test_stage_output_limits_reach_discovery_and_verification_transport(source, monkeypatch):
+    adapter, unit, context, menu, _, requests = batch_setup(source, monkeypatch, size=2)
+    adapter.stage_output_tokens = {"discovery": 8192, "verification": 16384}
+
+    reviewed = adapter.inspect_work_unit(unit, context, menu)
+
+    assert not reviewed.member_errors and len(reviewed.member_result_refs) == 2
+    assert [request["max_output_tokens"] for request in requests] == [8192, 16384]
 
 
 def test_estimated_output_splits_complete_members_before_reserving_verification(
@@ -904,9 +919,9 @@ def test_supplement_changes_only_routed_member_authorization(source, monkeypatch
     assert not adapter.work_unit_pending_recovery(context)
 
 
-@pytest.mark.parametrize("relations,requests_expected", [(8, 3), (9, 4)])
-def test_required_relation_checks_respect_eight_tools_per_shared_response(
-    source, monkeypatch, relations, requests_expected,
+@pytest.mark.parametrize("relations", [8, 9])
+def test_relation_checks_are_precomputed_without_model_tool_rounds(
+    source, monkeypatch, relations,
 ):
     def repeat_relations(answer, view, number):
         if view["stage"] == "discovery":
@@ -924,11 +939,14 @@ def test_required_relation_checks_respect_eight_tools_per_shared_response(
     adapter.max_output_tokens = 200000
     reviewed = adapter.inspect_work_unit(unit, context, menu)
     assert not reviewed.member_errors and len(reviewed.member_result_refs) == 2
-    assert len(requests) == requests_expected
+    assert len(requests) == 2
     turns = [row["value"] for row in stored["results"].values() if row["field"] == "model_turn"]
-    counts = [sum(item["type"] == "function_call" for item in turn["output_items"])
-              for turn in turns]
-    assert max(counts) == 8 and sum(counts) == relations
+    assert all(not any(item["type"] == "function_call" for item in turn["output_items"])
+               for turn in turns)
+    tools = [row["value"] for row in stored["results"].values()
+             if row["field"] == "tool_result"]
+    assert len(tools) == relations
+    assert all(item["call_id"].startswith("controller-relation-") for item in tools)
     assert context.protocol_state["member_states"][unit.members[0].task_id]["tool_calls_used"] == (
         relations
     )
@@ -968,4 +986,4 @@ def test_cold_resume_reuses_saved_member_and_paired_tool_results(source, monkeyp
     resumed.remaining_model_calls_by_member = {key: 4 - value for key, value in counts.items()}
     reviewed = adapter.inspect_work_unit(unit, resumed, menu)
     assert not reviewed.member_errors and len(reviewed.member_result_refs) == 2
-    assert len(requests) == 3
+    assert len(requests) == 2

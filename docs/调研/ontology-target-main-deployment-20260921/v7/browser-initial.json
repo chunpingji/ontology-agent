@@ -1,0 +1,67 @@
+{
+  "runId": "b915fc1d-e4d7-4fa8-976e-038805ce9dcd",
+  "phase": "evidence_review",
+  "assertions": 0,
+  "properties": 0,
+  "subjects": 0,
+  "dashed": 12,
+  "solid": 0,
+  "sources": [],
+  "summary": {
+    "relationships": {
+      "total": 12,
+      "supported": 0,
+      "completed": 0,
+      "percent": 0
+    },
+    "properties": {
+      "total": 7,
+      "supported": 0,
+      "completed": 0,
+      "percent": 0
+    },
+    "pending_expansion_count": 12,
+    "notes": [
+      "实线表示原文证据已采信；虚线表示待定候选或尚无证据的本体目标。",
+      "未采信候选可切换显示；显示筛选不改变本体关系和属性目标总数。",
+      "Schema 语义对齐与原文证据决定采信；规范化结果和 SHACL 告警单独展示。",
+      "采信目标数不表示全文信息已穷尽；否定、条件及备选成员保留限定。"
+    ]
+  },
+  "writes": [],
+  "errors": [],
+  "api": [
+    {
+      "path": "/api/document-analysis/runs/b915fc1d-e4d7-4fa8-976e-038805ce9dcd",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs",
+      "status": 200
+    },
+    {
+      "path": "/api/entities",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/b915fc1d-e4d7-4fa8-976e-038805ce9dcd/target-graph",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/b915fc1d-e4d7-4fa8-976e-038805ce9dcd/source",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/b915fc1d-e4d7-4fa8-976e-038805ce9dcd",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/b915fc1d-e4d7-4fa8-976e-038805ce9dcd/source",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/b915fc1d-e4d7-4fa8-976e-038805ce9dcd/target-graph",
+      "status": 200
+    }
+  ]
+}

@@ -1,0 +1,1543 @@
+{
+  "run_id": "20bf2d25-98f3-4efe-99f0-1e5dbbae5d05",
+  "reviewed_at": "2026-09-21T06:05:54.123789+00:00",
+  "review_kind": "read_only_source_role_provenance_correction",
+  "model_calls_by_reviewer": 0,
+  "application_mutations_by_reviewer": 0,
+  "entity_ref": {
+    "id": "095ae2bf2de1123f0ce134d918879f98df1bcb4eeab0b7e1cc91d18f86fd9bac",
+    "revision": 1
+  },
+  "entity_lineage_id": "a9860bc85d4285b672d26fdc6b9abd5082f9486dea522af8805d66ef0c6791fa",
+  "relation_lineage_id": "49da0e1c56be84ced7720e23f061df41b51d7e717e24b61f61fa860b2dcb3285",
+  "immutable_result_keys": {
+    "entity_discovery": "c68381b1fad2589824644db32742f960622a69fd133595fce674080d2c364a16",
+    "entity_outcome": "f358d666a6b7be10b9e644d0222002f9b163ec4173c4621a080f1cca0aa5155a",
+    "relation_discovery": "dad22ee97e3316a43edbe24850403deb8c0121eb8565841acdac4508d3e96cb3",
+    "relation_verification": "a0d5a1af3f30e029439f5832d2e79a930cd5e8d51deef43eec934067088d9ea5"
+  },
+  "source_hashes": {
+    "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+    "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+    "parser_version": "9"
+  },
+  "retained_actual_input": {
+    "stage": "verification",
+    "source": "calls:protocols.stage_input_items -> input_text -> members[0].registered_entities",
+    "input_text_sha256": "0c502ff2e2d48f546106143dfdfb79d0353e4ffa20d1edb8438ff254d035144a",
+    "entity_dependency": {
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+      "content_hash": "df371f5f95da4e3bf74a632e27e91e0306b3414acb49cb1dc47d3dfec1cf3933",
+      "dependency_refs": [
+        {
+          "id": "1fbd58a255db8117eaf91d656ef7932fc40aae6fc16670047c42c93b48c29c84",
+          "revision": 1
+        },
+        {
+          "id": "d9006786994b6ec40e04f43b570c6b9fe3bd7bd02b33e23767b10995e80b99f9",
+          "revision": 1
+        },
+        {
+          "id": "d94d75379cf2ead796b9a4f98e759813f47fa64897e76343b51893e0450d3e55",
+          "revision": 1
+        },
+        {
+          "id": "1fbd58a255db8117eaf91d656ef7932fc40aae6fc16670047c42c93b48c29c84",
+          "revision": 1
+        },
+        {
+          "id": "d9006786994b6ec40e04f43b570c6b9fe3bd7bd02b33e23767b10995e80b99f9",
+          "revision": 1
+        },
+        {
+          "id": "61fd60ab6dec713af7be28fadd296000e5922a77aca1c16f3281e0db5f99c92d",
+          "revision": 1
+        },
+        {
+          "id": "5dcdcf01d4085c46975ef0e8ae1c804f1861d92d17b1996f1a9ce78026e73c07",
+          "revision": 1
+        }
+      ],
+      "entity_ref": {
+        "id": "095ae2bf2de1123f0ce134d918879f98df1bcb4eeab0b7e1cc91d18f86fd9bac",
+        "revision": 1
+      },
+      "grounding_kind": "mention",
+      "proposal": {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "identifier_claims": [],
+        "local_id": "e1",
+        "mentions": [
+          {
+            "context_text": null,
+            "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+            "text": "项目名称：HRS-1597"
+          }
+        ],
+        "record_components": [],
+        "representation": "mention"
+      },
+      "root_origin": null,
+      "source_refs": [
+        {
+          "block_id": "paragraph:32:0",
+          "column_index": null,
+          "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+          "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+          "fragment_index": 0,
+          "paragraph_index": 32,
+          "parser_version": "9",
+          "physical_page_number": 3,
+          "row_index": null,
+          "section_node_id": "section:28",
+          "span_end": 13,
+          "span_start": 0,
+          "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+          "table_path": null
+        },
+        {
+          "block_id": "paragraph:33:0",
+          "column_index": null,
+          "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+          "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+          "fragment_index": 0,
+          "paragraph_index": 33,
+          "parser_version": "9",
+          "physical_page_number": 3,
+          "row_index": null,
+          "section_node_id": "section:28",
+          "span_end": 16,
+          "span_start": 0,
+          "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+          "table_path": null
+        },
+        {
+          "block_id": "paragraph:41:0",
+          "column_index": null,
+          "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+          "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+          "fragment_index": 0,
+          "paragraph_index": 41,
+          "parser_version": "9",
+          "physical_page_number": 3,
+          "row_index": null,
+          "section_node_id": "section:28",
+          "span_end": 9,
+          "span_start": 0,
+          "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+          "table_path": null
+        },
+        {
+          "block_id": "paragraph:30:0",
+          "column_index": null,
+          "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+          "evidence_id": "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+          "fragment_index": 0,
+          "paragraph_index": 30,
+          "parser_version": "9",
+          "physical_page_number": 3,
+          "row_index": null,
+          "section_node_id": "section:28",
+          "span_end": 15,
+          "span_start": 0,
+          "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+          "table_path": null
+        },
+        {
+          "block_id": "paragraph:31:0",
+          "column_index": null,
+          "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+          "evidence_id": "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c",
+          "fragment_index": 0,
+          "paragraph_index": 31,
+          "parser_version": "9",
+          "physical_page_number": 3,
+          "row_index": null,
+          "section_node_id": "section:28",
+          "span_end": 10,
+          "span_start": 0,
+          "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+          "table_path": null
+        },
+        {
+          "block_id": "paragraph:34:0",
+          "column_index": null,
+          "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+          "evidence_id": "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+          "fragment_index": 0,
+          "paragraph_index": 34,
+          "parser_version": "9",
+          "physical_page_number": 3,
+          "row_index": null,
+          "section_node_id": "section:28",
+          "span_end": 157,
+          "span_start": 0,
+          "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+          "table_path": null
+        },
+        {
+          "block_id": "paragraph:35:0",
+          "column_index": null,
+          "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+          "evidence_id": "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e",
+          "fragment_index": 0,
+          "paragraph_index": 35,
+          "parser_version": "9",
+          "physical_page_number": 3,
+          "row_index": null,
+          "section_node_id": "section:28",
+          "span_end": 90,
+          "span_start": 0,
+          "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+          "table_path": null
+        },
+        {
+          "block_id": "paragraph:37:0",
+          "column_index": null,
+          "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+          "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+          "fragment_index": 0,
+          "paragraph_index": 37,
+          "parser_version": "9",
+          "physical_page_number": 3,
+          "row_index": null,
+          "section_node_id": "section:28",
+          "span_end": 11,
+          "span_start": 0,
+          "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+          "table_path": null
+        },
+        {
+          "block_id": "paragraph:42:0",
+          "column_index": null,
+          "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+          "evidence_id": "92a82f158e48683ef179eb2ac947fcc82d319381afcf72457c5bd1e69d8ceaa0",
+          "fragment_index": 0,
+          "paragraph_index": 42,
+          "parser_version": "9",
+          "physical_page_number": 3,
+          "row_index": null,
+          "section_node_id": "section:28",
+          "span_end": 9,
+          "span_start": 0,
+          "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+          "table_path": null
+        },
+        {
+          "block_id": "paragraph:43:0",
+          "column_index": null,
+          "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+          "evidence_id": "bbc77ec05164fc68500520c9b37a410c205318f87e1ac764b7b259be9fb54e35",
+          "fragment_index": 0,
+          "paragraph_index": 43,
+          "parser_version": "9",
+          "physical_page_number": 3,
+          "row_index": null,
+          "section_node_id": "section:28",
+          "span_end": 9,
+          "span_start": 0,
+          "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+          "table_path": null
+        },
+        {
+          "block_id": "paragraph:44:0",
+          "column_index": null,
+          "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+          "evidence_id": "0d97b1cfec2e1dd87a225a07abcd15051b595c9a15214fcc518691696dbf917b",
+          "fragment_index": 0,
+          "paragraph_index": 44,
+          "parser_version": "9",
+          "physical_page_number": 3,
+          "row_index": null,
+          "section_node_id": "section:28",
+          "span_end": 10,
+          "span_start": 0,
+          "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+          "table_path": null
+        },
+        {
+          "block_id": "paragraph:45:0",
+          "column_index": null,
+          "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+          "evidence_id": "a6db68228eb3e4e9f6afb0c51a50528bb8bd5e051ec50d6bd5b2e4fbb70e5316",
+          "fragment_index": 0,
+          "paragraph_index": 45,
+          "parser_version": "9",
+          "physical_page_number": 3,
+          "row_index": null,
+          "section_node_id": "section:28",
+          "span_end": 10,
+          "span_start": 0,
+          "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+          "table_path": null
+        },
+        {
+          "block_id": "paragraph:46:0",
+          "column_index": null,
+          "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+          "evidence_id": "73fd2ce08c8dda22a7eb3f5217044e5c90a8f50f075b3b0fd6ff1741bcf8732a",
+          "fragment_index": 0,
+          "paragraph_index": 46,
+          "parser_version": "9",
+          "physical_page_number": 3,
+          "row_index": null,
+          "section_node_id": "section:28",
+          "span_end": 11,
+          "span_start": 0,
+          "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+          "table_path": null
+        },
+        {
+          "block_id": "paragraph:47:0",
+          "column_index": null,
+          "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+          "evidence_id": "fbf4fd8f7cfd9b9066e0a19ae8e5f0feca4677c612af8d61b4eda7b6647f4517",
+          "fragment_index": 0,
+          "paragraph_index": 47,
+          "parser_version": "9",
+          "physical_page_number": 3,
+          "row_index": null,
+          "section_node_id": "section:28",
+          "span_end": 11,
+          "span_start": 0,
+          "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+          "table_path": null
+        }
+      ]
+    },
+    "limitation": "保存的是关系核验阶段实际输入；原始发现阶段完整指令不在这个快照内。发现指令的全覆盖要求由源码核对，不能把它说成本次保存的 discovery 请求文本。"
+  },
+  "original_entity_proposal": {
+    "local_id": "e1",
+    "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+    "representation": "mention",
+    "mentions": [
+      {
+        "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+        "text": "项目名称：HRS-1597",
+        "context_text": null
+      }
+    ],
+    "record_components": [],
+    "identifier_claims": []
+  },
+  "original_physical_resolution_sources": [
+    {
+      "anchor": {
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "parser_version": "9",
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+        "section_node_id": "section:28",
+        "block_id": "paragraph:32:0",
+        "paragraph_index": 32,
+        "fragment_index": 0,
+        "table_path": null,
+        "row_index": null,
+        "column_index": null,
+        "span_start": 0,
+        "span_end": 13,
+        "physical_page_number": 3
+      },
+      "paragraph_1_based": 33,
+      "quote": "项目名称：HRS-1597"
+    }
+  ],
+  "entity_facet_supports": [
+    {
+      "facet": "type",
+      "decision_id": "1fbd58a255db8117eaf91d656ef7932fc40aae6fc16670047c42c93b48c29c84",
+      "verdict": "supported",
+      "source_count": 14,
+      "sources": [
+        {
+          "anchor": {
+            "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+            "parser_version": "9",
+            "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+            "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+            "section_node_id": "section:28",
+            "block_id": "paragraph:32:0",
+            "paragraph_index": 32,
+            "fragment_index": 0,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null,
+            "span_start": 0,
+            "span_end": 13,
+            "physical_page_number": 3
+          },
+          "paragraph_1_based": 33,
+          "quote": "项目名称：HRS-1597"
+        },
+        {
+          "anchor": {
+            "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+            "parser_version": "9",
+            "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+            "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+            "section_node_id": "section:28",
+            "block_id": "paragraph:33:0",
+            "paragraph_index": 33,
+            "fragment_index": 0,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null,
+            "span_start": 0,
+            "span_end": 16,
+            "physical_page_number": 3
+          },
+          "paragraph_1_based": 34,
+          "quote": "项目代码：HRXS-P-2419"
+        },
+        {
+          "anchor": {
+            "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+            "parser_version": "9",
+            "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+            "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+            "section_node_id": "section:28",
+            "block_id": "paragraph:41:0",
+            "paragraph_index": 41,
+            "fragment_index": 0,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null,
+            "span_start": 0,
+            "span_end": 9,
+            "physical_page_number": 3
+          },
+          "paragraph_1_based": 42,
+          "quote": "制剂剂型：口服片剂"
+        },
+        {
+          "anchor": {
+            "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+            "parser_version": "9",
+            "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+            "evidence_id": "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+            "section_node_id": "section:28",
+            "block_id": "paragraph:30:0",
+            "paragraph_index": 30,
+            "fragment_index": 0,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null,
+            "span_start": 0,
+            "span_end": 15,
+            "physical_page_number": 3
+          },
+          "paragraph_1_based": 31,
+          "quote": "分子式：C23H28N6O5S"
+        },
+        {
+          "anchor": {
+            "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+            "parser_version": "9",
+            "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+            "evidence_id": "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c",
+            "section_node_id": "section:28",
+            "block_id": "paragraph:31:0",
+            "paragraph_index": 31,
+            "fragment_index": 0,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null,
+            "span_start": 0,
+            "span_end": 10,
+            "physical_page_number": 3
+          },
+          "paragraph_1_based": 32,
+          "quote": "分子量：500.60"
+        },
+        {
+          "anchor": {
+            "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+            "parser_version": "9",
+            "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+            "evidence_id": "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+            "section_node_id": "section:28",
+            "block_id": "paragraph:34:0",
+            "paragraph_index": 34,
+            "fragment_index": 0,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null,
+            "span_start": 0,
+            "span_end": 157,
+            "physical_page_number": 3
+          },
+          "paragraph_1_based": 35,
+          "quote": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide"
+        },
+        {
+          "anchor": {
+            "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+            "parser_version": "9",
+            "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+            "evidence_id": "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e",
+            "section_node_id": "section:28",
+            "block_id": "paragraph:35:0",
+            "paragraph_index": 35,
+            "fragment_index": 0,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null,
+            "span_start": 0,
+            "span_end": 90,
+            "physical_page_number": 3
+          },
+          "paragraph_1_based": 36,
+          "quote": "中文：(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺"
+        },
+        {
+          "anchor": {
+            "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+            "parser_version": "9",
+            "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+            "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+            "section_node_id": "section:28",
+            "block_id": "paragraph:37:0",
+            "paragraph_index": 37,
+            "fragment_index": 0,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null,
+            "span_start": 0,
+            "span_end": 11,
+            "physical_page_number": 3
+          },
+          "paragraph_1_based": 38,
+          "quote": "性状：类白色到白色粉末"
+        },
+        {
+          "anchor": {
+            "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+            "parser_version": "9",
+            "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+            "evidence_id": "92a82f158e48683ef179eb2ac947fcc82d319381afcf72457c5bd1e69d8ceaa0",
+            "section_node_id": "section:28",
+            "block_id": "paragraph:42:0",
+            "paragraph_index": 42,
+            "fragment_index": 0,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null,
+            "span_start": 0,
+            "span_end": 9,
+            "physical_page_number": 3
+          },
+          "paragraph_1_based": 43,
+          "quote": "是否是肿瘤药物：否"
+        },
+        {
+          "anchor": {
+            "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+            "parser_version": "9",
+            "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+            "evidence_id": "bbc77ec05164fc68500520c9b37a410c205318f87e1ac764b7b259be9fb54e35",
+            "section_node_id": "section:28",
+            "block_id": "paragraph:43:0",
+            "paragraph_index": 43,
+            "fragment_index": 0,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null,
+            "span_start": 0,
+            "span_end": 9,
+            "physical_page_number": 3
+          },
+          "paragraph_1_based": 44,
+          "quote": "是否细胞毒药物：否"
+        },
+        {
+          "anchor": {
+            "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+            "parser_version": "9",
+            "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+            "evidence_id": "0d97b1cfec2e1dd87a225a07abcd15051b595c9a15214fcc518691696dbf917b",
+            "section_node_id": "section:28",
+            "block_id": "paragraph:44:0",
+            "paragraph_index": 44,
+            "fragment_index": 0,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null,
+            "span_start": 0,
+            "span_end": 10,
+            "physical_page_number": 3
+          },
+          "paragraph_1_based": 45,
+          "quote": "是否是高致敏药物：否"
+        },
+        {
+          "anchor": {
+            "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+            "parser_version": "9",
+            "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+            "evidence_id": "a6db68228eb3e4e9f6afb0c51a50528bb8bd5e051ec50d6bd5b2e4fbb70e5316",
+            "section_node_id": "section:28",
+            "block_id": "paragraph:45:0",
+            "paragraph_index": 45,
+            "fragment_index": 0,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null,
+            "span_start": 0,
+            "span_end": 10,
+            "physical_page_number": 3
+          },
+          "paragraph_1_based": 46,
+          "quote": "是否是激素类药物：否"
+        },
+        {
+          "anchor": {
+            "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+            "parser_version": "9",
+            "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+            "evidence_id": "73fd2ce08c8dda22a7eb3f5217044e5c90a8f50f075b3b0fd6ff1741bcf8732a",
+            "section_node_id": "section:28",
+            "block_id": "paragraph:46:0",
+            "paragraph_index": 46,
+            "fragment_index": 0,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null,
+            "span_start": 0,
+            "span_end": 11,
+            "physical_page_number": 3
+          },
+          "paragraph_1_based": 47,
+          "quote": "是否是青霉素类药物：否"
+        },
+        {
+          "anchor": {
+            "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+            "parser_version": "9",
+            "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+            "evidence_id": "fbf4fd8f7cfd9b9066e0a19ae8e5f0feca4677c612af8d61b4eda7b6647f4517",
+            "section_node_id": "section:28",
+            "block_id": "paragraph:47:0",
+            "paragraph_index": 47,
+            "fragment_index": 0,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null,
+            "span_start": 0,
+            "span_end": 11,
+            "physical_page_number": 3
+          },
+          "paragraph_1_based": 48,
+          "quote": "是否是高毒高活药物：否"
+        }
+      ]
+    },
+    {
+      "facet": "referent",
+      "decision_id": "d9006786994b6ec40e04f43b570c6b9fe3bd7bd02b33e23767b10995e80b99f9",
+      "verdict": "supported",
+      "source_count": 2,
+      "sources": [
+        {
+          "anchor": {
+            "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+            "parser_version": "9",
+            "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+            "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+            "section_node_id": "section:28",
+            "block_id": "paragraph:32:0",
+            "paragraph_index": 32,
+            "fragment_index": 0,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null,
+            "span_start": 0,
+            "span_end": 13,
+            "physical_page_number": 3
+          },
+          "paragraph_1_based": 33,
+          "quote": "项目名称：HRS-1597"
+        },
+        {
+          "anchor": {
+            "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+            "parser_version": "9",
+            "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+            "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+            "section_node_id": "section:28",
+            "block_id": "paragraph:33:0",
+            "paragraph_index": 33,
+            "fragment_index": 0,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null,
+            "span_start": 0,
+            "span_end": 16,
+            "physical_page_number": 3
+          },
+          "paragraph_1_based": 34,
+          "quote": "项目代码：HRXS-P-2419"
+        }
+      ]
+    },
+    {
+      "facet": "subject_role",
+      "decision_id": "61fd60ab6dec713af7be28fadd296000e5922a77aca1c16f3281e0db5f99c92d",
+      "verdict": "supported",
+      "source_count": 1,
+      "sources": [
+        {
+          "anchor": {
+            "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+            "parser_version": "9",
+            "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+            "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+            "section_node_id": "section:28",
+            "block_id": "paragraph:32:0",
+            "paragraph_index": 32,
+            "fragment_index": 0,
+            "table_path": null,
+            "row_index": null,
+            "column_index": null,
+            "span_start": 0,
+            "span_end": 13,
+            "physical_page_number": 3
+          },
+          "paragraph_1_based": 33,
+          "quote": "项目名称：HRS-1597"
+        }
+      ]
+    }
+  ],
+  "node_evidence_refs_equals_registered_input": true,
+  "registered_input_equals_type_supports": true,
+  "counts": {
+    "physical_sources": 1,
+    "registered_input_sources": 14,
+    "submitted_object_sources": 19,
+    "predicate_sources": 1,
+    "additional_object_source_units": 5
+  },
+  "registered_input_sources": [
+    {
+      "anchor": {
+        "block_id": "paragraph:32:0",
+        "column_index": null,
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+        "fragment_index": 0,
+        "paragraph_index": 32,
+        "parser_version": "9",
+        "physical_page_number": 3,
+        "row_index": null,
+        "section_node_id": "section:28",
+        "span_end": 13,
+        "span_start": 0,
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "table_path": null
+      },
+      "paragraph_1_based": 33,
+      "quote": "项目名称：HRS-1597"
+    },
+    {
+      "anchor": {
+        "block_id": "paragraph:33:0",
+        "column_index": null,
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+        "fragment_index": 0,
+        "paragraph_index": 33,
+        "parser_version": "9",
+        "physical_page_number": 3,
+        "row_index": null,
+        "section_node_id": "section:28",
+        "span_end": 16,
+        "span_start": 0,
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "table_path": null
+      },
+      "paragraph_1_based": 34,
+      "quote": "项目代码：HRXS-P-2419"
+    },
+    {
+      "anchor": {
+        "block_id": "paragraph:41:0",
+        "column_index": null,
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+        "fragment_index": 0,
+        "paragraph_index": 41,
+        "parser_version": "9",
+        "physical_page_number": 3,
+        "row_index": null,
+        "section_node_id": "section:28",
+        "span_end": 9,
+        "span_start": 0,
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "table_path": null
+      },
+      "paragraph_1_based": 42,
+      "quote": "制剂剂型：口服片剂"
+    },
+    {
+      "anchor": {
+        "block_id": "paragraph:30:0",
+        "column_index": null,
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "evidence_id": "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+        "fragment_index": 0,
+        "paragraph_index": 30,
+        "parser_version": "9",
+        "physical_page_number": 3,
+        "row_index": null,
+        "section_node_id": "section:28",
+        "span_end": 15,
+        "span_start": 0,
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "table_path": null
+      },
+      "paragraph_1_based": 31,
+      "quote": "分子式：C23H28N6O5S"
+    },
+    {
+      "anchor": {
+        "block_id": "paragraph:31:0",
+        "column_index": null,
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "evidence_id": "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c",
+        "fragment_index": 0,
+        "paragraph_index": 31,
+        "parser_version": "9",
+        "physical_page_number": 3,
+        "row_index": null,
+        "section_node_id": "section:28",
+        "span_end": 10,
+        "span_start": 0,
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "table_path": null
+      },
+      "paragraph_1_based": 32,
+      "quote": "分子量：500.60"
+    },
+    {
+      "anchor": {
+        "block_id": "paragraph:34:0",
+        "column_index": null,
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "evidence_id": "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+        "fragment_index": 0,
+        "paragraph_index": 34,
+        "parser_version": "9",
+        "physical_page_number": 3,
+        "row_index": null,
+        "section_node_id": "section:28",
+        "span_end": 157,
+        "span_start": 0,
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "table_path": null
+      },
+      "paragraph_1_based": 35,
+      "quote": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide"
+    },
+    {
+      "anchor": {
+        "block_id": "paragraph:35:0",
+        "column_index": null,
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "evidence_id": "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e",
+        "fragment_index": 0,
+        "paragraph_index": 35,
+        "parser_version": "9",
+        "physical_page_number": 3,
+        "row_index": null,
+        "section_node_id": "section:28",
+        "span_end": 90,
+        "span_start": 0,
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "table_path": null
+      },
+      "paragraph_1_based": 36,
+      "quote": "中文：(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺"
+    },
+    {
+      "anchor": {
+        "block_id": "paragraph:37:0",
+        "column_index": null,
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+        "fragment_index": 0,
+        "paragraph_index": 37,
+        "parser_version": "9",
+        "physical_page_number": 3,
+        "row_index": null,
+        "section_node_id": "section:28",
+        "span_end": 11,
+        "span_start": 0,
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "table_path": null
+      },
+      "paragraph_1_based": 38,
+      "quote": "性状：类白色到白色粉末"
+    },
+    {
+      "anchor": {
+        "block_id": "paragraph:42:0",
+        "column_index": null,
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "evidence_id": "92a82f158e48683ef179eb2ac947fcc82d319381afcf72457c5bd1e69d8ceaa0",
+        "fragment_index": 0,
+        "paragraph_index": 42,
+        "parser_version": "9",
+        "physical_page_number": 3,
+        "row_index": null,
+        "section_node_id": "section:28",
+        "span_end": 9,
+        "span_start": 0,
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "table_path": null
+      },
+      "paragraph_1_based": 43,
+      "quote": "是否是肿瘤药物：否"
+    },
+    {
+      "anchor": {
+        "block_id": "paragraph:43:0",
+        "column_index": null,
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "evidence_id": "bbc77ec05164fc68500520c9b37a410c205318f87e1ac764b7b259be9fb54e35",
+        "fragment_index": 0,
+        "paragraph_index": 43,
+        "parser_version": "9",
+        "physical_page_number": 3,
+        "row_index": null,
+        "section_node_id": "section:28",
+        "span_end": 9,
+        "span_start": 0,
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "table_path": null
+      },
+      "paragraph_1_based": 44,
+      "quote": "是否细胞毒药物：否"
+    },
+    {
+      "anchor": {
+        "block_id": "paragraph:44:0",
+        "column_index": null,
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "evidence_id": "0d97b1cfec2e1dd87a225a07abcd15051b595c9a15214fcc518691696dbf917b",
+        "fragment_index": 0,
+        "paragraph_index": 44,
+        "parser_version": "9",
+        "physical_page_number": 3,
+        "row_index": null,
+        "section_node_id": "section:28",
+        "span_end": 10,
+        "span_start": 0,
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "table_path": null
+      },
+      "paragraph_1_based": 45,
+      "quote": "是否是高致敏药物：否"
+    },
+    {
+      "anchor": {
+        "block_id": "paragraph:45:0",
+        "column_index": null,
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "evidence_id": "a6db68228eb3e4e9f6afb0c51a50528bb8bd5e051ec50d6bd5b2e4fbb70e5316",
+        "fragment_index": 0,
+        "paragraph_index": 45,
+        "parser_version": "9",
+        "physical_page_number": 3,
+        "row_index": null,
+        "section_node_id": "section:28",
+        "span_end": 10,
+        "span_start": 0,
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "table_path": null
+      },
+      "paragraph_1_based": 46,
+      "quote": "是否是激素类药物：否"
+    },
+    {
+      "anchor": {
+        "block_id": "paragraph:46:0",
+        "column_index": null,
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "evidence_id": "73fd2ce08c8dda22a7eb3f5217044e5c90a8f50f075b3b0fd6ff1741bcf8732a",
+        "fragment_index": 0,
+        "paragraph_index": 46,
+        "parser_version": "9",
+        "physical_page_number": 3,
+        "row_index": null,
+        "section_node_id": "section:28",
+        "span_end": 11,
+        "span_start": 0,
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "table_path": null
+      },
+      "paragraph_1_based": 47,
+      "quote": "是否是青霉素类药物：否"
+    },
+    {
+      "anchor": {
+        "block_id": "paragraph:47:0",
+        "column_index": null,
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "evidence_id": "fbf4fd8f7cfd9b9066e0a19ae8e5f0feca4677c612af8d61b4eda7b6647f4517",
+        "fragment_index": 0,
+        "paragraph_index": 47,
+        "parser_version": "9",
+        "physical_page_number": 3,
+        "row_index": null,
+        "section_node_id": "section:28",
+        "span_end": 11,
+        "span_start": 0,
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "table_path": null
+      },
+      "paragraph_1_based": 48,
+      "quote": "是否是高毒高活药物：否"
+    }
+  ],
+  "submitted_object_sources": [
+    {
+      "anchor": {
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "parser_version": "9",
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+        "section_node_id": "section:28",
+        "block_id": "paragraph:32:0",
+        "paragraph_index": 32,
+        "fragment_index": 0,
+        "table_path": null,
+        "row_index": null,
+        "column_index": null,
+        "span_start": 0,
+        "span_end": 13,
+        "physical_page_number": 3
+      },
+      "paragraph_1_based": 33,
+      "quote": "项目名称：HRS-1597"
+    },
+    {
+      "anchor": {
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "parser_version": "9",
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "evidence_id": "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+        "section_node_id": "section:28",
+        "block_id": "paragraph:30:0",
+        "paragraph_index": 30,
+        "fragment_index": 0,
+        "table_path": null,
+        "row_index": null,
+        "column_index": null,
+        "span_start": 0,
+        "span_end": 15,
+        "physical_page_number": 3
+      },
+      "paragraph_1_based": 31,
+      "quote": "分子式：C23H28N6O5S"
+    },
+    {
+      "anchor": {
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "parser_version": "9",
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "evidence_id": "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c",
+        "section_node_id": "section:28",
+        "block_id": "paragraph:31:0",
+        "paragraph_index": 31,
+        "fragment_index": 0,
+        "table_path": null,
+        "row_index": null,
+        "column_index": null,
+        "span_start": 0,
+        "span_end": 10,
+        "physical_page_number": 3
+      },
+      "paragraph_1_based": 32,
+      "quote": "分子量：500.60"
+    },
+    {
+      "anchor": {
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "parser_version": "9",
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+        "section_node_id": "section:28",
+        "block_id": "paragraph:33:0",
+        "paragraph_index": 33,
+        "fragment_index": 0,
+        "table_path": null,
+        "row_index": null,
+        "column_index": null,
+        "span_start": 0,
+        "span_end": 16,
+        "physical_page_number": 3
+      },
+      "paragraph_1_based": 34,
+      "quote": "项目代码：HRXS-P-2419"
+    },
+    {
+      "anchor": {
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "parser_version": "9",
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "evidence_id": "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+        "section_node_id": "section:28",
+        "block_id": "paragraph:34:0",
+        "paragraph_index": 34,
+        "fragment_index": 0,
+        "table_path": null,
+        "row_index": null,
+        "column_index": null,
+        "span_start": 0,
+        "span_end": 157,
+        "physical_page_number": 3
+      },
+      "paragraph_1_based": 35,
+      "quote": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide"
+    },
+    {
+      "anchor": {
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "parser_version": "9",
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "evidence_id": "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e",
+        "section_node_id": "section:28",
+        "block_id": "paragraph:35:0",
+        "paragraph_index": 35,
+        "fragment_index": 0,
+        "table_path": null,
+        "row_index": null,
+        "column_index": null,
+        "span_start": 0,
+        "span_end": 90,
+        "physical_page_number": 3
+      },
+      "paragraph_1_based": 36,
+      "quote": "中文：(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺"
+    },
+    {
+      "anchor": {
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "parser_version": "9",
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "evidence_id": "b4dabece54e4ed1ff9eab064651ccf18f151de488ad48ef326ca52418b3dacd8",
+        "section_node_id": "section:28",
+        "block_id": "paragraph:36:0",
+        "paragraph_index": 36,
+        "fragment_index": 0,
+        "table_path": null,
+        "row_index": null,
+        "column_index": null,
+        "span_start": 0,
+        "span_end": 7,
+        "physical_page_number": 3
+      },
+      "paragraph_1_based": 37,
+      "quote": "CAS：N/A"
+    },
+    {
+      "anchor": {
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "parser_version": "9",
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+        "section_node_id": "section:28",
+        "block_id": "paragraph:37:0",
+        "paragraph_index": 37,
+        "fragment_index": 0,
+        "table_path": null,
+        "row_index": null,
+        "column_index": null,
+        "span_start": 0,
+        "span_end": 11,
+        "physical_page_number": 3
+      },
+      "paragraph_1_based": 38,
+      "quote": "性状：类白色到白色粉末"
+    },
+    {
+      "anchor": {
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "parser_version": "9",
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+        "section_node_id": "section:28",
+        "block_id": "paragraph:38:0",
+        "paragraph_index": 38,
+        "fragment_index": 0,
+        "table_path": null,
+        "row_index": null,
+        "column_index": null,
+        "span_start": 0,
+        "span_end": 24,
+        "physical_page_number": 3
+      },
+      "paragraph_1_based": 39,
+      "quote": "溶解性： DCM易溶，H2O、Heptane难溶"
+    },
+    {
+      "anchor": {
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "parser_version": "9",
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "evidence_id": "ae3330d1d1826e10ecff3fd4b56765fe385dfff5a67679fbe22a436480d3276a",
+        "section_node_id": "section:28",
+        "block_id": "paragraph:39:0",
+        "paragraph_index": 39,
+        "fragment_index": 0,
+        "table_path": null,
+        "row_index": null,
+        "column_index": null,
+        "span_start": 0,
+        "span_end": 20,
+        "physical_page_number": 3
+      },
+      "paragraph_1_based": 40,
+      "quote": "结构特点：三氮唑类化合物，含有磺胺结构 "
+    },
+    {
+      "anchor": {
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "parser_version": "9",
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+        "section_node_id": "section:28",
+        "block_id": "paragraph:40:0",
+        "paragraph_index": 40,
+        "fragment_index": 0,
+        "table_path": null,
+        "row_index": null,
+        "column_index": null,
+        "span_start": 0,
+        "span_end": 54,
+        "physical_page_number": 3
+      },
+      "paragraph_1_based": 41,
+      "quote": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃"
+    },
+    {
+      "anchor": {
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "parser_version": "9",
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+        "section_node_id": "section:28",
+        "block_id": "paragraph:41:0",
+        "paragraph_index": 41,
+        "fragment_index": 0,
+        "table_path": null,
+        "row_index": null,
+        "column_index": null,
+        "span_start": 0,
+        "span_end": 10,
+        "physical_page_number": 3
+      },
+      "paragraph_1_based": 42,
+      "quote": "制剂剂型：口服片剂 "
+    },
+    {
+      "anchor": {
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "parser_version": "9",
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "evidence_id": "92a82f158e48683ef179eb2ac947fcc82d319381afcf72457c5bd1e69d8ceaa0",
+        "section_node_id": "section:28",
+        "block_id": "paragraph:42:0",
+        "paragraph_index": 42,
+        "fragment_index": 0,
+        "table_path": null,
+        "row_index": null,
+        "column_index": null,
+        "span_start": 0,
+        "span_end": 9,
+        "physical_page_number": 3
+      },
+      "paragraph_1_based": 43,
+      "quote": "是否是肿瘤药物：否"
+    },
+    {
+      "anchor": {
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "parser_version": "9",
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "evidence_id": "bbc77ec05164fc68500520c9b37a410c205318f87e1ac764b7b259be9fb54e35",
+        "section_node_id": "section:28",
+        "block_id": "paragraph:43:0",
+        "paragraph_index": 43,
+        "fragment_index": 0,
+        "table_path": null,
+        "row_index": null,
+        "column_index": null,
+        "span_start": 0,
+        "span_end": 9,
+        "physical_page_number": 3
+      },
+      "paragraph_1_based": 44,
+      "quote": "是否细胞毒药物：否"
+    },
+    {
+      "anchor": {
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "parser_version": "9",
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "evidence_id": "0d97b1cfec2e1dd87a225a07abcd15051b595c9a15214fcc518691696dbf917b",
+        "section_node_id": "section:28",
+        "block_id": "paragraph:44:0",
+        "paragraph_index": 44,
+        "fragment_index": 0,
+        "table_path": null,
+        "row_index": null,
+        "column_index": null,
+        "span_start": 0,
+        "span_end": 10,
+        "physical_page_number": 3
+      },
+      "paragraph_1_based": 45,
+      "quote": "是否是高致敏药物：否"
+    },
+    {
+      "anchor": {
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "parser_version": "9",
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "evidence_id": "a6db68228eb3e4e9f6afb0c51a50528bb8bd5e051ec50d6bd5b2e4fbb70e5316",
+        "section_node_id": "section:28",
+        "block_id": "paragraph:45:0",
+        "paragraph_index": 45,
+        "fragment_index": 0,
+        "table_path": null,
+        "row_index": null,
+        "column_index": null,
+        "span_start": 0,
+        "span_end": 10,
+        "physical_page_number": 3
+      },
+      "paragraph_1_based": 46,
+      "quote": "是否是激素类药物：否"
+    },
+    {
+      "anchor": {
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "parser_version": "9",
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "evidence_id": "73fd2ce08c8dda22a7eb3f5217044e5c90a8f50f075b3b0fd6ff1741bcf8732a",
+        "section_node_id": "section:28",
+        "block_id": "paragraph:46:0",
+        "paragraph_index": 46,
+        "fragment_index": 0,
+        "table_path": null,
+        "row_index": null,
+        "column_index": null,
+        "span_start": 0,
+        "span_end": 11,
+        "physical_page_number": 3
+      },
+      "paragraph_1_based": 47,
+      "quote": "是否是青霉素类药物：否"
+    },
+    {
+      "anchor": {
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "parser_version": "9",
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "evidence_id": "fbf4fd8f7cfd9b9066e0a19ae8e5f0feca4677c612af8d61b4eda7b6647f4517",
+        "section_node_id": "section:28",
+        "block_id": "paragraph:47:0",
+        "paragraph_index": 47,
+        "fragment_index": 0,
+        "table_path": null,
+        "row_index": null,
+        "column_index": null,
+        "span_start": 0,
+        "span_end": 11,
+        "physical_page_number": 3
+      },
+      "paragraph_1_based": 48,
+      "quote": "是否是高毒高活药物：否"
+    },
+    {
+      "anchor": {
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "parser_version": "9",
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "evidence_id": "12943408020bef0c9efc9d1f0ec34c383d7d0764a250752ee0e52bbb0e72ad95",
+        "section_node_id": "section:28",
+        "block_id": "paragraph:48:0",
+        "paragraph_index": 48,
+        "fragment_index": 0,
+        "table_path": null,
+        "row_index": null,
+        "column_index": null,
+        "span_start": 0,
+        "span_end": 9,
+        "physical_page_number": 3
+      },
+      "paragraph_1_based": 49,
+      "quote": "是否需要灭活：否 "
+    }
+  ],
+  "predicate_sources": [
+    {
+      "anchor": {
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "parser_version": "9",
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+        "section_node_id": "section:28",
+        "block_id": "paragraph:32:0",
+        "paragraph_index": 32,
+        "fragment_index": 0,
+        "table_path": null,
+        "row_index": null,
+        "column_index": null,
+        "span_start": 0,
+        "span_end": 13,
+        "physical_page_number": 3
+      },
+      "paragraph_1_based": 33,
+      "quote": "项目名称：HRS-1597"
+    }
+  ],
+  "additional_object_source_units": [
+    {
+      "anchor": {
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "parser_version": "9",
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "evidence_id": "b4dabece54e4ed1ff9eab064651ccf18f151de488ad48ef326ca52418b3dacd8",
+        "section_node_id": "section:28",
+        "block_id": "paragraph:36:0",
+        "paragraph_index": 36,
+        "fragment_index": 0,
+        "table_path": null,
+        "row_index": null,
+        "column_index": null,
+        "span_start": 0,
+        "span_end": 7,
+        "physical_page_number": 3
+      },
+      "paragraph_1_based": 37,
+      "quote": "CAS：N/A"
+    },
+    {
+      "anchor": {
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "parser_version": "9",
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+        "section_node_id": "section:28",
+        "block_id": "paragraph:38:0",
+        "paragraph_index": 38,
+        "fragment_index": 0,
+        "table_path": null,
+        "row_index": null,
+        "column_index": null,
+        "span_start": 0,
+        "span_end": 24,
+        "physical_page_number": 3
+      },
+      "paragraph_1_based": 39,
+      "quote": "溶解性： DCM易溶，H2O、Heptane难溶"
+    },
+    {
+      "anchor": {
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "parser_version": "9",
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "evidence_id": "ae3330d1d1826e10ecff3fd4b56765fe385dfff5a67679fbe22a436480d3276a",
+        "section_node_id": "section:28",
+        "block_id": "paragraph:39:0",
+        "paragraph_index": 39,
+        "fragment_index": 0,
+        "table_path": null,
+        "row_index": null,
+        "column_index": null,
+        "span_start": 0,
+        "span_end": 20,
+        "physical_page_number": 3
+      },
+      "paragraph_1_based": 40,
+      "quote": "结构特点：三氮唑类化合物，含有磺胺结构 "
+    },
+    {
+      "anchor": {
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "parser_version": "9",
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+        "section_node_id": "section:28",
+        "block_id": "paragraph:40:0",
+        "paragraph_index": 40,
+        "fragment_index": 0,
+        "table_path": null,
+        "row_index": null,
+        "column_index": null,
+        "span_start": 0,
+        "span_end": 54,
+        "physical_page_number": 3
+      },
+      "paragraph_1_based": 41,
+      "quote": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃"
+    },
+    {
+      "anchor": {
+        "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+        "parser_version": "9",
+        "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+        "evidence_id": "12943408020bef0c9efc9d1f0ec34c383d7d0764a250752ee0e52bbb0e72ad95",
+        "section_node_id": "section:28",
+        "block_id": "paragraph:48:0",
+        "paragraph_index": 48,
+        "fragment_index": 0,
+        "table_path": null,
+        "row_index": null,
+        "column_index": null,
+        "span_start": 0,
+        "span_end": 9,
+        "physical_page_number": 3
+      },
+      "paragraph_1_based": 49,
+      "quote": "是否需要灭活：否 "
+    }
+  ],
+  "object_output_covers_all_registered_sources": true,
+  "source_assertion_gate": {
+    "predicate_covers_physical_sources": true,
+    "predicate_covered_registered_count": 1,
+    "predicate_covered_submitted_object_count": 1,
+    "outcome": "source_assertion_endpoint_chain_not_closed",
+    "binding_gate_change_recommended": false
+  },
+  "discovery_instruction_from_source": {
+    "file": "backend/app/services/extraction/ontology_guided/tool_model_adapter.py",
+    "constant": "REGISTERED_RELATION_INSTRUCTIONS",
+    "text": "每个object_support须完整覆盖该对象在registered_entities中的source_refs，或引用同一授权单元中包含这些锚点的更长原文；不得只截取更短的名称子串。"
+  },
+  "independent_conclusions": [
+    "原始实体只有P33项目名一个物理提及；14个登记来源来自实体facet支持并集，其中type facet自身已有14个，不是直接把六条属性候选的证明复制进节点。",
+    "源角色已在模型收到registered_entities之前混合。全覆盖指令会要求至少14个对象来源；模型另外增加5个单元，不能将全部背景扩张只归责于本次关系发现。",
+    "predicate只覆盖项目名；即使object_support严格照登记的14个来源输出，仍仅覆盖1/14；实际19个仅覆盖1/19。",
+    "更小修复是GraphNode.evidence_refs只保留实体原物理sources（提及或全部记录组成），类型/指称/角色引文继续独立保存在SemanticDecision并由原决策和依赖refs关联。",
+    "该修复解决来源角色构造，不证明DrugProduct类型、实例层级或关系语义正确，不能放松已有端点链覆盖门。"
+  ],
+  "input_file_sha256": {
+    "review-20bf2d25-results-final.json": "1da7439eb9c2e165bbffc9cce8c971315b319601c6e4b1470287c6a0e9bb4afa",
+    "review-20bf2d25-relation-protocol-sources.json": "8ba6182c83027ce2ecad159360ce588be361a623e28571b650406e96907294e3",
+    "review-20bf2d25-source.json": "89bdffa8677a7eab1ee1b3ba0b5844ce7257f2635383d3091c92d636fbff5651"
+  },
+  "pure_function_replay": {
+    "function": "source_assertions._covered",
+    "source_sha256": "be1635ef5edd3c4ad8634ea271106906b2a324300376366ee4d8b9317ebd500b",
+    "physical_sources_covered": true,
+    "registered_sources_covered": false,
+    "submitted_object_sources_covered": false,
+    "model_calls": 0,
+    "application_mutations": 0
+  }
+}

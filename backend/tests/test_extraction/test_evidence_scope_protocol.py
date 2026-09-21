@@ -9,6 +9,7 @@ from app.services.extraction.ontology_guided import model_adapter
 from app.services.extraction.ontology_guided.context import assemble_context
 from app.services.extraction.ontology_guided.ontology_plan import compile_local_menu
 from app.services.extraction.ontology_guided.repair_adapter import EvidenceRepairAdapter
+from app.services.extraction.ontology_guided.value_constraints import UNIT_NORMALIZATION_VERSION
 from tests.test_extraction.test_evidence_repair import _ontology, repaired_response
 from tests.test_extraction.test_joint_evidence_validation import _fixture
 
@@ -133,7 +134,7 @@ def test_old_scope_policy_cannot_reuse_frozen_outcome(tmp_path, monkeypatch, fie
 
 
 @pytest.mark.parametrize("missing", [
-    "scope_protocol", "owner_binding", "evidence_work", "literal_quotes",
+    "scope_protocol", "owner_binding", "evidence_work", "literal_quotes", "unit_normalization",
 ])
 def test_old_run_policy_does_not_construct_a_new_adapter(monkeypatch, missing):
     from app.services.document_analysis import execution
@@ -142,7 +143,8 @@ def test_old_run_policy_does_not_construct_a_new_adapter(monkeypatch, missing):
     monkeypatch.setattr(execution, "configured_model_adapter", lambda **kw: calls.append(kw))
     policy = {"evidence_repair": "evidence-repair-v1", "scope_protocol": "source-quoted-scope-v1",
               "owner_binding": "source-owned-binding-v2", "evidence_work": "evidence-work-v2",
-              "literal_quotes": "source-integer-quotes-v2"}
+              "literal_quotes": "source-integer-quotes-v2",
+              "unit_normalization": UNIT_NORMALIZATION_VERSION}
     old = dict(policy)
     old.pop(missing)
     with pytest.raises(execution.CheckpointMismatch, match="policy version mismatch"):

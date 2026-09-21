@@ -157,7 +157,6 @@ export function DocumentRelationshipGraph({
   selectedSelectionRef,
   compact = false,
   runStatus,
-  rankingBudgetEnabled,
 }: {
   artifact: DocumentAnalysisGraphArtifact | null;
   projection: DocumentGraphProjection;
@@ -166,10 +165,8 @@ export function DocumentRelationshipGraph({
   selectedSelectionRef?: string | null;
   compact?: boolean;
   runStatus?: DocumentAnalysisStatus;
-  rankingBudgetEnabled?: boolean;
 }) {
   const runContinuing = runStatus === "running" || runStatus === "queued";
-  const budgetEnabled = rankingBudgetEnabled ?? artifact?.ranking?.budget_enabled ?? true;
   const [selection, setSelection] = useState<GraphSelection | null>(null);
   const detailsRef = useRef<HTMLDivElement>(null);
   useEffect(() => { detailsRef.current?.scrollTo({ top: 0 }); }, [selection]);
@@ -262,7 +259,6 @@ export function DocumentRelationshipGraph({
           )}
         >
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline" aria-label="图谱排序预算限制">排序预算限制：{budgetEnabled ? "已启用" : "已禁用"}</Badge>
             <Badge
               variant={
                 artifact?.availability === "failed"
@@ -299,7 +295,6 @@ export function DocumentRelationshipGraph({
               ))}
             </select>
           </label>
-          {!budgetEnabled && <p className="text-xs text-muted-foreground">预算统计已暂停（显示启用期间累计值）。排序模型仍可运行，输入长度、超时和单次重试限制保持有效。</p>}
         </CardContent>
       </Card>
 
@@ -315,7 +310,11 @@ export function DocumentRelationshipGraph({
           <AlertTitle>{runContinuing ? "最近提交的排序快照" : "排序已暂停"}</AlertTitle>
           <AlertDescription>
             {runContinuing && <p>运行正在继续，以下为最近已提交快照的说明。</p>}
-            <p>{formatDocumentRankingPause(artifact.ranking, runContinuing, budgetEnabled)}</p>
+            <p>{formatDocumentRankingPause(
+              artifact.ranking,
+              runContinuing,
+              artifact.ranking.budget_enabled,
+            )}</p>
           </AlertDescription>
         </Alert>
       )}
@@ -327,7 +326,6 @@ export function DocumentRelationshipGraph({
             {artifact.ranking.paused ? " · 排序已暂停" : artifact.ranking.degraded ? " · 排序已降级" : ""}
           </summary>
           <div className="mt-4 space-y-3 text-xs">
-            {!budgetEnabled && <p className="font-medium">预算统计已暂停（显示启用期间累计值）。重新启用后从关闭前的累计量继续。</p>}
             <p className="text-muted-foreground">
               检索排名用于安排处理顺序，原始分数不代表事实正确概率。关系是否成立仍以原文证明和验证结果为准。
             </p>

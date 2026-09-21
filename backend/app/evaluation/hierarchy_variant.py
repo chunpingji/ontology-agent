@@ -22,7 +22,11 @@ from dataclasses import asdict, is_dataclass
 from time import perf_counter
 
 from app.services.extraction.evidence_identity import canonical_json, evidence_hash, stable_id
-from app.services.extraction.extraction_tasks import SYSTEM, GenericExtractionRunner
+from app.services.extraction.extraction_tasks import (
+    OUTPUT_SPLIT_VERSION,
+    SYSTEM,
+    GenericExtractionRunner,
+)
 from app.services.extraction.hierarchical_context import model_request
 from app.services.extraction.model_protocol import ModelProtocol
 
@@ -276,8 +280,22 @@ class HierarchyHintRunner(GenericExtractionRunner):
                     "GLiNER unavailable: do not label this run as a GLiNER experiment"
                 )
 
-    def input_id(self, ir, effective_class="", *, scheduler_version=None):
-        base = super().input_id(ir, effective_class, scheduler_version=scheduler_version)
+    def input_id(
+        self,
+        ir,
+        effective_class="",
+        *,
+        scheduler_version=None,
+        output_split_version=OUTPUT_SPLIT_VERSION,
+        execution_policy="configured",
+    ):
+        base = super().input_id(
+            ir,
+            effective_class,
+            scheduler_version=scheduler_version,
+            output_split_version=output_split_version,
+            execution_policy=execution_policy,
+        )
         return stable_id("hierarchy-experiment", [base, self.plan["dependency_hash"]])
 
     def pack_regions(self, ir, regions):

@@ -1,6 +1,7 @@
 """Record discovery through the actual coordinator, worker and transactional store."""
 import json
 from copy import deepcopy
+from dataclasses import replace
 from functools import partial
 
 import pytest
@@ -65,8 +66,8 @@ def record_setup(tmp_path, monkeypatch, current_run, *, split=False, empty_relat
     index = RecordIndex(args["ir"])
     unit = index.records[0].source_units[0]
     requests = []
-    def quote(text):
-        return {"evidence_id": unit.evidence_id, "text": text,
+    def quote(text, *, evidence_id=None):
+        return {"evidence_id": evidence_id or unit.evidence_id, "text": text,
                 "context_text": TEXT if text == "部件乙" else None}
     qualifiers = dict(polarity="affirmed", modality="asserted",
                       condition_support=[], scope_qualifiers=[])
@@ -76,10 +77,13 @@ def record_setup(tmp_path, monkeypatch, current_run, *, split=False, empty_relat
         return transform(view, payload, record=record) if transform else payload
 
     def base_answer(view, *, record):
+        source_refs = view.get("evidence_units") or view["evidence_refs"]
+        evidence_id = source_refs[0]["evidence_id"]
         if view["stage"] == "verification":
             return {"verifications": [{
                 "target_id": target["target_id"], "content_hash": target["content_hash"],
-                "facets": [dict(name=facet, verdict="supported", support=[quote(TEXT)],
+                "facets": [dict(name=facet, verdict="supported",
+                                support=[quote(TEXT, evidence_id=evidence_id)],
                                 counterevidence_support=[], reason="原文逐项支持")
                            for facet in target["required_facets"]],
             } for target in view["verification_input"]["targets"]]}
@@ -98,29 +102,59 @@ def record_setup(tmp_path, monkeypatch, current_run, *, split=False, empty_relat
                     owner = "a" if cls == A else "b"
                     result["entities"].append(dict(
                         local_id=owner, class_iri=cls, representation="mention",
-                        mentions=[quote(name)], record_components=[], identifier_claims=[],
+                        mentions=[quote(name, evidence_id=evidence_id)],
+                        record_components=[], identifier_claims=[],
                     ))
                 result["properties"].append(dict(
                     local_id="p" + value, subject_id=owner, predicate_iri=VALUE,
-                    value_quote=quote(value), field_support=[quote(field)], unit_support=[],
+                    value_quote=quote(value, evidence_id=evidence_id),
+                    field_support=[quote(field, evidence_id=evidence_id)], unit_support=[],
                     qualifiers=qualifiers, bridge_kind="explicit_assertion", bridge_ref_ids=[],
                 ))
-        elif view["predicate_iri"] == EDGE and not empty_relations:
+        elif view["predicate_iri"] in {ROOT_EDGE, EDGE} and not empty_relations:
+            target_class = A if view["predicate_iri"] == ROOT_EDGE else B
             destination = next((e["entity_ref"]["id"] for e in registered
-                                if e["class_iri"] == B), None)
+                                if e["class_iri"] == target_class), None)
             if destination:
+                subject_text = "" if view["predicate_iri"] == ROOT_EDGE else "装置甲"
+                object_text = "装置甲" if view["predicate_iri"] == ROOT_EDGE else "部件乙"
                 result["relations"].append(dict(
-                    local_id="rel", subject_id=view["subject_ref"]["id"], predicate_iri=EDGE,
-                    object_ids=[destination], selection="all", bridge_support=[quote(TEXT)],
+                    local_id="rel", subject_id=view["subject_ref"]["id"],
+                    predicate_iri=view["predicate_iri"],
+                    object_ids=[destination], selection="all",
+                    bridge_support=[quote(TEXT, evidence_id=evidence_id)],
                     selection_support=[], qualifiers=qualifiers,
-                    bridge_kind="explicit_assertion", bridge_ref_ids=[],
+                    bridge_kind=("document_subject_description"
+                                 if view["predicate_iri"] == ROOT_EDGE
+                                 else "explicit_assertion"),
+                    bridge_ref_ids=[],
                     source_assertion=dict(
-                        subject_support=[quote("装置甲")],
-                        object_support=[dict(object_id=destination, support=[quote("部件乙")])],
-                        predicate_support=[quote(TEXT)], binding_ids=[],
+                        subject_support=([quote(subject_text, evidence_id=evidence_id)]
+                                         if subject_text else []),
+                        object_support=[dict(
+                            object_id=destination,
+                            support=[quote(object_text, evidence_id=evidence_id)],
+                        )],
+                        predicate_support=[quote(TEXT, evidence_id=evidence_id)], binding_ids=[],
                         binding_dependency_refs=[],
                     ),
                 ))
+        elif view["predicate_iri"] == VALUE:
+            subject = next(
+                entity for entity in registered
+                if entity["entity_ref"]["id"] == view["subject_ref"]["id"]
+            )
+            value = "A" if subject["class_iri"] == A else "B"
+            field = "型号" if subject["class_iri"] == A else "规格"
+            result["properties"].append(dict(
+                local_id="local-property-" + value,
+                subject_id=view["subject_ref"]["id"],
+                predicate_iri=VALUE,
+                value_quote=quote(value, evidence_id=evidence_id),
+                field_support=[quote(field, evidence_id=evidence_id)],
+                unit_support=[], qualifiers=qualifiers,
+                bridge_kind="explicit_assertion", bridge_ref_ids=[],
+            ))
         return result
 
     def transport(_client, **kwargs):
@@ -202,6 +236,62 @@ def test_record_candidates_without_incoming_edges_keep_their_own_properties(
     assert result.graph.progress.model_calls == len(requests)
 
 
+def test_record_entity_relationship_menu_waits_for_proved_incoming_relation(
+    tmp_path, monkeypatch, current_run,
+):
+    def omit_root_relation(view, payload, *, record):
+        if not record and view["predicate_iri"] == ROOT_EDGE:
+            payload["relations"] = []
+        return payload
+
+    args, executor, requests, hooks = record_setup(
+        tmp_path, monkeypatch, current_run, transform=omit_root_relation,
+    )
+    result = executor().run(**args, **hooks)
+
+    assert {node.class_iri for node in result.graph.nodes} == {ROOT, A, B}
+    assert {prop.raw_value for prop in result.graph.properties} == {"A", "B"}
+    assert not any(edge.predicate_iri == EDGE for edge in result.graph.edges)
+    assert not any(
+        member["predicate_iri"] == EDGE
+        for view in requests
+        for member in view.get("members", [])
+    )
+
+
+def test_entity_only_record_attributes_start_after_proved_incoming_relation(
+    tmp_path, monkeypatch, current_run,
+):
+    def omit_region_properties(_view, payload, *, record):
+        if record and _view["stage"] == "discovery":
+            payload["properties"] = []
+        return payload
+
+    args, executor, requests, hooks = record_setup(
+        tmp_path, monkeypatch, current_run, transform=omit_region_properties,
+    )
+    result = executor().run(**args, **hooks)
+
+    assert {prop.raw_value for prop in result.graph.properties} == {"A", "B"}, (
+        [
+            (view["stage"], [member["predicate_iri"] for member in view.get("members", [])])
+            for view in requests
+        ],
+        result.diagnostics,
+    )
+    root_request = next(
+        position for position, view in enumerate(requests)
+        if view["stage"] == "discovery"
+        and any(member["predicate_iri"] == ROOT_EDGE for member in view.get("members", []))
+    )
+    first_property = next(
+        position for position, view in enumerate(requests)
+        if view["stage"] == "discovery"
+        and any(member["predicate_iri"] == VALUE for member in view.get("members", []))
+    )
+    assert root_request < first_property
+
+
 def test_late_endpoint_reopens_only_affected_relation_with_original_lineage_budget(
     tmp_path, monkeypatch, current_run,
 ):
@@ -248,20 +338,48 @@ def test_missing_endpoints_spend_no_relation_calls_and_remain_unattempted(
     assert result.graph.progress.model_calls == len(requests)
 
 
-def test_waiting_endpoint_survives_cold_continue_without_repeating_paid_discovery(
+def test_fresh_record_run_registers_root_dependency_before_first_entity_call(
+    tmp_path, monkeypatch, current_run,
+):
+    store, run, _ = current_run
+    observed = []
+
+    def inspect_first_request(view, payload, *, record):
+        if record and not observed:
+            work = current_state.restore_work(store, run, run.run_fingerprint).work_state
+            observed.extend(
+                row["value"] for row in work["record_relation_inputs"].values()
+            )
+            assert [card["class_iri"] for card in view["schema_card"]["class_cards"]] == [A]
+        return payload
+
+    args, executor, _, hooks = record_setup(
+        tmp_path, monkeypatch, current_run, split=True, transform=inspect_first_request,
+    )
+    executor().run(**args, **hooks)
+
+    assert observed
+    assert observed[0]["task"]["predicate_iri"] == ROOT_EDGE
+    assert observed[0]["status"] == "waiting_endpoints"
+
+
+def test_late_endpoint_survives_cold_continue_without_repeating_paid_discovery(
     tmp_path, monkeypatch, current_run,
 ):
     args, executor, requests, hooks = record_setup(tmp_path, monkeypatch, current_run, split=True)
     stopped = False
-    persist = hooks["work_hook"]
+    persist = hooks["model_call_hook"]
 
-    def work(changes):
+    def calls(state):
         nonlocal stopped
-        persist(changes)
-        stopped = stopped or "waiting_endpoints" in str(changes)
+        persist(state)
+        stopped = stopped or any(
+            row["field"] == "model_turn" and row["value"]["stage"] == "discovery"
+            for row in state.get("result_changes", {}).values()
+        )
 
     paused = executor(progress_hook=lambda _: not stopped).run(
-        **args, **{**hooks, "work_hook": work},
+        **args, **{**hooks, "model_call_hook": calls},
     )
     assert stopped and "execution_pause_requested" in paused.diagnostics
     paid_requests = deepcopy(requests)
@@ -278,7 +396,7 @@ def test_waiting_endpoint_survives_cold_continue_without_repeating_paid_discover
 
 
 @pytest.mark.parametrize("observation_kind", ["missing", "unbound"])
-def test_source_located_missing_relation_observation_reaches_bounded_discovery_feedback(
+def test_source_located_relation_observation_does_not_repeat_paid_discovery(
     tmp_path, monkeypatch, current_run, observation_kind,
 ):
     def gap(view, payload, *, record):
@@ -299,14 +417,42 @@ def test_source_located_missing_relation_observation_reaches_bounded_discovery_f
     result = executor().run(**args, **hooks)
     discoveries = [request for request in requests
                    if "members" not in request and request["stage"] == "discovery"]
-    assert len(discoveries) == 2
-    assert any(item.get("kind") == "record_feedback"
-               for item in discoveries[1].get("feedback", []))
+    assert len(discoveries) == 1
+    assert not discoveries[0].get("feedback")
     store, run, _ = current_run
     calls = current_state.restore_calls(store, run, run.run_fingerprint)
     records = [p for p in calls["protocols"].values() if p["version"] == RECORD_PROTOCOL]
-    assert len(records) == 1 and records[0]["request_attempt"] == 4
+    assert len(records) == 1 and records[0]["request_attempt"] == 2
     assert result.graph.progress.model_calls == len(requests)
+
+
+def test_relation_observation_with_registered_range_endpoint_does_not_repeat_discovery(
+    tmp_path, monkeypatch, current_run,
+):
+    def contradictory_gap(view, payload, *, record):
+        if not record and view["stage"] == "discovery" and view["predicate_iri"] == EDGE:
+            assert payload["relations"]
+            unit = RecordIndex(args["ir"]).records[0].source_units[0]
+            payload["observations"] = [{
+                "kind": "missing", "subject_id": view["subject_ref"]["id"],
+                "predicate_iri": EDGE, "quote": {
+                    "evidence_id": unit.evidence_id, "text": "部件乙", "context_text": TEXT,
+                }, "reason": "关系证据仍需核对，但对象端点已经登记",
+            }]
+        return payload
+
+    args, executor, requests, hooks = record_setup(
+        tmp_path, monkeypatch, current_run, transform=contradictory_gap,
+    )
+    result = executor().run(**args, **hooks)
+    assert any(edge.predicate_iri == EDGE for edge in result.graph.edges), result.events
+    record_requests = [view for view in requests if "members" not in view]
+    assert record_requests
+    assert not any(view.get("feedback") for view in record_requests)
+    store, run, _ = current_run
+    work = current_state.restore_work(store, run, run.run_fingerprint).work_state
+    rows = [row["value"] for row in work["record_discovery"].values()]
+    assert rows and all(row.get("feedback_reopens", 0) == 0 for row in rows)
 
 
 @pytest.mark.parametrize("pause_stage", ["discovery", "verification"])
@@ -338,9 +484,79 @@ def test_cold_continue_reuses_confirmed_record_response(
     assert len([view for view in requests if "members" not in view]) == 2
 
 
-@pytest.mark.parametrize("recover_missing", [True, False])
-def test_anchored_discovery_gap_reopens_record_once_with_same_budget(
-    tmp_path, monkeypatch, current_run, recover_missing,
+def test_cold_continue_loads_completed_verification_batch_without_repeating_targets(
+    tmp_path, monkeypatch, current_run,
+):
+    from app.services.llm import local_client
+
+    args, executor, requests, hooks = record_setup(
+        tmp_path, monkeypatch, current_run, empty_relations=True,
+    )
+    transport = local_client.responses_create
+    truncated = False
+
+    def split_first_batch(*arguments, **kwargs):
+        nonlocal truncated
+        view = json.loads(kwargs["input_items"][0]["content"][0]["text"])
+        turn = transport(*arguments, **kwargs)
+        if view["stage"] == "verification" and not truncated:
+            truncated = True
+            return replace(
+                turn,
+                output_items=[{
+                    "type": "message", "role": "assistant", "status": "completed",
+                    "content": [{"type": "output_text", "text": '{"verifications":['}],
+                }],
+                usage={"input_tokens": 10, "output_tokens": 20000, "total_tokens": 20010},
+            )
+        return turn
+
+    monkeypatch.setattr(local_client, "responses_create", split_first_batch)
+    stopped = False
+    persist = hooks["model_call_hook"]
+
+    def calls(state):
+        nonlocal stopped
+        persist(state)
+        if (
+            state.get("verification_ref") is None
+            and any(row["field"] == "verification"
+                    for row in state.get("result_changes", {}).values())
+        ):
+            stopped = True
+
+    first = executor(progress_hook=lambda _: not stopped, max_model_calls_per_record=8).run(
+        **args, **{**hooks, "model_call_hook": calls},
+    )
+    assert "execution_pause_requested" in first.diagnostics
+    store, run, _ = current_run
+    saved_calls = current_state.restore_calls(store, run, run.run_fingerprint)
+    protocol = next(value for value in saved_calls["protocols"].values()
+                    if value["version"] == RECORD_PROTOCOL)
+    completed_ids = {
+        target_id for batch in protocol["verification_batches"]["batches"]
+        if batch["status"] == "completed" for target_id in batch["target_ids"]
+    }
+    assert completed_ids and any(
+        batch["status"] == "pending" for batch in protocol["verification_batches"]["batches"]
+    )
+    paid_before_resume = len(requests)
+    result = executor(max_model_calls_per_record=8).run(
+        **args, **hooks,
+        resume_state=vars(current_state.restore_work(store, run, run.run_fingerprint)),
+        model_call_state=saved_calls,
+    )
+    assert {prop.raw_value for prop in result.graph.properties} == {"A", "B"}
+    resumed_ids = {
+        target["target_id"] for view in requests[paid_before_resume:]
+        if view["stage"] == "verification"
+        for target in view["verification_input"]["targets"]
+    }
+    assert completed_ids.isdisjoint(resumed_ids)
+
+
+def test_anchored_discovery_gap_does_not_reopen_paid_record(
+    tmp_path, monkeypatch, current_run,
 ):
     generations = []
     def transform(view, payload, *, record):
@@ -348,14 +564,13 @@ def test_anchored_discovery_gap_reopens_record_once_with_same_budget(
             return payload
         if record:
             generations.append(view)
-            if len(generations) == 1 or not recover_missing:
-                payload["entities"] = [e for e in payload["entities"] if e["class_iri"] != B]
-                payload["properties"] = [p for p in payload["properties"] if p["local_id"] != "pB"]
-                evidence_id = RecordIndex(args["ir"]).records[0].source_units[0].evidence_id
-                payload["observations"] = [{"kind": "unbound", "subject_id": None,
-                    "predicate_iri": None, "quote": {"evidence_id": evidence_id,
-                    "text": "部件乙", "context_text": TEXT},
-                    "reason": "原文对象尚未登记，需核对类型和指称"}]
+            payload["entities"] = [e for e in payload["entities"] if e["class_iri"] != B]
+            payload["properties"] = [p for p in payload["properties"] if p["local_id"] != "pB"]
+            evidence_id = RecordIndex(args["ir"]).records[0].source_units[0].evidence_id
+            payload["observations"] = [{"kind": "unbound", "subject_id": None,
+                "predicate_iri": None, "quote": {"evidence_id": evidence_id,
+                "text": "部件乙", "context_text": TEXT},
+                "reason": "原文对象尚未登记，需核对类型和指称"}]
         elif view["predicate_iri"] == EDGE and not payload["relations"]:
             evidence_id = RecordIndex(args["ir"]).records[0].source_units[0].evidence_id
             payload["observations"] = [{"kind": "unbound",
@@ -366,16 +581,16 @@ def test_anchored_discovery_gap_reopens_record_once_with_same_budget(
     args, executor, requests, hooks = record_setup(
         tmp_path, monkeypatch, current_run, transform=transform,
     )
-    result = executor().run(**args, **hooks)
-    assert len(generations) == 2, result.events
-    assert bool(result.graph.edges) == recover_missing, result.events
+    result = executor(max_model_calls_per_record=4).run(**args, **hooks)
+    assert len(generations) == 1, result.events
+    assert not any(edge.predicate_iri == EDGE for edge in result.graph.edges), result.events
     store, run, _ = current_run
     calls = current_state.restore_calls(store, run, run.run_fingerprint)
     protocols = [p for p in calls["protocols"].values() if p["version"] == RECORD_PROTOCOL]
     assert len(protocols) == 1
-    assert protocols[0]["assertion_generation"] == 2
-    assert len(protocols[0]["completed_attempts"]) == 4
-    assert max(calls["lineage_calls"].values()) <= 4
+    assert protocols[0]["assertion_generation"] == 1
+    assert len(protocols[0]["completed_attempts"]) == 2
+    assert max(calls["lineage_calls"].values()) <= 2
     assert result.graph.progress.model_calls_reserved == len(requests)
 
 
@@ -404,7 +619,7 @@ def test_record_unknown_request_retains_cost_and_incomplete_status(
     assert not result.graph.edges
 
 
-@pytest.mark.parametrize("budget", [3, 4])
+@pytest.mark.parametrize("budget", [2, 3])
 def test_relation_pages_visit_optional_endpoints_and_keep_unfinished_budget_visible(
     tmp_path, monkeypatch, current_run, budget,
 ):
@@ -423,7 +638,7 @@ def test_relation_pages_visit_optional_endpoints_and_keep_unfinished_budget_visi
                 template.update(local_id=identity)
                 template["mentions"][0].update(text=name, context_text=None)
                 payload["entities"].append(template)
-        else:
+        elif view["predicate_iri"] == EDGE:
             payload["relations"] = []
         return payload
     args, executor, requests, hooks = record_setup(
@@ -446,8 +661,8 @@ def test_relation_pages_visit_optional_endpoints_and_keep_unfinished_budget_visi
     turns = [member for view in requests if view["stage"] == "discovery"
              for member in view.get("members", [])
              if member["task_id"] in task_refs]
-    assert len(turns) == (2 if budget == 4 else 1), result.diagnostics
-    if budget == 4:
+    assert len(turns) == (2 if budget == 3 else 1), result.diagnostics
+    if budget == 3:
         authorized = {e["entity_ref"]["id"] for member in turns
                       for e in member["registered_entities"] if e["class_iri"] == B}
         expected_refs = project_reference_payload({

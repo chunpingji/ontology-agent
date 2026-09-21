@@ -269,6 +269,7 @@ def responses_create(
     max_output_tokens: int | None = None,
     include: list[str] | None = None,
     reasoning: dict | None = None,
+    extra_body: dict | None = None,
     timeout_s: float | None = None,
     total_timeout_s: float | None = None,
 ) -> ResponseTurn:
@@ -296,7 +297,7 @@ def responses_create(
     }
     for name, value in (
         ("tools", tools), ("tool_choice", tool_choice), ("include", include),
-        ("reasoning", reasoning),
+        ("reasoning", reasoning), ("extra_body", extra_body),
     ):
         if value is not None:
             kwargs[name] = value

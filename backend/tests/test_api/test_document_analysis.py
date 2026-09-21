@@ -92,7 +92,8 @@ def test_projection_uses_frozen_protocol_and_graph_get_does_not_start_work(
     source = db.get(DocumentAnalysisArtifact, run.artifact_manifest["source"]["artifact_id"])
     frozen_new = source.payload["performance_policy"]
     assert frozen_new["extraction_protocol"] == "ontology-tool-extraction-v1"
-    assert frozen_new["api_protocol"] == "responses" and frozen_new["max_lineage_calls"] == 4
+    assert frozen_new["api_protocol"] == "responses" and frozen_new["max_lineage_calls"] == 6
+    assert "cmc_describes_type_scope" not in frozen_new
     assert frozen_new["recognition_batching"] == {
         "version": "predicate-batch-v1", "max_members": 4,
     }
@@ -181,7 +182,8 @@ def test_batch_transport_failure_reports_unknown_request_and_keeps_coverage(
     assert created.status_code == 202, created.text
     run_id = created.json()["recognition_run_id"]
     # This regression exercises the frozen predicate-batch protocol. New runs now
-    # discover record entities first, whose requests have no batch members.
+    # discover record entities first, whose requests have no batch members. Its
+    # coupled type-scope option also requires record/source-object recognition.
     run = db.get(DocumentAnalysisRun, run_id)
     source = db.get(DocumentAnalysisArtifact, run.artifact_manifest["source"]["artifact_id"])
     source.payload = {**source.payload, "performance_policy": {

@@ -112,6 +112,7 @@ def _narrow_verification_schema(member: dict, card: dict) -> None:
         for owner in selected:
             if owner.get("class_iri") not in entity_classes:
                 _narrow_predicates(card, owner, "properties", predicates)
+                _narrow_predicates(card, owner, "relationships", predicates)
         definitions = card.get("property_definitions")
         if definitions is not None:
             refs = {item["property_ref"] for owner in selected

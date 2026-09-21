@@ -5,6 +5,7 @@ from docx import Document
 
 from app.services.extraction.ontology_guided.reading_groups import (
     build_reading_groups,
+    build_section_paragraph_groups,
     heading_context,
 )
 from app.services.extraction.ontology_guided.records import RecordIndex
@@ -48,6 +49,26 @@ def test_ontology_labeled_siblings_share_reading_but_keep_all_records_and_anchor
 def test_short_adjacent_topics_do_not_create_a_reading_group(tmp_path):
     index = index_for(tmp_path, [("简介", ["产品甲"]), ("研究结论", ["产品乙"])])
     assert build_reading_groups(index) == ()
+
+
+def test_consecutive_paragraphs_in_one_section_form_bounded_region_batches(tmp_path):
+    index = index_for(tmp_path, [("工艺描述", ["第一步。", "第二步。", "第三步。"])])
+    groups = build_section_paragraph_groups(index, max_records=2)
+    assert [tuple(index.by_id[identity].text for identity in group.record_ids)
+            for group in groups] == [("第一步。", "第二步。")]
+    assert len({identity for group in groups for identity in group.record_ids}) == 2
+
+
+def test_section_paragraph_batch_does_not_cross_excluded_table_lead_or_section(tmp_path):
+    index = index_for(tmp_path, [
+        ("工艺描述", ["第一步。", "结果如下表。", "不连续的第三步。"]),
+        ("质量控制", ["检查甲。", "检查乙。"]),
+    ])
+    excluded = next(record.record_id for record in index.records
+                    if record.text == "结果如下表。")
+    groups = build_section_paragraph_groups(index, excluded_record_ids=[excluded])
+    assert [tuple(index.by_id[identity].text for identity in group.record_ids)
+            for group in groups] == [("检查甲。", "检查乙。")]
 
 
 def test_explicit_label_and_value_split_across_sections_can_be_read_together(tmp_path):

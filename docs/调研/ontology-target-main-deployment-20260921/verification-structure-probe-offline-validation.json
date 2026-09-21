@@ -1,0 +1,40 @@
+{
+  "probe_run_id": "cmc-verification-structure-probe-20260921",
+  "provider_response_status": "completed",
+  "jsonschema_draft202012_valid": true,
+  "production_parser_accepted": true,
+  "exact_targets_hashes_and_facets": true,
+  "new_model_calls": 1,
+  "seconds": 21.21393881109543,
+  "usage": {
+    "input_tokens": 12762,
+    "input_tokens_details": {
+      "cached_tokens": 12246
+    },
+    "output_tokens": 1002,
+    "total_tokens": 13764
+  },
+  "full_quality_acceptance": false,
+  "result_sha256": "a6c7af455164ef229fd40f9578c3575ad5ad101044b501672ed202e90594c556",
+  "wire_request_sha256": "2f8929242500ec774c41fa6890de5f9aab13b6701f1a4e8b9c7e881800f4cdbf",
+  "targets": [
+    {
+      "local_id": "e1",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Centrifuge",
+      "facet_verdicts": {
+        "type": "supported",
+        "referent": "supported",
+        "subject_role": "supported"
+      }
+    },
+    {
+      "local_id": "e2",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment",
+      "facet_verdicts": {
+        "type": "supported",
+        "referent": "supported",
+        "subject_role": "supported"
+      }
+    }
+  ]
+}

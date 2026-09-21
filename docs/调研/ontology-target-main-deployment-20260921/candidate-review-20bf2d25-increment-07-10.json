@@ -1,0 +1,2381 @@
+{
+  "run_id": "20bf2d25-98f3-4efe-99f0-1e5dbbae5d05",
+  "reviewed_at": "2026-09-21T05:35:32.206627+00:00",
+  "review_kind": "independent_post_hoc_source_review",
+  "model_calls_by_reviewer": 0,
+  "application_mutations_by_reviewer": 0,
+  "increments": [
+    {
+      "group": 7,
+      "lineage_id": "b05af9879f3fbf9e2739a0d8bb2096a88908ea9c7e49d5c78a958d936a26dd05",
+      "immutable_results": {
+        "tool_result": "62560be47db7ce2700ca1806d7bce468050dacc7600c61d65b70b24325fb2a79",
+        "discovery": "18b9b4e475be15e24e1693d9980380d07ce5ae668116ea9b40a0f1c06690698a",
+        "verification": "17d97adf91325b4480632185e1b2f1f5a54af0cc69440137abdc8bcaf659f2de",
+        "outcome": "65cd67b40b0fa63814aeed448a320f083a1701dc4eea0edc5cea18e4eb423779"
+      },
+      "reviewed_model_turns": [
+        {
+          "immutable_result_key": "b8085596f8eaa40cf2c95d59f4961eba5e17af0049d1b71a3b9767b1fa537f7a",
+          "lineage_id": "b05af9879f3fbf9e2739a0d8bb2096a88908ea9c7e49d5c78a958d936a26dd05",
+          "attempt": 1,
+          "stage": "discovery",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 5114,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 984,
+            "total_tokens": 6098
+          }
+        },
+        {
+          "immutable_result_key": "834cc2e21eec24408d0500dd911b6f349b5c9a02503abfcbef65d297db552d65",
+          "lineage_id": "b05af9879f3fbf9e2739a0d8bb2096a88908ea9c7e49d5c78a958d936a26dd05",
+          "attempt": 2,
+          "stage": "verification",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 6526,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 1962,
+            "total_tokens": 8488
+          }
+        },
+        {
+          "immutable_result_key": "f42ee8789aba691831da1c11ec1dc0d5049b6b84056b01bd95f20a27faf1792a",
+          "lineage_id": "b05af9879f3fbf9e2739a0d8bb2096a88908ea9c7e49d5c78a958d936a26dd05",
+          "attempt": 3,
+          "stage": "verification",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 7915,
+            "input_tokens_details": {
+              "cached_tokens": 3085
+            },
+            "output_tokens": 1027,
+            "total_tokens": 8942
+          }
+        }
+      ],
+      "raw_discovery_summary": [
+        {
+          "attempt": 1,
+          "member_count": 1,
+          "member_shapes": [
+            {
+              "entities": 0,
+              "properties": 0,
+              "relations": 2,
+              "reference_bindings": 0,
+              "observations": 1
+            }
+          ]
+        }
+      ],
+      "frozen_discovery": {
+        "entities": [],
+        "properties": [],
+        "relations": [
+          {
+            "local_id": "r1",
+            "subject_id": "c5b309b1d300ceb7d3a9c94b0dd7f5ef7f59b1c59c7768a8e2e5c633d02eee4a",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway",
+            "object_ids": [
+              "3ca0c80d1363b82f9ea57375cd9880612efae91a3912558f55c9538bc3dc92b2",
+              "a27d6e5a71f034385c565a8327c24cf313481319d35dadf5096bffc7d99837df"
+            ],
+            "selection": "all",
+            "bridge_support": [
+              {
+                "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                "text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解",
+                "context_text": null
+              }
+            ],
+            "selection_support": [],
+            "qualifiers": {
+              "polarity": "affirmed",
+              "modality": "asserted",
+              "condition_support": [],
+              "scope_qualifiers": []
+            },
+            "bridge_kind": "document_subject_description",
+            "bridge_ref_ids": [],
+            "source_assertion": {
+              "subject_support": [],
+              "object_support": [],
+              "predicate_support": [
+                {
+                  "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                  "text": "本品在酸、碱条件下比较稳定",
+                  "context_text": null
+                }
+              ],
+              "binding_ids": []
+            }
+          },
+          {
+            "local_id": "r2",
+            "subject_id": "c5b309b1d300ceb7d3a9c94b0dd7f5ef7f59b1c59c7768a8e2e5c633d02eee4a",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway",
+            "object_ids": [
+              "3ca0c80d1363b82f9ea57375cd9880612efae91a3912558f55c9538bc3dc92b2"
+            ],
+            "selection": "all",
+            "bridge_support": [
+              {
+                "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                "text": "本品在酸、碱条件下比较稳定",
+                "context_text": null
+              }
+            ],
+            "selection_support": [],
+            "qualifiers": {
+              "polarity": "affirmed",
+              "modality": "asserted",
+              "condition_support": [],
+              "scope_qualifiers": []
+            },
+            "bridge_kind": "document_subject_description",
+            "bridge_ref_ids": [],
+            "source_assertion": {
+              "subject_support": [],
+              "object_support": [
+                {
+                  "object_id": "3ca0c80d1363b82f9ea57375cd9880612efae91a3912558f55c9538bc3dc92b2",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "text": "碱",
+                      "context_text": null
+                    }
+                  ]
+                }
+              ],
+              "predicate_support": [
+                {
+                  "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                  "text": "碱",
+                  "context_text": null
+                }
+              ],
+              "binding_ids": []
+            }
+          }
+        ],
+        "external_links": [],
+        "observations": [
+          {
+            "subject_id": "c5b309b1d300ceb7d3a9c94b0dd7f5ef7f59b1c59c7768a8e2e5c633d02eee4a",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway",
+            "quote": {
+              "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+              "text": "在氧化、光照、高温均有降解",
+              "context_text": null
+            },
+            "kind": "missing",
+            "reason": "未登记氧化、光照、高温降解实体"
+          }
+        ],
+        "reference_bindings": [],
+        "assertion_generation": 1,
+        "evidence_revision": 1,
+        "content_hash": "3d6e52a20df2e56763f07a4f1968e35cc72c89ecb6d7e4aabfc583a1d78c5b03",
+        "local_ref_map": {
+          "c5b309b1d300ceb7d3a9c94b0dd7f5ef7f59b1c59c7768a8e2e5c633d02eee4a": {
+            "id": "c5b309b1d300ceb7d3a9c94b0dd7f5ef7f59b1c59c7768a8e2e5c633d02eee4a",
+            "revision": 1
+          },
+          "3ca0c80d1363b82f9ea57375cd9880612efae91a3912558f55c9538bc3dc92b2": {
+            "id": "3ca0c80d1363b82f9ea57375cd9880612efae91a3912558f55c9538bc3dc92b2",
+            "revision": 1
+          },
+          "a27d6e5a71f034385c565a8327c24cf313481319d35dadf5096bffc7d99837df": {
+            "id": "a27d6e5a71f034385c565a8327c24cf313481319d35dadf5096bffc7d99837df",
+            "revision": 1
+          },
+          "r1": {
+            "id": "fa2728158b7a303575065e9e5b4357ad0f1965a7702f3e07ba756ba1c5b155b0",
+            "revision": 1
+          },
+          "r2": {
+            "id": "acbcd45aee5013083e03451a70c595bcd16f0bcae92af0b84d2984b703cccd70",
+            "revision": 1
+          }
+        },
+        "claim_issues": {
+          "r1": [
+            "source_assertion_object_set_mismatch"
+          ]
+        }
+      },
+      "quote_checks": [
+        {
+          "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+          "table_path": null,
+          "row_0_based": null,
+          "column_0_based": null,
+          "paragraph_1_based": 96,
+          "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+          "quote": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              27
+            ]
+          ],
+          "context_encloses_quote": null
+        },
+        {
+          "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+          "table_path": null,
+          "row_0_based": null,
+          "column_0_based": null,
+          "paragraph_1_based": 96,
+          "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+          "quote": "本品在酸、碱条件下比较稳定",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              13
+            ]
+          ],
+          "context_encloses_quote": null
+        },
+        {
+          "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+          "table_path": null,
+          "row_0_based": null,
+          "column_0_based": null,
+          "paragraph_1_based": 96,
+          "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+          "quote": "碱",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              5,
+              6
+            ]
+          ],
+          "context_encloses_quote": null
+        },
+        {
+          "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+          "table_path": null,
+          "row_0_based": null,
+          "column_0_based": null,
+          "paragraph_1_based": 96,
+          "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+          "quote": "在氧化、光照、高温均有降解",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              14,
+              27
+            ]
+          ],
+          "context_encloses_quote": null
+        }
+      ],
+      "raw_verification_summary": [
+        {
+          "attempt": 2,
+          "member_count": 1,
+          "duplicate_target_ids": {
+            "b068a62886787db2acb48bf9ee6b518213e84ebe9c4ae9bf203c49d77ff4dc34": 2
+          },
+          "verifications": [
+            {
+              "target_id": "b068a62886787db2acb48bf9ee6b518213e84ebe9c4ae9bf203c49d77ff4dc34",
+              "facets": [
+                {
+                  "name": "bridge",
+                  "verdict": "supported",
+                  "reason": "声明桥接类型为document_subject_description，subject_id为当前文档@r:c5b309b1d300。原文整句描述本品（即文档主体）的降解特性，无需在正文中单独提及文档ID，桥接依据充分。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          55
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "subject_binding",
+                  "verdict": "supported",
+                  "reason": "主体为CMCReport文档，原文主语“本品”在语境中指代该研究报告对应的药物/产品实体，由文档根节点（user_specified）锚定，归属正确。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          55
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "object_binding",
+                  "verdict": "supported",
+                  "reason": "对象为AlkalineDegradation (e4)，原文提及“碱”条件下有降解（“在氧化、光照、高温均有降解”隐含前文酸、碱稳定之外的其他降解，或指整体稳定性测试中包含碱降解路径的发现）。结合shared_context摘要“降解途径：...在氧化、光照、高温下有降解”，原文“在酸、碱条件下比较稳定”与“均有降解”",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "碱",
+                      "context_text": "本品在酸、碱条件下比较稳定",
+                      "exact_intervals": [
+                        [
+                          5,
+                          6
+                        ]
+                      ],
+                      "context_encloses_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "predicate",
+                  "verdict": "supported",
+                  "reason": "谓词为hasDegradationPathway。原文陈述药物在碱条件下有降解（“均有降解”涵盖碱，尽管前半句说稳定，但后半句明确说有降解，且摘要确认降解途径存在）。原文支持存在碱降解这一事实关系。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "在酸、碱条件下比较稳定，在氧化、光照、高温均有降解",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          2,
+                          27
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "qualifiers",
+                  "verdict": "supported",
+                  "reason": "声明为肯定（affirmed）和断言（asserted）语气。原文陈述“均有降解”为事实性描述，无否定词或条件状语限制该降解的存在，符合肯定断言。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "在酸、碱条件下比较稳定，在氧化、光照、高温均有降解",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          2,
+                          27
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "counterevidence",
+                  "verdict": "supported",
+                  "reason": "核查原文。原文前半部分称“在酸、碱条件下比较稳定”，后半部分称“在氧化、光照、高温均有降解”。虽然“稳定”与“降解”在语义上存在张力，但“稳定”通常指降解程度低或动力学较慢，并不完全否定降解途径的存在（尤其在强制降解研究中）。摘要也确认了降解途径的存在。未发现直接否定“存在碱降解途径”的反证，仅是对程度的不同描述。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "在酸、碱条件下比较稳定",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          2,
+                          13
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "target_id": "b068a62886787db2acb48bf9ee6b518213e84ebe9c4ae9bf203c49d77ff4dc34",
+              "facets": [
+                {
+                  "name": "object_binding",
+                  "verdict": "supported",
+                  "reason": "对象e4对应AlkalineDegradation。原文提及“碱”，且摘要确认包含碱降解途径。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "碱",
+                      "context_text": "本品在酸、碱条件下比较稳定",
+                      "exact_intervals": [
+                        [
+                          5,
+                          6
+                        ]
+                      ],
+                      "context_encloses_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "subject_binding",
+                  "verdict": "supported",
+                  "reason": "主体为文档指代的药品/产品，原文主语“本品”指代明确。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "本品",
+                      "context_text": "本品在酸、碱条件下比较稳定",
+                      "exact_intervals": [
+                        [
+                          0,
+                          2
+                        ],
+                        [
+                          30,
+                          32
+                        ]
+                      ],
+                      "context_encloses_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "predicate",
+                  "verdict": "supported",
+                  "reason": "原文陈述在碱条件下有降解行为，支持hasDegradationPathway关系。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "在酸、碱条件下比较稳定，在氧化、光照、高温均有降解",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          2,
+                          27
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "bridge",
+                  "verdict": "supported",
+                  "reason": "文档整体描述药品特性，桥接方式document_subject_description适用。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          55
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "qualifiers",
+                  "verdict": "supported",
+                  "reason": "原文为陈述句，语气肯定，无否定或条件限制。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "在氧化、光照、高温均有降解",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          14,
+                          27
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "counterevidence",
+                  "verdict": "supported",
+                  "reason": "原文提到“稳定”，可能与“降解”构成语义上的轻微冲突（稳定 vs 降解），但“稳定”不等于“无降解”，且在稳定性研究中“稳定”常指符合标准，仍可能存在微量降解途径。未发现直接反证。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "在酸、碱条件下比较稳定",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          2,
+                          13
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "attempt": 3,
+          "member_count": 1,
+          "duplicate_target_ids": {},
+          "verifications": [
+            {
+              "target_id": "b068a62886787db2acb48bf9ee6b518213e84ebe9c4ae9bf203c49d77ff4dc34",
+              "facets": [
+                {
+                  "name": "bridge",
+                  "verdict": "supported",
+                  "reason": "原文整句描述药品在特定条件下的稳定性与降解情况，符合document_subject_description桥接方式，无需显式提及文档ID。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          55
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "subject_binding",
+                  "verdict": "supported",
+                  "reason": "原文主语“本品”指代文档描述的药品实体，与主体CMCReport (document_root) 指代一致，归属正确。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "本品",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          2
+                        ],
+                        [
+                          30,
+                          32
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "object_binding",
+                  "verdict": "undetermined",
+                  "reason": "原文提及“碱”，且摘要指出“在氧化、光照、高温下有降解”及“在酸、碱条件下稳定”。原文前半句称“在酸、碱条件下比较稳定”，后半句称“在氧化、光照、高温均有降解”。对于碱降解，原文表述存在歧义：前半句暗示稳定（可能降解极少或无），后半句的“均有降解”在语法上是否包含前文的“酸、碱”存在歧义（通常“在A、B稳定，在C、D、",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "碱",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          5,
+                          6
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "predicate",
+                  "verdict": "undetermined",
+                  "reason": "由于对象AlkalineDegradation的存在性在原文中存疑（“稳定”与“降解”的语义冲突及“均有降解”的指代范围不明），无法确认是否存在明确的“hasDegradationPathway”关系指向碱降解。若“均有降解”指氧化、光照、高温，则碱降解未被明确断言存在。因此谓词支持不足。",
+                  "support": []
+                },
+                {
+                  "name": "qualifiers",
+                  "verdict": "undetermined",
+                  "reason": "原文语气为陈述，但针对碱降解这一特定事实的真假未决，导致修饰该事实的qualifiers（如asserted）也随之未决。若事实未成立，则qualifiers不适用。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "在酸、碱条件下比较稳定",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          2,
+                          13
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "counterevidence",
+                  "verdict": "supported",
+                  "reason": "核查原文发现“在酸、碱条件下比较稳定”的表述，这与“存在显著的碱降解途径”（通常暗示不稳定）在语义上构成张力或潜在冲突。虽然“稳定”不等于“无降解”，但它提供了不支持强降解断言的证据，故作为反证记录，但其不足以完全否定微量降解的可能性，导致事实未决。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "在酸、碱条件下比较稳定",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          2,
+                          13
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "stored_verification_summary": [
+        {
+          "target_id": "b068a62886787db2acb48bf9ee6b518213e84ebe9c4ae9bf203c49d77ff4dc34",
+          "missing_facets": [
+            "subject_binding",
+            "object_binding",
+            "predicate",
+            "qualifiers"
+          ],
+          "validation_issues": [
+            "subject_binding:ambiguous_source_quote",
+            "subject_binding:support_missing"
+          ],
+          "decisions": [
+            {
+              "check_kind": "subject_binding",
+              "verdict": "undetermined",
+              "reason_code": "subject_binding:ambiguous_source_quote",
+              "reason": "原文主语“本品”指代文档描述的药品实体，与主体CMCReport (document_root) 指代一致，归属正确。"
+            },
+            {
+              "check_kind": "object_binding",
+              "verdict": "undetermined",
+              "reason_code": "facet_undetermined",
+              "reason": "原文提及“碱”，且摘要指出“在氧化、光照、高温下有降解”及“在酸、碱条件下稳定”。原文前半句称“在酸、碱条件下比较稳定”，后半句称“在氧化、光照、高温均有降解”。对于碱降解，原文表述存在歧义：前半句暗示稳定（可能降解极少或无），后半句的“均有降解”在语法上是否包含前文的“酸、碱”存在歧义（通常“在A、B稳定，在C、D、"
+            },
+            {
+              "check_kind": "predicate",
+              "verdict": "undetermined",
+              "reason_code": "facet_undetermined",
+              "reason": "由于对象AlkalineDegradation的存在性在原文中存疑（“稳定”与“降解”的语义冲突及“均有降解”的指代范围不明），无法确认是否存在明确的“hasDegradationPathway”关系指向碱降解。若“均有降解”指氧化、光照、高温，则碱降解未被明确断言存在。因此谓词支持不足。"
+            },
+            {
+              "check_kind": "bridge",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文整句描述药品在特定条件下的稳定性与降解情况，符合document_subject_description桥接方式，无需显式提及文档ID。"
+            },
+            {
+              "check_kind": "qualifiers",
+              "verdict": "undetermined",
+              "reason_code": "facet_undetermined",
+              "reason": "原文语气为陈述，但针对碱降解这一特定事实的真假未决，导致修饰该事实的qualifiers（如asserted）也随之未决。若事实未成立，则qualifiers不适用。"
+            },
+            {
+              "check_kind": "counterevidence",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "核查原文发现“在酸、碱条件下比较稳定”的表述，这与“存在显著的碱降解途径”（通常暗示不稳定）在语义上构成张力或潜在冲突。虽然“稳定”不等于“无降解”，但它提供了不支持强降解断言的证据，故作为反证记录，但其不足以完全否定微量降解的可能性，导致事实未决。"
+            }
+          ]
+        }
+      ],
+      "outcome": {
+        "semantic_outcome": "undetermined",
+        "complete": false,
+        "reason_code": "source_assertion_object_set_mismatch",
+        "reason": "source_assertion_object_set_mismatch；subject_binding:ambiguous_source_quote；subject_binding:support_missing；subject_binding_not_supported；object_binding_not_supported；predicate_not_supported；qualifiers_not_supported；source_assertion_predicate_not_reviewed；source_assertion_object_not_reviewed",
+        "model_calls": 0
+      },
+      "published_counts": {
+        "nodes": 0,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      },
+      "attribute_candidates": [],
+      "independent_conclusions": [
+        "r1两个对象却object_support为空，冻结object_set_mismatch正确；r2只含碱对象，一个谓词。",
+        "第一次verification同一target重复返回且将均有降解跨分句套给碱；第二次改为object/predicate/qualifiers未决，最终未落关系。",
+        "稳定不等于绝对零降解，但不能从稳定反推出存在降解过程；当前原文明确有降解的范围是氧化、光照、高温。",
+        "本品是报告描述的药物，不等同文档本身；文档根桥允许描述关系，不能以指称同一解释主语。",
+        "未登记氧化/光照/高温实体是识别状态，不能叫原文missing。",
+        "两条候选均为hasDegradationPathway，不是多谓词合批。"
+      ]
+    },
+    {
+      "group": 8,
+      "lineage_id": "5777cf3c58ee73323e948372f04ec31e502492bb933fbbbbf011e451fa87eebc",
+      "immutable_results": {
+        "discovery": "3c0f99a47227074a6bef9d224d673e01284f4fcf996b710cd059f7b5b2f8e495",
+        "verification": "583594a05d134def7bd5496c7f7e19d51f92cc33ebb884d1fb740fe6d64f38bb",
+        "outcome": "a910640e44a7e9ef20dd79ab17821bfc0a226a8e474028be02141fb1c2c51f49"
+      },
+      "reviewed_model_turns": [
+        {
+          "immutable_result_key": "ece06dd6b0c3d04b552814e72432acc1f089280207e1f6c2773bc7c09c5ec1e9",
+          "lineage_id": "5777cf3c58ee73323e948372f04ec31e502492bb933fbbbbf011e451fa87eebc",
+          "attempt": 1,
+          "stage": "discovery",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 3015,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 165,
+            "total_tokens": 3180
+          }
+        }
+      ],
+      "raw_discovery_summary": [
+        {
+          "attempt": 1,
+          "member_count": 1,
+          "member_shapes": [
+            {
+              "entities": 0,
+              "properties": 0,
+              "relations": 0,
+              "reference_bindings": 0,
+              "observations": 1
+            }
+          ]
+        }
+      ],
+      "frozen_discovery": {
+        "entities": [],
+        "properties": [],
+        "relations": [],
+        "external_links": [],
+        "observations": [
+          {
+            "subject_id": null,
+            "predicate_iri": null,
+            "quote": {
+              "evidence_id": "985f615a249cbdc006c6a8b32b073821b4ce7146e381426f943f1d257f0c5df9",
+              "text": "（包括中间体、中间态 以及成品的存放条件、包装方式、有效期/复测期）",
+              "context_text": null
+            },
+            "kind": "unknown",
+            "reason": "原文为范围定义描述，未包含具体实体及其属性值。"
+          }
+        ],
+        "reference_bindings": [],
+        "assertion_generation": 1,
+        "evidence_revision": 1,
+        "content_hash": "15ae0377ffe389a28808ff6b04f6bfa7290ea298b3958008febb08be4eaf9728",
+        "local_ref_map": {},
+        "claim_issues": {}
+      },
+      "quote_checks": [
+        {
+          "evidence_id": "985f615a249cbdc006c6a8b32b073821b4ce7146e381426f943f1d257f0c5df9",
+          "table_path": null,
+          "row_0_based": null,
+          "column_0_based": null,
+          "paragraph_1_based": 74,
+          "source_text": "（包括中间体、中间态 以及成品的存放条件、包装方式、有效期/复测期）",
+          "quote": "（包括中间体、中间态 以及成品的存放条件、包装方式、有效期/复测期）",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              34
+            ]
+          ],
+          "context_encloses_quote": null
+        }
+      ],
+      "raw_verification_summary": [],
+      "stored_verification_summary": [],
+      "outcome": {
+        "semantic_outcome": "undetermined",
+        "complete": false,
+        "reason_code": "record_undetermined",
+        "reason": "当前记录仍有待核实的声明或观察。",
+        "model_calls": 1
+      },
+      "published_counts": {
+        "nodes": 0,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      },
+      "attribute_candidates": [],
+      "independent_conclusions": [
+        "P74仅定义存放条件、包装、有效期等文档范围，没有具体对象、温度、包装或期限值；保持unknown与原文相符。",
+        "仅1次发现调用，空目标verification是系统保存项，不是一次真实模型核验。",
+        "record_undetermined不能扩写为全文无存放信息。"
+      ]
+    },
+    {
+      "group": 9,
+      "lineage_id": "cb1f18793e3e8d943d95abccc4d3a46ff707fbe5832d681d424bfa533dabace6",
+      "immutable_results": {
+        "verification": "ad5d7b50f5d6eaa5e32413fdf529cd233ade708487950fba6452e32e0f04934e",
+        "outcome": "aa2f47daf463f2fd314ada7c1e56a4d4631be1f4cddadec8ead4fc064e793a37",
+        "discovery": "3d033711410529f9796ce5b2815948af56bcb0a3827ca053d15a449bfc05e97e"
+      },
+      "reviewed_model_turns": [
+        {
+          "immutable_result_key": "39176b5ddb5daf5aff9ae6cf8ca384bafeca934762b37cf4a21b696f0ffc7b0f",
+          "lineage_id": "cb1f18793e3e8d943d95abccc4d3a46ff707fbe5832d681d424bfa533dabace6",
+          "attempt": 1,
+          "stage": "discovery",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 4294,
+            "input_tokens_details": {
+              "cached_tokens": 1573
+            },
+            "output_tokens": 1862,
+            "total_tokens": 6156
+          }
+        },
+        {
+          "immutable_result_key": "ff0904cab77fb9e6cba7d1ff2c55222ebf26160331698f24073a7ee330007f6f",
+          "lineage_id": "cb1f18793e3e8d943d95abccc4d3a46ff707fbe5832d681d424bfa533dabace6",
+          "attempt": 2,
+          "stage": "discovery",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 4378,
+            "input_tokens_details": {
+              "cached_tokens": 1573
+            },
+            "output_tokens": 1305,
+            "total_tokens": 5683
+          }
+        },
+        {
+          "immutable_result_key": "b4923096531313dc8740abd45b2483bd3e141ec1b03ded9b5ec1016a13bba5ab",
+          "lineage_id": "cb1f18793e3e8d943d95abccc4d3a46ff707fbe5832d681d424bfa533dabace6",
+          "attempt": 3,
+          "stage": "verification",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 5038,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 1614,
+            "total_tokens": 6652
+          }
+        }
+      ],
+      "raw_discovery_summary": [
+        {
+          "attempt": 1,
+          "member_count": 1,
+          "member_shapes": [
+            {
+              "entities": 2,
+              "properties": 2,
+              "relations": 0,
+              "reference_bindings": 1,
+              "observations": 7
+            }
+          ]
+        },
+        {
+          "attempt": 2,
+          "member_count": 1,
+          "member_shapes": [
+            {
+              "entities": 1,
+              "properties": 1,
+              "relations": 0,
+              "reference_bindings": 1,
+              "observations": 4
+            }
+          ]
+        }
+      ],
+      "frozen_discovery": {
+        "entities": [
+          {
+            "local_id": "e1",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ClinicalSampleProductionPlan",
+            "representation": "mention",
+            "mentions": [
+              {
+                "evidence_id": "0de578ec2e6c1d6a6d9ee38d8226a99999bb958a0e147e7343beef5e66d88073",
+                "text": "编号： DP-C-PI-S-X2419 2601 04",
+                "context_text": "编号： DP-C-PI-S-X2419 2601 04"
+              }
+            ],
+            "record_components": [],
+            "identifier_claims": []
+          }
+        ],
+        "properties": [
+          {
+            "local_id": "p1",
+            "subject_id": "e1",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedProductionDate",
+            "value_quote": {
+              "evidence_id": "d160ef9e8df6fb0f2396cf3e980928c6ea933448a77b2e19d962248caf047345",
+              "text": "时间：2026年05月",
+              "context_text": "时间：2026年05月"
+            },
+            "field_support": [
+              {
+                "evidence_id": "d160ef9e8df6fb0f2396cf3e980928c6ea933448a77b2e19d962248caf047345",
+                "text": "时间：",
+                "context_text": "时间：2026年05月"
+              }
+            ],
+            "unit_support": [],
+            "qualifiers": {
+              "polarity": "affirmed",
+              "modality": "planned",
+              "condition_support": [],
+              "scope_qualifiers": [
+                {
+                  "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedProductionDate",
+                  "quote": {
+                    "evidence_id": "d160ef9e8df6fb0f2396cf3e980928c6ea933448a77b2e19d962248caf047345",
+                    "text": "时间：2026年05月",
+                    "context_text": "时间：2026年05月"
+                  }
+                }
+              ]
+            },
+            "bridge_kind": "explicit_assertion",
+            "bridge_ref_ids": []
+          }
+        ],
+        "relations": [],
+        "external_links": [],
+        "observations": [
+          {
+            "subject_id": "e1",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedBatchCount",
+            "quote": {
+              "evidence_id": "0de578ec2e6c1d6a6d9ee38d8226a99999bb958a0e147e7343beef5e66d88073",
+              "text": "编号： DP-C-PI-S-X2419 2601 04",
+              "context_text": "编号： DP-C-PI-S-X2419 2601 04"
+            },
+            "kind": "missing",
+            "reason": "原文未提供计划生产批次数"
+          },
+          {
+            "subject_id": "e1",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedBatchSizeMax_kg",
+            "quote": {
+              "evidence_id": "0de578ec2e6c1d6a6d9ee38d8226a99999bb958a0e147e7343beef5e66d88073",
+              "text": "编号： DP-C-PI-S-X2419 2601 04",
+              "context_text": "编号： DP-C-PI-S-X2419 2601 04"
+            },
+            "kind": "missing",
+            "reason": "原文未提供预计批量上限"
+          },
+          {
+            "subject_id": "e1",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/plannedBatchSizeMin_kg",
+            "quote": {
+              "evidence_id": "0de578ec2e6c1d6a6d9ee38d8226a99999bb958a0e147e7343beef5e66d88073",
+              "text": "编号： DP-C-PI-S-X2419 2601 04",
+              "context_text": "编号： DP-C-PI-S-X2419 2601 04"
+            },
+            "kind": "missing",
+            "reason": "原文未提供预计批量下限"
+          },
+          {
+            "subject_id": "e1",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/productionPurpose",
+            "quote": {
+              "evidence_id": "0de578ec2e6c1d6a6d9ee38d8226a99999bb958a0e147e7343beef5e66d88073",
+              "text": "编号： DP-C-PI-S-X2419 2601 04",
+              "context_text": "编号： DP-C-PI-S-X2419 2601 04"
+            },
+            "kind": "missing",
+            "reason": "原文未提供生产用途"
+          }
+        ],
+        "reference_bindings": [
+          {
+            "local_id": "rb1",
+            "source_id": "e1",
+            "target_id": "e1",
+            "binding_kind": "coreference",
+            "support": [
+              {
+                "evidence_id": "0de578ec2e6c1d6a6d9ee38d8226a99999bb958a0e147e7343beef5e66d88073",
+                "text": "编号： DP-C-PI-S-X2419 2601 04",
+                "context_text": "编号： DP-C-PI-S-X2419 2601 04"
+              }
+            ]
+          }
+        ],
+        "assertion_generation": 1,
+        "evidence_revision": 1,
+        "content_hash": "52a28530ecdf7b5c040ad2a0aeda9b84b18299f8a5a07c17e72d1500c50cddec",
+        "local_ref_map": {
+          "e1": {
+            "id": "d4282889efc932a0969a5c19c5821d2866600ea6243b31040fefeb41f06667c0",
+            "revision": 1
+          },
+          "rb1": {
+            "id": "c8ffce7a91464e6c715a688559084f9a79a59b09490aaa840ec890b0885b63e2",
+            "revision": 1
+          },
+          "p1": {
+            "id": "8631429342c0a7ce4fc748000c58325e71abbdab5150a00aeed7b0289486d0c0",
+            "revision": 1
+          }
+        },
+        "claim_issues": {
+          "rb1": [
+            "reference_binding_endpoint_invalid"
+          ]
+        }
+      },
+      "quote_checks": [
+        {
+          "evidence_id": "0de578ec2e6c1d6a6d9ee38d8226a99999bb958a0e147e7343beef5e66d88073",
+          "table_path": null,
+          "row_0_based": null,
+          "column_0_based": null,
+          "paragraph_1_based": 8,
+          "source_text": "编号： DP-C-PI-S-X2419 2601 04",
+          "quote": "编号： DP-C-PI-S-X2419 2601 04",
+          "context_text": "编号： DP-C-PI-S-X2419 2601 04",
+          "exact_intervals": [
+            [
+              0,
+              27
+            ]
+          ],
+          "context_encloses_quote": true
+        },
+        {
+          "evidence_id": "d160ef9e8df6fb0f2396cf3e980928c6ea933448a77b2e19d962248caf047345",
+          "table_path": null,
+          "row_0_based": null,
+          "column_0_based": null,
+          "paragraph_1_based": 20,
+          "source_text": "时间：2026年05月",
+          "quote": "时间：2026年05月",
+          "context_text": "时间：2026年05月",
+          "exact_intervals": [
+            [
+              0,
+              11
+            ]
+          ],
+          "context_encloses_quote": true
+        },
+        {
+          "evidence_id": "d160ef9e8df6fb0f2396cf3e980928c6ea933448a77b2e19d962248caf047345",
+          "table_path": null,
+          "row_0_based": null,
+          "column_0_based": null,
+          "paragraph_1_based": 20,
+          "source_text": "时间：2026年05月",
+          "quote": "时间：",
+          "context_text": "时间：2026年05月",
+          "exact_intervals": [
+            [
+              0,
+              3
+            ]
+          ],
+          "context_encloses_quote": true
+        }
+      ],
+      "raw_verification_summary": [
+        {
+          "attempt": 3,
+          "member_count": 1,
+          "duplicate_target_ids": {},
+          "verifications": [
+            {
+              "target_id": "dc7fe2f8946dae54f5ab2896524bb25a469cbba9625094fc3abba754486b1c86",
+              "facets": [
+                {
+                  "name": "type",
+                  "verdict": "unsupported",
+                  "reason": "类型要求证明'production date, workshop, batch count, purpose, and expected batch size'等关键限定。原文仅包含编号和时间字段，缺少车间、批次数、用途及预计批量等核心定义要素，无法支持该类型。",
+                  "support": [
+                    {
+                      "evidence_id": "0de578ec2e6c1d6a6d9ee38d8226a99999bb958a0e147e7343beef5e66d88073",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 8,
+                      "source_text": "编号： DP-C-PI-S-X2419 2601 04",
+                      "quote": "编号： DP-C-PI-S-X2419 2601 04",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          27
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    },
+                    {
+                      "evidence_id": "d160ef9e8df6fb0f2396cf3e980928c6ea933448a77b2e19d962248caf047345",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 20,
+                      "source_text": "时间：2026年05月",
+                      "quote": "时间：2026年05月",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          11
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "referent",
+                  "verdict": "supported",
+                  "reason": "原文通过具体编号及时间戳唯一定位了'临床备样生产计划'这一文档记录对象，指称明确无歧义。",
+                  "support": [
+                    {
+                      "evidence_id": "0de578ec2e6c1d6a6d9ee38d8226a99999bb958a0e147e7343beef5e66d88073",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 8,
+                      "source_text": "编号： DP-C-PI-S-X2419 2601 04",
+                      "quote": "编号： DP-C-PI-S-X2419 2601 04",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          27
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    },
+                    {
+                      "evidence_id": "d160ef9e8df6fb0f2396cf3e980928c6ea933448a77b2e19d962248caf047345",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 20,
+                      "source_text": "时间：2026年05月",
+                      "quote": "时间：2026年05月",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          11
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "subject_role",
+                  "verdict": "supported",
+                  "reason": "该实体作为记录主体，承载了后续属性（如计划生产时间）的主语角色，且为事实来源端。",
+                  "support": [
+                    {
+                      "evidence_id": "0de578ec2e6c1d6a6d9ee38d8226a99999bb958a0e147e7343beef5e66d88073",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 8,
+                      "source_text": "编号： DP-C-PI-S-X2419 2601 04",
+                      "quote": "编号： DP-C-PI-S-X2419 2601 04",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          27
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    },
+                    {
+                      "evidence_id": "d160ef9e8df6fb0f2396cf3e980928c6ea933448a77b2e19d962248caf047345",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 20,
+                      "source_text": "时间：2026年05月",
+                      "quote": "时间：2026年05月",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          11
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "target_id": "1e8fd642ff7286ed39d3a3c019fe8931acf07af68e3cc07ca42650b522621172",
+              "facets": [
+                {
+                  "name": "subject_binding",
+                  "verdict": "supported",
+                  "reason": "属性声明处于'研发项目临床备样生产信息'语境下，且依赖对象e1（编号DP-C-PI-S-X2419 2601 04）确认为该信息的主体记录。",
+                  "support": [
+                    {
+                      "evidence_id": "938f7ff9894a703dfd0e43283ebaf7923122ac4cbddc6a505ff438ddac361595",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 6,
+                      "source_text": "研发项目临床备样生产信息",
+                      "quote": "研发项目临床备样生产信息",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          12
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "field_role",
+                  "verdict": "supported",
+                  "reason": "原文字段标签'时间'与属性'计划生产时间'(plannedProductionDate)语义一致，且值'2026年05月'符合gYearMonth类型格式，绑定合法。",
+                  "support": [
+                    {
+                      "evidence_id": "d160ef9e8df6fb0f2396cf3e980928c6ea933448a77b2e19d962248caf047345",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 20,
+                      "source_text": "时间：2026年05月",
+                      "quote": "时间：2026年05月",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          11
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "predicate",
+                  "verdict": "supported",
+                  "reason": "属性描述'Planned production month'与原文'时间'对应，且处于计划阶段语境，谓词匹配。",
+                  "support": [
+                    {
+                      "evidence_id": "d160ef9e8df6fb0f2396cf3e980928c6ea933448a77b2e19d962248caf047345",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 20,
+                      "source_text": "时间：2026年05月",
+                      "quote": "时间：2026年05月",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          11
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "bridge",
+                  "verdict": "supported",
+                  "reason": "通过显式字段'时间'直接绑定实体与属性值，桥接关系明确。",
+                  "support": [
+                    {
+                      "evidence_id": "d160ef9e8df6fb0f2396cf3e980928c6ea933448a77b2e19d962248caf047345",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 20,
+                      "source_text": "时间：2026年05月",
+                      "quote": "时间：2026年05月",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          11
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "value",
+                  "verdict": "supported",
+                  "reason": "原值'2026年05月'逐字对应，格式为年月，符合gYearMonth数据类型要求。",
+                  "support": [
+                    {
+                      "evidence_id": "d160ef9e8df6fb0f2396cf3e980928c6ea933448a77b2e19d962248caf047345",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 20,
+                      "source_text": "时间：2026年05月",
+                      "quote": "时间：2026年05月",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          11
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "qualifiers",
+                  "verdict": "supported",
+                  "reason": "原文为'临床备样生产信息'，暗示计划性；属性声明中modality标记为planned，与生产计划语境一致，未发现反证。",
+                  "support": [
+                    {
+                      "evidence_id": "938f7ff9894a703dfd0e43283ebaf7923122ac4cbddc6a505ff438ddac361595",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 6,
+                      "source_text": "研发项目临床备样生产信息",
+                      "quote": "研发项目临床备样生产信息",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          12
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "counterevidence",
+                  "verdict": "supported",
+                  "reason": "核查原文未发现否定、撤销或与实际时间不符的反证。",
+                  "support": [
+                    {
+                      "evidence_id": "d160ef9e8df6fb0f2396cf3e980928c6ea933448a77b2e19d962248caf047345",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 20,
+                      "source_text": "时间：2026年05月",
+                      "quote": "时间：2026年05月",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          11
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "stored_verification_summary": [
+        {
+          "target_id": "dc7fe2f8946dae54f5ab2896524bb25a469cbba9625094fc3abba754486b1c86",
+          "missing_facets": [
+            "type"
+          ],
+          "validation_issues": [],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "unsupported",
+              "reason_code": "facet_unsupported",
+              "reason": "类型要求证明'production date, workshop, batch count, purpose, and expected batch size'等关键限定。原文仅包含编号和时间字段，缺少车间、批次数、用途及预计批量等核心定义要素，无法支持该类型。"
+            },
+            {
+              "check_kind": "referent",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文通过具体编号及时间戳唯一定位了'临床备样生产计划'这一文档记录对象，指称明确无歧义。"
+            },
+            {
+              "check_kind": "subject_role",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "该实体作为记录主体，承载了后续属性（如计划生产时间）的主语角色，且为事实来源端。"
+            }
+          ]
+        },
+        {
+          "target_id": "1e8fd642ff7286ed39d3a3c019fe8931acf07af68e3cc07ca42650b522621172",
+          "missing_facets": [],
+          "validation_issues": [],
+          "decisions": [
+            {
+              "check_kind": "subject_binding",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "属性声明处于'研发项目临床备样生产信息'语境下，且依赖对象e1（编号DP-C-PI-S-X2419 2601 04）确认为该信息的主体记录。"
+            },
+            {
+              "check_kind": "field_role",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文字段标签'时间'与属性'计划生产时间'(plannedProductionDate)语义一致，且值'2026年05月'符合gYearMonth类型格式，绑定合法。"
+            },
+            {
+              "check_kind": "predicate",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "属性描述'Planned production month'与原文'时间'对应，且处于计划阶段语境，谓词匹配。"
+            },
+            {
+              "check_kind": "bridge",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "通过显式字段'时间'直接绑定实体与属性值，桥接关系明确。"
+            },
+            {
+              "check_kind": "value",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原值'2026年05月'逐字对应，格式为年月，符合gYearMonth数据类型要求。"
+            },
+            {
+              "check_kind": "qualifiers",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文为'临床备样生产信息'，暗示计划性；属性声明中modality标记为planned，与生产计划语境一致，未发现反证。"
+            },
+            {
+              "check_kind": "counterevidence",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "核查原文未发现否定、撤销或与实际时间不符的反证。"
+            }
+          ]
+        }
+      ],
+      "outcome": {
+        "semantic_outcome": "undetermined",
+        "complete": false,
+        "reason_code": "reference_binding_endpoint_invalid",
+        "reason": "reference_binding_endpoint_invalid；type_not_supported；datatype_mismatch；shacl_not_evaluated；entity_dependency_not_verified；metric_not_passed；shacl_not_passed",
+        "model_calls": 3
+      },
+      "published_counts": {
+        "nodes": 0,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      },
+      "attribute_candidates": [
+        {
+          "candidate_id": "f11e6a46dd0b6ca7340bfdb66a76768e15e918eb3dc3e70f11ff46e41d94595a",
+          "status": "rejected_mapping",
+          "raw_value": "时间：2026年05月",
+          "parsed_value": {
+            "value": "时间：2026年05月",
+            "datatype_iri": "http://www.w3.org/2001/XMLSchema#string",
+            "quantity": null,
+            "precision": null,
+            "issues": [
+              "datatype_mismatch"
+            ]
+          },
+          "reason_codes": [
+            "datatype_mismatch",
+            "shacl_not_evaluated",
+            "entity_dependency_not_verified",
+            "metric_not_passed",
+            "shacl_not_passed"
+          ],
+          "checks": {
+            "binding": "passed",
+            "metric": "failed",
+            "shacl": "not_checked"
+          }
+        }
+      ],
+      "independent_conclusions": [
+        "P8是封面编号，P20是封面时间；字段逐字存在，但没有证明是独立ClinicalSampleProductionPlan或计划生产日期。",
+        "文档标题临床备样生产信息不能自动把封面时间转换为planned modality生产月。",
+        "self-coreference e1到e1没有新增身份依据，最终拒绝。",
+        "plannedProductionDate取完整时间字段而非年月实值且datatype_mismatch；正确年月格式转换也无法修复主体/日期角色不足。",
+        "核验以缺少全部类型描述字段作为unsupported理由不等于这些字段都为本体必填；独立拒绝依据是对象类型和日期角色证据不足。",
+        "最终0登记0属性0关系；失败候选不能计作生产计划完成。"
+      ]
+    },
+    {
+      "group": 10,
+      "lineage_id": "a9927fb65525b759eb346e0f797209ab1cddcdfd1f42e680a004783e6566dc0e",
+      "immutable_results": {
+        "discovery": "4223899e6813aaae909e7fdea8c473cd164204f50b36802b81e5744267df8ed5",
+        "outcome": "8410c29587c20b91361d178242bb557bcfb51fd9e28743a5722391aee02a3059",
+        "verification": "d7ea9b8598cb5d88e2af0db571820cd9a786d8010a7ec3e4f177a2ad0f19779e"
+      },
+      "reviewed_model_turns": [
+        {
+          "immutable_result_key": "df125e7e5fd94fe5808a580fd291fd83a61ec0fce4cd718661eb5a370ce8b241",
+          "lineage_id": "a9927fb65525b759eb346e0f797209ab1cddcdfd1f42e680a004783e6566dc0e",
+          "attempt": 1,
+          "stage": "discovery",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 4435,
+            "input_tokens_details": {
+              "cached_tokens": 1573
+            },
+            "output_tokens": 1315,
+            "total_tokens": 5750
+          }
+        },
+        {
+          "immutable_result_key": "1214885f50e01ad1be5124cdbd26eb4ef7c02c9167ac1f71e52ab12bcddad0cb",
+          "lineage_id": "a9927fb65525b759eb346e0f797209ab1cddcdfd1f42e680a004783e6566dc0e",
+          "attempt": 2,
+          "stage": "verification",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 5188,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 1141,
+            "total_tokens": 6329
+          }
+        }
+      ],
+      "raw_discovery_summary": [
+        {
+          "attempt": 1,
+          "member_count": 1,
+          "member_shapes": [
+            {
+              "entities": 2,
+              "properties": 0,
+              "relations": 0,
+              "reference_bindings": 1,
+              "observations": 5
+            }
+          ]
+        }
+      ],
+      "frozen_discovery": {
+        "entities": [
+          {
+            "local_id": "e1",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ProductionRiskAssessment",
+            "representation": "record",
+            "mentions": [],
+            "record_components": [
+              {
+                "role": "subject",
+                "quote": {
+                  "evidence_id": "5b2d23615a443c4fc6743bd727a0ad989ef32d0b906e71c9fced2309a73d7cc3",
+                  "text": "HRS-1597",
+                  "context_text": null
+                }
+              },
+              {
+                "role": "field",
+                "quote": {
+                  "evidence_id": "5bf4984b0ecb55b664e5a1c4f7b2f551574efb0d67b7036a53a30bb3e4ec009b",
+                  "text": "产品名称",
+                  "context_text": null
+                }
+              },
+              {
+                "role": "value",
+                "quote": {
+                  "evidence_id": "5b2d23615a443c4fc6743bd727a0ad989ef32d0b906e71c9fced2309a73d7cc3",
+                  "text": "HRS-1597",
+                  "context_text": null
+                }
+              }
+            ],
+            "identifier_claims": []
+          },
+          {
+            "local_id": "p1",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ProductionRiskAssessment",
+            "representation": "mention",
+            "mentions": [
+              {
+                "evidence_id": "f8699b3584593daeee19724a6bab2d7c3053154c4490addb40961d1f650174ec",
+                "text": "×",
+                "context_text": null
+              }
+            ],
+            "record_components": [],
+            "identifier_claims": []
+          }
+        ],
+        "properties": [],
+        "relations": [],
+        "external_links": [],
+        "observations": [
+          {
+            "subject_id": "e1",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ProductionRiskAssessment#product_name",
+            "quote": {
+              "evidence_id": "5b2d23615a443c4fc6743bd727a0ad989ef32d0b906e71c9fced2309a73d7cc3",
+              "text": "HRS-1597",
+              "context_text": null
+            },
+            "kind": "unknown",
+            "reason": "Schema class 'ProductionRiskAssessment' has no declared properties. Field '产品名称' in the table maps to the entity name but no property IRI is defined in the schema_card for this type."
+          },
+          {
+            "subject_id": "e1",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ProductionRiskAssessment#genetic_toxicity",
+            "quote": {
+              "evidence_id": "f8699b3584593daeee19724a6bab2d7c3053154c4490addb40961d1f650174ec",
+              "text": "×",
+              "context_text": "表2 产品毒性信息"
+            },
+            "kind": "unknown",
+            "reason": "Schema class 'ProductionRiskAssessment' has no declared properties. The value '×' (no genetic toxicity) is present in the table under the '基因毒性' column, but no property IRI is defined for toxicity results."
+          },
+          {
+            "subject_id": "e1",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ProductionRiskAssessment#reproductive_developmental_toxicity",
+            "quote": {
+              "evidence_id": "7806db70c857437d1b7591ce1fdfc6b8cf76d1351918f0dcfa6ea05567d79c9e",
+              "text": "—",
+              "context_text": "表2 产品毒性信息"
+            },
+            "kind": "unknown",
+            "reason": "Schema class 'ProductionRiskAssessment' has no declared properties. The value '—' (insufficient data) is present under '生殖发育毒性', but no property IRI is defined."
+          },
+          {
+            "subject_id": "e1",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ProductionRiskAssessment#carcinogenicity",
+            "quote": {
+              "evidence_id": "c965a34b559b12f8024266b198a7a9f259405b46b95882ff8d2e7799ef97f08f",
+              "text": "—",
+              "context_text": "表2 产品毒性信息"
+            },
+            "kind": "unknown",
+            "reason": "Schema class 'ProductionRiskAssessment' has no declared properties. The value '—' is present under '致癌性', but no property IRI is defined."
+          },
+          {
+            "subject_id": "e1",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ProductionRiskAssessment#sensitization",
+            "quote": {
+              "evidence_id": "46dc0ed0652990dbeadfa95c7bcc7f08caee842cd967ca7a034da1b2c9e5aea3",
+              "text": "—",
+              "context_text": "表2 产品毒性信息"
+            },
+            "kind": "unknown",
+            "reason": "Schema class 'ProductionRiskAssessment' has no declared properties. The value '—' is present under '致敏性', but no property IRI is defined."
+          }
+        ],
+        "reference_bindings": [
+          {
+            "local_id": "ref1",
+            "source_id": "e1",
+            "target_id": "unknown",
+            "binding_kind": "coreference",
+            "support": [
+              {
+                "evidence_id": "5b2d23615a443c4fc6743bd727a0ad989ef32d0b906e71c9fced2309a73d7cc3",
+                "text": "HRS-1597",
+                "context_text": null
+              }
+            ]
+          }
+        ],
+        "assertion_generation": 1,
+        "evidence_revision": 1,
+        "content_hash": "02829dd8923aebfa8ad62af5b1c06c61f476f30fbeecc93458ade0fdba4122c3",
+        "local_ref_map": {
+          "e1": {
+            "id": "7502445f62ccf99e84f946645c6b5ab2192d4876eae0c42dc22b04a00f66bce2",
+            "revision": 1
+          },
+          "p1": {
+            "id": "7dc68e495cbcbe81456be2070427b58c3fe8324e25290a1e0b917df4336191dd",
+            "revision": 1
+          },
+          "ref1": {
+            "id": "ce0dccd6fcb29ef722c2c88e8d819d1aef58ae5dda23a0b225d5ea38d1be8135",
+            "revision": 1
+          }
+        },
+        "claim_issues": {
+          "ref1": [
+            "entity_reference_missing",
+            "reference_binding_endpoint_invalid",
+            "reference_binding_class_mismatch"
+          ]
+        }
+      },
+      "quote_checks": [
+        {
+          "evidence_id": "5b2d23615a443c4fc6743bd727a0ad989ef32d0b906e71c9fced2309a73d7cc3",
+          "table_path": [
+            "table:11"
+          ],
+          "row_0_based": 1,
+          "column_0_based": 0,
+          "paragraph_1_based": 1,
+          "source_text": "HRS-1597",
+          "quote": "HRS-1597",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              8
+            ]
+          ],
+          "context_encloses_quote": null
+        },
+        {
+          "evidence_id": "5bf4984b0ecb55b664e5a1c4f7b2f551574efb0d67b7036a53a30bb3e4ec009b",
+          "table_path": [
+            "table:11"
+          ],
+          "row_0_based": 0,
+          "column_0_based": 0,
+          "paragraph_1_based": 1,
+          "source_text": "产品名称",
+          "quote": "产品名称",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              4
+            ]
+          ],
+          "context_encloses_quote": null
+        },
+        {
+          "evidence_id": "f8699b3584593daeee19724a6bab2d7c3053154c4490addb40961d1f650174ec",
+          "table_path": [
+            "table:11"
+          ],
+          "row_0_based": 1,
+          "column_0_based": 2,
+          "paragraph_1_based": 1,
+          "source_text": "×",
+          "quote": "×",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              1
+            ]
+          ],
+          "context_encloses_quote": null
+        },
+        {
+          "evidence_id": "f8699b3584593daeee19724a6bab2d7c3053154c4490addb40961d1f650174ec",
+          "table_path": [
+            "table:11"
+          ],
+          "row_0_based": 1,
+          "column_0_based": 2,
+          "paragraph_1_based": 1,
+          "source_text": "×",
+          "quote": "×",
+          "context_text": "表2 产品毒性信息",
+          "exact_intervals": [
+            [
+              0,
+              1
+            ]
+          ],
+          "context_encloses_quote": false
+        },
+        {
+          "evidence_id": "7806db70c857437d1b7591ce1fdfc6b8cf76d1351918f0dcfa6ea05567d79c9e",
+          "table_path": [
+            "table:11"
+          ],
+          "row_0_based": 1,
+          "column_0_based": 1,
+          "paragraph_1_based": 1,
+          "source_text": "—",
+          "quote": "—",
+          "context_text": "表2 产品毒性信息",
+          "exact_intervals": [
+            [
+              0,
+              1
+            ]
+          ],
+          "context_encloses_quote": false
+        },
+        {
+          "evidence_id": "c965a34b559b12f8024266b198a7a9f259405b46b95882ff8d2e7799ef97f08f",
+          "table_path": [
+            "table:11"
+          ],
+          "row_0_based": 1,
+          "column_0_based": 3,
+          "paragraph_1_based": 1,
+          "source_text": "—",
+          "quote": "—",
+          "context_text": "表2 产品毒性信息",
+          "exact_intervals": [
+            [
+              0,
+              1
+            ]
+          ],
+          "context_encloses_quote": false
+        },
+        {
+          "evidence_id": "46dc0ed0652990dbeadfa95c7bcc7f08caee842cd967ca7a034da1b2c9e5aea3",
+          "table_path": [
+            "table:11"
+          ],
+          "row_0_based": 1,
+          "column_0_based": 4,
+          "paragraph_1_based": 1,
+          "source_text": "—",
+          "quote": "—",
+          "context_text": "表2 产品毒性信息",
+          "exact_intervals": [
+            [
+              0,
+              1
+            ]
+          ],
+          "context_encloses_quote": false
+        }
+      ],
+      "raw_verification_summary": [
+        {
+          "attempt": 2,
+          "member_count": 1,
+          "duplicate_target_ids": {},
+          "verifications": [
+            {
+              "target_id": "bfa6f6b4f9eae6437f1d84c6298f4fe27ea12f2adeba3c702ec771aa280aca0a",
+              "facets": [
+                {
+                  "name": "type",
+                  "verdict": "undetermined",
+                  "reason": "类型定义要求覆盖 Personnel, Equipment, Materials, Documents, Waste management 的 7-column risk evaluation table 完整评估。原文仅提供了产品名称'HRS-1597'，未包含任何关于上述人员、设备、物料、文件、废弃物管理的具体评估",
+                  "support": [
+                    {
+                      "evidence_id": "5b2d23615a443c4fc6743bd727a0ad989ef32d0b906e71c9fced2309a73d7cc3",
+                      "table_path": [
+                        "table:11"
+                      ],
+                      "row_0_based": 1,
+                      "column_0_based": 0,
+                      "paragraph_1_based": 1,
+                      "source_text": "HRS-1597",
+                      "quote": "HRS-1597",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          8
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    },
+                    {
+                      "evidence_id": "5bf4984b0ecb55b664e5a1c4f7b2f551574efb0d67b7036a53a30bb3e4ec009b",
+                      "table_path": [
+                        "table:11"
+                      ],
+                      "row_0_based": 0,
+                      "column_0_based": 0,
+                      "paragraph_1_based": 1,
+                      "source_text": "产品名称",
+                      "quote": "产品名称",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          4
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "referent",
+                  "verdict": "supported",
+                  "reason": "原文表格第一行第一列逐字明确记录'HRS-1597'作为产品名称，指向清晰。",
+                  "support": [
+                    {
+                      "evidence_id": "5b2d23615a443c4fc6743bd727a0ad989ef32d0b906e71c9fced2309a73d7cc3",
+                      "table_path": [
+                        "table:11"
+                      ],
+                      "row_0_based": 1,
+                      "column_0_based": 0,
+                      "paragraph_1_based": 1,
+                      "source_text": "HRS-1597",
+                      "quote": "HRS-1597",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          8
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "subject_role",
+                  "verdict": "supported",
+                  "reason": "原文通过表格结构（表头'产品名称'与数据'HRS-1597'同行同列）确立了'HRS-1597'的主体身份。",
+                  "support": [
+                    {
+                      "evidence_id": "5b2d23615a443c4fc6743bd727a0ad989ef32d0b906e71c9fced2309a73d7cc3",
+                      "table_path": [
+                        "table:11"
+                      ],
+                      "row_0_based": 1,
+                      "column_0_based": 0,
+                      "paragraph_1_based": 1,
+                      "source_text": "HRS-1597",
+                      "quote": "HRS-1597",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          8
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    },
+                    {
+                      "evidence_id": "5bf4984b0ecb55b664e5a1c4f7b2f551574efb0d67b7036a53a30bb3e4ec009b",
+                      "table_path": [
+                        "table:11"
+                      ],
+                      "row_0_based": 0,
+                      "column_0_based": 0,
+                      "paragraph_1_based": 1,
+                      "source_text": "产品名称",
+                      "quote": "产品名称",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          4
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "target_id": "d0c9b1ce69d67f867a7bfbf059772c10e6f7738a115dfd087b73c6f6b72cce3b",
+              "facets": [
+                {
+                  "name": "type",
+                  "verdict": "undetermined",
+                  "reason": "类型定义要求覆盖 Personnel, Equipment, Materials, Documents, Waste management 的 7-column risk evaluation table 完整评估。原文'×'仅表示无基因毒性，未提供其他维度的风险评估信息。",
+                  "support": [
+                    {
+                      "evidence_id": "f8699b3584593daeee19724a6bab2d7c3053154c4490addb40961d1f650174ec",
+                      "table_path": [
+                        "table:11"
+                      ],
+                      "row_0_based": 1,
+                      "column_0_based": 2,
+                      "paragraph_1_based": 1,
+                      "source_text": "×",
+                      "quote": "×",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          1
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "referent",
+                  "verdict": "undetermined",
+                  "reason": "'×'本身是符号，原文备注说明其代表'没有相应的毒性'。虽然通过表格行位置可推断其属于HRS-1597，但该实体登记为'p1'且mentions仅为'×'，缺乏明确的主语指称来确认'p1'是否独立于'e1'或仅为属性值。若视为独立实体指称，证据不足；若视为e1的属性，则referent绑定错误。此处针对实体登记'p1'",
+                  "support": [
+                    {
+                      "evidence_id": "f8699b3584593daeee19724a6bab2d7c3053154c4490addb40961d1f650174ec",
+                      "table_path": [
+                        "table:11"
+                      ],
+                      "row_0_based": 1,
+                      "column_0_based": 2,
+                      "paragraph_1_based": 1,
+                      "source_text": "×",
+                      "quote": "×",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          1
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "subject_role",
+                  "verdict": "unsupported",
+                  "reason": "原文中'×'位于'基因毒性'列，表示该产品在基因毒性方面的属性为阴性。它描述的是一个属性/状态，而非主体（Subject）身份。主体已在第一列'HRS-1597'中定义。",
+                  "support": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "stored_verification_summary": [
+        {
+          "target_id": "bfa6f6b4f9eae6437f1d84c6298f4fe27ea12f2adeba3c702ec771aa280aca0a",
+          "missing_facets": [
+            "type",
+            "referent"
+          ],
+          "validation_issues": [
+            "record_composition_source_coverage_missing"
+          ],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "undetermined",
+              "reason_code": "facet_undetermined",
+              "reason": "类型定义要求覆盖 Personnel, Equipment, Materials, Documents, Waste management 的 7-column risk evaluation table 完整评估。原文仅提供了产品名称'HRS-1597'，未包含任何关于上述人员、设备、物料、文件、废弃物管理的具体评估"
+            },
+            {
+              "check_kind": "referent",
+              "verdict": "undetermined",
+              "reason_code": "record_composition_source_coverage_missing",
+              "reason": "原文表格第一行第一列逐字明确记录'HRS-1597'作为产品名称，指向清晰。"
+            },
+            {
+              "check_kind": "subject_role",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文通过表格结构（表头'产品名称'与数据'HRS-1597'同行同列）确立了'HRS-1597'的主体身份。"
+            }
+          ]
+        },
+        {
+          "target_id": "d0c9b1ce69d67f867a7bfbf059772c10e6f7738a115dfd087b73c6f6b72cce3b",
+          "missing_facets": [
+            "type",
+            "referent",
+            "subject_role"
+          ],
+          "validation_issues": [],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "undetermined",
+              "reason_code": "facet_undetermined",
+              "reason": "类型定义要求覆盖 Personnel, Equipment, Materials, Documents, Waste management 的 7-column risk evaluation table 完整评估。原文'×'仅表示无基因毒性，未提供其他维度的风险评估信息。"
+            },
+            {
+              "check_kind": "referent",
+              "verdict": "undetermined",
+              "reason_code": "facet_undetermined",
+              "reason": "'×'本身是符号，原文备注说明其代表'没有相应的毒性'。虽然通过表格行位置可推断其属于HRS-1597，但该实体登记为'p1'且mentions仅为'×'，缺乏明确的主语指称来确认'p1'是否独立于'e1'或仅为属性值。若视为独立实体指称，证据不足；若视为e1的属性，则referent绑定错误。此处针对实体登记'p1'"
+            },
+            {
+              "check_kind": "subject_role",
+              "verdict": "unsupported",
+              "reason_code": "facet_unsupported",
+              "reason": "原文中'×'位于'基因毒性'列，表示该产品在基因毒性方面的属性为阴性。它描述的是一个属性/状态，而非主体（Subject）身份。主体已在第一列'HRS-1597'中定义。"
+            }
+          ]
+        }
+      ],
+      "outcome": {
+        "semantic_outcome": "undetermined",
+        "complete": false,
+        "reason_code": "entity_reference_missing",
+        "reason": "entity_reference_missing；reference_binding_endpoint_invalid；reference_binding_class_mismatch；record_composition_source_coverage_missing；type_not_supported；referent_not_supported；subject_role_not_supported",
+        "model_calls": 2
+      },
+      "published_counts": {
+        "nodes": 0,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      },
+      "attribute_candidates": [],
+      "independent_conclusions": [
+        "table:11为产品毒性信息，HRS-1597行×位于基因毒性列，—分别位于生殖发育毒性/致癌性/致敏性列。P117备注明确×无相应毒性、—研究数据不充分。",
+        "×是阴性属性状态，不是独立ProductionRiskAssessment实体；产品名记录也未证明生产风险评估实例，最终拒绝有依据。",
+        "未知端点unknown的共指无法建立。",
+        "observations自造ProductionRiskAssessment#字段IRI，且context_text为不包含符号的表标题；不能作为合法已识别属性。",
+        "没有把—当作无毒，也没有任何对象关系实线。"
+      ]
+    }
+  ],
+  "source_context": [
+    {
+      "evidence_id": "5216a626d98b87e2bed5ca2e4e51261f9f3eee30f3bed2e913ab0fa9fd164409",
+      "paragraph_index": 4,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "text": "HRXS-P-2419(HRS-1597)"
+    },
+    {
+      "evidence_id": "938f7ff9894a703dfd0e43283ebaf7923122ac4cbddc6a505ff438ddac361595",
+      "paragraph_index": 5,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "text": "研发项目临床备样生产信息"
+    },
+    {
+      "evidence_id": "0de578ec2e6c1d6a6d9ee38d8226a99999bb958a0e147e7343beef5e66d88073",
+      "paragraph_index": 7,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "text": "编号： DP-C-PI-S-X2419 2601 04"
+    },
+    {
+      "evidence_id": "d160ef9e8df6fb0f2396cf3e980928c6ea933448a77b2e19d962248caf047345",
+      "paragraph_index": 19,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "text": "时间：2026年05月"
+    },
+    {
+      "evidence_id": "5bf4984b0ecb55b664e5a1c4f7b2f551574efb0d67b7036a53a30bb3e4ec009b",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:11"
+      ],
+      "row_index": 0,
+      "column_index": 0,
+      "text": "产品名称"
+    },
+    {
+      "evidence_id": "a60658fc5cccaeddb8d9faa0760ee48d5fdad5ab0f678bd0e0d15775e6837b06",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:11"
+      ],
+      "row_index": 0,
+      "column_index": 1,
+      "text": "生殖发育毒性"
+    },
+    {
+      "evidence_id": "b040ef1101fda5fad8475f111b42a1c8c2df04f13f61d0e3f65e2d21ba3491eb",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:11"
+      ],
+      "row_index": 0,
+      "column_index": 2,
+      "text": "基因毒性"
+    },
+    {
+      "evidence_id": "a632e0e4e40942797fe9f172474f4e9271d3d54c07ab599f27825801200c3d6b",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:11"
+      ],
+      "row_index": 0,
+      "column_index": 3,
+      "text": "致癌性"
+    },
+    {
+      "evidence_id": "8f11688c66b24eb5323e8fa3fd6258cc81cc881cb62489dc68d28cf4f081dbc2",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:11"
+      ],
+      "row_index": 0,
+      "column_index": 4,
+      "text": "致敏性"
+    },
+    {
+      "evidence_id": "3ceaa7c8fba8c013544dbe194c3ebdee343221b1c020d2961f198afd74280257",
+      "paragraph_index": 116,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "text": "备注：“√”代表有相应毒性；“×”代表没有相应的毒性 ；“—”代表相关的研究数据不充分。"
+    }
+  ],
+  "graph_snapshot": {
+    "run_revision": 279,
+    "event_head": 20,
+    "summary": {
+      "relationships": {
+        "total": 12,
+        "supported": 0,
+        "completed": 0,
+        "percent": 0.0
+      },
+      "properties": {
+        "total": 202,
+        "supported": 2,
+        "completed": 0,
+        "percent": 0.0
+      },
+      "pending_expansion_count": 21,
+      "notes": [
+        "分母是冻结本体在当前主体与范围上的识别目标，不表示每个字段在文档中必填。",
+        "完整度按完成目标数计算；候选记录覆盖不等于开放文档召回率。",
+        "未知多值成员总数保持未完成；待展开分支不计为已完成。",
+        "否定、条件、计划及备选关系保留原图标签；虚拟目标不是事实。"
+      ]
+    },
+    "counts": {
+      "entities": 10,
+      "properties": 2,
+      "relationships": 0,
+      "relationship_groups": 0
+    }
+  },
+  "input_file_sha256": {
+    "review-20bf2d25-results-06.json": "0014f554ad52ea0e9b65ed8205d553b158c87c15f26f0c27baeade34c063a729",
+    "review-20bf2d25-target-06.json": "989444397d49e64ec25fb851a15d9df13e4d64527f1ed73c20f4717ebadd83c5"
+  }
+}

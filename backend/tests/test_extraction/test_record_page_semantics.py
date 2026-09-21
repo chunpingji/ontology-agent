@@ -9,7 +9,7 @@ from tests.test_extraction.test_record_executor import EDGE, TEXT, A, B, record_
 pytest_plugins = ["tests.test_extraction.test_tool_engine_resume"]
 
 
-def test_supported_relation_page_survives_later_page_budget_limit(
+def test_supported_relation_page_survives_empty_sibling_pages_in_two_call_batch(
     tmp_path, monkeypatch, current_run,
 ):
     first_text = "部件丙与部件丁也是部件。"
@@ -20,19 +20,22 @@ def test_supported_relation_page_survives_later_page_budget_limit(
         records = RecordIndex(args["ir"]).records
         first, second = records
 
+        def model_ref(value):
+            return f"@r:{value[:12]}"
+
         def quote(text, source):
-            return dict(evidence_id=source.source_units[0].evidence_id,
+            return dict(evidence_id=model_ref(source.source_units[0].evidence_id),
                         text=text, context_text=None)
 
         if view["stage"] == "verification":
-            source = (second if second.source_units[0].evidence_id
+            source = (second if model_ref(second.source_units[0].evidence_id)
                       in str(view["verification_input"]) else first)
             for target in payload["verifications"]:
                 for facet in target["facets"]:
                     facet["support"] = [quote(source.text, source)]
             return payload
         if record:
-            if view["record_id"] == first.record_id:
+            if view["record_id"] == model_ref(first.record_id):
                 template = next(e for e in payload["entities"] if e["class_iri"] == B)
                 payload["entities"] = []
                 payload["properties"] = []
@@ -47,7 +50,7 @@ def test_supported_relation_page_survives_later_page_budget_limit(
                 ) for identity, class_iri, name in (("a", A, "装置甲"), ("b", B, "部件乙"))]
                 payload["properties"] = []
         elif view["predicate_iri"] == EDGE:
-            if not any(ref["evidence_id"] == second.source_units[0].evidence_id
+            if not any(ref["evidence_id"] == model_ref(second.source_units[0].evidence_id)
                        and ref["fact_eligible"] for ref in view["evidence_refs"]):
                 payload["relations"] = []
             else:
@@ -55,11 +58,16 @@ def test_supported_relation_page_survives_later_page_budget_limit(
                 if len(relation_turns) > 1:
                     payload["relations"] = []
                 else:
-                    local_part = next(item["entity_ref"]["id"]
-                                      for item in view["registered_entities"]
-                                      if item["class_iri"] == B and any(
-                                          ref["evidence_id"] == second.source_units[0].evidence_id
-                                          for ref in item["source_refs"]))
+                    local_part = next(
+                        item["entity_ref"]["id"]
+                        for item in view["registered_entities"]
+                        if item["class_iri"] == B and any(
+                            ref["evidence_id"] == model_ref(
+                                second.source_units[0].evidence_id
+                            )
+                            for ref in item["source_refs"]
+                        )
+                    )
                     relation = payload["relations"][0]
                     relation.update(object_ids=[local_part], bridge_support=[quote(TEXT, second)])
                     relation["source_assertion"].update(
@@ -74,21 +82,24 @@ def test_supported_relation_page_survives_later_page_budget_limit(
         tmp_path, monkeypatch, current_run, texts=[first_text, second_text],
         transform=transform, page_size=2,
     )
-    result = executor(max_model_calls_per_record=4).run(**args, **hooks)
+    result = executor(max_model_calls_per_record=6).run(**args, **hooks)
     store, run, _token = current_run
     rows = current_state.restore_work(store, run, run.run_fingerprint).work_state
-    # A proved relation needs discovery, validate_graph and verification. The
-    # remaining one call cannot reserve another page's required verification budget.
-    assert len(relation_turns) == 1, result.diagnostics
+    # Each source-local endpoint group is visited once after the owner has a
+    # proved incoming relation.  Unbound cross-scope entities do not create an
+    # additional relationship page.
+    assert len(relation_turns) == 2, result.diagnostics
     assert any(edge.predicate_iri == EDGE for edge in result.graph.edges), result.diagnostics
     second_record = RecordIndex(args["ir"]).records[1].record_id
     entries = [row["value"]["value"] for row in rows["plan_parts"].values()
                if row["name"] == "ledger"
+               and row["slot"][-1] == EDGE
                and row["value"]["value"]["record_id"] == second_record]
     supported = [entry for entry in entries if "supported" in entry["semantic_outcomes"]]
     assert len(supported) == 1, entries
-    assert supported[0]["coverage_state"] == "attempted_incomplete"
-    assert result.graph.progress.supported == 1
+    assert supported[0]["coverage_state"] == "examined"
+    assert len(result.graph.properties) == 2
+    assert result.graph.progress.supported == 2 + len(result.graph.properties)
     assert result.graph.progress.completion == "incomplete"
 
 
@@ -101,8 +112,10 @@ def test_cold_relation_page_resume_keeps_paid_context_and_visits_remaining_endpo
         if view["stage"] != "discovery":
             return payload
         second = RecordIndex(args["ir"]).records[1]
+        model_record_id = f"@r:{second.record_id[:12]}"
+        model_evidence_id = f"@r:{second.source_units[0].evidence_id[:12]}"
         if record:
-            if view["record_id"] == second.record_id:
+            if view["record_id"] == model_record_id:
                 return {key: [] for key in payload}
             template = next(entity for entity in payload["entities"] if entity["class_iri"] == B)
             for identity, name in (("c", "部件丙"), ("d", "部件丁")):
@@ -110,10 +123,10 @@ def test_cold_relation_page_resume_keeps_paid_context_and_visits_remaining_endpo
                 entity.update(local_id=identity)
                 entity["mentions"][0].update(text=name, context_text=None)
                 payload["entities"].append(entity)
-        else:
+        elif view["predicate_iri"] == EDGE:
             payload["relations"] = []
-            if view["predicate_iri"] == EDGE and any(
-                ref["evidence_id"] == second.source_units[0].evidence_id
+            if any(
+                ref["evidence_id"] == model_evidence_id
                 and ref["fact_eligible"] for ref in view["evidence_refs"]
             ):
                 pages.append(deepcopy(view))
@@ -137,7 +150,9 @@ def test_cold_relation_page_resume_keeps_paid_context_and_visits_remaining_endpo
     assert len({page["task_id"] for page in pages}) == 2
     endpoints = {entity["entity_ref"]["id"] for page in pages
                  for entity in page["registered_entities"] if entity["class_iri"] == B}
-    assert endpoints == {node.entity_id for node in resumed.graph.nodes if node.class_iri == B}
+    assert endpoints == {
+        f"@r:{node.entity_id[:12]}" for node in resumed.graph.nodes if node.class_iri == B
+    }
     calls = current_state.restore_calls(store, run, run.run_fingerprint)
     task_ids = {page["task_id"] for page in pages}
     attempts = [(member["task_id"], view["stage"]) for view in requests
@@ -146,7 +161,7 @@ def test_cold_relation_page_resume_keeps_paid_context_and_visits_remaining_endpo
     assert len(attempts) == len(set(attempts)) == 2
     lineages = {member["claim_lineage_id"] for protocol in calls["protocols"].values()
                 for member in protocol.get("work_unit", {}).get("members", [])
-                if member["task_id"] in task_ids}
+                if f"@r:{member['task_id'][:12]}" in task_ids}
     assert len(lineages) == 1
     assert calls["lineage_calls"][next(iter(lineages))] == 2
     rows = current_state.restore_work(store, run, run.run_fingerprint).work_state

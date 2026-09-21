@@ -18,12 +18,16 @@ from app.services.extraction.ontology_guided.claim_protocol import (
 )
 from app.services.extraction.ontology_guided.contracts import (
     DocumentContext,
+    EdgeSpec,
     OntologySnapshot,
     SlotSpec,
     TraversalScope,
     VersionedRef,
 )
 from app.services.extraction.ontology_guided.ontology_plan import compile_class_predicates
+from app.services.extraction.ontology_guided.schema_region_routing import (
+    SchemaRegionRoutingPolicy,
+)
 
 RECORD_PIPELINE = "record-entity-first-v1"
 RECORD_PROTOCOL = "ontology-record-discovery-v1"
@@ -43,19 +47,26 @@ class ContextualDiscoveryPolicy(EvidenceModel):
 class RecordDiscoveryPolicy(EvidenceModel):
     model_config = ConfigDict(extra="forbid", strict=True, frozen=True)
     version: Literal["record-discovery-v2"] = "record-discovery-v2"
+    graph_phase: Literal[
+        "candidate_graph", "evidence_verification", "evidence_review"
+    ] = "evidence_verification"
     max_classes_per_card: int = Field(default=4, ge=1, le=32)
     endpoint_page_size: int = Field(default=8, ge=1, le=64)
     candidate_cards_per_record: int = Field(default=2, ge=1, le=16)
     minimum_similarity: float = Field(default=0.25, ge=-1, le=1, allow_inf_nan=False)
+    max_feedback_reopens: int = Field(default=8, ge=0, le=8)
     attribute_calibration: Literal["source-observations-v1"] = "source-observations-v1"
     table_reading: Literal["bounded-table-rows-v2"] = "bounded-table-rows-v2"
     contextual: ContextualDiscoveryPolicy | None = None
+    schema_region_routing: SchemaRegionRoutingPolicy | None = None
 
     @model_serializer(mode="wrap")
     def preserve_legacy_shape(self, handler):
         data = handler(self)
         if self.contextual is None:
             data.pop("contextual", None)
+        if self.schema_region_routing is None:
+            data.pop("schema_region_routing", None)
         return data
 
 
@@ -131,7 +142,10 @@ class RecordDiscoveryTarget(EvidenceModel):
 class ClassPropertyCard(EvidenceModel):
     class_iri: str
     label: str
+    description: str = ""
+    parent_iris: list[str] = Field(default_factory=list)
     properties: list[SlotSpec]
+    relationships: list[EdgeSpec] = Field(default_factory=list)
     quantity_policies: list[QuantityPolicy]
     identity_keys: list[IdentityKeySpec]
     unsupported_constraints: list[ConstraintIssue]
@@ -141,7 +155,8 @@ class ClassPropertyCard(EvidenceModel):
             schema_card_id=evidence_hash([parent.schema_card_id, self.class_iri, subject]),
             subject_ref=subject, class_iris=[self.class_iri],
             ontology_snapshot_id=parent.ontology_snapshot_id, menu_id=parent.schema_card_id,
-            predicates=self.properties, quantity_policies=self.quantity_policies,
+            predicates=[*self.properties, *self.relationships],
+            quantity_policies=self.quantity_policies,
             identity_keys=self.identity_keys, unsupported_constraints=self.unsupported_constraints,
         )
 
@@ -173,11 +188,81 @@ class RecordDiscoverySchemaCard(EvidenceModel):
     @property
     def predicates(self):
         # Transport/schema enum only; validation always resolves the owning class.
-        return [prop for card in self.class_cards for prop in card.properties]
+        return [predicate for card in self.class_cards
+                for predicate in [*card.properties, *card.relationships]]
 
     @property
     def identity_keys(self):
         return [key for card in self.class_cards for key in card.identity_keys]
+
+
+def merge_record_schema_cards(
+    cards: list[RecordDiscoverySchemaCard],
+) -> RecordDiscoverySchemaCard:
+    """Merge routed execution cards into one bounded region request.
+
+    Routing cards remain retrieval-only. This function combines the full
+    execution cards selected for the same source region and rejects conflicting
+    definitions instead of weakening either card.
+    """
+    if not cards:
+        raise ValueError("record_schema_cards_required")
+    ontology_snapshot_id = cards[0].ontology_snapshot_id
+    analysis_scope_ref = cards[0].analysis_scope_ref
+    def merge_items(left, right, *, key):
+        merged = {}
+        for item in [*left, *right]:
+            identity = key(item)
+            current = merged.get(identity)
+            if current is not None and current != item:
+                raise ValueError("record_schema_class_definition_conflict")
+            merged[identity] = item
+        return [merged[identity] for identity in sorted(merged)]
+
+    def merge_class(left, right):
+        if (left.label != right.label or left.description != right.description
+                or left.parent_iris != right.parent_iris):
+            raise ValueError("record_schema_class_definition_conflict")
+        return left.model_copy(update={
+            "properties": merge_items(
+                left.properties, right.properties, key=lambda item: item.iri,
+            ),
+            "relationships": merge_items(
+                left.relationships, right.relationships, key=lambda item: item.iri,
+            ),
+            "quantity_policies": merge_items(
+                left.quantity_policies,
+                right.quantity_policies,
+                key=lambda item: item.predicate_iri,
+            ),
+            "identity_keys": merge_items(
+                left.identity_keys,
+                right.identity_keys,
+                key=lambda item: item.declaration_ref,
+            ),
+            "unsupported_constraints": merge_items(
+                left.unsupported_constraints,
+                right.unsupported_constraints,
+                key=lambda item: (item.predicate_iri, item.constraint_construct),
+            ),
+        })
+
+    by_class = {}
+    for card in cards:
+        if (card.ontology_snapshot_id != ontology_snapshot_id
+                or card.analysis_scope_ref != analysis_scope_ref):
+            raise ValueError("record_schema_card_scope_mismatch")
+        for class_card in card.class_cards:
+            current = by_class.get(class_card.class_iri)
+            by_class[class_card.class_iri] = (
+                class_card if current is None else merge_class(current, class_card)
+            )
+    payload = {
+        "ontology_snapshot_id": ontology_snapshot_id,
+        "analysis_scope_ref": analysis_scope_ref,
+        "class_cards": [by_class[iri] for iri in sorted(by_class)],
+    }
+    return RecordDiscoverySchemaCard(schema_card_id=evidence_hash(payload), **payload)
 
 
 class DiscoveryCatalog(EvidenceModel):
@@ -196,7 +281,7 @@ class CandidateChanges(EvidenceModel):
 
 
 def compile_discovery_catalog(
-    ontology, root_class_iri, *, max_hops, cmc_describes_type_scope=False,
+    ontology, root_class_iri, *, max_hops,
     focus_paths=(),
 ):
     """Traverse formal types once per route position, without claiming instance edges."""
@@ -213,7 +298,7 @@ def compile_discovery_catalog(
         if depth >= max_hops:
             continue
         _, edges, _ = compile_class_predicates(
-            ontology, class_iri, cmc_describes_type_scope=cmc_describes_type_scope,
+            ontology, class_iri,
         )
         for edge in edges:
             next_prefix = (*prefix, edge.iri)
@@ -242,7 +327,7 @@ def compile_record_schema_card(
         "positiveInteger", "long", "short", "byte", "nonPositiveInteger", "negativeInteger",
     )}
     for iri in sorted(set(class_iris)):
-        properties, _, _ = compile_class_predicates(ontology, iri)
+        properties, relationships, _ = compile_class_predicates(ontology, iri)
         ids = {prop.iri for prop in properties}
         policies = [p.model_copy(deep=True) for p in profile.quantity_policies
                     if p.predicate_iri in ids]
@@ -260,21 +345,71 @@ def compile_record_schema_card(
                 ))
         cards.append(ClassPropertyCard(
             class_iri=iri, label=ontology.classes[iri].label, properties=properties,
+            relationships=relationships,
+            description=ontology.classes[iri].description,
+            parent_iris=sorted(ontology.classes[iri].parent_iris),
             quantity_policies=policies,
             identity_keys=[key.model_copy(deep=True) for key in profile.identity_keys
                            if key.class_iri == iri],
             unsupported_constraints=[ConstraintIssue(
                 predicate_iri=p.iri, construct="predicate_constraint",
                 reason_code="constraint_unresolved",
-            ) for p in properties if p.constraint_status != "resolved"],
+            ) for p in [*properties, *relationships] if p.constraint_status != "resolved"],
         ))
     payload = dict(ontology_snapshot_id=ontology.snapshot_id,
                    analysis_scope_ref=analysis_scope_ref, class_cards=cards)
     return RecordDiscoverySchemaCard(schema_card_id=evidence_hash(payload), **payload)
 
 
-def resolve_record_property(card, class_iri, predicate_iri):
-    for prop in card.for_class(class_iri).properties:
+def compile_partitioned_record_schema_cards(
+    ontology: OntologySnapshot,
+    *,
+    class_iris,
+    analysis_scope_ref: str,
+    profile: ExtractionProfile,
+    max_classes_per_card: int,
+    max_card_tokens: int,
+    token_counter,
+) -> list[RecordDiscoverySchemaCard]:
+    """Freeze bounded execution cards for one routed class scope."""
+    if min(max_classes_per_card, max_card_tokens) < 1:
+        raise ValueError("record_schema_card_partition_limit_invalid")
+    result = []
+    group = []
+    for iri in sorted(set(class_iris)):
+        trial = compile_record_schema_card(
+            ontology,
+            class_iris=[*group, iri],
+            analysis_scope_ref=analysis_scope_ref,
+            profile=profile,
+        )
+        # A single oversize class remains intact so request capacity handling
+        # reports it explicitly instead of silently dropping its constraints.
+        if group and (
+            len(group) >= max_classes_per_card
+            or token_counter(trial.model_dump_json()) > max_card_tokens
+        ):
+            result.append(compile_record_schema_card(
+                ontology,
+                class_iris=group,
+                analysis_scope_ref=analysis_scope_ref,
+                profile=profile,
+            ))
+            group = []
+        group.append(iri)
+    if group:
+        result.append(compile_record_schema_card(
+            ontology,
+            class_iris=group,
+            analysis_scope_ref=analysis_scope_ref,
+            profile=profile,
+        ))
+    return result
+
+
+def resolve_record_predicate(card, class_iri, predicate_iri):
+    owner = card.for_class(class_iri)
+    for prop in [*owner.properties, *owner.relationships]:
         if prop.iri == predicate_iri:
             return prop
     raise ValueError("predicate_outside_menu")

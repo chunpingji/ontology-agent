@@ -1,0 +1,167 @@
+{
+  "purpose": "provider_structure_acceptance_only",
+  "full_quality_acceptance": false,
+  "source_run_id": "20bf2d25-98f3-4efe-99f0-1e5dbbae5d05",
+  "source_lineage_id": "07b11ded29ac54db00f87e1e01961fc903e69e5338588079f984206bf7048029",
+  "saved_paid_request_hash": "0acd99d5f1a2c77c67ace567263942af498ffbe405e96644871728da4968620e",
+  "original_request_hash_matches_paid_turn": true,
+  "only_changed_request_path": "text.format.schema",
+  "input_sha256": "1c87ad9d83042134e89133e084c2b1d9aa59468fc8a5fcaec82cb70e21b02ce9",
+  "instructions_sha256": "3a0ba17d8ad2c29c2371e7ec081457f2749c97ea1337aef7281dde5a0115f51c",
+  "original_schema_sha256": "6fe44ac8b52c29641417fcf7f6f2719e280c13e38c5e1d15f29b3a1ea9e1af1a",
+  "new_schema_sha256": "6d3c11828f914de1c3b0725f8c991369f4b9a0871b71e12b5fb5bf69e41b3a30",
+  "new_request_hash": "e911f6920bc842ce2a0ce4b02d10ffb21208f75711c185e3fc95371db36f0795",
+  "source_file_sha256": "b88211fb2a4d90de9412b50aec6149aedde0e148fd2f537ad3181c38fbf399ec",
+  "compiler_file_sha256": "f65bb5f23462c9a2a9f2136368d785c81104f73b90d52fc8ebc7defcc59b4e48",
+  "model": "Qwen3.6-35B-A3B",
+  "model_revision": "0b21525e972670ed59e1812e170b27c26355381f0656ecc4e25617ece7dac58b",
+  "max_output_tokens": 16384,
+  "reasoning": {
+    "effort": "none"
+  },
+  "extra_body": {
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "tools_unchanged": true,
+  "target_count": 2,
+  "required_facet_count": 6,
+  "exact_target_hash_facet_schema": true,
+  "gold_or_expected_answers_loaded": false,
+  "new_model_calls": 1,
+  "application_state_written": false,
+  "probe_run_id": "cmc-verification-structure-probe-20260921",
+  "maximum_model_calls": 1,
+  "transport_requests_attempted": 1,
+  "automatic_retries": 0,
+  "local_client_total_timeout_s": 900.0,
+  "raw_response": {
+    "response_id": "resp_4bfNrY5GXTLi0IcZ2Sfb4DwyBATvSyzW",
+    "output_items": [
+      {
+        "id": "msg_1dQ5mv1kDj2RYUwz3A9v78sq6653DBbi",
+        "content": [
+          {
+            "annotations": [],
+            "text": "{\n  \"verifications\": [\n    {\n      \"target_id\": \"@r:f5b934b2159d\",\n      \"content_hash\": \"@r:872d6891c8a0\",\n      \"facets\": [\n        {\n          \"name\": \"type\",\n          \"verdict\": \"supported\",\n          \"support\": [\n            {\n              \"evidence_id\": \"@r:4ec9ebd6f013\",\n              \"text\": \"离心机\",\n              \"context_text\": null\n            }\n          ],\n          \"counterevidence_support\": [],\n          \"reason\": \"原文将设备明确标识为'离心机'。根据本体定义，离心机是通过旋转产生离心作用实现固液或液液分离的生产设备。'甩滤'用途（见e2支持）符合离心机功能，且无证据表明其属于其他特定类型（如CIP、干燥等）。关键限定获支持。\"\n        },\n        {\n          \"name\": \"referent\",\n          \"verdict\": \"supported\",\n          \"support\": [\n            {\n              \"evidence_id\": \"@r:3b2041f0956d\",\n              \"text\": \"CT64610\",\n              \"context_text\": null\n            }\n          ],\n          \"counterevidence_support\": [],\n          \"reason\": \"原文在'设备编号'字段下明确记录了'CT64610'，与该设备在表中的位置对应，身份标识明确。\"\n        },\n        {\n          \"name\": \"subject_role\",\n          \"verdict\": \"supported\",\n          \"support\": [\n            {\n              \"evidence_id\": \"@r:4ec9ebd6f013\",\n              \"text\": \"离心机\",\n              \"context_text\": null\n            }\n          ],\n          \"counterevidence_support\": [],\n          \"reason\": \"原文'离心机'位于'设备名称'列，与'岗位'、'设备编号'等同属一行，作为该行记录的主体对象出现。\"\n        }\n      ]\n    },\n    {\n      \"target_id\": \"@r:9010be649d43\",\n      \"content_hash\": \"@r:0e469c8eaf06\",\n      \"facets\": [\n        {\n          \"name\": \"type\",\n          \"verdict\": \"supported\",\n          \"support\": [\n            {\n              \"evidence_id\": \"@r:19953db1c915\",\n              \"text\": \"甩滤\",\n              \"context_text\": null\n            }\n          ],\n          \"counterevidence_support\": [],\n          \"reason\": \"该声明基于'设备用途以及工艺要求'字段的'甩滤'。虽然'甩滤'是离心机（e1）的功能，但在本声明中，实体e2被分类为CleaningEquipment（清洗设备）。清洗设备的定义是'用于向待清洁对象施加清洗介质或机械作用，以去除设备、器具或表面残留物及污染物的设备或工具'。原文仅提供了'甩滤'这一用途，未提供清洗介质、\"\n        },\n        {\n          \"name\": \"referent\",\n          \"verdict\": \"supported\",\n          \"support\": [\n            {\n              \"evidence_id\": \"@r:19953db1c915\",\n              \"text\": \"甩滤\",\n              \"context_text\": null\n            }\n          ],\n          \"counterevidence_support\": [],\n          \"reason\": \"该声明的referent指向'甩滤'这一操作/用途。原文在'设备用途以及工艺要求'字段下明确记录了'甩滤'，证实了该实体在该记录中的指称内容。\"\n        },\n        {\n          \"name\": \"subject_role\",\n          \"verdict\": \"supported\",\n          \"support\": [\n            {\n              \"evidence_id\": \"@r:19953db1c915\",\n              \"text\": \"甩滤\",\n              \"context_text\": null\n            }\n          ],\n          \"counterevidence_support\": [],\n          \"reason\": \"原文'甩滤'位于'设备用途以及工艺要求'列，作为该行记录的一个属性/字段值出现。在该验证上下文中，它被处理为一个独立的实体声明主体。\"\n        }\n      ]\n    }\n  ]\n}",
+            "type": "output_text",
+            "logprobs": []
+          }
+        ],
+        "role": "assistant",
+        "status": "completed",
+        "type": "message"
+      }
+    ],
+    "response_status": "completed",
+    "incomplete_details": null,
+    "error": null,
+    "usage": {
+      "input_tokens": 12762,
+      "input_tokens_details": {
+        "cached_tokens": 12246
+      },
+      "output_tokens": 1002,
+      "total_tokens": 13764
+    }
+  },
+  "response_status": "completed",
+  "structure_accepted": true,
+  "jsonschema_validation": "pending_offline_validation",
+  "decoded_answer": {
+    "verifications": [
+      {
+        "target_id": "f5b934b2159d3c1d5a3048e77e397f55a05d6d29a7909101f59d59ba6506427e",
+        "content_hash": "872d6891c8a05d0f94c09af3922ba819b6ff9ddacea2d5950d4b68a9e7d583bf",
+        "facets": [
+          {
+            "name": "type",
+            "verdict": "supported",
+            "support": [
+              {
+                "evidence_id": "4ec9ebd6f013e8da2e2732c3c5f873d22ffdd83919ac8d10459ec33f7e9b2ee5",
+                "text": "离心机",
+                "context_text": null
+              }
+            ],
+            "counterevidence_support": [],
+            "reason": "原文将设备明确标识为'离心机'。根据本体定义，离心机是通过旋转产生离心作用实现固液或液液分离的生产设备。'甩滤'用途（见e2支持）符合离心机功能，且无证据表明其属于其他特定类型（如CIP、干燥等）。关键限定获支持。"
+          },
+          {
+            "name": "referent",
+            "verdict": "supported",
+            "support": [
+              {
+                "evidence_id": "3b2041f0956d7678f915572bd525ce6bb1fdebab1345fea3ddf309bb8c58e8b4",
+                "text": "CT64610",
+                "context_text": null
+              }
+            ],
+            "counterevidence_support": [],
+            "reason": "原文在'设备编号'字段下明确记录了'CT64610'，与该设备在表中的位置对应，身份标识明确。"
+          },
+          {
+            "name": "subject_role",
+            "verdict": "supported",
+            "support": [
+              {
+                "evidence_id": "4ec9ebd6f013e8da2e2732c3c5f873d22ffdd83919ac8d10459ec33f7e9b2ee5",
+                "text": "离心机",
+                "context_text": null
+              }
+            ],
+            "counterevidence_support": [],
+            "reason": "原文'离心机'位于'设备名称'列，与'岗位'、'设备编号'等同属一行，作为该行记录的主体对象出现。"
+          }
+        ]
+      },
+      {
+        "target_id": "9010be649d434e245bb8f0562116cff116c78333d107b67fa391bac985e48b89",
+        "content_hash": "0e469c8eaf0683a6123fff7530da20a530fa0e70fbc907cf8b9adf7dce42ae7b",
+        "facets": [
+          {
+            "name": "type",
+            "verdict": "supported",
+            "support": [
+              {
+                "evidence_id": "19953db1c9154636d0c7031d8d013fa0e1115a23dedd12eee281bf5dd65a0159",
+                "text": "甩滤",
+                "context_text": null
+              }
+            ],
+            "counterevidence_support": [],
+            "reason": "该声明基于'设备用途以及工艺要求'字段的'甩滤'。虽然'甩滤'是离心机（e1）的功能，但在本声明中，实体e2被分类为CleaningEquipment（清洗设备）。清洗设备的定义是'用于向待清洁对象施加清洗介质或机械作用，以去除设备、器具或表面残留物及污染物的设备或工具'。原文仅提供了'甩滤'这一用途，未提供清洗介质、"
+          },
+          {
+            "name": "referent",
+            "verdict": "supported",
+            "support": [
+              {
+                "evidence_id": "19953db1c9154636d0c7031d8d013fa0e1115a23dedd12eee281bf5dd65a0159",
+                "text": "甩滤",
+                "context_text": null
+              }
+            ],
+            "counterevidence_support": [],
+            "reason": "该声明的referent指向'甩滤'这一操作/用途。原文在'设备用途以及工艺要求'字段下明确记录了'甩滤'，证实了该实体在该记录中的指称内容。"
+          },
+          {
+            "name": "subject_role",
+            "verdict": "supported",
+            "support": [
+              {
+                "evidence_id": "19953db1c9154636d0c7031d8d013fa0e1115a23dedd12eee281bf5dd65a0159",
+                "text": "甩滤",
+                "context_text": null
+              }
+            ],
+            "counterevidence_support": [],
+            "reason": "原文'甩滤'位于'设备用途以及工艺要求'列，作为该行记录的一个属性/字段值出现。在该验证上下文中，它被处理为一个独立的实体声明主体。"
+          }
+        ]
+      }
+    ]
+  },
+  "seconds": 21.21393881109543
+}

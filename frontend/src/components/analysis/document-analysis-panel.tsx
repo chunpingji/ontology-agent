@@ -32,6 +32,7 @@ import {
 
 import { DocumentHarnessStream, DocumentHarnessInformation, useDocumentHarness } from "@/components/analysis/document-harness";
 import { DocumentAnalysisHistory } from "@/components/analysis/document-analysis-history";
+import { DocumentAnalysisProgressPanel } from "@/components/analysis/document-analysis-progress";
 import { DocumentRelationshipGraph } from "@/components/analysis/document-relationship-graph";
 import { WordViewer, type DocumentLocation } from "@/components/extraction/word-viewer";
 import { TreeView, type TreeDataItem } from "@/components/tree-view";
@@ -80,10 +81,8 @@ import {
 } from "@/lib/api";
 import {
   DOCUMENT_ANALYSIS_STATUS_LABELS as RUN_STATUS_LABELS,
-  documentRankingPauseReasons,
   formatDocumentAnalysisDate as formatDate,
   formatDocumentAnalysisReason,
-  formatDocumentRankingPause,
 } from "@/lib/document-analysis";
 import { cn } from "@/lib/utils";
 
@@ -597,23 +596,15 @@ export function DocumentAnalysisPanel() {
   const currentRun = runState?.recognition_run_id === activeRunId ? runState : null;
   const currentMetadata = metadataState?.recognition_run_id === activeRunId ? metadataState : null;
   const currentGraph = graphState?.runId === activeRunId && graphState.projection === projection ? graphState.value : null;
-  const rankingBudgetEnabled = currentRun?.ranking_budget_enabled
-    ?? currentGraph?.ranking?.budget_enabled ?? true;
-  const rankingBudgetAction = rankingBudgetEnabled ? "ranking_budget_disable" : "ranking_budget_enable";
   const currentReplay = sourceReplay?.runId === activeRunId ? sourceReplay : null;
   const currentSelectionRef = selectedSelectionRef?.runId === activeRunId ? selectedSelectionRef.value : null;
   const runReason = currentRun?.progress.stop_reason;
-  const runReasonText = runReason === "ranking_paused"
-    ? formatDocumentRankingPause(
-      currentGraph?.ranking,
-      currentRun?.status === "running" || currentRun?.status === "queued",
-      rankingBudgetEnabled,
-    )
-    : runReason ? formatDocumentAnalysisReason(runReason, currentRun?.error?.safe_detail) : currentRun?.error?.safe_detail;
+  const runReasonText = runReason
+    ? formatDocumentAnalysisReason(runReason, currentRun?.error?.safe_detail)
+    : currentRun?.error?.safe_detail;
   const runReasonCodes = [...new Set([
     runReason,
     currentRun?.error?.code,
-    ...(runReason === "ranking_paused" ? documentRankingPauseReasons(currentGraph?.ranking) : []),
   ].filter((code): code is string => Boolean(code)))];
 
   const filteredClasses = useMemo(() => {
@@ -744,9 +735,7 @@ export function DocumentAnalysisPanel() {
           action,
           currentRun.run_revision,
           requestKey,
-          action === "ranking_budget_enable" ? "用户在文档分析页面启用排序预算限制"
-            : action === "ranking_budget_disable" ? "用户在文档分析页面禁用排序预算限制"
-              : `用户在文档分析页面请求${action}`,
+          `用户在文档分析页面请求${action}`,
         );
       }
       if (activeRunIdRef.current === currentRun.recognition_run_id) {
@@ -1012,55 +1001,26 @@ export function DocumentAnalysisPanel() {
                     <Button size="sm" variant="ghost" onClick={closeRunView}>关闭视图</Button>
                   </div>
                 </div>
+                <DocumentAnalysisProgressPanel run={currentRun} />
+                <div className="grid gap-2 text-xs sm:grid-cols-2">
+                  <div className="rounded-md bg-muted/40 p-2"><Clock3 className="mr-1 inline size-3.5" /><span className="text-muted-foreground">保留至</span><strong className="ml-2">{formatDate(currentRun.expires_at)}</strong></div>
+                  <div className="flex flex-wrap gap-2 rounded-md bg-muted/40 p-2">
+                    {Object.entries(currentRun.artifacts).map(([name, status]) => <Badge key={name} variant={status === "failed" ? "destructive" : "outline"}>{name}: {ARTIFACT_LABELS[status]}</Badge>)}
+                  </div>
+                </div>
                 <DocumentHarnessInformation key={currentRun.recognition_run_id}
                   runId={currentRun.recognition_run_id} status={currentRun.status}
-                  data={harness.data} error={harness.error}>
-                    <section aria-label="排序预算限制" className="space-y-2 rounded-md border p-3 text-xs">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">排序预算限制</span>
-                          <Badge variant="outline">{rankingBudgetEnabled ? "已启用" : "已禁用"}</Badge>
-                        </div>
-                        {currentRun.available_actions.includes(rankingBudgetAction) && (
-                          <Button size="sm" variant="outline" disabled={Boolean(controlBusy)} onClick={() => void handleControl(rankingBudgetAction)}>
-                            {controlBusy === rankingBudgetAction ? "正在更新" : rankingBudgetEnabled ? "禁用排序预算限制" : "启用排序预算限制"}
-                          </Button>
-                        )}
-                      </div>
-                      <p className="text-muted-foreground">
-                        {rankingBudgetEnabled
-                          ? "限制累计排序 tokens、记录与请求次数。"
-                          : "预算统计已暂停（显示启用期间累计值）。禁用期间不预扣或累计排序预算；重新启用后从关闭前的累计量继续。"}
-                      </p>
-                      <p className="text-muted-foreground">此开关不关闭 embedding 召回或 reranker 精排；输入长度、超时和单次重试限制仍然生效。切换不会自动恢复运行。</p>
-                      {(currentRun.status === "running" || currentRun.status === "queued") && <p className="text-muted-foreground">运行期间不可调整排序预算限制，请先暂停运行。</p>}
-                    </section>
-
-                    <div className="grid gap-2 text-xs sm:grid-cols-2">
-
-                      <div className="rounded-md bg-muted/40 p-2"><Clock3 className="mr-1 inline size-3.5" /><span className="text-muted-foreground">保留至</span><strong className="ml-2">{formatDate(currentRun.expires_at)}</strong></div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      {Object.entries(currentRun.artifacts).map(([name, status]) => <Badge key={name} variant={status === "failed" ? "destructive" : "outline"}>{name}: {ARTIFACT_LABELS[status]}</Badge>)}
-                      <Badge variant="outline">已记账模型调用 {currentRun.progress.model_calls}</Badge>
-                      {(currentRun.progress.model_calls_unresolved ?? 0) > 0 && (
-                        <Badge variant="outline">
-                          已预扣待核实 {currentRun.progress.model_calls_unresolved}
-                        </Badge>
-                      )}
-                    </div>
-                    <details>
-                      <summary className="cursor-pointer">标识与版本</summary>
-                      <div className="mt-2 space-y-1 break-all font-mono">
-                        <p>运行：{currentRun.recognition_run_id}</p>
-                        <p>revision {currentRun.run_revision} / event {currentRun.event_head}</p>
-                        <p>根类型：{currentRun.input.root_class_iri}</p>
-                        <p>模型版本：{harness.data?.configuration.model_revision || "未记录"}</p>
-                        <p>元数据快照：{currentMetadata?.metadata_snapshot?.snapshot_id || "未就绪"}</p>
-                      </div>
-                    </details>
-                </DocumentHarnessInformation>
+                  data={harness.data} error={harness.error} />
+                <details className="text-xs">
+                  <summary className="cursor-pointer">标识与版本</summary>
+                  <div className="mt-2 space-y-1 break-all font-mono">
+                    <p>运行：{currentRun.recognition_run_id}</p>
+                    <p>revision {currentRun.run_revision} / event {currentRun.event_head}</p>
+                    <p>根类型：{currentRun.input.root_class_iri}</p>
+                    <p>模型版本：{harness.data?.configuration.model_revision || "未记录"}</p>
+                    <p>元数据快照：{currentMetadata?.metadata_snapshot?.snapshot_id || "未就绪"}</p>
+                  </div>
+                </details>
                 {(currentRun.error || runReason) && (
                   <Alert variant="warning">
                     <TriangleAlert className="size-4" />
@@ -1160,7 +1120,6 @@ export function DocumentAnalysisPanel() {
                         key={activeRunId}
                         artifact={currentGraph}
                         runStatus={currentRun?.status}
-                        rankingBudgetEnabled={rankingBudgetEnabled}
                         projection={projection}
                         onProjectionChange={setProjection}
                         onSelectionRef={(selectionRef) => void handleSelectionRef(selectionRef)}

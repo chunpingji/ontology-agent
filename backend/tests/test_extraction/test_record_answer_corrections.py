@@ -28,7 +28,9 @@ def incomplete_support(answer, context, *, composition=False):
 
 
 @pytest.mark.parametrize("composition", [False, True])
-def test_discovery_and_verification_correct_within_four_calls(source, monkeypatch, composition):
+def test_discovery_corrects_once_and_verification_gap_is_downgraded_locally(
+    source, monkeypatch, composition,
+):
     def mistakes(answer, context, number):
         if "answer_correction" in context:
             return
@@ -46,29 +48,33 @@ def test_discovery_and_verification_correct_within_four_calls(source, monkeypatc
             for role, text in (("subject", "对象乙"), ("field", "数量"), ("value", "5"))
         ])
     outcome = adapter.inspect_record(task, context, card)
-    assert outcome.complete and len(outcome.nodes) == len(outcome.properties) == 2
-    assert outcome.model_calls == len(requests) == len(stored["reservations"]) == 4
-    discovery, verification = view(requests[1]), view(requests[3])
+    assert not outcome.complete
+    assert len(outcome.nodes) == (1 if composition else 2)
+    assert outcome.model_calls == len(requests) == len(stored["reservations"]) == 3
+    discovery, verification = view(requests[1]), view(requests[2])
     assert "bridge_reference_missing" in json.dumps(discovery["answer_correction"])
     reason = ("record_composition_source_coverage_missing" if composition
               else "qualifiers:support_missing")
-    assert reason in json.dumps(verification["answer_correction"])
+    assert reason in outcome.reason
+    assert "answer_correction" not in verification
     assert len(discovery["answer_correction"]["previous_answer"]["entities"]) == 2
     assert len(discovery["answer_correction"]["previous_answer"]["properties"]) == 2
     for field in ("evidence_units", "schema_card", "context_hash"):
         assert discovery[field] == view(requests[0])[field]
-    assert verification["verification_input"] == view(requests[2])["verification_input"]
-    assert not requests[1].get("tools") and not requests[3].get("tools")
+    assert not requests[1].get("tools")
     for request in requests[:2]:
         assert request["text_format"]["schema"]["$defs"]["PropertyProposal"][
             "properties"]["bridge_ref_ids"]["maxItems"] == 0
+        assert "resolved_reference_chain" not in request["text_format"]["schema"]["$defs"][
+            "PropertyProposal"
+        ]["properties"]["bridge_kind"]["enum"]
     assert "不得使用record_id、evidence_id" in requests[0]["instructions"]
     assert "不要调用inspect_evidence重复读取" in requests[0]["instructions"]
 
 
 @pytest.mark.parametrize("stage,budget,calls", [
     ("discovery", 2, 2), ("discovery", 4, 3),
-    ("verification", 2, 2), ("verification", 4, 3),
+    ("verification", 2, 2), ("verification", 4, 2),
 ])
 def test_uncorrected_claims_stay_rejected_and_keep_independent_claims(
     source, monkeypatch, stage, budget, calls,
@@ -90,21 +96,18 @@ def test_uncorrected_claims_stay_rejected_and_keep_independent_claims(
     assert reason in outcome.reason
     assert outcome.model_calls == len(requests) == len(stored["reservations"]) == calls
     corrections = [request for request in requests if "answer_correction" in view(request)]
-    assert len(corrections) == (1 if budget == 4 else 0)
+    assert len(corrections) == (1 if stage == "discovery" and budget == 4 else 0)
 
 
-@pytest.mark.parametrize("stage", ["discovery", "verification"])
 @pytest.mark.parametrize("pause_after_answer", [False, True])
 def test_correction_cold_resume_does_not_repeat_paid_answer(
-    source, monkeypatch, stage, pause_after_answer,
+    source, monkeypatch, pause_after_answer,
 ):
+    stage = "discovery"
     def mistake(answer, context, number):
         if context["stage"] != stage or "answer_correction" in context:
             return
-        if stage == "discovery":
-            answer["properties"][0]["bridge_ref_ids"] = [source["source_unit"].evidence_id]
-        else:
-            incomplete_support(answer, context)
+        answer["properties"][0]["bridge_ref_ids"] = [source["source_unit"].evidence_id]
 
     adapter, task, context, card, saved, paid, _ = setup_record(
         source, monkeypatch, budget=4, transform=mistake,
@@ -198,27 +201,21 @@ def test_empty_correction_rechecks_original_candidates_without_accepting_them(
     assert frozen["claim_issues"] == {"pb": ["bridge_reference_missing"]}
 
 
-@pytest.mark.parametrize("stage", ["discovery", "verification"])
 @pytest.mark.parametrize("capacity", ["input", "context"])
 def test_oversized_correction_keeps_original_claims_for_normal_gates(
-    source, monkeypatch, stage, capacity,
+    source, monkeypatch, capacity,
 ):
+    stage = "discovery"
     def mistake(answer, context, number):
         if context["stage"] != stage or "answer_correction" in context:
             return
-        if stage == "discovery":
-            answer["properties"][0]["bridge_ref_ids"] = [source["record_id"]]
-            # Keep the oversized-answer boundary after schema/context compression.
-            answer["observations"].append({
-                "subject_id": None, "predicate_iri": None,
-                "quote": deepcopy(answer["properties"][0]["value_quote"]),
-                "kind": "unknown", "reason": "核查原文归属及字段。" * 500,
-            })
-        else:
-            incomplete_support(answer, context)
-            # The prior response can fit the output allowance while its inclusion
-            # in a new verification request exceeds the input allowance.
-            answer["verifications"][0]["facets"][0]["reason"] = "核查原文归属及字段。" * 500
+        answer["properties"][0]["bridge_ref_ids"] = [source["record_id"]]
+        # Keep the oversized-answer boundary after schema/context compression.
+        answer["observations"].append({
+            "subject_id": None, "predicate_iri": None,
+            "quote": deepcopy(answer["properties"][0]["value_quote"]),
+            "kind": "unknown", "reason": "核查原文归属及字段。" * 1000,
+        })
 
     def setup():
         configured = setup_record(source, monkeypatch, budget=4, transform=mistake)
@@ -250,8 +247,7 @@ def test_oversized_correction_keeps_original_claims_for_normal_gates(
         adapter.max_context_tokens = limit + adapter.max_output_tokens
     outcome = adapter.inspect_record(task, context, card)
     assert not outcome.complete and len(outcome.nodes) == 2 and len(outcome.properties) == 1
-    reason = "bridge_reference_missing" if stage == "discovery" else "qualifiers:support_missing"
-    assert reason in outcome.reason
+    assert "bridge_reference_missing" in outcome.reason
     assert outcome.model_calls == len(requests) == len(stored["reservations"]) == 2
     assert any(correcting and size > limit for correcting, size in measured)
     assert all("answer_correction" not in view(request) for request in requests)

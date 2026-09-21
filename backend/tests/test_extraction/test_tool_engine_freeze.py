@@ -33,7 +33,7 @@ from app.services.extraction.word_analysis import analyze_word_core
 
 
 @pytest.fixture
-def source(tmp_path):
+def tool_source(tmp_path):
     document = Document()
     document.add_heading("正文", level=1)
     document.add_paragraph("主体甲关联对象乙或对象丙，恰选其一。数量为5 mg。")
@@ -114,6 +114,12 @@ def source(tmp_path):
         index=index, options=task_context(predicate), task_context=task_context,
         proposal=proposal, quote=quote, source_unit=source_unit, predicate=predicate,
     )
+
+
+@pytest.fixture
+def source(tool_source):
+    """Local compatibility name; cross-module users request ``tool_source``."""
+    return tool_source
 
 
 def _freeze(source, proposal=None, **options):
@@ -233,6 +239,28 @@ def test_repeated_quote_needs_an_exact_same_source_context(source):
     assert _freeze(source, proposal).claim_issues == {}
 
 
+def test_entity_grounding_ignores_the_inactive_representation_branch(source):
+    mention_proposal = copy.deepcopy(source["proposal"])
+    mention_proposal["entities"][0]["record_components"] = [{
+        "role": "subject", "quote": source["quote"]("对象"),
+    }]
+    mention_frozen = _freeze(source, mention_proposal)
+    assert mention_frozen.claim_issues == {}
+    assert mention_frozen.entities[0].record_components == []
+
+    record_proposal = copy.deepcopy(source["proposal"])
+    record_proposal["entities"][0].update(
+        representation="record",
+        mentions=[source["quote"]("不存在的对象")],
+        record_components=[{
+            "role": "subject", "quote": source["quote"]("对象乙"),
+        }],
+    )
+    record_frozen = _freeze(source, record_proposal)
+    assert record_frozen.claim_issues == {}
+    assert record_frozen.entities[0].mentions == []
+
+
 def test_record_proposal_requires_a_fact_component_but_accepts_context_components(source):
     proposal = copy.deepcopy(source["proposal"])
     entity = proposal["entities"][0]
@@ -243,6 +271,20 @@ def test_record_proposal_requires_a_fact_component_but_accepts_context_component
     assert _freeze(source, proposal).claim_issues == {}
     entity["record_components"].pop(0)
     assert "record_fact_components_missing" in _freeze(source, proposal).claim_issues["b"]
+
+
+def test_record_proposal_does_not_turn_one_attribute_value_into_an_entity(source):
+    proposal = copy.deepcopy(source["proposal"])
+    entity = proposal["entities"][0]
+    entity.update(representation="record", mentions=[], record_components=[
+        {"role": "value", "quote": source["quote"]("对象乙")},
+    ])
+    assert "record_fact_components_missing" in _freeze(source, proposal).claim_issues["b"]
+
+    entity["record_components"].insert(
+        0, {"role": "field", "quote": source["quote"]("主体甲关联")},
+    )
+    assert _freeze(source, proposal).claim_issues == {}
 
 
 def test_external_link_must_reference_an_explicit_registered_candidate(source):

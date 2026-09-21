@@ -13,6 +13,11 @@ from tests.test_extraction.test_tool_engine_quantity import metric_case, normali
 pytest_plugins = ["tests.test_extraction.test_tool_engine_freeze"]
 
 
+@pytest.fixture
+def source(tool_source):
+    return tool_source
+
+
 @pytest.mark.parametrize("failure,reason", [
     ("self_reference", "endpoint_is_not_an_entity"),
     ("missing_entity", "entity_reference_missing"),
@@ -39,7 +44,7 @@ def test_single_relationship_corrects_exact_error_and_keeps_entity_evidence(
     )
     reviewed = adapter.inspect_work_unit(unit, context, menu)
     assert not reviewed.member_errors
-    assert len(requests) == len(stored["reservations"]) == 4
+    assert len(requests) == len(stored["reservations"]) == 3
     correction = json.loads(requests[1]["input_items"][0]["content"][0]["text"])
     feedback = correction["members"][0]["answer_correction"]
     assert reason in json.dumps(feedback["issues"])
@@ -71,7 +76,9 @@ def test_requests_include_actual_narrowed_batch_schema_even_when_not_strict(sour
     assert "范围保留上下限及单位原文" in requests[0]["instructions"]
 
 
-def test_single_invalid_answer_stops_when_verification_budget_would_be_spent(source, monkeypatch):
+def test_single_invalid_correction_stops_before_verification_budget_is_spent(
+    source, monkeypatch,
+):
     def malformed(answer, view, number):
         relation = answer["members"][0]["result"]["relations"][0]
         relation.update(object_ids=[relation["local_id"]], selection="all")
@@ -79,11 +86,11 @@ def test_single_invalid_answer_stops_when_verification_budget_would_be_spent(sou
     adapter, unit, context, menu, _, requests = batch_setup(
         source, monkeypatch, size=1, relation=True, transform=malformed,
     )
-    context.remaining_model_calls_by_member = {unit.members[0].task_id: 3}
+    context.remaining_model_calls_by_member = {unit.members[0].task_id: 6}
     reviewed = adapter.inspect_work_unit(unit, context, menu)
     assert reviewed.member_errors == {unit.members[0].task_id: "member_answer_invalid"}
     assert not reviewed.member_result_refs
-    assert len(requests) == 1
+    assert len(requests) == 2
 
 
 def test_single_completed_malformed_json_is_corrected_without_reusing_thinking(source, monkeypatch):
@@ -155,25 +162,25 @@ def test_correction_feedback_survives_pause_before_request(source, monkeypatch):
     resumed.remaining_model_calls_by_member = {unit.members[0].task_id: 3}
     fresh_stored["results"].update(deepcopy(saved_results))
     reviewed = fresh.inspect_work_unit(unit, resumed, menu)
-    assert not reviewed.member_errors and len(new_requests) == 3
+    assert not reviewed.member_errors and len(new_requests) == 2
     member = json.loads(new_requests[0]["input_items"][0]["content"][0]["text"])["members"][0]
     assert "endpoint_is_not_an_entity" in json.dumps(member["answer_correction"])
     assert all(fresh_stored["results"][key] == value for key, value in saved_results.items())
     assert finalize(fresh, unit, resumed)[0].complete
 
 
-@pytest.mark.parametrize("corrected", [True, False])
-def test_record_referent_must_cover_components_and_can_correct_only_verification(
-    source, monkeypatch, corrected,
+def test_record_referent_gap_is_downgraded_without_verification_correction(
+    source, monkeypatch,
 ):
     source = {**source, "proposal": deepcopy(source["proposal"])}
     entity = source["proposal"]["entities"][0]
     entity.update(representation="record", mentions=[], record_components=[
+        {"role": "subject", "quote": source["quote"]("对象乙")},
         {"role": "value", "quote": source["quote"]("数量为5 mg")},
     ])
 
     def partial_referent(answer, view, number):
-        if view["stage"] != "verification" or corrected and number > 3:
+        if view["stage"] != "verification":
             return
         for member in answer["members"]:
             targets = {target["target_id"]: target for target in
@@ -183,28 +190,23 @@ def test_record_referent_must_cover_components_and_can_correct_only_verification
                     continue
                 for facet in verification["facets"]:
                     if facet["name"] == "referent":
-                        facet["support"] = [source["quote"]("主体甲")]
+                        facet["support"] = [source["quote"]("对象乙")]
 
-    adapter, unit, context, menu, _, requests = batch_setup(
+    adapter, unit, context, menu, stored, requests = batch_setup(
         source, monkeypatch, size=1, relation=True, transform=partial_referent,
     )
     reviewed = adapter.inspect_work_unit(unit, context, menu)
     assert not reviewed.member_errors
-    assert len(requests) == 4
-    repair = json.loads(requests[-1]["input_items"][0]["content"][0]["text"])
-    assert repair["stage"] == "verification"
-    assert "record_composition_source_coverage_missing" in json.dumps(
-        repair["members"][0]["answer_correction"],
-    )
-    original = json.loads(requests[2]["input_items"][0]["content"][0]["text"])
-    assert (repair["members"][0]["verification_input"]
-            == original["members"][0]["verification_input"])
+    discovery = next(row["value"] for row in stored["results"].values()
+                     if row["field"] == "discovery")
+    assert "b" not in discovery["claim_issues"]
+    assert len(requests) == 2
+    verification = json.loads(requests[-1]["input_items"][0]["content"][0]["text"])
+    assert verification["stage"] == "verification"
+    assert "answer_correction" not in verification["members"][0]
     outcome = finalize(adapter, unit, context)[0]
-    if corrected:
-        assert outcome.complete and len(outcome.nodes) == 2 and outcome.relationship_groups
-    else:
-        assert not outcome.complete and not outcome.relationship_groups
-        assert "record_composition_source_coverage_missing" in outcome.reason
+    assert not outcome.complete and not outcome.relationship_groups
+    assert "record_composition_source_coverage_missing" in outcome.reason
 
 
 def test_bad_member_feedback_never_includes_successful_sibling(source, monkeypatch):

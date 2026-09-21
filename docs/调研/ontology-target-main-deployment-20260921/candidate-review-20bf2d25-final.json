@@ -1,0 +1,1999 @@
+{
+  "run_id": "20bf2d25-98f3-4efe-99f0-1e5dbbae5d05",
+  "reviewed_at": "2026-09-21T05:50:12.483560+00:00",
+  "review_kind": "independent_post_hoc_source_review",
+  "model_calls_by_reviewer": 0,
+  "application_mutations_by_reviewer": 0,
+  "increments": [
+    {
+      "group": 17,
+      "lineage_id": "15f22abbe052faa1a5f175392b85f3f81a72f567be013811d5171a9c4c0cd0c7",
+      "reviewed_model_turns": [
+        {
+          "immutable_result_key": "635e76719a3b6cfc0b1f63166b1fb2cd9c2dbff35d1a31784cc06b46eba54e7e",
+          "lineage_id": "15f22abbe052faa1a5f175392b85f3f81a72f567be013811d5171a9c4c0cd0c7",
+          "attempt": 1,
+          "stage": "discovery",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 9741,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 585,
+            "total_tokens": 10326
+          }
+        },
+        {
+          "immutable_result_key": "57bcbb6071fa52ae7f61a8125bc1f05a9136aed72c46ffbec3e46e3ff5512152",
+          "lineage_id": "15f22abbe052faa1a5f175392b85f3f81a72f567be013811d5171a9c4c0cd0c7",
+          "attempt": 2,
+          "stage": "verification",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 11082,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 1955,
+            "total_tokens": 13037
+          }
+        }
+      ],
+      "immutable_results": {
+        "discovery": "419de4ff2e19920d21fdb12666313182be87a64264deabd245d8fc4803178221",
+        "outcome": "045bf85a5cac8c780676ba7f1cf0f09bbbbd9355c0e2b2a7538ffddb2592655a",
+        "tool_result": "f297f8b7526971325f5c9410b9695edeb454b3e5d3e0126b6e8cdcc573a22add",
+        "verification": "2f2b1049e03a675f8a2218fb500a7989a0bf2ce38126427bd113b98bccbba53f"
+      },
+      "frozen_discovery": {
+        "entities": [],
+        "properties": [],
+        "relations": [
+          {
+            "local_id": "r1",
+            "subject_id": "c5b309b1d300ceb7d3a9c94b0dd7f5ef7f59b1c59c7768a8e2e5c633d02eee4a",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+            "object_ids": [
+              "095ae2bf2de1123f0ce134d918879f98df1bcb4eeab0b7e1cc91d18f86fd9bac"
+            ],
+            "selection": "all",
+            "bridge_support": [
+              {
+                "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+                "text": "项目代码：HRXS-P-2419",
+                "context_text": null
+              }
+            ],
+            "selection_support": [],
+            "qualifiers": {
+              "polarity": "affirmed",
+              "modality": "asserted",
+              "condition_support": [],
+              "scope_qualifiers": []
+            },
+            "bridge_kind": "document_subject_description",
+            "bridge_ref_ids": [],
+            "source_assertion": {
+              "subject_support": [
+                {
+                  "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+                  "text": "项目代码：HRXS-P-2419",
+                  "context_text": null
+                }
+              ],
+              "object_support": [
+                {
+                  "object_id": "095ae2bf2de1123f0ce134d918879f98df1bcb4eeab0b7e1cc91d18f86fd9bac",
+                  "support": [
+                    {
+                      "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+                      "text": "项目名称：HRS-1597",
+                      "context_text": null
+                    }
+                  ]
+                }
+              ],
+              "predicate_support": [
+                {
+                  "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+                  "text": "项目代码：HRXS-P-2419",
+                  "context_text": null
+                }
+              ],
+              "binding_ids": []
+            }
+          }
+        ],
+        "external_links": [],
+        "observations": [],
+        "reference_bindings": [],
+        "assertion_generation": 1,
+        "evidence_revision": 1,
+        "content_hash": "9f0f0f862bdb8ce204fd131f4df0552a7c30ef48b7718819fc6cc0fbe5a1582d",
+        "local_ref_map": {
+          "c5b309b1d300ceb7d3a9c94b0dd7f5ef7f59b1c59c7768a8e2e5c633d02eee4a": {
+            "id": "c5b309b1d300ceb7d3a9c94b0dd7f5ef7f59b1c59c7768a8e2e5c633d02eee4a",
+            "revision": 1
+          },
+          "095ae2bf2de1123f0ce134d918879f98df1bcb4eeab0b7e1cc91d18f86fd9bac": {
+            "id": "095ae2bf2de1123f0ce134d918879f98df1bcb4eeab0b7e1cc91d18f86fd9bac",
+            "revision": 1
+          },
+          "r1": {
+            "id": "0f209e744d885ebf644871fd7166b9ead4d33f75f7cdfcc83bef96b0b946f356",
+            "revision": 1
+          }
+        },
+        "claim_issues": {}
+      },
+      "raw_discovery": [
+        {
+          "entities": [],
+          "external_links": [],
+          "observations": [],
+          "properties": [],
+          "reference_bindings": [],
+          "relations": [
+            {
+              "bridge_kind": "document_subject_description",
+              "bridge_ref_ids": [],
+              "bridge_support": [
+                {
+                  "context_text": null,
+                  "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+                  "text": "项目代码：HRXS-P-2419"
+                }
+              ],
+              "local_id": "r1",
+              "object_ids": [
+                "095ae2bf2de1123f0ce134d918879f98df1bcb4eeab0b7e1cc91d18f86fd9bac"
+              ],
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+              "qualifiers": {
+                "condition_support": [],
+                "modality": "asserted",
+                "polarity": "affirmed",
+                "scope_qualifiers": []
+              },
+              "selection": "all",
+              "selection_support": [],
+              "source_assertion": {
+                "binding_ids": [],
+                "object_support": [
+                  {
+                    "object_id": "095ae2bf2de1123f0ce134d918879f98df1bcb4eeab0b7e1cc91d18f86fd9bac",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+                        "text": "项目名称：HRS-1597"
+                      }
+                    ]
+                  }
+                ],
+                "predicate_support": [
+                  {
+                    "context_text": null,
+                    "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+                    "text": "项目代码：HRXS-P-2419"
+                  }
+                ],
+                "subject_support": [
+                  {
+                    "context_text": null,
+                    "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+                    "text": "项目代码：HRXS-P-2419"
+                  }
+                ]
+              },
+              "subject_id": "c5b309b1d300ceb7d3a9c94b0dd7f5ef7f59b1c59c7768a8e2e5c633d02eee4a"
+            }
+          ]
+        }
+      ],
+      "quote_checks": [
+        {
+          "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+          "table_path": null,
+          "row_0_based": null,
+          "column_0_based": null,
+          "paragraph_1_based": 34,
+          "source_text": "项目代码：HRXS-P-2419",
+          "quote": "项目代码：HRXS-P-2419",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              16
+            ]
+          ]
+        },
+        {
+          "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+          "table_path": null,
+          "row_0_based": null,
+          "column_0_based": null,
+          "paragraph_1_based": 33,
+          "source_text": "项目名称：HRS-1597",
+          "quote": "项目名称：HRS-1597",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              13
+            ]
+          ]
+        }
+      ],
+      "raw_verification_summary": [
+        {
+          "target_id": "578f0ffb2b3cc125f65a19300fa6d4dc29facfb6c505bf60e4c49c76eeab4a15",
+          "facets": [
+            {
+              "name": "subject_binding",
+              "verdict": "supported",
+              "reason": "当前成员registered_entities中CMCReport主体@r:c5b309b1d300的grounding_kind为document_root，由用户指定。原文“项目代码：HRXS-P-2419”作为文档标识锚点，确立了文档主体身份。",
+              "support": [
+                {
+                  "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+                  "table_path": null,
+                  "row_0_based": null,
+                  "column_0_based": null,
+                  "paragraph_1_based": 34,
+                  "source_text": "项目代码：HRXS-P-2419",
+                  "quote": "项目代码：HRXS-P-2419",
+                  "context_text": null,
+                  "exact_intervals": [
+                    [
+                      0,
+                      16
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "object_binding",
+              "verdict": "supported",
+              "reason": "声明中对象为e1 (@r:095ae2bf2de1)。原文“项目名称：HRS-1597”明确指称该药物产品实体，原文归属正确，指向一致。",
+              "support": [
+                {
+                  "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+                  "table_path": null,
+                  "row_0_based": null,
+                  "column_0_based": null,
+                  "paragraph_1_based": 33,
+                  "source_text": "项目名称：HRS-1597",
+                  "quote": "项目名称：HRS-1597",
+                  "context_text": null,
+                  "exact_intervals": [
+                    [
+                      0,
+                      13
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "predicate",
+              "verdict": "undetermined",
+              "reason": "原文仅提供了项目的标识代码。虽然本体允许CMCReport描述DrugProduct，且两者同属一个文档，但原文并未显式陈述或证明文档与药物之间存在“描述(describes)”这一语义关系。",
+              "support": [
+                {
+                  "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+                  "table_path": null,
+                  "row_0_based": null,
+                  "column_0_based": null,
+                  "paragraph_1_based": 34,
+                  "source_text": "项目代码：HRXS-P-2419",
+                  "quote": "项目代码：HRXS-P-2419",
+                  "context_text": null,
+                  "exact_intervals": [
+                    [
+                      0,
+                      16
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "bridge",
+              "verdict": "supported",
+              "reason": "声明使用document_subject_description桥接。原文“项目代码：HRXS-P-2419”作为文档层面的标识锚点，将CMCReport文档与药物e1关联，桥接依据充分。",
+              "support": [
+                {
+                  "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+                  "table_path": null,
+                  "row_0_based": null,
+                  "column_0_based": null,
+                  "paragraph_1_based": 34,
+                  "source_text": "项目代码：HRXS-P-2419",
+                  "quote": "项目代码：HRXS-P-2419",
+                  "context_text": null,
+                  "exact_intervals": [
+                    [
+                      0,
+                      16
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "qualifiers",
+              "verdict": "supported",
+              "reason": "原文陈述为事实性属性，无否定词，无模态修饰，无特殊条件，符合asserted、affirmed、无scope限定。",
+              "support": []
+            },
+            {
+              "name": "counterevidence",
+              "verdict": "supported",
+              "reason": "核查了成员授权的所有原文字段（分子式、分子量、化学名、性状、溶解性、剂型及各分类属性）。所有原文均描述了该药物的物理化学属性，未发现否定CMCReport描述该药物的反证。",
+              "support": [
+                {
+                  "evidence_id": "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+                  "table_path": null,
+                  "row_0_based": null,
+                  "column_0_based": null,
+                  "paragraph_1_based": 31,
+                  "source_text": "分子式：C23H28N6O5S",
+                  "quote": "分子式：C23H28N6O5S",
+                  "context_text": null,
+                  "exact_intervals": [
+                    [
+                      0,
+                      15
+                    ]
+                  ]
+                },
+                {
+                  "evidence_id": "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c",
+                  "table_path": null,
+                  "row_0_based": null,
+                  "column_0_based": null,
+                  "paragraph_1_based": 32,
+                  "source_text": "分子量：500.60",
+                  "quote": "分子量：500.60",
+                  "context_text": null,
+                  "exact_intervals": [
+                    [
+                      0,
+                      10
+                    ]
+                  ]
+                },
+                {
+                  "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+                  "table_path": null,
+                  "row_0_based": null,
+                  "column_0_based": null,
+                  "paragraph_1_based": 33,
+                  "source_text": "项目名称：HRS-1597",
+                  "quote": "项目名称：HRS-1597",
+                  "context_text": null,
+                  "exact_intervals": [
+                    [
+                      0,
+                      13
+                    ]
+                  ]
+                },
+                {
+                  "evidence_id": "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+                  "table_path": null,
+                  "row_0_based": null,
+                  "column_0_based": null,
+                  "paragraph_1_based": 35,
+                  "source_text": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+                  "quote": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+                  "context_text": null,
+                  "exact_intervals": [
+                    [
+                      0,
+                      157
+                    ]
+                  ]
+                },
+                {
+                  "evidence_id": "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e",
+                  "table_path": null,
+                  "row_0_based": null,
+                  "column_0_based": null,
+                  "paragraph_1_based": 36,
+                  "source_text": "中文：(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺",
+                  "quote": "中文：(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺",
+                  "context_text": null,
+                  "exact_intervals": [
+                    [
+                      0,
+                      90
+                    ]
+                  ]
+                },
+                {
+                  "evidence_id": "b4dabece54e4ed1ff9eab064651ccf18f151de488ad48ef326ca52418b3dacd8",
+                  "table_path": null,
+                  "row_0_based": null,
+                  "column_0_based": null,
+                  "paragraph_1_based": 37,
+                  "source_text": "CAS：N/A",
+                  "quote": "CAS：N/A",
+                  "context_text": null,
+                  "exact_intervals": [
+                    [
+                      0,
+                      7
+                    ]
+                  ]
+                },
+                {
+                  "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+                  "table_path": null,
+                  "row_0_based": null,
+                  "column_0_based": null,
+                  "paragraph_1_based": 38,
+                  "source_text": "性状：类白色到白色粉末",
+                  "quote": "性状：类白色到白色粉末",
+                  "context_text": null,
+                  "exact_intervals": [
+                    [
+                      0,
+                      11
+                    ]
+                  ]
+                },
+                {
+                  "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                  "table_path": null,
+                  "row_0_based": null,
+                  "column_0_based": null,
+                  "paragraph_1_based": 39,
+                  "source_text": "溶解性： DCM易溶，H2O、Heptane难溶",
+                  "quote": "溶解性： DCM易溶，H2O、Heptane难溶",
+                  "context_text": null,
+                  "exact_intervals": [
+                    [
+                      0,
+                      24
+                    ]
+                  ]
+                },
+                {
+                  "evidence_id": "ae3330d1d1826e10ecff3fd4b56765fe385dfff5a67679fbe22a436480d3276a",
+                  "table_path": null,
+                  "row_0_based": null,
+                  "column_0_based": null,
+                  "paragraph_1_based": 40,
+                  "source_text": "结构特点：三氮唑类化合物，含有磺胺结构 ",
+                  "quote": "结构特点：三氮唑类化合物，含有磺胺结构 ",
+                  "context_text": null,
+                  "exact_intervals": [
+                    [
+                      0,
+                      20
+                    ]
+                  ]
+                },
+                {
+                  "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                  "table_path": null,
+                  "row_0_based": null,
+                  "column_0_based": null,
+                  "paragraph_1_based": 41,
+                  "source_text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+                  "quote": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+                  "context_text": null,
+                  "exact_intervals": [
+                    [
+                      0,
+                      54
+                    ]
+                  ]
+                },
+                {
+                  "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                  "table_path": null,
+                  "row_0_based": null,
+                  "column_0_based": null,
+                  "paragraph_1_based": 42,
+                  "source_text": "制剂剂型：口服片剂 ",
+                  "quote": "制剂剂型：口服片剂 ",
+                  "context_text": null,
+                  "exact_intervals": [
+                    [
+                      0,
+                      10
+                    ]
+                  ]
+                },
+                {
+                  "evidence_id": "92a82f158e48683ef179eb2ac947fcc82d319381afcf72457c5bd1e69d8ceaa0",
+                  "table_path": null,
+                  "row_0_based": null,
+                  "column_0_based": null,
+                  "paragraph_1_based": 43,
+                  "source_text": "是否是肿瘤药物：否",
+                  "quote": "是否是肿瘤药物：否",
+                  "context_text": null,
+                  "exact_intervals": [
+                    [
+                      0,
+                      9
+                    ]
+                  ]
+                },
+                {
+                  "evidence_id": "bbc77ec05164fc68500520c9b37a410c205318f87e1ac764b7b259be9fb54e35",
+                  "table_path": null,
+                  "row_0_based": null,
+                  "column_0_based": null,
+                  "paragraph_1_based": 44,
+                  "source_text": "是否细胞毒药物：否",
+                  "quote": "是否细胞毒药物：否",
+                  "context_text": null,
+                  "exact_intervals": [
+                    [
+                      0,
+                      9
+                    ]
+                  ]
+                },
+                {
+                  "evidence_id": "0d97b1cfec2e1dd87a225a07abcd15051b595c9a15214fcc518691696dbf917b",
+                  "table_path": null,
+                  "row_0_based": null,
+                  "column_0_based": null,
+                  "paragraph_1_based": 45,
+                  "source_text": "是否是高致敏药物：否",
+                  "quote": "是否是高致敏药物：否",
+                  "context_text": null,
+                  "exact_intervals": [
+                    [
+                      0,
+                      10
+                    ]
+                  ]
+                },
+                {
+                  "evidence_id": "a6db68228eb3e4e9f6afb0c51a50528bb8bd5e051ec50d6bd5b2e4fbb70e5316",
+                  "table_path": null,
+                  "row_0_based": null,
+                  "column_0_based": null,
+                  "paragraph_1_based": 46,
+                  "source_text": "是否是激素类药物：否",
+                  "quote": "是否是激素类药物：否",
+                  "context_text": null,
+                  "exact_intervals": [
+                    [
+                      0,
+                      10
+                    ]
+                  ]
+                },
+                {
+                  "evidence_id": "73fd2ce08c8dda22a7eb3f5217044e5c90a8f50f075b3b0fd6ff1741bcf8732a",
+                  "table_path": null,
+                  "row_0_based": null,
+                  "column_0_based": null,
+                  "paragraph_1_based": 47,
+                  "source_text": "是否是青霉素类药物：否",
+                  "quote": "是否是青霉素类药物：否",
+                  "context_text": null,
+                  "exact_intervals": [
+                    [
+                      0,
+                      11
+                    ]
+                  ]
+                },
+                {
+                  "evidence_id": "fbf4fd8f7cfd9b9066e0a19ae8e5f0feca4677c612af8d61b4eda7b6647f4517",
+                  "table_path": null,
+                  "row_0_based": null,
+                  "column_0_based": null,
+                  "paragraph_1_based": 48,
+                  "source_text": "是否是高毒高活药物：否",
+                  "quote": "是否是高毒高活药物：否",
+                  "context_text": null,
+                  "exact_intervals": [
+                    [
+                      0,
+                      11
+                    ]
+                  ]
+                },
+                {
+                  "evidence_id": "12943408020bef0c9efc9d1f0ec34c383d7d0764a250752ee0e52bbb0e72ad95",
+                  "table_path": null,
+                  "row_0_based": null,
+                  "column_0_based": null,
+                  "paragraph_1_based": 49,
+                  "source_text": "是否需要灭活：否 ",
+                  "quote": "是否需要灭活：否 ",
+                  "context_text": null,
+                  "exact_intervals": [
+                    [
+                      0,
+                      9
+                    ]
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "outcome": {
+        "semantic_outcome": "undetermined",
+        "complete": false,
+        "reason_code": "qualifiers:support_missing",
+        "reason": "qualifiers:support_missing；predicate_not_supported；qualifiers_not_supported；source_assertion_predicate_not_reviewed；source_assertion_endpoint_chain_not_closed",
+        "model_calls": 0
+      },
+      "published_counts": {
+        "nodes": 0,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      },
+      "independent_conclusions": [
+        "只含1个describes谓词与1个既有DrugProduct端点，非多谓词批次。",
+        "P34项目代码与P33项目名称引文真实；项目代码不等于报告身份，更不能修复对象DrugProduct类型。",
+        "predicate未决和qualifiers空support导致拒绝；predicate_support的P34锚点不覆盖object_support的P33，链未闭合。",
+        "报告描述关系不必机械要求出现描述这个动词；但本条提交的单个项目代码引文及其证据角色不能完成证明。",
+        "最终0关系，没有实线。"
+      ]
+    },
+    {
+      "group": 18,
+      "lineage_id": "347a80aa3e6d34cd9be6acf945cba9fc59082118bd23ef174a04470224a173d6",
+      "reviewed_model_turns": [
+        {
+          "immutable_result_key": "7119a20a6efa874d1928f20a4941dffbb861ad5d27acaafe9b5950be6c51c68e",
+          "lineage_id": "347a80aa3e6d34cd9be6acf945cba9fc59082118bd23ef174a04470224a173d6",
+          "attempt": 1,
+          "stage": "discovery",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 4687,
+            "input_tokens_details": {
+              "cached_tokens": 1573
+            },
+            "output_tokens": 723,
+            "total_tokens": 5410
+          }
+        }
+      ],
+      "immutable_results": {},
+      "frozen_discovery": null,
+      "raw_discovery": [
+        {
+          "entities": [],
+          "external_links": [],
+          "observations": [
+            {
+              "kind": "unknown",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/has-assessment-conclusion",
+              "quote": {
+                "context_text": null,
+                "evidence_id": "5e1d671a9bad8167e1712c646e087452783eef450485277bc1436ce030aed305",
+                "text": "通过反应安全风险评估，得出以下结论：无危险反应步骤，风险可以接受。"
+              },
+              "reason": "原文为结论性陈述，未定义具体的被评估实体类型或属性结构，且schema中QualityRiskAssessment类型无具体属性定义，无法建立结构化实体与属性的映射。",
+              "subject_id": "e1"
+            },
+            {
+              "kind": "unknown",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/has-assessment-item",
+              "quote": {
+                "context_text": null,
+                "evidence_id": "f1eca29f588641df4fc4bdb4437cfd7d4064a981c44cfd1adbc8c95a492e3e40",
+                "text": "和反应单元相连接的冷热源介质"
+              },
+              "reason": "原文仅列出评估项目标题，未提供被评估对象的实体身份或具体属性值，无法确定主体。",
+              "subject_id": "unknown"
+            },
+            {
+              "kind": "unknown",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/has-assessment-item",
+              "quote": {
+                "context_text": null,
+                "evidence_id": "26e1429804afe9768d1ed71ff673486c25b0543a4bcf319b4bde0f8daef6ad35",
+                "text": "是否会由于冷却失效导致反应压力上升至不可接受的水平"
+              },
+              "reason": "原文仅列出评估问题，未提供被评估对象的实体身份。",
+              "subject_id": "unknown"
+            },
+            {
+              "kind": "unknown",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/has-assessment-item",
+              "quote": {
+                "context_text": null,
+                "evidence_id": "c520078095b6aa66c3a46d41169bdd8c1a88be1a6f4a6ec199b4373b69d5e4c6",
+                "text": "是否会由于冷却失效导致反应温度上升至不可接受的水平"
+              },
+              "reason": "原文仅列出评估问题，未提供被评估对象的实体身份。",
+              "subject_id": "unknown"
+            },
+            {
+              "kind": "unknown",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/has-assessment-item",
+              "quote": {
+                "context_text": null,
+                "evidence_id": "8990231476578125b4cccf1fa79264195e36502bbbcaf29e5be21aab4e980511",
+                "text": "反应过程中有没有气体产生，如氢气、环氧乙烷需要室外高处排放。"
+              },
+              "reason": "原文仅列出评估问题，未提供被评估对象的实体身份。",
+              "subject_id": "unknown"
+            }
+          ],
+          "properties": [],
+          "reference_bindings": [],
+          "relations": []
+        }
+      ],
+      "quote_checks": [
+        {
+          "evidence_id": "5e1d671a9bad8167e1712c646e087452783eef450485277bc1436ce030aed305",
+          "table_path": null,
+          "row_0_based": null,
+          "column_0_based": null,
+          "paragraph_1_based": 88,
+          "source_text": "通过反应安全风险评估，得出以下结论：无危险反应步骤，风险可以接受。",
+          "quote": "通过反应安全风险评估，得出以下结论：无危险反应步骤，风险可以接受。",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              33
+            ]
+          ]
+        },
+        {
+          "evidence_id": "f1eca29f588641df4fc4bdb4437cfd7d4064a981c44cfd1adbc8c95a492e3e40",
+          "table_path": [
+            "table:8"
+          ],
+          "row_0_based": 4,
+          "column_0_based": 1,
+          "paragraph_1_based": 1,
+          "source_text": "和反应单元相连接的冷热源介质 ",
+          "quote": "和反应单元相连接的冷热源介质",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              14
+            ]
+          ]
+        },
+        {
+          "evidence_id": "26e1429804afe9768d1ed71ff673486c25b0543a4bcf319b4bde0f8daef6ad35",
+          "table_path": [
+            "table:8"
+          ],
+          "row_0_based": 5,
+          "column_0_based": 1,
+          "paragraph_1_based": 1,
+          "source_text": "是否会由于冷却失效导致反应压力上升至不可接受的水平",
+          "quote": "是否会由于冷却失效导致反应压力上升至不可接受的水平",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              25
+            ]
+          ]
+        },
+        {
+          "evidence_id": "c520078095b6aa66c3a46d41169bdd8c1a88be1a6f4a6ec199b4373b69d5e4c6",
+          "table_path": [
+            "table:8"
+          ],
+          "row_0_based": 6,
+          "column_0_based": 1,
+          "paragraph_1_based": 1,
+          "source_text": "是否会由于冷却失效导致反应温度上升至不可接受的水平",
+          "quote": "是否会由于冷却失效导致反应温度上升至不可接受的水平",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              25
+            ]
+          ]
+        },
+        {
+          "evidence_id": "8990231476578125b4cccf1fa79264195e36502bbbcaf29e5be21aab4e980511",
+          "table_path": [
+            "table:8"
+          ],
+          "row_0_based": 7,
+          "column_0_based": 1,
+          "paragraph_1_based": 1,
+          "source_text": "反应过程中有没有气体产生，如氢气、环氧乙烷需要室外高处排放。",
+          "quote": "反应过程中有没有气体产生，如氢气、环氧乙烷需要室外高处排放。",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              30
+            ]
+          ]
+        }
+      ],
+      "raw_verification_summary": [],
+      "outcome": null,
+      "published_counts": null,
+      "independent_conclusions": [
+        "仅保存最后一次模型发现回执，尚无冻结发现或最终outcome；空实体/属性/关系不能计为已完成该区域。",
+        "P88安全结论与table:8冷却失效/气体等问项可定位；问项不是风险已发生的事实。",
+        "观察使用不存在的e1/unknown主体并自造has-assessment-*谓词，不构成合法已识别事实。",
+        "安全范围和质量风险类型的差异仍须保持，不能从记录无属性定义推出原文没有评估对象。"
+      ]
+    }
+  ],
+  "final_run_status": {
+    "status": "paused",
+    "stage": "extracting",
+    "run_revision": 359,
+    "event_head": 29,
+    "paused_at": "2026-09-21T05:47:42.791735Z",
+    "progress": {
+      "record_discovery": {
+        "policy": "semantic-record-discovery-v1",
+        "mode": "semantic",
+        "reading_groups": 43,
+        "ranked_groups": 43,
+        "remaining_pairs": 24,
+        "admitted_pairs": 14,
+        "unselected_pairs": 61,
+        "unselected_groups": 0,
+        "routing_cards": 12,
+        "metadata_nodes": 29,
+        "routed_groups": 34,
+        "unrouted_groups": 9,
+        "selected_regions": 15,
+        "execution_mode": "region_batch",
+        "property_field_mode": "region_batch"
+      },
+      "candidate_policy": "sparse-candidates-v1",
+      "tasks_attempted": 17,
+      "model_calls": 37,
+      "model_calls_reserved": 37,
+      "model_calls_unresolved": 0,
+      "records_planned": 124,
+      "records_examined": 0,
+      "records_incomplete": 17,
+      "records_unattempted": 107,
+      "phase_counts": {
+        "phase1": 3,
+        "phase2": 0
+      },
+      "decisions": {
+        "supported": 0,
+        "unsupported": 0,
+        "undetermined": 3,
+        "not_checked": 14
+      },
+      "pending_frontiers": 0,
+      "stop_reason": "operator_pause",
+      "completion": "incomplete",
+      "contract_version": "document-analysis-runs-v1",
+      "event_head": 29,
+      "artifact_revision": 4
+    },
+    "error": null
+  },
+  "all_model_turn_ledger": [
+    {
+      "immutable_result_key": "8c3dee9d291d8d079748b2daec8e1e94b5ab258150c75324e8dc8a5c218e8fb1",
+      "lineage_id": "3ade30e97846dcf7932f909142038ceca00c52925202dbac26dee9be15ec3111",
+      "attempt": 1,
+      "stage": "discovery",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 10008,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 1861,
+        "total_tokens": 11869
+      }
+    },
+    {
+      "immutable_result_key": "fdf1419ea8d453ea3eeb04a5af096fb5c062e244107c6ccce477d7c4f1f33829",
+      "lineage_id": "3ade30e97846dcf7932f909142038ceca00c52925202dbac26dee9be15ec3111",
+      "attempt": 2,
+      "stage": "verification",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 12305,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 4355,
+        "total_tokens": 16660
+      }
+    },
+    {
+      "immutable_result_key": "6b9eee7dd8ebb31c09260f2c454a960012df8b3217e93a4d6b88f76dee62ccae",
+      "lineage_id": "a9860bc85d4285b672d26fdc6b9abd5082f9486dea522af8805d66ef0c6791fa",
+      "attempt": 2,
+      "stage": "verification",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 13147,
+        "input_tokens_details": {
+          "cached_tokens": 1897
+        },
+        "output_tokens": 7025,
+        "total_tokens": 20172
+      }
+    },
+    {
+      "immutable_result_key": "b8085596f8eaa40cf2c95d59f4961eba5e17af0049d1b71a3b9767b1fa537f7a",
+      "lineage_id": "b05af9879f3fbf9e2739a0d8bb2096a88908ea9c7e49d5c78a958d936a26dd05",
+      "attempt": 1,
+      "stage": "discovery",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 5114,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 984,
+        "total_tokens": 6098
+      }
+    },
+    {
+      "immutable_result_key": "1214885f50e01ad1be5124cdbd26eb4ef7c02c9167ac1f71e52ab12bcddad0cb",
+      "lineage_id": "a9927fb65525b759eb346e0f797209ab1cddcdfd1f42e680a004783e6566dc0e",
+      "attempt": 2,
+      "stage": "verification",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 5188,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 1141,
+        "total_tokens": 6329
+      }
+    },
+    {
+      "immutable_result_key": "04c67c4d42b81cf818d93db3587c6215d4490ad170a9405a5fee39768e57c4ea",
+      "lineage_id": "1b1f54b4ba4fc9feb49025a21158f156131466347698d370f320f8ea1da3da4a",
+      "attempt": 1,
+      "stage": "discovery",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 12749,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 3715,
+        "total_tokens": 16464
+      }
+    },
+    {
+      "immutable_result_key": "834cc2e21eec24408d0500dd911b6f349b5c9a02503abfcbef65d297db552d65",
+      "lineage_id": "b05af9879f3fbf9e2739a0d8bb2096a88908ea9c7e49d5c78a958d936a26dd05",
+      "attempt": 2,
+      "stage": "verification",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 6526,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 1962,
+        "total_tokens": 8488
+      }
+    },
+    {
+      "immutable_result_key": "11dbc319acb760e30e65951319caf20513f5b6cea679c3e814936c1d5c241811",
+      "lineage_id": "a9860bc85d4285b672d26fdc6b9abd5082f9486dea522af8805d66ef0c6791fa",
+      "attempt": 1,
+      "stage": "discovery",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 10617,
+        "input_tokens_details": {
+          "cached_tokens": 1573
+        },
+        "output_tokens": 3049,
+        "total_tokens": 13666
+      }
+    },
+    {
+      "immutable_result_key": "7aaf26648dc438f8d2e6b39acd14e2212632bea53626b1ce58f158671e25d79c",
+      "lineage_id": "1b1f54b4ba4fc9feb49025a21158f156131466347698d370f320f8ea1da3da4a",
+      "attempt": 2,
+      "stage": "discovery",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 12833,
+        "input_tokens_details": {
+          "cached_tokens": 12233
+        },
+        "output_tokens": 3995,
+        "total_tokens": 16828
+      }
+    },
+    {
+      "immutable_result_key": "40222678276d676cc1c162538829097f7500c33a8344da128b8b631c43f1072e",
+      "lineage_id": "49da0e1c56be84ced7720e23f061df41b51d7e717e24b61f61fa860b2dcb3285",
+      "attempt": 2,
+      "stage": "verification",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 12693,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 4086,
+        "total_tokens": 16779
+      }
+    },
+    {
+      "immutable_result_key": "c0fa2a50d49d7b5b6e2765e4442215ab83818277631df2733c0d537d167e2567",
+      "lineage_id": "1b1f54b4ba4fc9feb49025a21158f156131466347698d370f320f8ea1da3da4a",
+      "attempt": 3,
+      "stage": "verification",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 15789,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 3301,
+        "total_tokens": 19090
+      }
+    },
+    {
+      "immutable_result_key": "bd3ba2bec5d5cc48207203fd272939f067dc962d46c528ef07efbda89c261bf5",
+      "lineage_id": "b4cd1148fe8f1df8ba207fa9faea84d1878236d3aab102d5f3564e4adb935955",
+      "attempt": 3,
+      "stage": "verification",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 4694,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 1412,
+        "total_tokens": 6106
+      }
+    },
+    {
+      "immutable_result_key": "af64713cc9feb6fa7633448b73071aec3863c30d747a801a16f2e9fb6e7c3945",
+      "lineage_id": "49da0e1c56be84ced7720e23f061df41b51d7e717e24b61f61fa860b2dcb3285",
+      "attempt": 1,
+      "stage": "discovery",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 9754,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 2705,
+        "total_tokens": 12459
+      }
+    },
+    {
+      "immutable_result_key": "b634d3fcd8aeb184c2cec005f19d9ec4ee3ea917ddcba4b1b0ce46abc0d4fcf9",
+      "lineage_id": "4699b75fa6d2bd5afca2d91e87660ccb102465cc47907a9c932acb9642c9ec08",
+      "attempt": 1,
+      "stage": "discovery",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 3315,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 516,
+        "total_tokens": 3831
+      }
+    },
+    {
+      "immutable_result_key": "e21751b16e81a0f9198b191e07f03f71ecdaeed9089f886f7f8fd71f79e67dd1",
+      "lineage_id": "4699b75fa6d2bd5afca2d91e87660ccb102465cc47907a9c932acb9642c9ec08",
+      "attempt": 2,
+      "stage": "verification",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 3623,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 483,
+        "total_tokens": 4106
+      }
+    },
+    {
+      "immutable_result_key": "cdb4bf41d7d0b71f1c462bc70c569bed651f07aba18a0b7ed58fac773df42378",
+      "lineage_id": "b4cd1148fe8f1df8ba207fa9faea84d1878236d3aab102d5f3564e4adb935955",
+      "attempt": 2,
+      "stage": "verification",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 5586,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 1131,
+        "total_tokens": 6717
+      }
+    },
+    {
+      "immutable_result_key": "997929d9152a492150b8c44460bd69bd436a598cce7277e92949f18d89864344",
+      "lineage_id": "b4cd1148fe8f1df8ba207fa9faea84d1878236d3aab102d5f3564e4adb935955",
+      "attempt": 1,
+      "stage": "discovery",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 4738,
+        "input_tokens_details": {
+          "cached_tokens": 1613
+        },
+        "output_tokens": 1613,
+        "total_tokens": 6351
+      }
+    },
+    {
+      "immutable_result_key": "f42ee8789aba691831da1c11ec1dc0d5049b6b84056b01bd95f20a27faf1792a",
+      "lineage_id": "b05af9879f3fbf9e2739a0d8bb2096a88908ea9c7e49d5c78a958d936a26dd05",
+      "attempt": 3,
+      "stage": "verification",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 7915,
+        "input_tokens_details": {
+          "cached_tokens": 3085
+        },
+        "output_tokens": 1027,
+        "total_tokens": 8942
+      }
+    },
+    {
+      "immutable_result_key": "ece06dd6b0c3d04b552814e72432acc1f089280207e1f6c2773bc7c09c5ec1e9",
+      "lineage_id": "5777cf3c58ee73323e948372f04ec31e502492bb933fbbbbf011e451fa87eebc",
+      "attempt": 1,
+      "stage": "discovery",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 3015,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 165,
+        "total_tokens": 3180
+      }
+    },
+    {
+      "immutable_result_key": "39176b5ddb5daf5aff9ae6cf8ca384bafeca934762b37cf4a21b696f0ffc7b0f",
+      "lineage_id": "cb1f18793e3e8d943d95abccc4d3a46ff707fbe5832d681d424bfa533dabace6",
+      "attempt": 1,
+      "stage": "discovery",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 4294,
+        "input_tokens_details": {
+          "cached_tokens": 1573
+        },
+        "output_tokens": 1862,
+        "total_tokens": 6156
+      }
+    },
+    {
+      "immutable_result_key": "ff0904cab77fb9e6cba7d1ff2c55222ebf26160331698f24073a7ee330007f6f",
+      "lineage_id": "cb1f18793e3e8d943d95abccc4d3a46ff707fbe5832d681d424bfa533dabace6",
+      "attempt": 2,
+      "stage": "discovery",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 4378,
+        "input_tokens_details": {
+          "cached_tokens": 1573
+        },
+        "output_tokens": 1305,
+        "total_tokens": 5683
+      }
+    },
+    {
+      "immutable_result_key": "df125e7e5fd94fe5808a580fd291fd83a61ec0fce4cd718661eb5a370ce8b241",
+      "lineage_id": "a9927fb65525b759eb346e0f797209ab1cddcdfd1f42e680a004783e6566dc0e",
+      "attempt": 1,
+      "stage": "discovery",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 4435,
+        "input_tokens_details": {
+          "cached_tokens": 1573
+        },
+        "output_tokens": 1315,
+        "total_tokens": 5750
+      }
+    },
+    {
+      "immutable_result_key": "6bd81bca069c60a8762ebbfc1e8cd8d2f6bbd74fa4a65d8498199530c60adc82",
+      "lineage_id": "eb16bbd14cbcf0e7c47e84c6bfc654cf23af7efb88e6afba49178659f4a3a09a",
+      "attempt": 1,
+      "stage": "discovery",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 4780,
+        "input_tokens_details": {
+          "cached_tokens": 1573
+        },
+        "output_tokens": 366,
+        "total_tokens": 5146
+      }
+    },
+    {
+      "immutable_result_key": "b4923096531313dc8740abd45b2483bd3e141ec1b03ded9b5ec1016a13bba5ab",
+      "lineage_id": "cb1f18793e3e8d943d95abccc4d3a46ff707fbe5832d681d424bfa533dabace6",
+      "attempt": 3,
+      "stage": "verification",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 5038,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 1614,
+        "total_tokens": 6652
+      }
+    },
+    {
+      "immutable_result_key": "f4cd8525dcd177dfc7b6e59581243b5acaa79ee0416378cd789c17170e267e32",
+      "lineage_id": "1c0af9d63d9cca59e41eeb0b2fa4792874321699c0e7f9ca48fe85d28290a263",
+      "attempt": 1,
+      "stage": "discovery",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 4580,
+        "input_tokens_details": {
+          "cached_tokens": 1573
+        },
+        "output_tokens": 449,
+        "total_tokens": 5029
+      }
+    },
+    {
+      "immutable_result_key": "60bede6b1280afcbd9fb936e29b55275ee47668f54a3c6e2c2fc90f9cbce7674",
+      "lineage_id": "1d57fd356fd84c16f26bc1ec5bb5c86448926226de352750046a8708fb596586",
+      "attempt": 1,
+      "stage": "discovery",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 2339,
+        "input_tokens_details": {
+          "cached_tokens": 1573
+        },
+        "output_tokens": 304,
+        "total_tokens": 2643
+      }
+    },
+    {
+      "immutable_result_key": "90672aae1717bcc84ec04ef72528fde1e00e009dedba0dd9958e27a56baace7b",
+      "lineage_id": "eb16bbd14cbcf0e7c47e84c6bfc654cf23af7efb88e6afba49178659f4a3a09a",
+      "attempt": 2,
+      "stage": "verification",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 5298,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 693,
+        "total_tokens": 5991
+      }
+    },
+    {
+      "immutable_result_key": "1f500364f8dafa5f269a34b108aab49c773f8f4a8a51093c076e70fdae8a7956",
+      "lineage_id": "17d5a7ff7903cf0a6c6a572246309be94468595fb1be9a7e0f88a714ee9266ad",
+      "attempt": 2,
+      "stage": "verification",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 2659,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 523,
+        "total_tokens": 3182
+      }
+    },
+    {
+      "immutable_result_key": "79f6b47737c43a5d5ca607323628d26657be3d9ad1312e112d3b9e905e0b9488",
+      "lineage_id": "17d5a7ff7903cf0a6c6a572246309be94468595fb1be9a7e0f88a714ee9266ad",
+      "attempt": 1,
+      "stage": "discovery",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 2344,
+        "input_tokens_details": {
+          "cached_tokens": 1573
+        },
+        "output_tokens": 713,
+        "total_tokens": 3057
+      }
+    },
+    {
+      "immutable_result_key": "5bd5ab8e3a9fb59bad828c3297231431540712f3797f9046c647f93da2bbe262",
+      "lineage_id": "d34fbe0668217ba00b6a758e03ecaff17642d8c62643cb060a1a896b6a393a3f",
+      "attempt": 3,
+      "stage": "verification",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 7949,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 1386,
+        "total_tokens": 9335
+      }
+    },
+    {
+      "immutable_result_key": "32b83ca438b6b54201262256f1d749709a3679ddfca2d8c548b6b975b89a92ff",
+      "lineage_id": "07b11ded29ac54db00f87e1e01961fc903e69e5338588079f984206bf7048029",
+      "attempt": 1,
+      "stage": "discovery",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 11398,
+        "input_tokens_details": {
+          "cached_tokens": 1613
+        },
+        "output_tokens": 1216,
+        "total_tokens": 12614
+      }
+    },
+    {
+      "immutable_result_key": "90fc883adfb828b9844a5850816bbca5b632c745bc05a199377902670f8f3b67",
+      "lineage_id": "07b11ded29ac54db00f87e1e01961fc903e69e5338588079f984206bf7048029",
+      "attempt": 2,
+      "stage": "verification",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 12762,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 736,
+        "total_tokens": 13498
+      }
+    },
+    {
+      "immutable_result_key": "f552c34cccb7e5eea263adfc3387a3456288124f393e2fcb2e230e84b1020165",
+      "lineage_id": "d34fbe0668217ba00b6a758e03ecaff17642d8c62643cb060a1a896b6a393a3f",
+      "attempt": 1,
+      "stage": "discovery",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 7220,
+        "input_tokens_details": {
+          "cached_tokens": 1573
+        },
+        "output_tokens": 1654,
+        "total_tokens": 8874
+      }
+    },
+    {
+      "immutable_result_key": "1a9a1921057d9091a6c3036e77ba7ce67d5581298306505417edeaf9dabf0786",
+      "lineage_id": "d34fbe0668217ba00b6a758e03ecaff17642d8c62643cb060a1a896b6a393a3f",
+      "attempt": 2,
+      "stage": "verification",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 8737,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 3746,
+        "total_tokens": 12483
+      }
+    },
+    {
+      "immutable_result_key": "635e76719a3b6cfc0b1f63166b1fb2cd9c2dbff35d1a31784cc06b46eba54e7e",
+      "lineage_id": "15f22abbe052faa1a5f175392b85f3f81a72f567be013811d5171a9c4c0cd0c7",
+      "attempt": 1,
+      "stage": "discovery",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 9741,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 585,
+        "total_tokens": 10326
+      }
+    },
+    {
+      "immutable_result_key": "57bcbb6071fa52ae7f61a8125bc1f05a9136aed72c46ffbec3e46e3ff5512152",
+      "lineage_id": "15f22abbe052faa1a5f175392b85f3f81a72f567be013811d5171a9c4c0cd0c7",
+      "attempt": 2,
+      "stage": "verification",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 11082,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 1955,
+        "total_tokens": 13037
+      }
+    },
+    {
+      "immutable_result_key": "7119a20a6efa874d1928f20a4941dffbb861ad5d27acaafe9b5950be6c51c68e",
+      "lineage_id": "347a80aa3e6d34cd9be6acf945cba9fc59082118bd23ef174a04470224a173d6",
+      "attempt": 1,
+      "stage": "discovery",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 4687,
+        "input_tokens_details": {
+          "cached_tokens": 1573
+        },
+        "output_tokens": 723,
+        "total_tokens": 5410
+      }
+    }
+  ],
+  "model_turn_counts": {
+    "discovery": 20,
+    "verification": 17
+  },
+  "all_final_outcome_ledger": [
+    {
+      "lineage_id": "3ade30e97846dcf7932f909142038ceca00c52925202dbac26dee9be15ec3111",
+      "immutable_result_key": "7ae8d0b6f2487b86d0d5825839374fa2f08ff76017eab01ee216a0541598b6f7",
+      "semantic_outcome": "supported",
+      "complete": false,
+      "reason_code": "reference_binding_endpoint_invalid",
+      "published_counts": {
+        "nodes": 6,
+        "properties": 2,
+        "edges": 0,
+        "relationship_groups": 0
+      }
+    },
+    {
+      "lineage_id": "4699b75fa6d2bd5afca2d91e87660ccb102465cc47907a9c932acb9642c9ec08",
+      "immutable_result_key": "22d589eec22efbb4bc53898edccf796ec4c24df0cb72fd734b14d3c21be654b5",
+      "semantic_outcome": "undetermined",
+      "complete": false,
+      "reason_code": "type_not_supported",
+      "published_counts": {
+        "nodes": 0,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      }
+    },
+    {
+      "lineage_id": "b4cd1148fe8f1df8ba207fa9faea84d1878236d3aab102d5f3564e4adb935955",
+      "immutable_result_key": "7e3ebb9dcec388df6cf01b59cc5dbfe2916eea8452b9b6d68a986b39ff8f62ca",
+      "semantic_outcome": "supported",
+      "complete": false,
+      "reason_code": "ambiguous_source_quote",
+      "published_counts": {
+        "nodes": 2,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      }
+    },
+    {
+      "lineage_id": "cb1f18793e3e8d943d95abccc4d3a46ff707fbe5832d681d424bfa533dabace6",
+      "immutable_result_key": "aa2f47daf463f2fd314ada7c1e56a4d4631be1f4cddadec8ead4fc064e793a37",
+      "semantic_outcome": "undetermined",
+      "complete": false,
+      "reason_code": "reference_binding_endpoint_invalid",
+      "published_counts": {
+        "nodes": 0,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      }
+    },
+    {
+      "lineage_id": "a9927fb65525b759eb346e0f797209ab1cddcdfd1f42e680a004783e6566dc0e",
+      "immutable_result_key": "8410c29587c20b91361d178242bb557bcfb51fd9e28743a5722391aee02a3059",
+      "semantic_outcome": "undetermined",
+      "complete": false,
+      "reason_code": "entity_reference_missing",
+      "published_counts": {
+        "nodes": 0,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      }
+    },
+    {
+      "lineage_id": "49da0e1c56be84ced7720e23f061df41b51d7e717e24b61f61fa860b2dcb3285",
+      "immutable_result_key": "c7d52d9891538ff3947a5ddec6045a5d48c8411dac02d5b9bc4d8ed97a8c2826",
+      "semantic_outcome": "undetermined",
+      "complete": false,
+      "reason_code": "source_assertion_endpoint_chain_not_closed",
+      "published_counts": {
+        "nodes": 0,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      }
+    },
+    {
+      "lineage_id": "a9860bc85d4285b672d26fdc6b9abd5082f9486dea522af8805d66ef0c6791fa",
+      "immutable_result_key": "f358d666a6b7be10b9e644d0222002f9b163ec4173c4621a080f1cca0aa5155a",
+      "semantic_outcome": "supported",
+      "complete": false,
+      "reason_code": "attribute_value_missing",
+      "published_counts": {
+        "nodes": 1,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      }
+    },
+    {
+      "lineage_id": "1b1f54b4ba4fc9feb49025a21158f156131466347698d370f320f8ea1da3da4a",
+      "immutable_result_key": "48ed40e05f4317f2a3beefc4d6d24b5956397369f0becb9e82621a6b4a62f9b0",
+      "semantic_outcome": "not_checked",
+      "complete": false,
+      "reason_code": "model_parse_error",
+      "published_counts": {
+        "nodes": 0,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      }
+    },
+    {
+      "lineage_id": "b05af9879f3fbf9e2739a0d8bb2096a88908ea9c7e49d5c78a958d936a26dd05",
+      "immutable_result_key": "65cd67b40b0fa63814aeed448a320f083a1701dc4eea0edc5cea18e4eb423779",
+      "semantic_outcome": "undetermined",
+      "complete": false,
+      "reason_code": "source_assertion_object_set_mismatch",
+      "published_counts": {
+        "nodes": 0,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      }
+    },
+    {
+      "lineage_id": "5777cf3c58ee73323e948372f04ec31e502492bb933fbbbbf011e451fa87eebc",
+      "immutable_result_key": "a910640e44a7e9ef20dd79ab17821bfc0a226a8e474028be02141fb1c2c51f49",
+      "semantic_outcome": "undetermined",
+      "complete": false,
+      "reason_code": "record_undetermined",
+      "published_counts": {
+        "nodes": 0,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      }
+    },
+    {
+      "lineage_id": "eb16bbd14cbcf0e7c47e84c6bfc654cf23af7efb88e6afba49178659f4a3a09a",
+      "immutable_result_key": "ae2bd0ece2345f5df9a81476403da1a2e795572c3e806c3bbcd878daee27c408",
+      "semantic_outcome": "undetermined",
+      "complete": false,
+      "reason_code": "type_not_supported",
+      "published_counts": {
+        "nodes": 0,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      }
+    },
+    {
+      "lineage_id": "1c0af9d63d9cca59e41eeb0b2fa4792874321699c0e7f9ca48fe85d28290a263",
+      "immutable_result_key": "0e0d279f034bd70575801383d7ea608e87338ab8a2d7010b66d00da15382c6c6",
+      "semantic_outcome": "undetermined",
+      "complete": false,
+      "reason_code": "source_excerpt_mismatch",
+      "published_counts": {
+        "nodes": 0,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      }
+    },
+    {
+      "lineage_id": "d34fbe0668217ba00b6a758e03ecaff17642d8c62643cb060a1a896b6a393a3f",
+      "immutable_result_key": "82685e473aec304c1d213d26f0725ef1e859b9e8d1377c34a8477ee8b1edcd0f",
+      "semantic_outcome": "not_checked",
+      "complete": false,
+      "reason_code": "model_parse_error",
+      "published_counts": {
+        "nodes": 0,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      }
+    },
+    {
+      "lineage_id": "17d5a7ff7903cf0a6c6a572246309be94468595fb1be9a7e0f88a714ee9266ad",
+      "immutable_result_key": "8a9f385b592d038ea6aca9c508682d9d2338a2635606a424eb8b203000cc19f3",
+      "semantic_outcome": "supported",
+      "complete": false,
+      "reason_code": "source_excerpt_mismatch",
+      "published_counts": {
+        "nodes": 1,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      }
+    },
+    {
+      "lineage_id": "1d57fd356fd84c16f26bc1ec5bb5c86448926226de352750046a8708fb596586",
+      "immutable_result_key": "283a6669ae167003e8efc9354bef35694a9b2dca8345d11c6da43723a0ab96e8",
+      "semantic_outcome": "undetermined",
+      "complete": false,
+      "reason_code": "record_undetermined",
+      "published_counts": {
+        "nodes": 0,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      }
+    },
+    {
+      "lineage_id": "07b11ded29ac54db00f87e1e01961fc903e69e5338588079f984206bf7048029",
+      "immutable_result_key": "8e823d35ff5e146032e790869a76412455b8ab8b732acde81001d37b5d4a4d62",
+      "semantic_outcome": "not_checked",
+      "complete": false,
+      "reason_code": "model_parse_error",
+      "published_counts": {
+        "nodes": 0,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      }
+    },
+    {
+      "lineage_id": "15f22abbe052faa1a5f175392b85f3f81a72f567be013811d5171a9c4c0cd0c7",
+      "immutable_result_key": "045bf85a5cac8c780676ba7f1cf0f09bbbbd9355c0e2b2a7538ffddb2592655a",
+      "semantic_outcome": "undetermined",
+      "complete": false,
+      "reason_code": "qualifiers:support_missing",
+      "published_counts": {
+        "nodes": 0,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      }
+    }
+  ],
+  "final_outcome_count": 17,
+  "final_graph": {
+    "run_revision": 359,
+    "event_head": 29,
+    "summary": {
+      "relationships": {
+        "total": 12,
+        "supported": 0,
+        "completed": 0,
+        "percent": 0.0
+      },
+      "properties": {
+        "total": 202,
+        "supported": 2,
+        "completed": 0,
+        "percent": 0.0
+      },
+      "pending_expansion_count": 21,
+      "notes": [
+        "分母是冻结本体在当前主体与范围上的识别目标，不表示每个字段在文档中必填。",
+        "完整度按完成目标数计算；候选记录覆盖不等于开放文档召回率。",
+        "未知多值成员总数保持未完成；待展开分支不计为已完成。",
+        "否定、条件、计划及备选关系保留原图标签；虚拟目标不是事实。"
+      ]
+    },
+    "counts": {
+      "entities": 11,
+      "properties": 2,
+      "attribute_candidates": 7,
+      "relationships": 0,
+      "relationship_groups": 0
+    },
+    "entities": [
+      {
+        "entity_id": "c5b309b1d300ceb7d3a9c94b0dd7f5ef7f59b1c59c7768a8e2e5c633d02eee4a",
+        "revision": 1,
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "label": "HRS-1597原料临床备样生产信息表_--脱敏-原 - PDE-冲突.docx",
+        "identity_status": null,
+        "independent_review": "unreviewed",
+        "grounding_kind": "document_root"
+      },
+      {
+        "entity_id": "3a566d93f5e803a791e84b2c39cb580b29f5a139bb588b897df8797527da452b",
+        "revision": 1,
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "label": "制剂剂型：口服片剂",
+        "identity_status": null,
+        "independent_review": "unreviewed",
+        "grounding_kind": "mention"
+      },
+      {
+        "entity_id": "7fa3f99f970113f21ed3c003e4d4d206393ebe4e9502abe74967eabfbe0cc7c4",
+        "revision": 1,
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "label": "是否细胞毒药物：否",
+        "identity_status": null,
+        "independent_review": "unreviewed",
+        "grounding_kind": "mention"
+      },
+      {
+        "entity_id": "8976c5a84dd278c25be42e3c7eb82438e4bb4e3650c2b27163cd8ff87d15a408",
+        "revision": 1,
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "label": "溶解性： DCM易溶，H2O、Heptane难溶",
+        "identity_status": null,
+        "independent_review": "unreviewed",
+        "grounding_kind": "mention"
+      },
+      {
+        "entity_id": "7a3bea3509ff22badb5d08a47393c213658acc6b8f43796d994ebe10f3e99212",
+        "revision": 1,
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "label": "制剂剂型：口服片剂",
+        "identity_status": null,
+        "independent_review": "unreviewed",
+        "grounding_kind": "record"
+      },
+      {
+        "entity_id": "83654437cb1cfe3d5af8d57d39e8333d7aede6ed87cb6ccae02b9d238d414b93",
+        "revision": 1,
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "label": "是否细胞毒药物：否",
+        "identity_status": null,
+        "independent_review": "unreviewed",
+        "grounding_kind": "record"
+      },
+      {
+        "entity_id": "da1a902428537a963d0cdee858b861cef7934d761d4e970eee0bbe7a1699725b",
+        "revision": 1,
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "label": "溶解性： DCM易溶，H2O、Heptane难溶",
+        "identity_status": null,
+        "independent_review": "unreviewed",
+        "grounding_kind": "record"
+      },
+      {
+        "entity_id": "095ae2bf2de1123f0ce134d918879f98df1bcb4eeab0b7e1cc91d18f86fd9bac",
+        "revision": 1,
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "label": "项目名称：HRS-1597",
+        "identity_status": null,
+        "independent_review": "unreviewed",
+        "grounding_kind": "mention"
+      },
+      {
+        "entity_id": "3ca0c80d1363b82f9ea57375cd9880612efae91a3912558f55c9538bc3dc92b2",
+        "revision": 1,
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/AlkalineDegradation",
+        "label": "碱",
+        "identity_status": null,
+        "independent_review": "unreviewed",
+        "grounding_kind": "mention"
+      },
+      {
+        "entity_id": "a27d6e5a71f034385c565a8327c24cf313481319d35dadf5096bffc7d99837df",
+        "revision": 1,
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/AcidDegradation",
+        "label": "酸",
+        "identity_status": null,
+        "independent_review": "unreviewed",
+        "grounding_kind": "mention"
+      },
+      {
+        "entity_id": "7e702fdd7d56b3bb1e0e24f343edf1d42cbc18baa39b96d4626774e9e6b4d6f4",
+        "revision": 1,
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/QualityRiskAssessment",
+        "label": "反应安全风险评估",
+        "identity_status": null,
+        "independent_review": "unreviewed",
+        "grounding_kind": "mention"
+      }
+    ],
+    "properties": [
+      {
+        "candidate_id": "9a903d4e3d54ef66d90e3900f30aa72e80666e3550095b5176b05c530377ab75",
+        "revision": 1,
+        "subject_ref": {
+          "entity_id": "7a3bea3509ff22badb5d08a47393c213658acc6b8f43796d994ebe10f3e99212",
+          "revision": 1
+        },
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/dosageForm",
+        "predicate_label": "制剂剂型",
+        "polarity": "affirmed",
+        "conditions": [],
+        "applicability": {},
+        "structural_valid": true,
+        "model_supported": true,
+        "policy_eligible": true,
+        "independent_review": "unreviewed",
+        "proof_ref": {
+          "id": "c3a241ec7ea52b53ad3c75b7531becfac26d73cdd0b1fcfc18c6fc5148677dde",
+          "revision": 1
+        },
+        "decision_refs": [
+          {
+            "id": "e936ebb3eb788245faa4dc26b3f7c93d9cf990ad9d542ae65d685ea2e1f66b65",
+            "revision": 1
+          },
+          {
+            "id": "9ebeceaf81544b87a33208e50a6738f0dece4150ae2c56e45c3563084245c561",
+            "revision": 1
+          },
+          {
+            "id": "5bc6feafc7e0d9fb9e1836f69c1ca720da2ae9372b447ad0c7abeba4a718b14a",
+            "revision": 1
+          },
+          {
+            "id": "bc0b87acd5a6771f22d7f4a65b359ea963ca5845cc8c43c205a0deb48888c26b",
+            "revision": 1
+          },
+          {
+            "id": "deb06899c27e6ffbc252748ecb91e632af9e7c78aef2b92fc6b068bd6a594858",
+            "revision": 1
+          },
+          {
+            "id": "2e99011341329b8f4c83454c411881a5a68ac68e1713ff4217fe92bcb46ec672",
+            "revision": 1
+          },
+          {
+            "id": "75b1ec2d5eb9dabe71fe8e8beac7d681f2e66d244f1c7870c2fda394ae44eebb",
+            "revision": 1
+          }
+        ],
+        "dependency_refs": [
+          {
+            "id": "7a3bea3509ff22badb5d08a47393c213658acc6b8f43796d994ebe10f3e99212",
+            "revision": 1
+          }
+        ],
+        "invalidated": false,
+        "reason_code": "claim_verified",
+        "reason": "所有适用核验维度及确定性检查通过。",
+        "source_selection_refs": {
+          "unit": [],
+          "subject": [
+            "9fa2c74231b925285ea21ef272d99692d9dce2b68d28a41067efaafd678d55fa"
+          ],
+          "object": [],
+          "value": [
+            "9c9782d235c5b79718e11c5146f5da5fbea08020f1b77d67de3b4fe7acc1ba83"
+          ],
+          "predicate_bridge": [
+            "cb700601b6127d9d250e4e820e7d09a81c41fc87784130a2e5e8c6e3e8931952"
+          ],
+          "condition": [],
+          "counterevidence": []
+        },
+        "modality": "asserted",
+        "scope": {
+          "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "members": []
+        },
+        "direction": "subject_to_value",
+        "raw_value": "口服片剂",
+        "normalized_value": "口服片剂",
+        "datatype_iri": null,
+        "unit": null,
+        "normalization_record": {}
+      },
+      {
+        "candidate_id": "cd0828b2587a89b835636462dbb3b47e55a580871bc12232395f7df54213c151",
+        "revision": 1,
+        "subject_ref": {
+          "entity_id": "da1a902428537a963d0cdee858b861cef7934d761d4e970eee0bbe7a1699725b",
+          "revision": 1
+        },
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/solubility",
+        "predicate_label": "溶解性",
+        "polarity": "affirmed",
+        "conditions": [],
+        "applicability": {},
+        "structural_valid": true,
+        "model_supported": true,
+        "policy_eligible": true,
+        "independent_review": "unreviewed",
+        "proof_ref": {
+          "id": "6b8c9f73ea00b474362238e6cf2b301ffacd3dee1876556b2aebaaa561292b33",
+          "revision": 1
+        },
+        "decision_refs": [
+          {
+            "id": "2965d12aabbb37f2487617724b0c1e091c2b74c3bf9d7eb411a6d8bd4c701fc9",
+            "revision": 1
+          },
+          {
+            "id": "732ee087d0919486054d8f3bd0389869921e8e6333c1043a06ed76516d2c921a",
+            "revision": 1
+          },
+          {
+            "id": "e5f991bd27acdd4e5dc6fc5c8a66da92104544382c015d9600e956bbd5c16c44",
+            "revision": 1
+          },
+          {
+            "id": "35add73e08666d5e67f01d8e53670d8d0d4f873d770112ad83a27150e9e6ce92",
+            "revision": 1
+          },
+          {
+            "id": "009c0a27004bb1350dd7cfb365a383a67f59ada3c40bf8d62d2e251b10fce822",
+            "revision": 1
+          },
+          {
+            "id": "64637d8166dbf5b05d626d20fe9f9676258b71b63085152c2832ee263bacc62b",
+            "revision": 1
+          },
+          {
+            "id": "7edce71e318b04348cc72a958e1bcf6fe070597418cfb3fe06e8b54cd63dfdde",
+            "revision": 1
+          }
+        ],
+        "dependency_refs": [
+          {
+            "id": "da1a902428537a963d0cdee858b861cef7934d761d4e970eee0bbe7a1699725b",
+            "revision": 1
+          }
+        ],
+        "invalidated": false,
+        "reason_code": "claim_verified",
+        "reason": "所有适用核验维度及确定性检查通过。",
+        "source_selection_refs": {
+          "unit": [],
+          "subject": [
+            "7100bfcc2fe850f95733c64214ece8d013c6f895164d6b77cfc08452046b2336"
+          ],
+          "object": [],
+          "value": [
+            "0dc803083b75381ea6c828f9bd9fa08ba299d9ec031635062d11c58a349840ab"
+          ],
+          "predicate_bridge": [
+            "672966e276ccfac71bf013acca43ad5ea3e65ef4b59b227060ee227564aeda35"
+          ],
+          "condition": [],
+          "counterevidence": []
+        },
+        "modality": "asserted",
+        "scope": {
+          "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "members": []
+        },
+        "direction": "subject_to_value",
+        "raw_value": "DCM易溶，H2O、Heptane难溶",
+        "normalized_value": "DCM易溶，H2O、Heptane难溶",
+        "datatype_iri": null,
+        "unit": null,
+        "normalization_record": {}
+      }
+    ],
+    "relationships": [],
+    "relationship_groups": []
+  },
+  "independent_final_conclusions": [
+    "实际调用与失败已核实，但没有关系实线，无法验收从虚拟关系到已证关系的完整正向过程。",
+    "所有已执行关系发现均单谓词：describes两组、hasDegradationPathway一组；真实多谓词批次未完成。",
+    "已发布10个非根实体包括7个DrugProduct、2个酸/碱降解过程、1个QualityRiskAssessment；这些实例的类型/指称粒度均有上述独立审查缺口，不应称为10个正确识别实体。",
+    "2个已发布属性的值/字段可回原文，但主体实例身份/类型仍不足；不作为整条事实通过。",
+    "N/A、短词歧义、条件分句、符号属性、类型菜单和完整核验契约的具体失败已实证；不是盲评精度指标。",
+    "工程/浏览器验证与模型事实质量分开；停止为操作暂停、运行未完成。",
+    "首次describes链拒绝的后续实际输入补查：原始物理提及1个，登记来源因实体facet支持并入node变为14个，关系对象输出为19个；存在输入来源角色混合，不只是模型自行扩引文。修复此构造不证明DrugProduct类型或关系语义，详见entity-source-role-review-20bf2d25.json。"
+  ],
+  "input_file_sha256": {
+    "review-20bf2d25-results-final.json": "1da7439eb9c2e165bbffc9cce8c971315b319601c6e4b1470287c6a0e9bb4afa",
+    "review-20bf2d25-target-final.json": "4d41d406d7bf5f5f3ced1543684be4565f5028a64a8eacc35d4544e879ff0a14",
+    "review-20bf2d25-status-final-observed.json": "4ce063016aa3a83f6a972ff60e5ff9a7d56551346d7caffb920c582f01e5d6b8"
+  }
+}

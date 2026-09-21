@@ -1,0 +1,2201 @@
+{
+  "run_id": "20bf2d25-98f3-4efe-99f0-1e5dbbae5d05",
+  "reviewed_at": "2026-09-21T05:43:50.386736+00:00",
+  "review_kind": "independent_post_hoc_source_review",
+  "model_calls_by_reviewer": 0,
+  "application_mutations_by_reviewer": 0,
+  "increments": [
+    {
+      "group": 15,
+      "lineage_id": "d34fbe0668217ba00b6a758e03ecaff17642d8c62643cb060a1a896b6a393a3f",
+      "immutable_results": {
+        "outcome": "82685e473aec304c1d213d26f0725ef1e859b9e8d1377c34a8477ee8b1edcd0f",
+        "discovery": "807ae114927087fb6d549e5fde66f7cfefc3a7a8af4f8a0c4c5b0cd41ba0dab8"
+      },
+      "reviewed_model_turns": [
+        {
+          "immutable_result_key": "f552c34cccb7e5eea263adfc3387a3456288124f393e2fcb2e230e84b1020165",
+          "lineage_id": "d34fbe0668217ba00b6a758e03ecaff17642d8c62643cb060a1a896b6a393a3f",
+          "attempt": 1,
+          "stage": "discovery",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 7220,
+            "input_tokens_details": {
+              "cached_tokens": 1573
+            },
+            "output_tokens": 1654,
+            "total_tokens": 8874
+          }
+        },
+        {
+          "immutable_result_key": "1a9a1921057d9091a6c3036e77ba7ce67d5581298306505417edeaf9dabf0786",
+          "lineage_id": "d34fbe0668217ba00b6a758e03ecaff17642d8c62643cb060a1a896b6a393a3f",
+          "attempt": 2,
+          "stage": "verification",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 8737,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 3746,
+            "total_tokens": 12483
+          }
+        },
+        {
+          "immutable_result_key": "5bd5ab8e3a9fb59bad828c3297231431540712f3797f9046c647f93da2bbe262",
+          "lineage_id": "d34fbe0668217ba00b6a758e03ecaff17642d8c62643cb060a1a896b6a393a3f",
+          "attempt": 3,
+          "stage": "verification",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 7949,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 1386,
+            "total_tokens": 9335
+          }
+        }
+      ],
+      "raw_discovery_summary": [
+        {
+          "attempt": 1,
+          "member_count": 1,
+          "member_shapes": [
+            {
+              "entities": 2,
+              "properties": 3,
+              "relations": 0,
+              "reference_bindings": 1,
+              "observations": 3
+            }
+          ]
+        }
+      ],
+      "frozen_discovery": {
+        "entities": [
+          {
+            "local_id": "e1",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisRoute",
+            "representation": "mention",
+            "mentions": [
+              {
+                "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+                "text": "3.1.1合成路线图",
+                "context_text": null
+              }
+            ],
+            "record_components": [],
+            "identifier_claims": []
+          },
+          {
+            "local_id": "e2",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisRoute",
+            "representation": "record",
+            "mentions": [],
+            "record_components": [
+              {
+                "role": "subject",
+                "quote": {
+                  "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+                  "text": "3.1.1合成路线图",
+                  "context_text": null
+                }
+              },
+              {
+                "role": "field",
+                "quote": {
+                  "evidence_id": "990dfa5ac2af7465552f5b38490f48ab922489b76a5e0085708606a5e6d176e9",
+                  "text": "工艺描述",
+                  "context_text": null
+                }
+              },
+              {
+                "role": "value",
+                "quote": {
+                  "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+                  "text": "3.1.1合成路线图",
+                  "context_text": null
+                }
+              }
+            ],
+            "identifier_claims": []
+          }
+        ],
+        "properties": [
+          {
+            "local_id": "p1",
+            "subject_id": "e1",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/processBasis",
+            "value_quote": {
+              "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+              "text": "3.1.1合成路线图",
+              "context_text": null
+            },
+            "field_support": [
+              {
+                "evidence_id": "990dfa5ac2af7465552f5b38490f48ab922489b76a5e0085708606a5e6d176e9",
+                "text": "工艺描述",
+                "context_text": null
+              }
+            ],
+            "unit_support": [],
+            "qualifiers": {
+              "polarity": "affirmed",
+              "modality": "asserted",
+              "condition_support": [],
+              "scope_qualifiers": []
+            },
+            "bridge_kind": "explicit_assertion",
+            "bridge_ref_ids": []
+          },
+          {
+            "local_id": "p2",
+            "subject_id": "e1",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/processDescription",
+            "value_quote": {
+              "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+              "text": "3.1.1合成路线图",
+              "context_text": null
+            },
+            "field_support": [
+              {
+                "evidence_id": "990dfa5ac2af7465552f5b38490f48ab922489b76a5e0085708606a5e6d176e9",
+                "text": "工艺描述",
+                "context_text": null
+              }
+            ],
+            "unit_support": [],
+            "qualifiers": {
+              "polarity": "affirmed",
+              "modality": "asserted",
+              "condition_support": [],
+              "scope_qualifiers": []
+            },
+            "bridge_kind": "explicit_assertion",
+            "bridge_ref_ids": []
+          },
+          {
+            "local_id": "p3",
+            "subject_id": "e1",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/processName",
+            "value_quote": {
+              "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+              "text": "3.1.1合成路线图",
+              "context_text": null
+            },
+            "field_support": [
+              {
+                "evidence_id": "990dfa5ac2af7465552f5b38490f48ab922489b76a5e0085708606a5e6d176e9",
+                "text": "工艺描述",
+                "context_text": null
+              }
+            ],
+            "unit_support": [],
+            "qualifiers": {
+              "polarity": "affirmed",
+              "modality": "asserted",
+              "condition_support": [],
+              "scope_qualifiers": []
+            },
+            "bridge_kind": "explicit_assertion",
+            "bridge_ref_ids": []
+          }
+        ],
+        "relations": [],
+        "external_links": [],
+        "observations": [
+          {
+            "subject_id": "e2",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisRoute",
+            "quote": {
+              "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+              "text": "3.1.1合成路线图",
+              "context_text": null
+            },
+            "kind": "ambiguous",
+            "reason": "record实体e2与mention实体e1指向同一原文提及，根据规则应复用mention ID，e2作为冗余实体未提供额外唯一标识证明，故标记为歧义观察。"
+          },
+          {
+            "subject_id": "e1",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/processDescription",
+            "quote": {
+              "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+              "text": "3.1.1合成路线图",
+              "context_text": null
+            },
+            "kind": "missing",
+            "reason": "原文仅提供章节标题，未包含对合成路线所代表的整体工艺及其主要操作、衔接关系和控制要点的文字说明。"
+          },
+          {
+            "subject_id": "e1",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/processName",
+            "quote": {
+              "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+              "text": "3.1.1合成路线图",
+              "context_text": null
+            },
+            "kind": "missing",
+            "reason": "原文提供的是章节编号及名称，未明确提供业务导向的整体生产工艺名称（如结晶纯化等具体工艺名）。"
+          }
+        ],
+        "reference_bindings": [
+          {
+            "local_id": "ref1",
+            "source_id": "e1",
+            "target_id": "e1",
+            "binding_kind": "coreference",
+            "support": [
+              {
+                "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+                "text": "3.1.1合成路线图",
+                "context_text": null
+              }
+            ]
+          }
+        ],
+        "assertion_generation": 1,
+        "evidence_revision": 1,
+        "content_hash": "dffca31bce236d6bf7bb08600b94a632e7d332c7ac1164945e1684493d5d3549",
+        "local_ref_map": {
+          "e1": {
+            "id": "2d4dca087c3b7d92af9c93aba9e294758253c33c608eb09f901a32e78bf06b89",
+            "revision": 1
+          },
+          "e2": {
+            "id": "216cce507f55daefa98607079e1c9ebe7d845e53ec92e0b2539eb32b77b57e08",
+            "revision": 1
+          },
+          "ref1": {
+            "id": "a22d1b700169d104b4c27b963c3d377507d3c822e892b2461e3a2af6bbb74148",
+            "revision": 1
+          },
+          "p1": {
+            "id": "335f8a6fd9c1a4e3b235c701c1b9a3a82ce86e0c29be5aa81c561fb4b899f0a7",
+            "revision": 1
+          },
+          "p2": {
+            "id": "3671a57b12845afa079f8dc43e55c5eaa92bb36011d288800f29ebb59b842427",
+            "revision": 1
+          },
+          "p3": {
+            "id": "565bd400a80bb51edcf40f912f62cb3deb1568304099defca33e507f139ca8dc",
+            "revision": 1
+          }
+        },
+        "claim_issues": {
+          "ref1": [
+            "reference_binding_endpoint_invalid"
+          ]
+        }
+      },
+      "quote_checks": [
+        {
+          "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+          "table_path": null,
+          "row_0_based": null,
+          "column_0_based": null,
+          "paragraph_1_based": 53,
+          "source_text": "3.1.1合成路线图",
+          "quote": "3.1.1合成路线图",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              10
+            ]
+          ],
+          "context_encloses_quote": null
+        },
+        {
+          "evidence_id": "990dfa5ac2af7465552f5b38490f48ab922489b76a5e0085708606a5e6d176e9",
+          "table_path": null,
+          "row_0_based": null,
+          "column_0_based": null,
+          "paragraph_1_based": 52,
+          "source_text": "工艺描述",
+          "quote": "工艺描述",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              4
+            ]
+          ],
+          "context_encloses_quote": null
+        }
+      ],
+      "raw_verification_summary": [
+        {
+          "attempt": 2,
+          "member_count": 1,
+          "duplicate_target_ids": {
+            "d9d279e460e04e992d50e995e5f71ad5560dbe9a5a2b672c619dfde1ec7c2217": 3,
+            "6820d78d086e96d46e72f769146f6eed5cdab1f65fb06ede91d1f674e78f048a": 2
+          },
+          "verifications": [
+            {
+              "target_id": "d94225c8ec0c0b43a300824c9258d11cb072c7826409070b5535fc8d0d956571",
+              "facets": [
+                {
+                  "name": "type",
+                  "verdict": "undetermined",
+                  "reason": "原文仅显示标题'3.1.1合成路线图'，未提供描述整体合成路径、中间体或步骤链条的关键限定内容，无法确认其属于SynthesisRoute类型。",
+                  "support": [
+                    {
+                      "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 53,
+                      "source_text": "3.1.1合成路线图",
+                      "quote": "3.1.1合成路线图",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          10
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "referent",
+                  "verdict": "supported",
+                  "reason": "提及'3.1.1合成路线图'在证据单元中唯一且无歧义，指向该章节标题。",
+                  "support": [
+                    {
+                      "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 53,
+                      "source_text": "3.1.1合成路线图",
+                      "quote": "3.1.1合成路线图",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          10
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "subject_role",
+                  "verdict": "supported",
+                  "reason": "实体'3.1.1合成路线图'作为被描述的工艺路线对象，在语义上充当主体角色。",
+                  "support": [
+                    {
+                      "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 53,
+                      "source_text": "3.1.1合成路线图",
+                      "quote": "3.1.1合成路线图",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          10
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "target_id": "2cafb89127768d53bda0ac30368699ddf0427cead59ad4b9ca31a4b61d4ad6b2",
+              "facets": [
+                {
+                  "name": "type",
+                  "verdict": "undetermined",
+                  "reason": "该实体关联了'3.1.1合成路线图'和'工艺描述'两个字段。虽然涉及合成路线和工艺，但仅凭标题和字段名未提供描述整体合成路径、步骤链条的关键限定内容，无法确认为SynthesisRoute类型。",
+                  "support": [
+                    {
+                      "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 53,
+                      "source_text": "3.1.1合成路线图",
+                      "quote": "3.1.1合成路线图",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          10
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    },
+                    {
+                      "evidence_id": "990dfa5ac2af7465552f5b38490f48ab922489b76a5e0085708606a5e6d176e9",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 52,
+                      "source_text": "工艺描述",
+                      "quote": "工艺描述",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          4
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "referent",
+                  "verdict": "undetermined",
+                  "reason": "实体包含两个引用来源（合成路线图标题和工艺描述字段文本），但未明确这两个来源是否指向同一物理对象或概念实体，存在指代歧义。",
+                  "support": []
+                },
+                {
+                  "name": "subject_role",
+                  "verdict": "supported",
+                  "reason": "实体作为记录的主语，指向工艺路线对象。",
+                  "support": [
+                    {
+                      "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 53,
+                      "source_text": "3.1.1合成路线图",
+                      "quote": "3.1.1合成路线图",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          10
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    },
+                    {
+                      "evidence_id": "990dfa5ac2af7465552f5b38490f48ab922489b76a5e0085708606a5e6d176e9",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 52,
+                      "source_text": "工艺描述",
+                      "quote": "工艺描述",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          4
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "target_id": "d9d279e460e04e992d50e995e5f71ad5560dbe9a5a2b672c619dfde1ec7c2217",
+              "facets": [
+                {
+                  "name": "subject_binding",
+                  "verdict": "supported",
+                  "reason": "属性声明的主体e1（'3.1.1合成路线图'）在原文中有明确提及。",
+                  "support": [
+                    {
+                      "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 53,
+                      "source_text": "3.1.1合成路线图",
+                      "quote": "3.1.1合成路线图",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          10
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "field_role",
+                  "verdict": "supported",
+                  "reason": "原文字段标签为'工艺描述'，与属性定义中的'工艺依据'（source-document section...）在描述上存在差异。但属性定义指出'工艺路线所依据的源文章节...例如3.1.1合成路线图'。此处需核对属性IRI 'processBasis'与字段'工艺描述'的匹配度。根据schema_card，'工艺依据'",
+                  "support": [
+                    {
+                      "evidence_id": "990dfa5ac2af7465552f5b38490f48ab922489b76a5e0085708606a5e6d176e9",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 52,
+                      "source_text": "工艺描述",
+                      "quote": "工艺描述",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          4
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "target_id": "d9d279e460e04e992d50e995e5f71ad5560dbe9a5a2b672c619dfde1ec7c2217",
+              "facets": [
+                {
+                  "name": "field_role",
+                  "verdict": "unsupported",
+                  "reason": "属性IRI为processBasis（工艺依据），定义为'源文章节或受控文件引用'。原文字段标签为'工艺描述'（processDescription），二者定义不同。虽然属性值'3.1.1合成路线图'符合'工艺依据'的示例，但字段角色（Field）明确引用的是'工艺描述'这一标签，而非'工艺依据'。因此，将'工艺描述'",
+                  "support": [
+                    {
+                      "evidence_id": "990dfa5ac2af7465552f5b38490f48ab922489b76a5e0085708606a5e6d176e9",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 52,
+                      "source_text": "工艺描述",
+                      "quote": "工艺描述",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          4
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "target_id": "d9d279e460e04e992d50e995e5f71ad5560dbe9a5a2b672c619dfde1ec7c2217",
+              "facets": [
+                {
+                  "name": "predicate",
+                  "verdict": "supported",
+                  "reason": "属性IRI 'https://ontology.pharma-gmp.cn/slpra/drug-development/processBasis' 在SynthesisRoute类型的属性菜单中。",
+                  "support": [
+                    {
+                      "evidence_id": "990dfa5ac2af7465552f5b38490f48ab922489b76a5e0085708606a5e6d176e9",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 52,
+                      "source_text": "工艺描述",
+                      "quote": "工艺描述",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          4
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "bridge",
+                  "verdict": "supported",
+                  "reason": "显式断言，无额外桥接证据需求。",
+                  "support": []
+                },
+                {
+                  "name": "value",
+                  "verdict": "supported",
+                  "reason": "属性值'3.1.1合成路线图'在原文中有明确提及，且符合工艺依据（源文章节引用）的类型要求。",
+                  "support": [
+                    {
+                      "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 53,
+                      "source_text": "3.1.1合成路线图",
+                      "quote": "3.1.1合成路线图",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          10
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "qualifiers",
+                  "verdict": "supported",
+                  "reason": "无否定、模态或条件修饰，默认为肯定、 asserted。",
+                  "support": []
+                },
+                {
+                  "name": "counterevidence",
+                  "verdict": "supported",
+                  "reason": "核查相关原文，未发现与'工艺依据'属性值或主体冲突的反证。",
+                  "support": [
+                    {
+                      "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 53,
+                      "source_text": "3.1.1合成路线图",
+                      "quote": "3.1.1合成路线图",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          10
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    },
+                    {
+                      "evidence_id": "990dfa5ac2af7465552f5b38490f48ab922489b76a5e0085708606a5e6d176e9",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 52,
+                      "source_text": "工艺描述",
+                      "quote": "工艺描述",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          4
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "target_id": "6820d78d086e96d46e72f769146f6eed5cdab1f65fb06ede91d1f674e78f048a",
+              "facets": [
+                {
+                  "name": "subject_binding",
+                  "verdict": "supported",
+                  "reason": "主体e1在原文中有明确提及。",
+                  "support": [
+                    {
+                      "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 53,
+                      "source_text": "3.1.1合成路线图",
+                      "quote": "3.1.1合成路线图",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          10
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "field_role",
+                  "verdict": "unsupported",
+                  "reason": "属性IRI为processDescription（工艺描述），原文字段标签也为'工艺描述'，看似匹配。但属性定义要求'对合成路线所代表的整体工艺及其主要操作、衔接关系和控制要点的文字说明'。而原文中'工艺描述'字段下的值指向了'3.1.1合成路线图'（即另一个章节标题），而非一段文字说明。更关键的是，在property",
+                  "support": [
+                    {
+                      "evidence_id": "990dfa5ac2af7465552f5b38490f48ab922489b76a5e0085708606a5e6d176e9",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 52,
+                      "source_text": "工艺描述",
+                      "quote": "工艺描述",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          4
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "target_id": "6820d78d086e96d46e72f769146f6eed5cdab1f65fb06ede91d1f674e78f048a",
+              "facets": [
+                {
+                  "name": "field_role",
+                  "verdict": "supported",
+                  "reason": "原文字段标签'工艺描述'与属性IRI processDescription（工艺描述）在字面上完全匹配。",
+                  "support": [
+                    {
+                      "evidence_id": "990dfa5ac2af7465552f5b38490f48ab922489b76a5e0085708606a5e6d176e9",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 52,
+                      "source_text": "工艺描述",
+                      "quote": "工艺描述",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          4
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "predicate",
+                  "verdict": "supported",
+                  "reason": "属性IRI在类型属性菜单中。",
+                  "support": []
+                },
+                {
+                  "name": "bridge",
+                  "verdict": "supported",
+                  "reason": "显式断言。",
+                  "support": []
+                },
+                {
+                  "name": "value",
+                  "verdict": "unsupported",
+                  "reason": "属性processDescription要求'文字说明'。原文字段'工艺描述'下的值仅为'3.1.1合成路线图'，这是一个章节标题引用，而非对工艺操作、衔接关系的文字说明。因此，该值不满足属性定义的关键限定。",
+                  "support": [
+                    {
+                      "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 53,
+                      "source_text": "3.1.1合成路线图",
+                      "quote": "3.1.1合成路线图",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          10
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "qualifiers",
+                  "verdict": "supported",
+                  "reason": "无特殊修饰。",
+                  "support": []
+                },
+                {
+                  "name": "counterevidence",
+                  "verdict": "supported",
+                  "reason": "核查'工艺描述'字段内容，确认其值为标题引用而非文字说明，构成对该属性值成立的直接反证（或至少证明其不符合属性定义）。",
+                  "support": [
+                    {
+                      "evidence_id": "990dfa5ac2af7465552f5b38490f48ab922489b76a5e0085708606a5e6d176e9",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 52,
+                      "source_text": "工艺描述",
+                      "quote": "工艺描述",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          4
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "target_id": "8d097ce0cac3b12e863435799e88c995c0613b0f0263b2f57ec0107edf6ff38c",
+              "facets": [
+                {
+                  "name": "subject_binding",
+                  "verdict": "supported",
+                  "reason": "主体e1在原文中有明确提及。",
+                  "support": [
+                    {
+                      "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 53,
+                      "source_text": "3.1.1合成路线图",
+                      "quote": "3.1.1合成路线图",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          10
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "field_role",
+                  "verdict": "unsupported",
+                  "reason": "属性IRI为processName（工艺名称）。原文字段标签为'工艺描述'。'工艺描述'与'工艺名称'是不同的概念和字段。属性定义要求'整体生产工艺名称'，而字段是'工艺描述'。因此，字段角色不匹配。",
+                  "support": [
+                    {
+                      "evidence_id": "990dfa5ac2af7465552f5b38490f48ab922489b76a5e0085708606a5e6d176e9",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 52,
+                      "source_text": "工艺描述",
+                      "quote": "工艺描述",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          4
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "predicate",
+                  "verdict": "supported",
+                  "reason": "属性IRI在类型属性菜单中。",
+                  "support": []
+                },
+                {
+                  "name": "bridge",
+                  "verdict": "supported",
+                  "reason": "显式断言。",
+                  "support": []
+                },
+                {
+                  "name": "value",
+                  "verdict": "unsupported",
+                  "reason": "属性processName要求'生产工艺名称'（如结晶纯化）。原文提供的值'3.1.1合成路线图'是章节标题，并非具体的工艺名称。",
+                  "support": [
+                    {
+                      "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 53,
+                      "source_text": "3.1.1合成路线图",
+                      "quote": "3.1.1合成路线图",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          10
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "qualifiers",
+                  "verdict": "supported",
+                  "reason": "无特殊修饰。",
+                  "support": []
+                },
+                {
+                  "name": "counterevidence",
+                  "verdict": "supported",
+                  "reason": "核查字段标签'工艺描述'，证明其非'工艺名称'；核查值'3.1.1合成路线图'，证明其非工艺名称。",
+                  "support": [
+                    {
+                      "evidence_id": "990dfa5ac2af7465552f5b38490f48ab922489b76a5e0085708606a5e6d176e9",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 52,
+                      "source_text": "工艺描述",
+                      "quote": "工艺描述",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          4
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "attempt": 3,
+          "member_count": 1,
+          "duplicate_target_ids": {},
+          "verifications": [
+            {
+              "target_id": "d94225c8ec0c0b43a300824c9258d11cb072c7826409070b5535fc8d0d956571",
+              "facets": [
+                {
+                  "name": "type",
+                  "verdict": "undetermined",
+                  "reason": "原文仅包含章节标题“3.1.1合成路线图”，未提供关于合成路线的具体组成（如起始物料、中间体、API的有序链）或工艺描述的实质性内容，无法证明其符合SynthesisRoute类型的关键限定（ordered chain of SynthesisSteps）。",
+                  "support": [
+                    {
+                      "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 53,
+                      "source_text": "3.1.1合成路线图",
+                      "quote": "3.1.1合成路线图",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          10
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "referent",
+                  "verdict": "supported",
+                  "reason": "原文“3.1.1合成路线图”明确指向文档中编号为3.1.1的特定章节内容，具有明确的指称对象。",
+                  "support": [
+                    {
+                      "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 53,
+                      "source_text": "3.1.1合成路线图",
+                      "quote": "3.1.1合成路线图",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          10
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "subject_role",
+                  "verdict": "supported",
+                  "reason": "该实体作为被提及的对象，在上下文中充当了讨论或定义的主题角色。",
+                  "support": [
+                    {
+                      "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 53,
+                      "source_text": "3.1.1合成路线图",
+                      "quote": "3.1.1合成路线图",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          10
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "target_id": "2cafb89127768d53bda0ac30368699ddf0427cead59ad4b9ca31a4b61d4ad6b2",
+              "facets": [
+                {
+                  "name": "type",
+                  "verdict": "undetermined",
+                  "reason": "原文仅提供了字段标签（“工艺描述”）和值占位符（“3.1.1合成路线图”），未包含关于合成路线具体工艺步骤、衔接关系或控制要点的实质性描述文本，无法证明其符合SynthesisRoute类型的关键限定。",
+                  "support": [
+                    {
+                      "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 53,
+                      "source_text": "3.1.1合成路线图",
+                      "quote": "3.1.1合成路线图",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          10
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    },
+                    {
+                      "evidence_id": "990dfa5ac2af7465552f5b38490f48ab922489b76a5e0085708606a5e6d176e9",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 52,
+                      "source_text": "工艺描述",
+                      "quote": "工艺描述",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          4
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "referent",
+                  "verdict": "supported",
+                  "reason": "实体通过subject_role指向“3.1.1合成路线图”，通过field_role和value指向“工艺描述”字段下的具体内容，共同指向文档中3.1.1节对应的合成路线及其描述内容，指称明确。",
+                  "support": [
+                    {
+                      "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 53,
+                      "source_text": "3.1.1合成路线图",
+                      "quote": "3.1.1合成路线图",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          10
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    },
+                    {
+                      "evidence_id": "990dfa5ac2af7465552f5b38490f48ab922489b76a5e0085708606a5e6d176e9",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 52,
+                      "source_text": "工艺描述",
+                      "quote": "工艺描述",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          4
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "subject_role",
+                  "verdict": "supported",
+                  "reason": "原文“3.1.1合成路线图”作为记录的主题（subject），被明确标识。",
+                  "support": [
+                    {
+                      "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 53,
+                      "source_text": "3.1.1合成路线图",
+                      "quote": "3.1.1合成路线图",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          10
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "target_id": "d9d279e460e04e992d50e995e5f71ad5560dbe9a5a2b672c619dfde1ec7c2217",
+              "facets": [
+                {
+                  "name": "subject_binding",
+                  "verdict": "supported",
+                  "reason": "属性关联的实体e1（本地ID）在e1的verification中被确认为referent supported，且原文“3.1.1合成路线图”与e1的mention一致。",
+                  "support": [
+                    {
+                      "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 53,
+                      "source_text": "3.1.1合成路线图",
+                      "quote": "3.1.1合成路线图",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          10
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "field_role",
+                  "verdict": "supported",
+                  "reason": "原文“工艺描述”对应Schema中processBasis属性的label“工艺依据”的描述语境，但在本实例中，field label“工艺描述”更直接对应processDescription。然而，根据property_fields定义，field_id @r:9f608f2a9490 的label是“工艺描述”，其",
+                  "support": [
+                    {
+                      "evidence_id": "990dfa5ac2af7465552f5b38490f48ab922489b76a5e0085708606a5e6d176e9",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 52,
+                      "source_text": "工艺描述",
+                      "quote": "工艺描述",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          4
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "stored_verification_summary": [],
+      "outcome": {
+        "semantic_outcome": "not_checked",
+        "complete": false,
+        "reason_code": "model_parse_error",
+        "reason": "当前记录的实体和属性识别未完成。",
+        "model_calls": 3
+      },
+      "published_counts": {
+        "nodes": 0,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      },
+      "attribute_candidates": [],
+      "published_nodes": [],
+      "independent_conclusions": [
+        "P52工艺描述与P53合成路线图都只是标题；标题不能同时充当完整路线、工艺名和工艺文字说明。",
+        "第一次核验返回8条verification且重复拆分target；第二次仅3个target且属性facet未完整。最终model_parse_error，0登记/属性/关系。",
+        "局部只读到标题不能推出全文没有路线图、没有其他正文工艺；本审阅不补入模型未见原文。",
+        "没有可用新端点或多谓词关系成员。"
+      ]
+    },
+    {
+      "group": 16,
+      "lineage_id": "07b11ded29ac54db00f87e1e01961fc903e69e5338588079f984206bf7048029",
+      "immutable_results": {
+        "discovery": "616b2899af528523ac573066ffb5b06bb4cef998667139514154968a305b09bf"
+      },
+      "reviewed_model_turns": [
+        {
+          "immutable_result_key": "32b83ca438b6b54201262256f1d749709a3679ddfca2d8c548b6b975b89a92ff",
+          "lineage_id": "07b11ded29ac54db00f87e1e01961fc903e69e5338588079f984206bf7048029",
+          "attempt": 1,
+          "stage": "discovery",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 11398,
+            "input_tokens_details": {
+              "cached_tokens": 1613
+            },
+            "output_tokens": 1216,
+            "total_tokens": 12614
+          }
+        },
+        {
+          "immutable_result_key": "90fc883adfb828b9844a5850816bbca5b632c745bc05a199377902670f8f3b67",
+          "lineage_id": "07b11ded29ac54db00f87e1e01961fc903e69e5338588079f984206bf7048029",
+          "attempt": 2,
+          "stage": "verification",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 12762,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 736,
+            "total_tokens": 13498
+          }
+        }
+      ],
+      "raw_discovery_summary": [
+        {
+          "attempt": 1,
+          "member_count": 1,
+          "member_shapes": [
+            {
+              "entities": 2,
+              "properties": 0,
+              "relations": 0,
+              "reference_bindings": 0,
+              "observations": 6
+            }
+          ]
+        }
+      ],
+      "frozen_discovery": {
+        "entities": [
+          {
+            "local_id": "e1",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Centrifuge",
+            "representation": "record",
+            "mentions": [],
+            "record_components": [
+              {
+                "role": "subject",
+                "quote": {
+                  "evidence_id": "4ec9ebd6f013e8da2e2732c3c5f873d22ffdd83919ac8d10459ec33f7e9b2ee5",
+                  "text": "离心机",
+                  "context_text": null
+                }
+              },
+              {
+                "role": "field",
+                "quote": {
+                  "evidence_id": "afc97535bfb6e0ea18eb9999ac92cc7d4fda76c598e4c76c36663b2835e09e79",
+                  "text": "设备编号",
+                  "context_text": null
+                }
+              },
+              {
+                "role": "value",
+                "quote": {
+                  "evidence_id": "3b2041f0956d7678f915572bd525ce6bb1fdebab1345fea3ddf309bb8c58e8b4",
+                  "text": "CT64610",
+                  "context_text": null
+                }
+              }
+            ],
+            "identifier_claims": []
+          },
+          {
+            "local_id": "e2",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment",
+            "representation": "record",
+            "mentions": [],
+            "record_components": [
+              {
+                "role": "field",
+                "quote": {
+                  "evidence_id": "fc96e66ca25f2102ff6795f482cf68cd821f393c2212d066184c0d80ddd396cc",
+                  "text": "设备用途以及工艺要求",
+                  "context_text": null
+                }
+              },
+              {
+                "role": "value",
+                "quote": {
+                  "evidence_id": "19953db1c9154636d0c7031d8d013fa0e1115a23dedd12eee281bf5dd65a0159",
+                  "text": "甩滤",
+                  "context_text": null
+                }
+              }
+            ],
+            "identifier_claims": []
+          }
+        ],
+        "properties": [],
+        "relations": [],
+        "external_links": [],
+        "observations": [
+          {
+            "subject_id": "e1",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/modelSpecification",
+            "quote": {
+              "evidence_id": "2a752274dd95369afedda3168c415946e01dc3a83feccba8fee9bca535ff4a98",
+              "text": "600",
+              "context_text": null
+            },
+            "kind": "missing",
+            "reason": "field_support_provided_but_not_mapped_to_properties_in_this_stage"
+          },
+          {
+            "subject_id": "e1",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentMaterial",
+            "quote": {
+              "evidence_id": "588a54e2c3ed67600fb2156501e42166c530e4da5c674b629af3c4d5110218f0",
+              "text": "不锈钢衬HALAR",
+              "context_text": null
+            },
+            "kind": "missing",
+            "reason": "field_support_provided_but_not_mapped_to_properties_in_this_stage"
+          },
+          {
+            "subject_id": "e1",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/mainResidue",
+            "quote": {
+              "evidence_id": "6e540fa33b28bc4eb606d3f530429b53cc45369d9bed97c3a99daa4227a21940",
+              "text": "HRS-1597",
+              "context_text": null
+            },
+            "kind": "missing",
+            "reason": "field_support_provided_but_not_mapped_to_properties_in_this_stage"
+          },
+          {
+            "subject_id": "e1",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/cleaningSolvent",
+            "quote": {
+              "evidence_id": "89e893e79038ff237ee6c472b993b7043ff1d2a8d8d5f43b42cdff05f213ba26",
+              "text": "丙酮",
+              "context_text": null
+            },
+            "kind": "missing",
+            "reason": "field_support_provided_but_not_mapped_to_properties_in_this_stage"
+          },
+          {
+            "subject_id": "e1",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/mainResidueMolecularFormula",
+            "quote": {
+              "evidence_id": "83f583f999869db954383593b20c4cdde7af696757a3bc9a007613b5d728196d",
+              "text": "C23H28N6O5S ",
+              "context_text": null
+            },
+            "kind": "missing",
+            "reason": "field_support_provided_but_not_mapped_to_properties_in_this_stage"
+          },
+          {
+            "subject_id": "e1",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/mainResidueMolecularWeight",
+            "quote": {
+              "evidence_id": "ff7d021a8cd7d3eda358513d66e214fcbba655e2e06160ef8a6a501f8265ba7b",
+              "text": "500.18",
+              "context_text": null
+            },
+            "kind": "missing",
+            "reason": "field_support_provided_but_not_mapped_to_properties_in_this_stage"
+          }
+        ],
+        "reference_bindings": [],
+        "assertion_generation": 1,
+        "evidence_revision": 1,
+        "content_hash": "6ab0bd5f509fe64bde93496ed1f68aba68e5e13dfa3ddc2d0433b5d9d6c33357",
+        "local_ref_map": {
+          "e1": {
+            "id": "ce699f5a0cce95907246dbd862ae2eca835a52dc26fe0b3900018be0d1462b24",
+            "revision": 1
+          },
+          "e2": {
+            "id": "d88e2d2a636584e418ed1a028fdcd39445175f28905e81a2a040a024560b0b56",
+            "revision": 1
+          }
+        },
+        "claim_issues": {}
+      },
+      "quote_checks": [
+        {
+          "evidence_id": "4ec9ebd6f013e8da2e2732c3c5f873d22ffdd83919ac8d10459ec33f7e9b2ee5",
+          "table_path": [
+            "table:6"
+          ],
+          "row_0_based": 4,
+          "column_0_based": 1,
+          "paragraph_1_based": 1,
+          "source_text": "离心机",
+          "quote": "离心机",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              3
+            ]
+          ],
+          "context_encloses_quote": null
+        },
+        {
+          "evidence_id": "afc97535bfb6e0ea18eb9999ac92cc7d4fda76c598e4c76c36663b2835e09e79",
+          "table_path": [
+            "table:6"
+          ],
+          "row_0_based": 0,
+          "column_0_based": 2,
+          "paragraph_1_based": 1,
+          "source_text": "设备编号",
+          "quote": "设备编号",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              4
+            ]
+          ],
+          "context_encloses_quote": null
+        },
+        {
+          "evidence_id": "3b2041f0956d7678f915572bd525ce6bb1fdebab1345fea3ddf309bb8c58e8b4",
+          "table_path": [
+            "table:6"
+          ],
+          "row_0_based": 4,
+          "column_0_based": 2,
+          "paragraph_1_based": 1,
+          "source_text": "CT64610",
+          "quote": "CT64610",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              7
+            ]
+          ],
+          "context_encloses_quote": null
+        },
+        {
+          "evidence_id": "fc96e66ca25f2102ff6795f482cf68cd821f393c2212d066184c0d80ddd396cc",
+          "table_path": [
+            "table:6"
+          ],
+          "row_0_based": 0,
+          "column_0_based": 8,
+          "paragraph_1_based": 1,
+          "source_text": "设备用途以及工艺要求",
+          "quote": "设备用途以及工艺要求",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              10
+            ]
+          ],
+          "context_encloses_quote": null
+        },
+        {
+          "evidence_id": "19953db1c9154636d0c7031d8d013fa0e1115a23dedd12eee281bf5dd65a0159",
+          "table_path": [
+            "table:6"
+          ],
+          "row_0_based": 4,
+          "column_0_based": 8,
+          "paragraph_1_based": 1,
+          "source_text": "甩滤",
+          "quote": "甩滤",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              2
+            ]
+          ],
+          "context_encloses_quote": null
+        },
+        {
+          "evidence_id": "2a752274dd95369afedda3168c415946e01dc3a83feccba8fee9bca535ff4a98",
+          "table_path": [
+            "table:6"
+          ],
+          "row_0_based": 4,
+          "column_0_based": 3,
+          "paragraph_1_based": 1,
+          "source_text": "600",
+          "quote": "600",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              3
+            ]
+          ],
+          "context_encloses_quote": null
+        },
+        {
+          "evidence_id": "588a54e2c3ed67600fb2156501e42166c530e4da5c674b629af3c4d5110218f0",
+          "table_path": [
+            "table:6"
+          ],
+          "row_0_based": 4,
+          "column_0_based": 4,
+          "paragraph_1_based": 1,
+          "source_text": "不锈钢衬HALAR",
+          "quote": "不锈钢衬HALAR",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              9
+            ]
+          ],
+          "context_encloses_quote": null
+        },
+        {
+          "evidence_id": "6e540fa33b28bc4eb606d3f530429b53cc45369d9bed97c3a99daa4227a21940",
+          "table_path": [
+            "table:6"
+          ],
+          "row_0_based": 4,
+          "column_0_based": 7,
+          "paragraph_1_based": 1,
+          "source_text": "HRS-1597",
+          "quote": "HRS-1597",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              8
+            ]
+          ],
+          "context_encloses_quote": null
+        },
+        {
+          "evidence_id": "89e893e79038ff237ee6c472b993b7043ff1d2a8d8d5f43b42cdff05f213ba26",
+          "table_path": [
+            "table:6"
+          ],
+          "row_0_based": 4,
+          "column_0_based": 11,
+          "paragraph_1_based": 1,
+          "source_text": "丙酮",
+          "quote": "丙酮",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              2
+            ]
+          ],
+          "context_encloses_quote": null
+        },
+        {
+          "evidence_id": "83f583f999869db954383593b20c4cdde7af696757a3bc9a007613b5d728196d",
+          "table_path": [
+            "table:6"
+          ],
+          "row_0_based": 4,
+          "column_0_based": 10,
+          "paragraph_1_based": 1,
+          "source_text": "C23H28N6O5S ",
+          "quote": "C23H28N6O5S ",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              12
+            ]
+          ],
+          "context_encloses_quote": null
+        },
+        {
+          "evidence_id": "ff7d021a8cd7d3eda358513d66e214fcbba655e2e06160ef8a6a501f8265ba7b",
+          "table_path": [
+            "table:6"
+          ],
+          "row_0_based": 4,
+          "column_0_based": 10,
+          "paragraph_1_based": 2,
+          "source_text": "500.18",
+          "quote": "500.18",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              6
+            ]
+          ],
+          "context_encloses_quote": null
+        }
+      ],
+      "raw_verification_summary": [
+        {
+          "attempt": 2,
+          "member_count": 1,
+          "duplicate_target_ids": {},
+          "verifications": [
+            {
+              "target_id": "f5b934b2159d3c1d5a3048e77e397f55a05d6d29a7909101f59d59ba6506427e",
+              "facets": [
+                {
+                  "name": "type",
+                  "verdict": "supported",
+                  "reason": "原文“离心机”明确标识设备类型。离心机定义关键限定为‘通过旋转产生离心作用...实现固液或液液分离’，文中备注‘甩滤’证实该设备用于固液分离，符合离心机定义。",
+                  "support": [
+                    {
+                      "evidence_id": "4ec9ebd6f013e8da2e2732c3c5f873d22ffdd83919ac8d10459ec33f7e9b2ee5",
+                      "table_path": [
+                        "table:6"
+                      ],
+                      "row_0_based": 4,
+                      "column_0_based": 1,
+                      "paragraph_1_based": 1,
+                      "source_text": "离心机",
+                      "quote": "离心机",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          3
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "referent",
+                  "verdict": "supported",
+                  "reason": "原文“CT64610”在“设备编号”列下，直接关联到该行设备，确立了该实体的身份标识。",
+                  "support": [
+                    {
+                      "evidence_id": "3b2041f0956d7678f915572bd525ce6bb1fdebab1345fea3ddf309bb8c58e8b4",
+                      "table_path": [
+                        "table:6"
+                      ],
+                      "row_0_based": 4,
+                      "column_0_based": 2,
+                      "paragraph_1_based": 1,
+                      "source_text": "CT64610",
+                      "quote": "CT64610",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          7
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "subject_role",
+                  "verdict": "supported",
+                  "reason": "“离心机”位于“设备名称”列，作为该行记录描述的对象主体，符合subject_role定义。",
+                  "support": [
+                    {
+                      "evidence_id": "4ec9ebd6f013e8da2e2732c3c5f873d22ffdd83919ac8d10459ec33f7e9b2ee5",
+                      "table_path": [
+                        "table:6"
+                      ],
+                      "row_0_based": 4,
+                      "column_0_based": 1,
+                      "paragraph_1_based": 1,
+                      "source_text": "离心机",
+                      "quote": "离心机",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          3
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "target_id": "9010be649d434e245bb8f0562116cff116c78333d107b67fa391bac985e48b89",
+              "facets": [
+                {
+                  "name": "type",
+                  "verdict": "unsupported",
+                  "reason": "该实体被声明为CleaningEquipment（清洗设备）。CleaningEquipment定义为‘向待清洁对象施加清洗介质或机械作用，以去除...残留物’。然而，原文对应行的设备名称为“离心机”，设备用途为“甩滤”（固液分离）。虽然甩滤后可能涉及清洁，但“甩滤”本身是分离工艺，且主体设备“离心机”属于Centif",
+                  "support": [
+                    {
+                      "evidence_id": "19953db1c9154636d0c7031d8d013fa0e1115a23dedd12eee281bf5dd65a0159",
+                      "table_path": [
+                        "table:6"
+                      ],
+                      "row_0_based": 4,
+                      "column_0_based": 8,
+                      "paragraph_1_based": 1,
+                      "source_text": "甩滤",
+                      "quote": "甩滤",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          2
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "stored_verification_summary": [],
+      "outcome": null,
+      "published_counts": null,
+      "attribute_candidates": [],
+      "published_nodes": [],
+      "review_boundary": "budget_paused_before_valid_outcome",
+      "independent_conclusions": [
+        "table:6行4（0基）设备名称离心机、设备编号CT64610、用途甩滤同属一行，离心机记录的局部类型与归属具有明确依据；没有global identifier claim。",
+        "甩滤是固液分离用途，不自动证明另一个CleaningEquipment实体。模型仅type unsupported，未完成其他两个必需facet。",
+        "34号调用后的预算暂停时没有stored verification或outcome，work仍active/outcome_ref=null；原始Centrifuge supported不是已登记事实。",
+        "600、材质、HRS-1597、丙酮、分子式、500.18均有原文，因未映射而记missing混淆识别状态与缺失。",
+        "分子量500.18应保留该表原文，不能按基本性质的500.60擅自改写；其业务归属与数值一致性仍未核验。",
+        "尚无对象关系候选，也无真实多谓词关系批次。"
+      ]
+    }
+  ],
+  "source_context": [
+    {
+      "evidence_id": "990dfa5ac2af7465552f5b38490f48ab922489b76a5e0085708606a5e6d176e9",
+      "paragraph_index": 51,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "text": "工艺描述"
+    },
+    {
+      "evidence_id": "417caeb357e435ad20e373e523fb1902343d8a62b58bae6cb5e7777c42d2c238",
+      "paragraph_index": 52,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "text": "3.1.1合成路线图"
+    },
+    {
+      "evidence_id": "5d36998b40b0eb82df40c0bad24df14f858e074c622ce8112493ca599f0e683a",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 0,
+      "column_index": 0,
+      "text": "岗位"
+    },
+    {
+      "evidence_id": "4e809dd568373c335aad4e5eddda16174d7d21d0cc6dbafad19be28c262b5495",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 0,
+      "column_index": 1,
+      "text": "设备名称"
+    },
+    {
+      "evidence_id": "afc97535bfb6e0ea18eb9999ac92cc7d4fda76c598e4c76c36663b2835e09e79",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 0,
+      "column_index": 2,
+      "text": "设备编号"
+    },
+    {
+      "evidence_id": "715355307cf6059930e06a1272a66d4b8fc4a9e0defc2595fba9611e0db6e143",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 0,
+      "column_index": 3,
+      "text": "规格型号"
+    },
+    {
+      "evidence_id": "bd7688d93adc9c3e0bea2b71ef03d657b3562edf7e1ebf371599a13d2309500f",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 0,
+      "column_index": 4,
+      "text": "主体材质"
+    },
+    {
+      "evidence_id": "51860b75909ae3f8fafb3b9d13ae3ad8657edee5f8f99250838234f8e87fba14",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 0,
+      "column_index": 5,
+      "text": "物料最小/最大搅拌体积/L"
+    },
+    {
+      "evidence_id": "26a3cc9c83d0e718de655cd1540719cfe075937ed4ac30e2d869993f3d4ec227",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 0,
+      "column_index": 6,
+      "text": "备注（搅拌方式、阀门等特殊要求在此栏备注）"
+    },
+    {
+      "evidence_id": "0f401fd37f9fbfd09da0a03dfdda0523e52778b11c7ac190250b4b60c0c524f9",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 0,
+      "column_index": 7,
+      "text": "主残留物"
+    },
+    {
+      "evidence_id": "fc96e66ca25f2102ff6795f482cf68cd821f393c2212d066184c0d80ddd396cc",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 0,
+      "column_index": 8,
+      "text": "设备用途以及工艺要求"
+    },
+    {
+      "evidence_id": "16fb577b0e6d4b56e88e94e6f1135e3d5960a2ce8cc1e3dbd9fbedff3064f3e9",
+      "paragraph_index": 1,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 0,
+      "column_index": 8,
+      "text": ""
+    },
+    {
+      "evidence_id": "66c40e41d50c48870951ddc7ed36c64a876ae14680c452c496e30a8927c80742",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 0,
+      "column_index": 9,
+      "text": "主残留物特殊性"
+    },
+    {
+      "evidence_id": "72a7770416de64992b4458917fa74b7b37d80352210059cab135c1e960f260bb",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 0,
+      "column_index": 10,
+      "text": "主残留物分子量、分子式"
+    },
+    {
+      "evidence_id": "aae58910f58eb511d32f715e61acd1011c521c5ef0158e61e306b07ad46911b4",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 0,
+      "column_index": 11,
+      "text": "清洁溶剂"
+    },
+    {
+      "evidence_id": "8548ff9e501bb00fc92d58d1251eb4bd37f32cc4af6633590c0760d89577189b",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 0,
+      "column_index": 12,
+      "text": "备注"
+    },
+    {
+      "evidence_id": "4ec9ebd6f013e8da2e2732c3c5f873d22ffdd83919ac8d10459ec33f7e9b2ee5",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 4,
+      "column_index": 1,
+      "text": "离心机"
+    },
+    {
+      "evidence_id": "3b2041f0956d7678f915572bd525ce6bb1fdebab1345fea3ddf309bb8c58e8b4",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 4,
+      "column_index": 2,
+      "text": "CT64610"
+    },
+    {
+      "evidence_id": "2a752274dd95369afedda3168c415946e01dc3a83feccba8fee9bca535ff4a98",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 4,
+      "column_index": 3,
+      "text": "600"
+    },
+    {
+      "evidence_id": "588a54e2c3ed67600fb2156501e42166c530e4da5c674b629af3c4d5110218f0",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 4,
+      "column_index": 4,
+      "text": "不锈钢衬HALAR"
+    },
+    {
+      "evidence_id": "b873cb0ca4692b856d83a7459623fc121f49f2a8715f5c5a11e2a5c9759d84ae",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 4,
+      "column_index": 5,
+      "text": "N/A"
+    },
+    {
+      "evidence_id": "d9feda8cb9e98e5d8553c1ecc3e47ee22dcbcc506d1b80a543d5736dcda8877c",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 4,
+      "column_index": 6,
+      "text": "N/A"
+    },
+    {
+      "evidence_id": "6e540fa33b28bc4eb606d3f530429b53cc45369d9bed97c3a99daa4227a21940",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 4,
+      "column_index": 7,
+      "text": "HRS-1597"
+    },
+    {
+      "evidence_id": "19953db1c9154636d0c7031d8d013fa0e1115a23dedd12eee281bf5dd65a0159",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 4,
+      "column_index": 8,
+      "text": "甩滤"
+    },
+    {
+      "evidence_id": "eac05b51c3ce1303e4b60ec774105d41f483eb8ecbec2783a56cf3e25b380391",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 4,
+      "column_index": 9,
+      "text": "无特殊性"
+    },
+    {
+      "evidence_id": "83f583f999869db954383593b20c4cdde7af696757a3bc9a007613b5d728196d",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 4,
+      "column_index": 10,
+      "text": "C23H28N6O5S "
+    },
+    {
+      "evidence_id": "ff7d021a8cd7d3eda358513d66e214fcbba655e2e06160ef8a6a501f8265ba7b",
+      "paragraph_index": 1,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 4,
+      "column_index": 10,
+      "text": "500.18"
+    },
+    {
+      "evidence_id": "89e893e79038ff237ee6c472b993b7043ff1d2a8d8d5f43b42cdff05f213ba26",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 4,
+      "column_index": 11,
+      "text": "丙酮"
+    },
+    {
+      "evidence_id": "0c3fba24123a77f6adf7d1eb2c889643d972a8f56f68a9fd3964b9babb4b9800",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:6"
+      ],
+      "row_index": 4,
+      "column_index": 12,
+      "text": "N/A"
+    }
+  ],
+  "graph_snapshot": {
+    "run_revision": 317,
+    "event_head": 22,
+    "summary": {
+      "relationships": {
+        "total": 12,
+        "supported": 0,
+        "completed": 0,
+        "percent": 0.0
+      },
+      "properties": {
+        "total": 202,
+        "supported": 2,
+        "completed": 0,
+        "percent": 0.0
+      },
+      "pending_expansion_count": 21,
+      "notes": [
+        "分母是冻结本体在当前主体与范围上的识别目标，不表示每个字段在文档中必填。",
+        "完整度按完成目标数计算；候选记录覆盖不等于开放文档召回率。",
+        "未知多值成员总数保持未完成；待展开分支不计为已完成。",
+        "否定、条件、计划及备选关系保留原图标签；虚拟目标不是事实。"
+      ]
+    },
+    "counts": {
+      "entities": 11,
+      "properties": 2,
+      "relationships": 0,
+      "relationship_groups": 0
+    }
+  },
+  "input_file_sha256": {
+    "review-20bf2d25-results-10.json": "5bbc1d8cf21bbdb34b791d757fbc6a8517678275481f27b36962e1ed4766ead5",
+    "review-20bf2d25-target-07.json": "734c64f55faff9c23b9335964874d59310b4f085353169e96c03b6ba74d9ac4a"
+  },
+  "budget_pause_status": {
+    "contract_version": "document-analysis-runs-v1",
+    "recognition_run_id": "20bf2d25-98f3-4efe-99f0-1e5dbbae5d05",
+    "run_revision": 333,
+    "event_head": 24,
+    "artifact_revision": 4,
+    "extraction_protocol": "ontology-tool-extraction-v1",
+    "status": "paused",
+    "stage": "extracting",
+    "ranking_budget_enabled": true,
+    "input": {
+      "filename": "HRS-1597原料临床备样生产信息表_--脱敏-原 - PDE-冲突.docx",
+      "root_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "root_class_label": "CMC 报告",
+      "metadata_mode": "generate_summary",
+      "scope_mode": "document_graph"
+    },
+    "identities": {
+      "analysis_id": "93d6af4b32eda5f759d0c40a79b1dddb73937f7aa2a07b84c9a676c99bf728dd",
+      "ontology_snapshot_id": "54c748b83397a74fd7268f96c8f72826c572bc0b5a457fec8e8e18da055831f2",
+      "metadata_snapshot_id": "04d6c60edb6e5e89d5b7b49a06f67aaae7b399fdc6d510ab8b3f9c907026ee42",
+      "graph_snapshot_id": "134a5a88129cb03a28960eb12fcb05174105c3959f3100bdf701b5aacc63ce3c",
+      "structure_snapshot_id": "b3a8c0f7962840225c98b33f62fdf06fe9f6525f7d204d80f0975b274c06ed32",
+      "ranking_summary_id": "ca728dbb118ff331b8a47570dcb84dbdd38693a76e52049f4309fc5b80ef81cb",
+      "fingerprint_status": "frozen"
+    },
+    "artifacts": {
+      "source": "ready",
+      "structure": "ready",
+      "metadata": "ready",
+      "graph": "partial"
+    },
+    "progress": {
+      "record_discovery": {
+        "policy": "semantic-record-discovery-v1",
+        "mode": "semantic",
+        "reading_groups": 43,
+        "ranked_groups": 43,
+        "remaining_pairs": 24,
+        "admitted_pairs": 14,
+        "unselected_pairs": 61,
+        "unselected_groups": 0,
+        "routing_cards": 12,
+        "metadata_nodes": 29,
+        "routed_groups": 34,
+        "unrouted_groups": 9,
+        "selected_regions": 15,
+        "execution_mode": "region_batch",
+        "property_field_mode": "region_batch"
+      },
+      "candidate_policy": "sparse-candidates-v1",
+      "tasks_attempted": 16,
+      "model_calls": 34,
+      "model_calls_reserved": 34,
+      "model_calls_unresolved": 0,
+      "records_planned": 124,
+      "records_examined": 0,
+      "records_incomplete": 16,
+      "records_unattempted": 108,
+      "phase_counts": {
+        "phase1": 2,
+        "phase2": 0
+      },
+      "decisions": {
+        "supported": 0,
+        "unsupported": 0,
+        "undetermined": 2,
+        "not_checked": 14
+      },
+      "pending_frontiers": 1,
+      "stop_reason": "execution_model_call_budget_exhausted",
+      "completion": "incomplete",
+      "contract_version": "document-analysis-runs-v1",
+      "event_head": 24,
+      "artifact_revision": 4
+    },
+    "error": null,
+    "available_actions": [
+      "resume",
+      "cancel",
+      "delete",
+      "ranking_budget_disable"
+    ],
+    "created_at": "2026-09-21T05:02:51.797046Z",
+    "started_at": "2026-09-21T05:02:51.882821Z",
+    "paused_at": null,
+    "finished_at": null,
+    "expires_at": "2026-09-28T05:40:14.246741Z"
+  }
+}

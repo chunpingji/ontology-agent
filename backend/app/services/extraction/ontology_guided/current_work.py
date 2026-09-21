@@ -150,8 +150,13 @@ def validate_record_tool_protocol(protocol: dict) -> None:
     pending = protocol["pending_request"]
     if "record_feedback_hash" in protocol and not _digest(protocol["record_feedback_hash"]):
         raise ValueError("record_feedback_hash_invalid")
+    batches = protocol.get("verification_batches")
+    if batches is not None:
+        _validate_verification_batches(batches)
+    # A restored record request must obey the same direct-LLM boundary as a
+    # newly planned request. In particular, never replay a saved GLiNER call.
     if pending and not set(pending["allowed_tool_names"]) <= {
-        "inspect_evidence", "resolve_source_anchor", "propose_mentions",
+        "inspect_evidence", "resolve_source_anchor",
         "find_referent_candidates", "check_claim_binding",
     }:
         raise ValueError("record_protocol_tool_outside_scope")
@@ -161,7 +166,9 @@ def _validate_single_tool_protocol(protocol: dict, *, record=False) -> None:
     from .record_discovery import RECORD_PROTOCOL
 
     required = ToolProtocolState.__required_keys__ - {"reference_context"}
-    optional = {"reference_context"} | ({"record_feedback_hash"} if record else set())
+    optional = {"reference_context"} | (
+        {"record_feedback_hash", "verification_batches"} if record else set()
+    )
     if record:
         required = required | {"task"}
     if (not isinstance(protocol, dict) or not required <= set(protocol)
@@ -246,6 +253,53 @@ def _validate_single_tool_protocol(protocol: dict, *, record=False) -> None:
     ):
         raise ValueError("tool protocol pending reservation is invalid")
     evidence_hash(protocol)  # Reject non-JSON values and non-finite protocol numbers.
+
+
+def _validate_verification_batches(value: dict) -> None:
+    if (
+        not isinstance(value, dict)
+        or set(value) != {"version", "verification_input_hash", "batches"}
+        or value["version"] != 1
+        or not _digest(value["verification_input_hash"])
+        or not isinstance(value["batches"], list)
+    ):
+        raise ValueError("verification batch state invalid")
+    identities = set()
+    running = 0
+    for batch in value["batches"]:
+        if (
+            not isinstance(batch, dict)
+            or set(batch) != {
+                "batch_id", "parent_batch_id", "target_ids", "status", "result_ref",
+                "attempts", "failure_code",
+            }
+            or not _digest(batch["batch_id"])
+            or batch["batch_id"] in identities
+            or batch["parent_batch_id"] is not None
+            and not _digest(batch["parent_batch_id"])
+            or not isinstance(batch["target_ids"], list)
+            or not batch["target_ids"]
+            or any(not _digest(target_id) for target_id in batch["target_ids"])
+            or len(batch["target_ids"]) != len(set(batch["target_ids"]))
+            or batch["status"] not in {"pending", "running", "completed", "split", "failed"}
+            or type(batch["attempts"]) is not int
+            or batch["attempts"] < 0
+        ):
+            raise ValueError("verification batch invalid")
+        identities.add(batch["batch_id"])
+        running += batch["status"] == "running"
+        if (batch["status"] == "completed") != _digest(batch["result_ref"]):
+            raise ValueError("verification batch result invalid")
+        if batch["status"] == "failed":
+            if not isinstance(batch["failure_code"], str) or not batch["failure_code"]:
+                raise ValueError("verification batch failure invalid")
+        elif batch["failure_code"] is not None:
+            raise ValueError("verification batch failure invalid")
+    if running > 1:
+        raise ValueError("multiple verification batches running")
+    if any(batch["parent_batch_id"] is not None
+           and batch["parent_batch_id"] not in identities for batch in value["batches"]):
+        raise ValueError("verification batch parent missing")
 
 
 def validate_protocol_result(field: str, value: dict) -> None:

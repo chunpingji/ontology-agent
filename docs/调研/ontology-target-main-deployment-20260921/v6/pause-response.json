@@ -1,0 +1,1 @@
+{"contract_version":"document-analysis-runs-v1","recognition_run_id":"53947eca-2a87-4f5c-a51e-59128dd1a085","run_revision":233,"event_head":12,"artifact_revision":4,"status":"running","stage":"extracting","ranking_budget_enabled":true,"operation":"pause","operation_status":"accepted","available_actions":["cancel","delete"]}

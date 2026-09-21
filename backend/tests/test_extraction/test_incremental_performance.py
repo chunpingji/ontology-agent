@@ -22,11 +22,6 @@ from app.services.extraction.ontology_guided.heuristic_search import (
     HeuristicSearchPolicy,
     HeuristicSlotSearch,
 )
-from app.services.extraction.ontology_guided.process_granularity import (
-    CLEANING_PROCESS,
-    method_fields,
-    validate_method_scope,
-)
 from app.services.extraction.ontology_guided.ranking_execution import RankingPreparation
 from app.services.extraction.ontology_guided.records import RecordIndex
 from app.services.extraction.ontology_guided.repair_adapter import EvidenceRepairAdapter
@@ -234,8 +229,8 @@ def cleaning_fixture(tmp_path, paragraphs):
     predicate = EdgeSpec(
         iri="urn:hasCleaningMethod",
         label="含清洗方法",
-        range_class_iris=[CLEANING_PROCESS],
-        range_classes=[RangeClass(iri=CLEANING_PROCESS, label="清洗过程")],
+        range_class_iris=["urn:Process"],
+        range_classes=[RangeClass(iri="urn:Process", label="清洗过程")],
     )
     task = RecognitionTask.create(
         subject=subject,
@@ -265,49 +260,6 @@ def cleaning_fixture(tmp_path, paragraphs):
     context = assemble_context(target, task.record_id, index, repair_enabled=True)
     context.incremental_performance = True
     return index, task, predicate, context
-
-
-@pytest.mark.parametrize(
-    "paragraphs", [["加水冲洗；丙酮循环；氮气吹干"], ["加水冲洗", "丙酮循环", "氮气吹干"]]
-)
-def test_method_scope_rejects_partial_actions_and_keeps_rows(tmp_path, paragraphs):
-    index, task, predicate, context = cleaning_fixture(tmp_path, paragraphs)
-    groups = method_fields(context)
-    assert len(groups) == 1
-    refs = [
-        index.ir.anchor(u.evidence_id, 0, len(u.text))
-        for u in index.by_id[task.record_id].source_units
-        if u.text in paragraphs
-    ]
-    assert validate_method_scope(context, predicate, CLEANING_PROCESS, refs[0], refs) is None
-    action = refs[-1] if len(refs) > 1 else refs[0].model_copy(update={"span_end": 4})
-    assert validate_method_scope(context, predicate, CLEANING_PROCESS, action, refs) == (
-        "partial_cleaning_method"
-    )
-    if len(refs) > 1:
-        assert validate_method_scope(context, predicate, CLEANING_PROCESS, refs[0], refs[:1]) == (
-            "cleaning_method_scope_incomplete"
-        )
-    assert validate_method_scope(context, predicate, "urn:ActionStep", action, refs) is None
-    other = next(r for r in index.records if any(u.text == "E-1" for u in r.source_units))
-    other_context = assemble_context(context.target, other.record_id, index, repair_enabled=True)
-    assert method_fields(other_context)[0]["group_id"] != groups[0]["group_id"]
-    context.incremental_performance = False
-    assert validate_method_scope(context, predicate, CLEANING_PROCESS, action, refs) is None
-
-
-@pytest.mark.parametrize("text", ["加水冲洗", "CIP-方法A", "标准清洗规程CP-2"])
-def test_single_step_or_named_method_is_not_rejected_by_length(tmp_path, text):
-    assert method_fields(cleaning_fixture(tmp_path, [text])[-1]) == []
-
-
-def test_explicit_method_identifier_is_valid_with_following_action_paragraphs(tmp_path):
-    index, task, predicate, context = cleaning_fixture(
-        tmp_path, ["清洗方法编号：CP-001", "加水冲洗", "氮气吹干"],
-    )
-    unit = next(u for u in index.by_id[task.record_id].source_units if "CP-001" in u.text)
-    endpoint = index.ir.anchor(unit.evidence_id, unit.text.index("CP-001"), len(unit.text))
-    assert validate_method_scope(context, predicate, CLEANING_PROCESS, endpoint, [endpoint]) is None
 
 
 def test_attribute_priority_requires_exact_owner_and_role(tmp_path):
@@ -353,7 +305,7 @@ def test_attribute_priority_fairness_and_restore():
 
 @pytest.mark.parametrize("partial", [True, False])
 @pytest.mark.parametrize("multiple", [False, True])
-def test_repair_gate_rejects_partial_method_despite_supported_model(
+def test_repair_uses_semantic_scope_without_domain_specific_rewriting(
     tmp_path,
     monkeypatch,
     partial,
@@ -391,7 +343,7 @@ def test_repair_gate_rejects_partial_method_despite_supported_model(
                 "proposals": [
                     {
                         "kind": "relationship",
-                        "object_class_iri": CLEANING_PROCESS,
+                        "object_class_iri": "urn:Process",
                         "object_label": "方法",
                         "object_quote": {**quote, "text": "氮气吹干"} if partial else quote,
                         "bridge_kind": "role_mapped_table",
@@ -417,6 +369,7 @@ def test_repair_gate_rejects_partial_method_despite_supported_model(
                         )
                     },
                     "subject_binding": {"verdict": "supported", "support": [], "local_support": []},
+                    "type_verdict": "undetermined" if partial else "supported",
                     "type_support": [quote],
                     "predicate_support": [quote],
                     "bridge_support": whole_quotes,
@@ -440,14 +393,12 @@ def test_repair_gate_rejects_partial_method_despite_supported_model(
     result = EvidenceRepairAdapter(object(), model_identity="fixture").inspect(
         task, context, predicate, menu
     )
-    assert len(calls) == 2 and calls[0]["whole_method_fields"]
+    assert len(calls) == 2
+    assert "whole_method_fields" not in calls[0]
+    assert "method_granularity_instruction" not in calls[0]
     assert result.edges[0].policy_eligible is not partial
     if partial:
         assert result.edges[0].decision_status == "undetermined"
-        assert any(
-            "partial_cleaning_method" in issues
-            for issues in context.protocol_state["gate_issues"].values()
-        )
     else:
-        assert result.nodes[0].label == "\n".join(paragraphs)
-        assert len(result.nodes[0].evidence_refs) == len(paragraphs)
+        assert result.nodes[0].label == paragraphs[0]
+        assert len(result.nodes[0].evidence_refs) == 1

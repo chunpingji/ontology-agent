@@ -67,7 +67,8 @@ def test_related_relation_then_cold_resume_calibrates_and_retires_candidate(
     def batch(value):
         nonlocal paused
         save_batch(value)
-        if value.graph.edges and value.graph.attribute_candidates:
+        if (any(edge.predicate_iri == EDGE for edge in value.graph.edges)
+                and value.graph.attribute_candidates):
             paused = True
 
     first = factory(progress_hook=lambda _: not paused).run(

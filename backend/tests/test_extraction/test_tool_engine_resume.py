@@ -1,5 +1,6 @@
 """Responses checkpoints use current references and atomically confirm exact results."""
 
+import json
 from copy import deepcopy
 
 import pytest
@@ -185,7 +186,9 @@ def test_multiple_responses_same_stage_have_exact_per_attempt_results(current_ru
     assert items[1:3] == output
     assert items[3]["type"] == "function_call_output"
     assert items[3]["call_id"] == "call-1"
-    assert items[4]["type"] == "message"
+    assert items[4]["role"] == "user"
+    feedback = json.loads(items[4]["content"][0]["text"])
+    assert feedback["kind"] == "stage_answer_invalid"
     assert "result_changes" not in restored and "active_input_items" not in restored
     assert "pending_call_ids" not in restored
     assert current_state.load_protocol_result(store, run, "e", first_ref, "model_turn")[

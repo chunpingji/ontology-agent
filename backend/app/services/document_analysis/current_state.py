@@ -455,6 +455,21 @@ def _tool_protocol_results(store, run, protocol, *, unconfirmed_attempts=()):
         result_ref = protocol[field + "_ref"]
         if result_ref is not None:
             load_protocol_result(store, run, lineage, result_ref, field)
+    if protocol.get("verification_batches") is not None:
+        from app.services.extraction.ontology_guided.claim_protocol import VerifiedClaimSet
+
+        for batch in protocol["verification_batches"]["batches"]:
+            if batch["result_ref"] is None:
+                continue
+            value = load_protocol_result(
+                store, run, lineage, batch["result_ref"], "verification",
+            )
+            try:
+                checked = VerifiedClaimSet.model_validate(value, strict=True)
+            except (TypeError, ValueError) as exc:
+                raise HeadConflict("stored verification batch result is invalid") from exc
+            if {target.target_id for target in checked.targets} != set(batch["target_ids"]):
+                raise HeadConflict("stored verification batch targets changed")
     for value in protocol["materialized_refs"].values():
         if not isinstance(value.get("result_ref"), str):
             raise HeadConflict("materialized reference has no exact tool result")
@@ -547,6 +562,7 @@ def _check_record_reopening(store, run, protocol, old, authority):
             or protocol["stage"] != "discovery"
             or any(protocol[field] is not None
                    for field in ("discovery_ref", "verification_ref", "outcome_ref"))
+            or protocol.get("verification_batches") is not None
             or any(protocol[field] for field in (
                 "turn_refs", "completed_tool_results", "stage_input_items", "materialized_refs",
             ))):
@@ -662,6 +678,127 @@ def _check_record_answer_correction(store, run, protocol, old, result_changes):
         raise HeadConflict("record correction has no exact answer and source authority") from exc
 
 
+def _check_record_verification_batch_transition(protocol, old, result_changes):
+    """Validate the one mutable verifier-batch step and its optional result."""
+    from app.services.extraction.ontology_guided.claim_protocol import VerifiedClaimSet
+
+    before, after = old.get("verification_batches"), protocol.get("verification_batches")
+    if before == after:
+        return False
+    if before is None:
+        # The full frozen verifier input is compiled once after discovery.
+        return False
+    if (
+        after is None
+        or before["version"] != after["version"]
+        or before["verification_input_hash"] != after["verification_input_hash"]
+    ):
+        raise HeadConflict("verification batch input changed")
+    old_batches = {item["batch_id"]: item for item in before["batches"]}
+    new_batches = {item["batch_id"]: item for item in after["batches"]}
+    if not set(old_batches) <= set(new_batches):
+        raise HeadConflict("verification batch history regressed")
+    transitions = []
+    for batch_id, previous in old_batches.items():
+        current = new_batches[batch_id]
+        frozen = {"batch_id", "parent_batch_id", "target_ids"}
+        if any(previous[name] != current[name] for name in frozen):
+            raise HeadConflict("verification batch identity changed")
+        change = (previous["status"], current["status"])
+        allowed = {
+            ("pending", "pending"), ("pending", "running"), ("pending", "split"),
+            ("running", "running"), ("running", "completed"),
+            ("running", "split"), ("running", "failed"),
+            ("completed", "completed"), ("split", "split"),
+            ("failed", "failed"), ("failed", "pending"),
+        }
+        if change not in allowed:
+            raise HeadConflict("verification batch status changed illegally")
+        expected_attempts = previous["attempts"] + int(change == ("pending", "running"))
+        if current["attempts"] != expected_attempts:
+            raise HeadConflict("verification batch attempts changed illegally")
+        if change[0] != change[1]:
+            transitions.append((previous, current))
+        if previous["status"] in {"completed", "split"} and previous != current:
+            raise HeadConflict("completed verification batch changed")
+        if current["status"] == "completed":
+            result = result_changes.get(current["result_ref"])
+            if previous["status"] != "completed":
+                if result is None or result.get("field") != "verification":
+                    raise HeadConflict("verification batch result is missing")
+                try:
+                    checked = VerifiedClaimSet.model_validate(result["value"], strict=True)
+                except (TypeError, ValueError) as exc:
+                    raise HeadConflict("verification batch result is invalid") from exc
+                if {item.target_id for item in checked.targets} != set(current["target_ids"]):
+                    raise HeadConflict("verification batch result targets changed")
+        elif current["result_ref"] is not None:
+            raise HeadConflict("unfinished verification batch has a result")
+    if len(transitions) != 1:
+        raise HeadConflict("verification batches must advance one at a time")
+    previous, current = transitions[0]
+    added = [item for key, item in new_batches.items() if key not in old_batches]
+    if current["status"] == "split":
+        if (
+            len(added) != 2
+            or any(item["parent_batch_id"] != current["batch_id"]
+                   or item["status"] != "pending" for item in added)
+            or [target for item in added for target in item["target_ids"]]
+            != current["target_ids"]
+        ):
+            raise HeadConflict("verification batch split changed targets")
+    elif added:
+        raise HeadConflict("verification batch added without a split")
+    reset = (
+        previous["status"] == "running"
+        and current["status"] in {"completed", "split", "failed"}
+    )
+    if reset and (
+        old["pending_request"] is not None
+        or protocol["pending_request"] is not None
+        or protocol["stage_input_items"]
+        or protocol["turn_refs"]
+        or protocol["completed_tool_results"]
+    ):
+        raise HeadConflict("verification batch reset kept an active exchange")
+    return reset
+
+
+def _pending_review_completion(store, run, protocol, old, result_changes):
+    """Replace only an unproved pending view after its frozen review has been saved."""
+    if (protocol["version"] != TOOL_PROTOCOL_VERSION
+            or performance_policy(store, run).get("record_discovery", {}).get("graph_phase")
+            != "evidence_review"
+            or old.get("pending_request") is not None
+            or protocol.get("pending_request") is not None
+            or protocol["stage"] != "finalize" or not protocol.get("verification_ref")
+            or not protocol.get("outcome_ref")
+            or any(protocol[field] != old[field] for field in (
+                "assertion_generation", "evidence_revision", "discovery_ref",
+            ))):
+        return False
+    pending = load_protocol_result(store, run, old["lineage_id"], old["outcome_ref"], "outcome")
+    if (pending.get("complete") is not False or pending.get("semantic_outcome") != "not_checked"
+            or any(pending.get(field) for field in (
+                "nodes", "proof_payloads", "decision_payloads", "reference_resolutions",
+            ))):
+        return False
+    candidates = [item for field in ("properties", "edges", "relationship_groups")
+                  for item in pending.get(field, [])]
+    if any(item.get("decision_status") != "not_checked" or item.get("proof_ref")
+           or item.get("decision_refs") or item.get("policy_eligible") for item in candidates):
+        return False
+    replacement = result_changes.get(protocol["outcome_ref"], {})
+    if (replacement.get("lineage_id") != protocol["lineage_id"]
+            or replacement.get("field") != "outcome"
+            or replacement.get("value", {}).get("complete") is not True):
+        return False
+    verification = load_protocol_result(
+        store, run, protocol["lineage_id"], protocol["verification_ref"], "verification",
+    )
+    return verification.get("context_hash") == protocol["context_hash"]
+
+
 def _persist_tool_protocol(store, run, protocol, old, result_changes, *, record_authority=None):
     lineage = protocol["lineage_id"]
     record_reopening = False
@@ -702,12 +839,18 @@ def _persist_tool_protocol(store, run, protocol, old, result_changes, *, record_
         same_stage = (protocol["stage"] == old["stage"]
                       and protocol["assertion_generation"] == old["assertion_generation"]
                       and protocol["evidence_revision"] == old["evidence_revision"])
+        batch_reset = False
+        if protocol["version"] == RECORD_PROTOCOL and not record_reopening:
+            batch_reset = _check_record_verification_batch_transition(
+                protocol, old, result_changes,
+            )
         correcting = (same_stage and protocol["version"] == RECORD_PROTOCOL
                       and old["stage_input_items"]
-                      and protocol["stage_input_items"] != old["stage_input_items"])
+                      and protocol["stage_input_items"] != old["stage_input_items"]
+                      and not batch_reset)
         if correcting:
             _check_record_answer_correction(store, run, protocol, old, result_changes)
-        if same_stage and not correcting:
+        if same_stage and not correcting and not batch_reset:
             for field in ("base_target", "active_instructions", "stage_input_items"):
                 if (field == "stage_input_items" and not old[field] and not old["turn_refs"]
                         and old["pending_request"] is None):
@@ -723,6 +866,10 @@ def _persist_tool_protocol(store, run, protocol, old, result_changes, *, record_
                 fields.extend(["verification_ref", "outcome_ref"])
             for field in fields:
                 if old[field] is not None and old[field] != protocol[field]:
+                    if field == "outcome_ref" and _pending_review_completion(
+                        store, run, protocol, old, result_changes,
+                    ):
+                        continue
                     raise HeadConflict("committed tool protocol stage changed")
         pending = old["pending_request"]
         if pending and pending["attempt"] not in protocol["completed_attempts"]:
@@ -734,6 +881,11 @@ def _persist_tool_protocol(store, run, protocol, old, result_changes, *, record_
         "discovery_ref", "verification_ref", "outcome_ref",
     ) if protocol[field] is not None)
     references.update(value.get("result_ref") for value in protocol["materialized_refs"].values())
+    if protocol.get("verification_batches") is not None:
+        references.update(
+            batch["result_ref"] for batch in protocol["verification_batches"]["batches"]
+            if batch["result_ref"] is not None
+        )
     changes = {
         key: value for key, value in result_changes.items() if value["lineage_id"] == lineage
     }
@@ -1095,6 +1247,14 @@ def persist_calls(store, run, token, fingerprint, state):
         progress["model_calls_unresolved"] = max(
             0, progress["model_calls_reserved"] - progress.get("model_calls", 0)
         )
+        if confirmed_delta:
+            # Split verification can save several paid answers before any graph
+            # event is published. Each new durable answer is execution progress;
+            # reservations, heartbeats and repeated receipts are not.
+            execution = store.assert_fence(current.recognition_run_id, current.owner_id, token)
+            execution.last_progress_at = store._clock()
+            execution.recovery_event_head = current.event_head
+            execution.recovery_attempts = 0
         current.progress = progress
         current.revision += 1
         current.request_version += 1
@@ -1761,8 +1921,6 @@ def persist_batch(
                 identity_nodes.extend(node for node in finalized["nodes"]
                                       if node.get("identity_status") == "verified")
         elif record_task:
-            if batch.outcome.edges or batch.outcome.relationship_groups:
-                raise HeadConflict("record discovery cannot publish relationships")
             lineage = batch.task.claim_lineage_id
             task_value = batch.task.model_dump(mode="json")
             _validate_result_changes(protocols, results)

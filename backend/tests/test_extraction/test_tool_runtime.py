@@ -33,6 +33,7 @@ from app.services.extraction.ontology_guided.contracts import (
     VersionedRef,
 )
 from app.services.extraction.ontology_guided.mentions import MentionRegistry
+from app.services.extraction.ontology_guided.record_discovery import RecordDiscoveryTask
 from app.services.extraction.ontology_guided.records import RecordIndex
 from app.services.extraction.ontology_guided.scheduler import RecognitionTask
 from app.services.extraction.ontology_guided.tool_contracts import (
@@ -285,6 +286,7 @@ def test_absent_anchor_context_resolves_unique_quote_without_rewriting_call(
     ("alpha", "citation_quote_ambiguous"),
     ("missing", "citation_quote_not_in_source"),
     ("", "citation_quote_not_in_source"),
+    (" \t", "citation_quote_not_in_source"),
 ])
 @pytest.mark.parametrize("context_text", ["", "null"])
 def test_absent_context_still_requires_unique_exact_nonempty_quote(
@@ -305,6 +307,8 @@ def test_absent_context_still_requires_unique_exact_nonempty_quote(
     )
     assert result.status == "blocked" and result.data is None
     assert result.issues[0].code == code and not result.evidence_refs
+    if not quote.strip():
+        assert result.issues[0].field_path == "/quote"
 
 
 @pytest.mark.parametrize("context_text", ["", "null"])
@@ -398,6 +402,24 @@ def test_model_tools_are_advertised_with_reference_gates(tool_context):
         "get_schema_card", "inspect_evidence", "resolve_source_anchor", "propose_mentions",
         "query_instances", "retrieve_evidence",
     }
+
+
+def test_record_discovery_never_offers_or_dispatches_boundary_ner(tool_context):
+    record_task = RecordDiscoveryTask.create(
+        run_fingerprint="run", record_id="record", schema_card_id="card",
+        analysis_scope_ref="scope", dependency_hash="dependency",
+    )
+    ctx = replace(
+        tool_context, task=record_task, stage="discovery", mention_extractor=object(),
+        ontology_snapshot=object(), allow_mention_discovery=True,
+    )
+    names = {item["name"] for item in runtime.build_tool_definitions(ctx, ctx.stage)}
+    assert "propose_mentions" not in names
+    result = runtime.dispatch_tool(
+        call("propose_mentions", evidence_ids=["ignored"], schema_card_id="card"), ctx,
+    )
+    assert result.status == "blocked"
+    assert result.issues[0].code == "tool_not_allowed"
 
 
 @pytest.mark.parametrize("limit", [1, 16])

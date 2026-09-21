@@ -83,7 +83,7 @@ def test_record_policy_freezes_sparse_selection_and_task_preserves_source_member
     policy = {"version": "record-discovery-v2", "max_classes_per_card": 4,
               "endpoint_page_size": 8, "candidate_cards_per_record": 2,
               "minimum_similarity": 0.25, "attribute_calibration": "source-observations-v1",
-              "table_reading": "bounded-table-rows-v2"}
+              "table_reading": "bounded-table-rows-v2", "max_feedback_reopens": 8}
     assert RecordDiscoveryPolicy.model_validate(policy).model_dump(mode="json") == policy
     task = RecordDiscoveryTask.create(
         run_fingerprint="run", record_id="record", schema_card_id="card",

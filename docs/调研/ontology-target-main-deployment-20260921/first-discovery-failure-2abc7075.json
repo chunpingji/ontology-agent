@@ -1,0 +1,116 @@
+{
+  "run_id": "2abc7075-276d-41b6-b8a8-33f25af66465",
+  "created_at": "2026-09-21T04:24:18.017730+00:00",
+  "observed_status": "failed",
+  "external_sources_enabled": false,
+  "stage_metrics": {
+    "word_tree_summary": {
+      "calls": 6,
+      "statuses": {
+        "failed": 1,
+        "complete": 5
+      },
+      "input_tokens": 8166,
+      "output_tokens": 4121,
+      "request_seconds": 132.207,
+      "queue_seconds": 0.145
+    },
+    "ranking_count_tokens_batch": {
+      "calls": 25,
+      "statuses": {
+        "completed": 25
+      },
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "request_seconds": 37.62000000000004,
+      "queue_seconds": 0.4150000000000002
+    },
+    "ranking_embed": {
+      "calls": 25,
+      "statuses": {
+        "completed": 25
+      },
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "request_seconds": 13.869,
+      "queue_seconds": 0.42100000000000015
+    },
+    "discovery": {
+      "calls": 1,
+      "statuses": {
+        "failed": 1
+      },
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "request_seconds": 0.303,
+      "queue_seconds": 0.035
+    }
+  },
+  "progress": {
+    "record_discovery": {
+      "policy": "semantic-record-discovery-v1",
+      "mode": "semantic",
+      "reading_groups": 41,
+      "ranked_groups": 41,
+      "remaining_pairs": 32,
+      "admitted_pairs": 1,
+      "unselected_pairs": 60,
+      "unselected_groups": 0,
+      "routing_cards": 12,
+      "metadata_nodes": 29,
+      "routed_groups": 33,
+      "unrouted_groups": 8,
+      "selected_regions": 15,
+      "execution_mode": "region_batch",
+      "property_field_mode": "region_batch"
+    },
+    "candidate_policy": "sparse-candidates-v1",
+    "tasks_attempted": 1,
+    "model_calls": 0,
+    "model_calls_reserved": 1,
+    "model_calls_unresolved": 1,
+    "records_planned": 116,
+    "records_examined": 0,
+    "records_incomplete": 1,
+    "records_unattempted": 115,
+    "phase_counts": {
+      "phase1": 0,
+      "phase2": 0
+    },
+    "supported": 0,
+    "unsupported": 0,
+    "undetermined": 0,
+    "pending_frontiers": 1,
+    "unresolved_claims": 0,
+    "invalidated_count": 0,
+    "stop_reason": "model_calls_unresolved",
+    "completion": "incomplete",
+    "contract_version": "document-analysis-runs-v1"
+  },
+  "ledger": [
+    {
+      "domain": "calls:requests",
+      "request_key": "c3a9917929da4734e0a8c5ee1de7ecf7465fbc15e21e8560c101ea7691371721",
+      "stage": "discovery",
+      "dispatch_state": "dispatch_claimed",
+      "actual_cost": null,
+      "cost_status": "unknown",
+      "task_id": "f4b872f801dfbb3cf347dbfb4a2b9a27a74999be4e6b0c2b87e136d3733d18a6",
+      "record_id": "320c619b9b5fddd9964e65546783dd958f1627297bc5f6b49b87cee4894e4f64",
+      "input_hash": "c68246e39e8bb3b9d5264a7b11ff5ede77519a18d5bbc156f3aa08b653ae7f62"
+    }
+  ],
+  "failure_classification": {
+    "code": "model_request_failed",
+    "cause": "llama.cpp does not accept the unanchored JSON Schema pattern \\S",
+    "source": "main deployment investigation; original schema rejection reproduced offline; see quote-schema-proof.json"
+  },
+  "request_quote_schema": {
+    "minLength": 1,
+    "pattern": "\\S",
+    "type": "string"
+  },
+  "model_request_failure_seconds": 0.303,
+  "known_local_schema_converter_requirement": "pattern must start with ^ and end with $",
+  "model_output_received": false
+}

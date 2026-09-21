@@ -35,7 +35,7 @@ def test_navigation_filtered_but_unheaded_and_toc_styled_body_remains(
 ):
     structure, ir = _parse(tmp_path, body=body, body_style=body_style, pages=pages)
     index = RecordIndex(ir)
-    assert ir.parser_version == str(PARSER_VERSION) == "7"
+    assert ir.parser_version == str(PARSER_VERSION) == "9"
     assert [unit.navigation_role for unit in ir.evidence_units] == [
         "toc_heading", "toc_entry", None,
     ]

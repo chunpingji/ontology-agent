@@ -23,6 +23,11 @@ pytest_plugins = ["tests.test_extraction.test_tool_engine_freeze"]
 
 
 @pytest.fixture
+def source(tool_source):
+    return tool_source
+
+
+@pytest.fixture
 def document_source(source):
     source["options"]["context"].subject_evidence_refs = []
     source["proposal"]["reference_bindings"] = []
@@ -55,7 +60,7 @@ def test_anchorless_document_relation_passes_full_harness_with_independent_check
     )
     outcome = adapter.inspect(task, context, predicate, menu)
     assert outcome.complete and len(outcome.relationship_groups) == 1
-    assert len(requests) == len(stored["reservations"]) == 3
+    assert len(requests) == len(stored["reservations"]) == 2
     assert stored["protocol"]["tool_calls_used"] == 1
     assert not stored["protocol"]["recovery_used"]
     relation = requests[0]["text_format"]["schema"]["$defs"]["RelationProposal"]
@@ -102,7 +107,7 @@ def test_wrong_root_bridge_is_corrected_before_verification_without_overwriting_
     assert document_source["proposal"]["relations"][0]["bridge_kind"] == "explicit_assertion"
     if budget == 4 and correct:
         assert outcome.complete and len(outcome.relationship_groups) == 1
-        assert len(requests) == 4 and len(discoveries) == 2
+        assert len(requests) == 3 and len(discoveries) == 2
         assert discoveries[1]["assertion_generation"] == 2
         target = next(t for t in view(requests[-1])["verification_input"]["targets"]
                       if t["target_kind"] == "relation")
@@ -118,7 +123,6 @@ def test_wrong_root_bridge_is_corrected_before_verification_without_overwriting_
     if budget == 4:
         assert any(f["code"] == "document_subject_description_required"
                    for f in view(requests[1])["feedback"])
-        assert not requests[1]["tools"]
         assert view(requests[1])["turn"]["reserved_model_calls"] == 2
 
 
@@ -146,7 +150,7 @@ def test_document_identity_does_not_override_unsupported_semantics(
     outcome = adapter.inspect(task, context, predicate, menu)
     assert not outcome.edges and not outcome.relationship_groups
     assert f"{facet}_not_supported" in outcome.reason
-    assert len(requests) == 3
+    assert len(requests) == 2
 
 
 @pytest.mark.parametrize("cold_resume", [False, True])
@@ -189,7 +193,7 @@ def test_final_source_gate_feedback_reproposes_and_independently_reverifies(
         context.bind_protocol_hook(pause)
         with pytest.raises(RuntimeError, match="pause after gate feedback"):
             adapter.inspect(task, context, predicate, menu)
-        assert len(requests) == 3
+        assert len(requests) == 2
         context.protocol_state = copy.deepcopy(stored["protocol"])
         context.protocol_results = copy.deepcopy(stored["results"])
         context.remaining_model_calls = 3
@@ -197,11 +201,11 @@ def test_final_source_gate_feedback_reproposes_and_independently_reverifies(
         adapter = copy.copy(adapter)
     outcome = adapter.inspect(task, context, predicate, menu)
     assert outcome.complete and len(outcome.relationship_groups) == 1
-    assert len(requests) == len(stored["reservations"]) == 6
+    assert len(requests) == len(stored["reservations"]) == 4
     assert stored["protocol"]["assertion_generation"] == 2
     assert any(f["code"] == "source_assertion_predicate_not_reviewed"
-               for f in view(requests[3])["feedback"])
-    assert requests[1]["tool_choice"] == requests[4]["tool_choice"] == "required"
+               for f in view(requests[2])["feedback"])
+    assert all(request["tool_choice"] != "required" for request in requests)
     verifications = [r["value"] for r in stored["results"].values() if r["field"] == "verification"]
     assert len(verifications) == 2
     assert verifications[0] != verifications[1]

@@ -94,10 +94,12 @@ def test_multivalue_hits_page_past_first_success_before_deferring_tail(tmp_path)
     assert not search.needs_semantic
 
 
-def test_no_direct_hit_expands_registered_alias_before_semantic(tmp_path):
+def test_definition_can_supply_terms_without_domain_aliases(tmp_path):
     search = _search(
         tmp_path, ["molecular weight: 321.5", "设备维护说明"],
-        predicate=SlotSpec(iri="urn:mass", label="分子量"),
+        predicate=SlotSpec(
+            iri="urn:mass", label="分子量", description='Also called "molecular weight".',
+        ),
     )
     page = search.next_admission()
     assert page.stage == "H1"

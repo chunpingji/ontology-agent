@@ -1,0 +1,251 @@
+{
+  "run_id": "53947eca-2a87-4f5c-a51e-59128dd1a085",
+  "status": "paused",
+  "phase": "evidence_review",
+  "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+  "progress": {
+    "record_discovery": {
+      "policy": "semantic-record-discovery-v1",
+      "mode": "semantic",
+      "reading_groups": 43,
+      "ranked_groups": 43,
+      "remaining_pairs": 33,
+      "admitted_pairs": 4,
+      "unselected_pairs": 408,
+      "unselected_groups": 0,
+      "routing_cards": 12,
+      "metadata_nodes": 29,
+      "routed_groups": 35,
+      "unrouted_groups": 8,
+      "selected_regions": 16,
+      "execution_mode": "region_batch",
+      "property_field_mode": "region_batch"
+    },
+    "candidate_policy": "sparse-candidates-v1",
+    "tasks_attempted": 6,
+    "model_calls": 13,
+    "model_calls_reserved": 13,
+    "model_calls_unresolved": 0,
+    "records_planned": 534,
+    "records_examined": 2,
+    "records_incomplete": 4,
+    "records_unattempted": 528,
+    "phase_counts": {
+      "phase1": 1,
+      "phase2": 1
+    },
+    "decisions": {
+      "supported": 0,
+      "unsupported": 0,
+      "undetermined": 2,
+      "not_checked": 4
+    },
+    "pending_frontiers": 0,
+    "stop_reason": "operator_pause",
+    "completion": "incomplete",
+    "contract_version": "document-analysis-runs-v1",
+    "event_head": 13,
+    "artifact_revision": 4
+  },
+  "summary": {
+    "relationships": {
+      "total": 48,
+      "supported": 0,
+      "completed": 0,
+      "percent": 0.0
+    },
+    "properties": {
+      "total": 219,
+      "supported": 0,
+      "completed": 0,
+      "percent": 0.0
+    },
+    "pending_expansion_count": 48,
+    "notes": [
+      "实线表示原文证据已采信；虚线表示待定候选或尚无证据的本体目标。",
+      "未采信候选可切换显示；显示筛选不改变本体关系和属性目标总数。",
+      "Schema 语义对齐与原文证据决定采信；规范化结果和 SHACL 告警单独展示。",
+      "采信目标数不表示全文信息已穷尽；否定、条件及备选成员保留限定。"
+    ]
+  },
+  "entity_count_including_root": 10,
+  "assertions": [
+    {
+      "candidate_id": "a5cf94970b1f262c2c333875daac9412c2f1baeb84a4ccd4328f666251b261d8",
+      "revision": 2,
+      "subject_ref": {
+        "entity_id": "f8e8d02a3c8a412955621fecb1315703e851ec1d6cf7820d6731c4d1dd0dafc9",
+        "revision": 1
+      },
+      "object_ref": null,
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/document/approvalStatus",
+      "raw_value": "HRS-1597",
+      "raw_unit": null,
+      "normalized_value": null,
+      "normalization_available": false,
+      "decision_status": "undetermined",
+      "reason_code": "qualifiers:support_missing",
+      "reason": "qualifiers:support_missing；qualifiers_not_supported；原文“HRS-1597”明确指代当前验证的主体文档实体，归属清晰。；原文“理化性质”作为表头明确标识了该字段在数据表中的角色位置。；原文“中间体/成品”作为表头标识了该列对应的谓词概念（审批状态/属性）。；表格结构明确将主体“HRS-1597”与属性“中间体/成品”及值关联，为显式断言。；原文“白色或类白色粉末”位于对应单元格，明确提供了该属性的值。；原文未显示否定、条件或特殊模态，默认为肯定断言。；已核查同单元其他列“微生物控制”与“稳定性”，未发现与当前声明冲突的反证。",
+      "validation_diagnostics": [
+        {
+          "check": "metric",
+          "status": "incomplete",
+          "reason_codes": [
+            "semantic_undetermined"
+          ],
+          "message": "规范化可用性独立于原文值采信。"
+        },
+        {
+          "check": "shacl",
+          "status": "incomplete",
+          "reason_codes": [
+            "semantic_undetermined",
+            "shacl_not_evaluated"
+          ],
+          "message": "SHACL 结果为诊断，不决定原文值采信。"
+        }
+      ],
+      "source_selection_refs": {
+        "unit": [],
+        "subject": [],
+        "object": [],
+        "value": [
+          "5db6e1c9e228791598d85e972cf01814bb8ae2c87b28df665aaaa13a053daa86"
+        ],
+        "predicate_bridge": [
+          "9e21cd7291e53792fe9e05c773379dd68e96d5db91f8eb670bfb91d6432f9111"
+        ],
+        "condition": [],
+        "counterevidence": []
+      }
+    },
+    {
+      "candidate_id": "6fe2e6f908fd5684eefbb3c0d796c0838a61d69205f43c4d3c32abc7381fc420",
+      "revision": 2,
+      "subject_ref": {
+        "entity_id": "f8e8d02a3c8a412955621fecb1315703e851ec1d6cf7820d6731c4d1dd0dafc9",
+        "revision": 1
+      },
+      "object_ref": {
+        "entity_id": "b950230813a419c0c182c615442ea29d5d07584aca2af117868b8aa4487974e4",
+        "revision": 1
+      },
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+      "raw_value": null,
+      "raw_unit": null,
+      "normalized_value": null,
+      "normalization_available": null,
+      "decision_status": "undetermined",
+      "reason_code": "qualifiers:support_missing",
+      "reason": "qualifiers:support_missing；qualifiers_not_supported；声明主体为文档，原文以'项目名称'开头，符合文档主体归属。；原文提及HRS-1597，与登记实体e1指称一致。；原文通过项目名称字段明确将文档与实体关联，符合描述关系语义。；原文'项目名称'为文档根节点描述，桥接方式与声明一致。；原文无否定或条件标记，模态为asserted，极性为affirmed，与原声明一致。；核查授权原文，未发现与描述关系冲突的反证。",
+      "validation_diagnostics": [
+        {
+          "check": "relation_graph",
+          "status": "passed",
+          "reason_codes": [],
+          "message": "图约束诊断与原文关系采信分别记录。"
+        }
+      ],
+      "source_selection_refs": {
+        "unit": [],
+        "subject": [
+          "37c19ece6de390ac8dc8c2f8d9dc56390be403d1285d981bd76a49f042426ffc"
+        ],
+        "object": [
+          "bef0cedaf69fe318086de328e60cfa65b5fda6c8a2750c12dadebbc6e2599ccb"
+        ],
+        "value": [],
+        "predicate_bridge": [
+          "2e54f46c194b256c23bb4578f33cf15384f37f2fe4019e4f9372ccaa2df8b64c"
+        ],
+        "condition": [],
+        "counterevidence": []
+      }
+    }
+  ],
+  "generation_stages": {
+    "discovery": {
+      "calls": 7,
+      "statuses": {
+        "complete": 7
+      },
+      "input_tokens": 53238,
+      "output_tokens": 4696,
+      "request_seconds": 284.08000000000004,
+      "queue_seconds": 0.179
+    },
+    "verification": {
+      "calls": 6,
+      "statuses": {
+        "complete": 6
+      },
+      "input_tokens": 50986,
+      "output_tokens": 9450,
+      "request_seconds": 351.73499999999996,
+      "queue_seconds": 0.116
+    }
+  },
+  "max_batch_members": 1,
+  "entities": [
+    {
+      "entity_id": "f8e8d02a3c8a412955621fecb1315703e851ec1d6cf7820d6731c4d1dd0dafc9",
+      "revision": 1,
+      "label": "HRS-1597原料临床备样生产信息表_--脱敏-原 - PDE-冲突.docx",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport"
+    },
+    {
+      "entity_id": "ff803b4e5fbc8d99b1ce0f1e6b095c04ea190ff8b4ac9b647b1fff81236d62e3",
+      "revision": 1,
+      "label": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct"
+    },
+    {
+      "entity_id": "dd3763695a37791e9fb865ce02fcf00ea5fcef08fd3592372bf0588383874744",
+      "revision": 1,
+      "label": "制剂剂型：口服片剂 ",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct"
+    },
+    {
+      "entity_id": "974d1475fb9c475ad6646e9343e70741af82a522355ddfcad68e252ae5a967f0",
+      "revision": 1,
+      "label": "是否是肿瘤药物：否",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct"
+    },
+    {
+      "entity_id": "7fa3f99f970113f21ed3c003e4d4d206393ebe4e9502abe74967eabfbe0cc7c4",
+      "revision": 1,
+      "label": "是否细胞毒药物：否",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct"
+    },
+    {
+      "entity_id": "0612815c9cb4d95e342a20985ad90311ee977fc5d1db48d8bd01f35c856f74c5",
+      "revision": 1,
+      "label": "是否是高致敏药物：否",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct"
+    },
+    {
+      "entity_id": "c1cdc8116af23e246fbb1f57e0c6a09dcd264942e171b3b181f79b8ea2b91ab8",
+      "revision": 1,
+      "label": "是否是激素类药物：否",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct"
+    },
+    {
+      "entity_id": "b950230813a419c0c182c615442ea29d5d07584aca2af117868b8aa4487974e4",
+      "revision": 1,
+      "label": "HRS-1597",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct"
+    },
+    {
+      "entity_id": "cc46ebc7478b47a2a2161dcd7eacb7a9f83a6268b74a2bf7b7d70db6317c712b",
+      "revision": 1,
+      "label": "HRS-1597",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData"
+    },
+    {
+      "entity_id": "423eeefa933adbfc7bf0613f09bbf3d8caf33540dd0555e3ab8c12c4830f6499",
+      "revision": 1,
+      "label": "存放条件",
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition"
+    }
+  ]
+}

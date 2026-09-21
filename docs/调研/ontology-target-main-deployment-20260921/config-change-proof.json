@@ -1,0 +1,38 @@
+{
+  "changes": [
+    {
+      "path": ".env",
+      "before": {},
+      "after": {
+        "LOCAL_LLM_TOTAL_TIMEOUT_S": "900",
+        "EVIDENCE_TIMEOUT_S": "900",
+        "EVIDENCE_TOTAL_TIMEOUT_S": "900"
+      },
+      "other_lines_identical": true
+    },
+    {
+      "path": "backend/data/ontology-tool-options.env",
+      "removed_key": "ONTOLOGY_EXTRACTION_OPTIONS.external_sources",
+      "removed_source_counts": {
+        "system-mock-equipment": 211,
+        "system-mock-roles": 5
+      },
+      "other_options_equal": true,
+      "before": {},
+      "after": {
+        "DOCUMENT_ANALYSIS_NO_PROGRESS_TIMEOUT_SECONDS": "1200"
+      },
+      "other_lines_identical": true
+    }
+  ],
+  "compose_environment_verified": {
+    "LOCAL_LLM_TOTAL_TIMEOUT_S": 900,
+    "EVIDENCE_TIMEOUT_S": 900,
+    "EVIDENCE_TOTAL_TIMEOUT_S": 900
+  },
+  "new_process_settings_verified": {
+    "external_sources_enabled": false,
+    "document_analysis_no_progress_timeout_seconds": 1200
+  },
+  "backend_recreated": false
+}

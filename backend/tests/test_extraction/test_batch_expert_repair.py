@@ -5,6 +5,9 @@ from uuid import UUID, uuid4
 from app.models.document_analysis_review import DocumentPropertyRepair, DocumentPropertyReview
 from app.services.document_analysis import current_state
 from app.services.extraction.evidence_identity import evidence_hash
+from app.services.extraction.ontology_guided.model_reference_projection import (
+    project_reference_payload,
+)
 from tests.test_extraction.test_batch_executor import setup_batch
 
 pytest_plugins = ["tests.test_extraction.test_tool_engine_resume"]
@@ -60,7 +63,8 @@ def test_batch_expert_repair_preserves_scope_and_reports_paid_singleton_calls(
     )
     assert len(requests) == 4
     assert all(len(request["members"]) == 1 for request in requests[-2:])
-    assert all(request["members"][0]["scope"] == task["scope"] for request in requests[-2:])
+    wire_scope = project_reference_payload({"scope": task["scope"]})["scope"]
+    assert all(request["members"][0]["scope"] == wire_scope for request in requests[-2:])
     summary = repaired.evidence_repair_summary["expert_review"]["operations"][
         operation["operation_id"]
     ]

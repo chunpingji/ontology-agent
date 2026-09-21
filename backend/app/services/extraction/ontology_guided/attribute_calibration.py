@@ -3,6 +3,7 @@
 from app.schemas.attribute_calibration import AttributeCalibrationCandidate
 from app.schemas.evidence import EvidenceAnchor
 from app.services.extraction.evidence_identity import evidence_hash, stable_id
+from app.services.extraction.ontology_guided.projection import effective_proof_gate
 from app.services.extraction.ontology_guided.source_citations import resolve_fragment_quote
 from app.services.extraction.ontology_guided.value_observation import parse_attribute_value
 
@@ -29,7 +30,8 @@ def field_candidate(task, field, options, *, reason, parsed=None, checks=None, c
 
 def collect_candidates(task, context, card, frozen, checks, outcome, *, feedback):
     """Retain only authentic property sources rejected by the final fact gate."""
-    accepted = {prop.candidate_id for prop in outcome.properties}
+    accepted = {prop.candidate_id for prop in outcome.properties
+                if prop.decision_status == "supported" and effective_proof_gate(prop)}
     attribute = context.tool_inputs.get("attribute_disambiguation")
     classes = {entity.local_id: entity.class_iri for entity in frozen.entities}
     classes.update({entity["entity_ref"]["id"]: entity["class_iri"]
@@ -107,7 +109,7 @@ def collect_candidates(task, context, card, frozen, checks, outcome, *, feedback
             "source_claim_id": reference.id,
             "status": "rejected_mapping" if rejected else "pending",
         }))
-    if attribute and not outcome.properties and not candidates:
+    if attribute and not accepted and not candidates:
         candidates.append(field_candidate(
             task, attribute, attribute["options"], reason=outcome.reason_code, card=card,
         ))
@@ -130,6 +132,7 @@ def merge_candidates(previous, outcome):
                 for option in candidate.options
             ))
             for prop in outcome.properties
+            if prop.decision_status == "supported" and effective_proof_gate(prop)
         )
         if resolved:
             continue

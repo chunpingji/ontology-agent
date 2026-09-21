@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { DocumentAnalysisPanel } from "@/components/analysis/document-analysis-panel";
 import { GraphQueryPanel } from "@/components/analysis/graph-query-panel";
+import { GraphAnalysisPanel } from "@/components/analysis/graph-analysis-panel";
 import {
   AssessmentPanel,
   MACOCalculator,
@@ -12,16 +13,17 @@ import {
 } from "@/components/analysis/reasoning-panels";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-type Tab = "reasoning" | "graph" | "document";
+type Tab = "reasoning" | "graph" | "document" | "graph-analysis";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "reasoning", label: "推理" },
   { key: "graph", label: "图谱查询" },
   { key: "document", label: "文档分析" },
+  { key: "graph-analysis", label: "图谱分析" },
 ];
 
 function isTab(value: string | null): value is Tab {
-  return value === "reasoning" || value === "graph" || value === "document";
+  return value === "reasoning" || value === "graph" || value === "document" || value === "graph-analysis";
 }
 
 export function AnalysisTabs() {
@@ -82,6 +84,9 @@ export function AnalysisTabs() {
 
       <TabsContent value="document">
         <DocumentAnalysisPanel />
+      </TabsContent>
+      <TabsContent value="graph-analysis">
+        <GraphAnalysisPanel />
       </TabsContent>
     </Tabs>
   );

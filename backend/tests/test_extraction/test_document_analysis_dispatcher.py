@@ -20,8 +20,11 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.api import document_analysis
 from app.config import settings
 from app.models.document_analysis import (
+    DocumentAnalysisArtifact,
     DocumentAnalysisExecution,
     DocumentAnalysisRun,
+    DocumentRunArtifact,
+    DocumentRunArtifactHead,
 )
 from app.services.document_analysis import execution as execution_service
 from app.services.document_analysis.run_store import (
@@ -58,6 +61,9 @@ def _dispatcher_database(path: Path):
     )
     DocumentAnalysisRun.__table__.create(engine)
     DocumentAnalysisExecution.__table__.create(engine)
+    DocumentAnalysisArtifact.__table__.create(engine)
+    DocumentRunArtifact.__table__.create(engine)
+    DocumentRunArtifactHead.__table__.create(engine)
     return engine, sessionmaker(bind=engine, expire_on_commit=False)
 
 

@@ -181,6 +181,23 @@ def test_complete_prompt_hides_redundant_read_but_preserves_mention_tool(tool_co
     assert result.status == "ok"
 
 
+def test_record_pipeline_hides_and_rejects_boundary_mention_tool(tool_context):
+    ctx, card = ner_context(tool_context, extractor=FakeGliner25())
+    record_ctx = replace(ctx, allow_mention_discovery=False)
+    offered = {item["name"] for item in runtime.build_tool_definitions(
+        record_ctx, record_ctx.stage,
+    )}
+    assert "propose_mentions" not in offered
+
+    blocked = runtime.dispatch_tool(call(
+        "propose_mentions",
+        evidence_ids=[ctx.context.fragments[0].anchor.evidence_id],
+        schema_card_id=card.schema_card_id,
+    ), record_ctx)
+    assert blocked.status == "blocked"
+    assert blocked.issues[0].code == "tool_not_allowed"
+
+
 def test_batch_still_offers_read_to_member_missing_prompt_text(tool_context):
     first = replace(tool_context, evidence_text_in_prompt=True)
     contexts = {"included": first, "not-included": tool_context}

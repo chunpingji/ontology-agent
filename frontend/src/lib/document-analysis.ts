@@ -60,6 +60,7 @@ const REASON_LABELS: Record<string, string> = {
   expert_repair_unresolved: "局部重识别仍有未解决项，请查看属性审核中的具体原因。",
   candidate_search_exhausted: "本轮候选检索和核验已完成；未入选原文尚未核验，不表示全文事实已穷尽。",
   adaptive_search_saturated: "当前检索阶段已结束，仍有原文待检查；可恢复运行以继续检索。",
+  evidence_review_pending: "候选原文已保存，核验尚未完成；继续运行将接续核验。",
   evidence_recheck_incomplete: "已找到补充证据，部分关系或属性仍待重新核验。",
   no_new_evidence: "尚未找到可补充的新证据。",
   parent_not_effective: "上级关系尚未通过核验，属性任务暂未展开。",

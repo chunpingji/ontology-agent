@@ -1,0 +1,1250 @@
+{
+  "run_id": "20bf2d25-98f3-4efe-99f0-1e5dbbae5d05",
+  "reviewed_at": "2026-09-21T05:38:52.506566+00:00",
+  "review_kind": "independent_post_hoc_source_review",
+  "model_calls_by_reviewer": 0,
+  "application_mutations_by_reviewer": 0,
+  "increments": [
+    {
+      "group": 11,
+      "lineage_id": "eb16bbd14cbcf0e7c47e84c6bfc654cf23af7efb88e6afba49178659f4a3a09a",
+      "immutable_results": {
+        "verification": "99f98cd97f061bd778d53b7491aceedb7387d8c5bdb7fbd5424c5c1c01cb6f31",
+        "discovery": "740d8b20086dc111dbf9f7d2d24cedafb6cea4cf72bac9fd11511d266347cb9a",
+        "outcome": "ae2bd0ece2345f5df9a81476403da1a2e795572c3e806c3bbcd878daee27c408"
+      },
+      "reviewed_model_turns": [
+        {
+          "immutable_result_key": "6bd81bca069c60a8762ebbfc1e8cd8d2f6bbd74fa4a65d8498199530c60adc82",
+          "lineage_id": "eb16bbd14cbcf0e7c47e84c6bfc654cf23af7efb88e6afba49178659f4a3a09a",
+          "attempt": 1,
+          "stage": "discovery",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 4780,
+            "input_tokens_details": {
+              "cached_tokens": 1573
+            },
+            "output_tokens": 366,
+            "total_tokens": 5146
+          }
+        },
+        {
+          "immutable_result_key": "90672aae1717bcc84ec04ef72528fde1e00e009dedba0dd9958e27a56baace7b",
+          "lineage_id": "eb16bbd14cbcf0e7c47e84c6bfc654cf23af7efb88e6afba49178659f4a3a09a",
+          "attempt": 2,
+          "stage": "verification",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 5298,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 693,
+            "total_tokens": 5991
+          }
+        }
+      ],
+      "raw_discovery_summary": [
+        {
+          "attempt": 1,
+          "member_count": 1,
+          "member_shapes": [
+            {
+              "entities": 1,
+              "properties": 0,
+              "relations": 0,
+              "reference_bindings": 0,
+              "observations": 1
+            }
+          ]
+        }
+      ],
+      "frozen_discovery": {
+        "entities": [
+          {
+            "local_id": "e1",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SafetyRiskAssessment",
+            "representation": "mention",
+            "mentions": [
+              {
+                "evidence_id": "9534183369f1fd1d6d1106f261a594c08da716997a4920e0c707eea1f9cedf68",
+                "text": "曾经发生过的反应异常事件",
+                "context_text": null
+              }
+            ],
+            "record_components": [],
+            "identifier_claims": []
+          }
+        ],
+        "properties": [],
+        "relations": [],
+        "external_links": [],
+        "observations": [
+          {
+            "subject_id": "e1",
+            "predicate_iri": "http://example.com/has_assessment_result",
+            "quote": {
+              "evidence_id": "65fbd29d0fe766f1c43c5dc6395903b26aad852544207d768de174930dc848a8",
+              "text": "否",
+              "context_text": null
+            },
+            "kind": "unknown",
+            "reason": "实体e1（反应异常事件）未明确关联具体的评估属性（如是否发生），且表格逻辑中该列标题为'是/否'，通常针对前一列的'是否/有无'问题进行回答，但e1作为记录主体未直接绑定该值，需进一步确认归属或视为缺失观察。"
+          }
+        ],
+        "reference_bindings": [],
+        "assertion_generation": 1,
+        "evidence_revision": 1,
+        "content_hash": "a779f8212bbe0cdc435cf65ee6f501e5b78adef5c4f70f316b9bf4ee984f064b",
+        "local_ref_map": {
+          "e1": {
+            "id": "78e3f589aa0d37d2941224a6660ac3581640e6b0f9e1800ef7862b9fa47e2e50",
+            "revision": 1
+          }
+        },
+        "claim_issues": {}
+      },
+      "quote_checks": [
+        {
+          "evidence_id": "9534183369f1fd1d6d1106f261a594c08da716997a4920e0c707eea1f9cedf68",
+          "table_path": [
+            "table:8"
+          ],
+          "row_0_based": 2,
+          "column_0_based": 1,
+          "paragraph_1_based": 1,
+          "source_text": "曾经发生过的反应异常事件，若有，请描述。",
+          "quote": "曾经发生过的反应异常事件",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              12
+            ]
+          ],
+          "context_encloses_quote": null
+        },
+        {
+          "evidence_id": "65fbd29d0fe766f1c43c5dc6395903b26aad852544207d768de174930dc848a8",
+          "table_path": [
+            "table:8"
+          ],
+          "row_0_based": 2,
+          "column_0_based": 3,
+          "paragraph_1_based": 1,
+          "source_text": "否",
+          "quote": "否",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              1
+            ]
+          ],
+          "context_encloses_quote": null
+        }
+      ],
+      "raw_verification_summary": [
+        {
+          "attempt": 2,
+          "member_count": 1,
+          "duplicate_target_ids": {},
+          "verifications": [
+            {
+              "target_id": "de824429f02b380e43ba0e13ea76ae618c73398265226b81745850df1434d90d",
+              "facets": [
+                {
+                  "name": "type",
+                  "verdict": "unsupported",
+                  "reason": "实体类型定义为‘Assessment of occupational safety risks during manufacturing’（制造期间职业安全风险的评估）。原文提及‘曾经发生过的反应异常事件’并回答‘否’，意指不存在此类事件，属于对特定风险因素的核查结果或状态描述，而非对职业安全风险的评估活动或文档本身。",
+                  "support": [
+                    {
+                      "evidence_id": "9534183369f1fd1d6d1106f261a594c08da716997a4920e0c707eea1f9cedf68",
+                      "table_path": [
+                        "table:8"
+                      ],
+                      "row_0_based": 2,
+                      "column_0_based": 1,
+                      "paragraph_1_based": 1,
+                      "source_text": "曾经发生过的反应异常事件，若有，请描述。",
+                      "quote": "曾经发生过的反应异常事件",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          12
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    },
+                    {
+                      "evidence_id": "65fbd29d0fe766f1c43c5dc6395903b26aad852544207d768de174930dc848a8",
+                      "table_path": [
+                        "table:8"
+                      ],
+                      "row_0_based": 2,
+                      "column_0_based": 3,
+                      "paragraph_1_based": 1,
+                      "source_text": "否",
+                      "quote": "否",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          1
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    },
+                    {
+                      "evidence_id": "5e1d671a9bad8167e1712c646e087452783eef450485277bc1436ce030aed305",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 88,
+                      "source_text": "通过反应安全风险评估，得出以下结论：无危险反应步骤，风险可以接受。",
+                      "quote": "通过反应安全风险评估，得出以下结论：无危险反应步骤，风险可以接受。",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          33
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "referent",
+                  "verdict": "supported",
+                  "reason": "原文在表格中明确提及‘曾经发生过的反应异常事件’并作为询问主题，实体指称该查询对象（即‘无’这一事实对应的概念），指称明确。",
+                  "support": [
+                    {
+                      "evidence_id": "9534183369f1fd1d6d1106f261a594c08da716997a4920e0c707eea1f9cedf68",
+                      "table_path": [
+                        "table:8"
+                      ],
+                      "row_0_based": 2,
+                      "column_0_based": 1,
+                      "paragraph_1_based": 1,
+                      "source_text": "曾经发生过的反应异常事件，若有，请描述。",
+                      "quote": "曾经发生过的反应异常事件",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          12
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "subject_role",
+                  "verdict": "supported",
+                  "reason": "原文该字段为表格中的询问主题（Subject/Question），回答‘否’针对该主题，符合主体角色定义。",
+                  "support": [
+                    {
+                      "evidence_id": "9534183369f1fd1d6d1106f261a594c08da716997a4920e0c707eea1f9cedf68",
+                      "table_path": [
+                        "table:8"
+                      ],
+                      "row_0_based": 2,
+                      "column_0_based": 1,
+                      "paragraph_1_based": 1,
+                      "source_text": "曾经发生过的反应异常事件，若有，请描述。",
+                      "quote": "曾经发生过的反应异常事件",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          12
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "stored_verification_summary": [
+        {
+          "target_id": "de824429f02b380e43ba0e13ea76ae618c73398265226b81745850df1434d90d",
+          "missing_facets": [
+            "type"
+          ],
+          "validation_issues": [],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "unsupported",
+              "reason_code": "facet_unsupported",
+              "reason": "实体类型定义为‘Assessment of occupational safety risks during manufacturing’（制造期间职业安全风险的评估）。原文提及‘曾经发生过的反应异常事件’并回答‘否’，意指不存在此类事件，属于对特定风险因素的核查结果或状态描述，而非对职业安全风险的评估活动或文档本身。"
+            },
+            {
+              "check_kind": "referent",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文在表格中明确提及‘曾经发生过的反应异常事件’并作为询问主题，实体指称该查询对象（即‘无’这一事实对应的概念），指称明确。"
+            },
+            {
+              "check_kind": "subject_role",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "原文该字段为表格中的询问主题（Subject/Question），回答‘否’针对该主题，符合主体角色定义。"
+            }
+          ]
+        }
+      ],
+      "outcome": {
+        "semantic_outcome": "undetermined",
+        "complete": false,
+        "reason_code": "type_not_supported",
+        "reason": "type_not_supported",
+        "model_calls": 2
+      },
+      "published_counts": {
+        "nodes": 0,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      },
+      "attribute_candidates": [],
+      "published_nodes": [],
+      "independent_conclusions": [
+        "table:8行2是曾经发生过的反应异常事件，若有请描述的问题；同行回答否，不能把问项当作发生的事件或评估实例。",
+        "type拒绝有依据；referent/subject_role supported仅能指向问题主题，不能补成实体事实。",
+        "观察自行构造example.com/has_assessment_result，不能计为合法属性。"
+      ]
+    },
+    {
+      "group": 12,
+      "lineage_id": "1c0af9d63d9cca59e41eeb0b2fa4792874321699c0e7f9ca48fe85d28290a263",
+      "immutable_results": {
+        "verification": "d5f4f800672533b286d16bf2a3df10f1eeee5a1fb070260ff2fc1624dadb77ea",
+        "discovery": "67881bd684bff2d886b5269f3495810e461e06174db44b2a64b84a9ad215e8dd",
+        "outcome": "0e0d279f034bd70575801383d7ea608e87338ab8a2d7010b66d00da15382c6c6"
+      },
+      "reviewed_model_turns": [
+        {
+          "immutable_result_key": "f4cd8525dcd177dfc7b6e59581243b5acaa79ee0416378cd789c17170e267e32",
+          "lineage_id": "1c0af9d63d9cca59e41eeb0b2fa4792874321699c0e7f9ca48fe85d28290a263",
+          "attempt": 1,
+          "stage": "discovery",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 4580,
+            "input_tokens_details": {
+              "cached_tokens": 1573
+            },
+            "output_tokens": 449,
+            "total_tokens": 5029
+          }
+        }
+      ],
+      "raw_discovery_summary": [
+        {
+          "attempt": 1,
+          "member_count": 1,
+          "member_shapes": [
+            {
+              "entities": 1,
+              "properties": 0,
+              "relations": 0,
+              "reference_bindings": 0,
+              "observations": 1
+            }
+          ]
+        }
+      ],
+      "frozen_discovery": {
+        "entities": [
+          {
+            "local_id": "e1",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ProductionRiskAssessment",
+            "representation": "mention",
+            "mentions": [
+              {
+                "evidence_id": "3ceaa7c8fba8c013544dbe194c3ebdee343221b1c020d2961f198afd74280257",
+                "text": "4共线评估所需资料\n4.2临床及临床前反馈数据\n4.2.3产品毒性信息\n表2 产品毒性信息",
+                "context_text": null
+              }
+            ],
+            "record_components": [],
+            "identifier_claims": []
+          }
+        ],
+        "properties": [],
+        "relations": [],
+        "external_links": [],
+        "observations": [
+          {
+            "subject_id": "e1",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ProductionRiskAssessment#hasRiskData",
+            "quote": {
+              "evidence_id": "8f11688c66b24eb5323e8fa3fd6258cc81cc881cb62489dc68d28cf4f081dbc2",
+              "text": "表2 产品毒性信息",
+              "context_text": null
+            },
+            "kind": "unknown",
+            "reason": "Schema定义的生产风险评估（ProductionRiskAssessment）要求覆盖‘人员、设备、物料、文件及废物管理’的‘7列风险评估表’。原文引用的‘表2’标题为‘产品毒性信息’，且其内容（生殖发育毒性、基因毒性、致癌性、致敏性）属于毒理学评价范畴，与Schema定义的‘生产风险评估’类型描述中的关键限定（生产环境、7列结构、全维度生产风险）不符。原文虽提及产品毒性数据，但无证据表明该表格满足Schema定义的‘ProductionRiskAssessment’类型的构成要件。因此，无法将e1归类为该类型，亦无合法属性可提取。"
+          }
+        ],
+        "reference_bindings": [],
+        "assertion_generation": 1,
+        "evidence_revision": 1,
+        "content_hash": "c4bbf2cda345be7c8771dfad33583346910c331a929fdff4350dcf30e13a498b",
+        "local_ref_map": {
+          "e1": {
+            "id": "d53b012f5c0571dab66bfd945169e9b2829c4adc08a95914591850d9713bc1e5",
+            "revision": 1
+          }
+        },
+        "claim_issues": {
+          "e1": [
+            "source_excerpt_mismatch"
+          ]
+        }
+      },
+      "quote_checks": [
+        {
+          "evidence_id": "3ceaa7c8fba8c013544dbe194c3ebdee343221b1c020d2961f198afd74280257",
+          "table_path": null,
+          "row_0_based": null,
+          "column_0_based": null,
+          "paragraph_1_based": 117,
+          "source_text": "备注：“√”代表有相应毒性；“×”代表没有相应的毒性 ；“—”代表相关的研究数据不充分。",
+          "quote": "4共线评估所需资料\n4.2临床及临床前反馈数据\n4.2.3产品毒性信息\n表2 产品毒性信息",
+          "context_text": null,
+          "exact_intervals": [],
+          "context_encloses_quote": null
+        },
+        {
+          "evidence_id": "8f11688c66b24eb5323e8fa3fd6258cc81cc881cb62489dc68d28cf4f081dbc2",
+          "table_path": [
+            "table:11"
+          ],
+          "row_0_based": 0,
+          "column_0_based": 4,
+          "paragraph_1_based": 1,
+          "source_text": "致敏性",
+          "quote": "表2 产品毒性信息",
+          "context_text": null,
+          "exact_intervals": [],
+          "context_encloses_quote": null
+        }
+      ],
+      "raw_verification_summary": [],
+      "stored_verification_summary": [],
+      "outcome": {
+        "semantic_outcome": "undetermined",
+        "complete": false,
+        "reason_code": "source_excerpt_mismatch",
+        "reason": "source_excerpt_mismatch",
+        "model_calls": 1
+      },
+      "published_counts": {
+        "nodes": 0,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      },
+      "attribute_candidates": [],
+      "published_nodes": [],
+      "independent_conclusions": [
+        "e1引文拼接共线/反馈/毒性多个标题，却挂在P117符号备注的evidence_id；逐字不匹配。",
+        "unknown观察将表2标题挂在table:11致敏性表头evidence_id，亦不匹配，另构造hasRiskData谓词。",
+        "source_excerpt_mismatch拒绝正确，无登记；不证明毒性表缺失。"
+      ]
+    },
+    {
+      "group": 13,
+      "lineage_id": "17d5a7ff7903cf0a6c6a572246309be94468595fb1be9a7e0f88a714ee9266ad",
+      "immutable_results": {
+        "verification": "b63511ed52a15732ee395d2c29c83fa048891f8b9c5c5021ea7ed860d6a1fda4",
+        "discovery": "4e8e128180d5e2c6e9c94f55f171272a3894eacf7fa73ca95c2d4f06a3bf8776",
+        "outcome": "8a9f385b592d038ea6aca9c508682d9d2338a2635606a424eb8b203000cc19f3"
+      },
+      "reviewed_model_turns": [
+        {
+          "immutable_result_key": "79f6b47737c43a5d5ca607323628d26657be3d9ad1312e112d3b9e905e0b9488",
+          "lineage_id": "17d5a7ff7903cf0a6c6a572246309be94468595fb1be9a7e0f88a714ee9266ad",
+          "attempt": 1,
+          "stage": "discovery",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 2344,
+            "input_tokens_details": {
+              "cached_tokens": 1573
+            },
+            "output_tokens": 713,
+            "total_tokens": 3057
+          }
+        },
+        {
+          "immutable_result_key": "1f500364f8dafa5f269a34b108aab49c773f8f4a8a51093c076e70fdae8a7956",
+          "lineage_id": "17d5a7ff7903cf0a6c6a572246309be94468595fb1be9a7e0f88a714ee9266ad",
+          "attempt": 2,
+          "stage": "verification",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 2659,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 523,
+            "total_tokens": 3182
+          }
+        }
+      ],
+      "raw_discovery_summary": [
+        {
+          "attempt": 1,
+          "member_count": 1,
+          "member_shapes": [
+            {
+              "entities": 2,
+              "properties": 0,
+              "relations": 0,
+              "reference_bindings": 1,
+              "observations": 2
+            }
+          ]
+        }
+      ],
+      "frozen_discovery": {
+        "entities": [
+          {
+            "local_id": "e1",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/QualityRiskAssessment",
+            "representation": "mention",
+            "mentions": [
+              {
+                "evidence_id": "5e1d671a9bad8167e1712c646e087452783eef450485277bc1436ce030aed305",
+                "text": "反应安全风险评估",
+                "context_text": null
+              }
+            ],
+            "record_components": [],
+            "identifier_claims": []
+          },
+          {
+            "local_id": "e2",
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/QualityRiskAssessment",
+            "representation": "mention",
+            "mentions": [
+              {
+                "evidence_id": "5e1d671a9bad8167e1712c646e087452783eef450485277bc1436ce030aed305",
+                "text": "安全评估",
+                "context_text": null
+              }
+            ],
+            "record_components": [],
+            "identifier_claims": []
+          }
+        ],
+        "properties": [],
+        "relations": [],
+        "external_links": [],
+        "observations": [
+          {
+            "subject_id": "e1",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/QualityRiskAssessment#assessment_result",
+            "quote": {
+              "evidence_id": "5e1d671a9bad8167e1712c646e087452783eef450485277bc1436ce030aed305",
+              "text": "无危险反应步骤，风险可以接受。",
+              "context_text": null
+            },
+            "kind": "unknown",
+            "reason": "Schema card for 'QualityRiskAssessment' lists no properties, preventing mapping of assessment results to typed attributes."
+          },
+          {
+            "subject_id": "e2",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/QualityRiskAssessment#assessment_result",
+            "quote": {
+              "evidence_id": "5e1d671a9bad8167e1712c646e087452783eef450485277bc1436ce030aed305",
+              "text": "无危险反应步骤，风险可以接受。",
+              "context_text": null
+            },
+            "kind": "unknown",
+            "reason": "Schema card for 'QualityRiskAssessment' lists no properties, preventing mapping of assessment results to typed attributes."
+          }
+        ],
+        "reference_bindings": [
+          {
+            "local_id": "rb1",
+            "source_id": "e1",
+            "target_id": "e2",
+            "binding_kind": "coreference",
+            "support": [
+              {
+                "evidence_id": "5e1d671a9bad8167e1712c646e087452783eef450485277bc1436ce030aed305",
+                "text": "通过反应安全风险评估，得出以下结论：... 风险可以接受。",
+                "context_text": null
+              },
+              {
+                "evidence_id": "31996b3c1ff1d4c82c7f02c97497fa71ba4892d5c21e07cbf108d2eeae544df4",
+                "text": "安全评估",
+                "context_text": null
+              }
+            ]
+          }
+        ],
+        "assertion_generation": 1,
+        "evidence_revision": 1,
+        "content_hash": "3cd90fe456ab5d403754f18733f4d9fe7c7d3ceeeb6f06f88b57e033f69c4788",
+        "local_ref_map": {
+          "e1": {
+            "id": "279c9f315566038a900eca312ba3f6eccc1c5ff5128197900aac33d430af2901",
+            "revision": 1
+          },
+          "e2": {
+            "id": "8e406c8955ab33a6ba049200ae1d99da7b6bfef245614e8f9cac1b47b51efec2",
+            "revision": 1
+          },
+          "rb1": {
+            "id": "c1b86b1ce0cf861c6d7b88bb40c19cf5b3523bdf054b88fab313fce94746e054",
+            "revision": 1
+          }
+        },
+        "claim_issues": {
+          "e2": [
+            "source_excerpt_mismatch"
+          ],
+          "rb1": [
+            "source_excerpt_mismatch",
+            "reference_binding_endpoint_invalid"
+          ]
+        }
+      },
+      "quote_checks": [
+        {
+          "evidence_id": "5e1d671a9bad8167e1712c646e087452783eef450485277bc1436ce030aed305",
+          "table_path": null,
+          "row_0_based": null,
+          "column_0_based": null,
+          "paragraph_1_based": 88,
+          "source_text": "通过反应安全风险评估，得出以下结论：无危险反应步骤，风险可以接受。",
+          "quote": "反应安全风险评估",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              2,
+              10
+            ]
+          ],
+          "context_encloses_quote": null
+        },
+        {
+          "evidence_id": "5e1d671a9bad8167e1712c646e087452783eef450485277bc1436ce030aed305",
+          "table_path": null,
+          "row_0_based": null,
+          "column_0_based": null,
+          "paragraph_1_based": 88,
+          "source_text": "通过反应安全风险评估，得出以下结论：无危险反应步骤，风险可以接受。",
+          "quote": "安全评估",
+          "context_text": null,
+          "exact_intervals": [],
+          "context_encloses_quote": null
+        },
+        {
+          "evidence_id": "5e1d671a9bad8167e1712c646e087452783eef450485277bc1436ce030aed305",
+          "table_path": null,
+          "row_0_based": null,
+          "column_0_based": null,
+          "paragraph_1_based": 88,
+          "source_text": "通过反应安全风险评估，得出以下结论：无危险反应步骤，风险可以接受。",
+          "quote": "无危险反应步骤，风险可以接受。",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              18,
+              33
+            ]
+          ],
+          "context_encloses_quote": null
+        },
+        {
+          "evidence_id": "5e1d671a9bad8167e1712c646e087452783eef450485277bc1436ce030aed305",
+          "table_path": null,
+          "row_0_based": null,
+          "column_0_based": null,
+          "paragraph_1_based": 88,
+          "source_text": "通过反应安全风险评估，得出以下结论：无危险反应步骤，风险可以接受。",
+          "quote": "通过反应安全风险评估，得出以下结论：... 风险可以接受。",
+          "context_text": null,
+          "exact_intervals": [],
+          "context_encloses_quote": null
+        },
+        {
+          "evidence_id": "31996b3c1ff1d4c82c7f02c97497fa71ba4892d5c21e07cbf108d2eeae544df4",
+          "table_path": null,
+          "row_0_based": null,
+          "column_0_based": null,
+          "paragraph_1_based": 87,
+          "source_text": "安全评估",
+          "quote": "安全评估",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              4
+            ]
+          ],
+          "context_encloses_quote": null
+        }
+      ],
+      "raw_verification_summary": [
+        {
+          "attempt": 2,
+          "member_count": 1,
+          "duplicate_target_ids": {},
+          "verifications": [
+            {
+              "target_id": "dcb262f7a8861e154b7b51cd5c3fb99010fd512506179b54d1366e2ec8338618",
+              "facets": [
+                {
+                  "name": "type",
+                  "verdict": "supported",
+                  "reason": "实体类型为QualityRiskAssessment。其关键限定为‘Assessment of quality risks during manufacturing’。原文‘通过反应安全风险评估...无危险反应步骤，风险可以接受’明确描述了针对反应（制造环节）进行的评估行为及其结果（风险接受），符合‘during制造’",
+                  "support": [
+                    {
+                      "evidence_id": "5e1d671a9bad8167e1712c646e087452783eef450485277bc1436ce030aed305",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 88,
+                      "source_text": "通过反应安全风险评估，得出以下结论：无危险反应步骤，风险可以接受。",
+                      "quote": "通过反应安全风险评估，得出以下结论：无危险反应步骤，风险可以接受。",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          33
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "referent",
+                  "verdict": "supported",
+                  "reason": "实体指代为‘反应安全风险评估’。原文中‘通过反应安全风险评估’作为评估行为的来源或主体，且后续给出了具体评估结论，指向该特定的评估实例。",
+                  "support": [
+                    {
+                      "evidence_id": "5e1d671a9bad8167e1712c646e087452783eef450485277bc1436ce030aed305",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 88,
+                      "source_text": "通过反应安全风险评估，得出以下结论：无危险反应步骤，风险可以接受。",
+                      "quote": "通过反应安全风险评估，得出以下结论：无危险反应步骤，风险可以接受。",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          33
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                },
+                {
+                  "name": "subject_role",
+                  "verdict": "supported",
+                  "reason": "实体作为主体角色。原文‘通过...评估’表明该评估是得出后续结论（无危险步骤）的来源和依据，符合主体/来源角色。",
+                  "support": [
+                    {
+                      "evidence_id": "5e1d671a9bad8167e1712c646e087452783eef450485277bc1436ce030aed305",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 88,
+                      "source_text": "通过反应安全风险评估，得出以下结论：无危险反应步骤，风险可以接受。",
+                      "quote": "通过反应安全风险评估，得出以下结论：无危险反应步骤，风险可以接受。",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          33
+                        ]
+                      ],
+                      "context_encloses_quote": null
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "stored_verification_summary": [
+        {
+          "target_id": "dcb262f7a8861e154b7b51cd5c3fb99010fd512506179b54d1366e2ec8338618",
+          "missing_facets": [],
+          "validation_issues": [],
+          "decisions": [
+            {
+              "check_kind": "type",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "实体类型为QualityRiskAssessment。其关键限定为‘Assessment of quality risks during manufacturing’。原文‘通过反应安全风险评估...无危险反应步骤，风险可以接受’明确描述了针对反应（制造环节）进行的评估行为及其结果（风险接受），符合‘during制造’"
+            },
+            {
+              "check_kind": "referent",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "实体指代为‘反应安全风险评估’。原文中‘通过反应安全风险评估’作为评估行为的来源或主体，且后续给出了具体评估结论，指向该特定的评估实例。"
+            },
+            {
+              "check_kind": "subject_role",
+              "verdict": "supported",
+              "reason_code": "facet_supported",
+              "reason": "实体作为主体角色。原文‘通过...评估’表明该评估是得出后续结论（无危险步骤）的来源和依据，符合主体/来源角色。"
+            }
+          ]
+        }
+      ],
+      "outcome": {
+        "semantic_outcome": "supported",
+        "complete": false,
+        "reason_code": "source_excerpt_mismatch",
+        "reason": "source_excerpt_mismatch；reference_binding_endpoint_invalid",
+        "model_calls": 2
+      },
+      "published_counts": {
+        "nodes": 1,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      },
+      "attribute_candidates": [],
+      "published_nodes": [
+        {
+          "entity_id": "7e702fdd7d56b3bb1e0e24f343edf1d42cbc18baa39b96d4626774e9e6b4d6f4",
+          "revision": 1,
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/QualityRiskAssessment",
+          "label": "反应安全风险评估",
+          "grounding_kind": "mention",
+          "identity_status": "document_local",
+          "independent_review": "unreviewed"
+        }
+      ],
+      "independent_conclusions": [
+        "P88确实存在反应安全风险评估实例和无危险反应步骤、风险可以接受的结论；这不证明质量风险评估。",
+        "模型只抓制造期间限定，忽略QualityRiskAssessment的quality风险维度，实际发布该类型节点未通过独立审查。",
+        "e2安全评估在P87而非所引P88连续文字中；共指使用省略号拼接文本，source_excerpt_mismatch拒绝正确。",
+        "无危险反应步骤是反应安全结论，不能扩大为无质量风险或全部风险安全。",
+        "图谱新增1个错误类型节点，没有关系实线。"
+      ]
+    },
+    {
+      "group": 14,
+      "lineage_id": "1d57fd356fd84c16f26bc1ec5bb5c86448926226de352750046a8708fb596586",
+      "immutable_results": {
+        "verification": "cf94dcf76a0e3c4915272ad60f63eebccf4145dabe6b1cc079e296c8af7a2ff9",
+        "discovery": "3e0bcc5756efce7e61d4a4af979fcd4ac127abaaf55dba58e1e0269846089103",
+        "outcome": "283a6669ae167003e8efc9354bef35694a9b2dca8345d11c6da43723a0ab96e8"
+      },
+      "reviewed_model_turns": [
+        {
+          "immutable_result_key": "60bede6b1280afcbd9fb936e29b55275ee47668f54a3c6e2c2fc90f9cbce7674",
+          "lineage_id": "1d57fd356fd84c16f26bc1ec5bb5c86448926226de352750046a8708fb596586",
+          "attempt": 1,
+          "stage": "discovery",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 2339,
+            "input_tokens_details": {
+              "cached_tokens": 1573
+            },
+            "output_tokens": 304,
+            "total_tokens": 2643
+          }
+        }
+      ],
+      "raw_discovery_summary": [
+        {
+          "attempt": 1,
+          "member_count": 1,
+          "member_shapes": [
+            {
+              "entities": 0,
+              "properties": 0,
+              "relations": 0,
+              "reference_bindings": 0,
+              "observations": 2
+            }
+          ]
+        }
+      ],
+      "frozen_discovery": {
+        "entities": [],
+        "properties": [],
+        "relations": [],
+        "external_links": [],
+        "observations": [
+          {
+            "subject_id": "31996b3c1ff1d4c82c7f02c97497fa71ba4892d5c21e07cbf108d2eeae544df4",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/isFactual",
+            "quote": {
+              "evidence_id": "31996b3c1ff1d4c82c7f02c97497fa71ba4892d5c21e07cbf108d2eeae544df4",
+              "text": "安全评估",
+              "context_text": null
+            },
+            "kind": "missing",
+            "reason": "evidence_fact_eligible_false"
+          },
+          {
+            "subject_id": "b297f5c4d9725c2725fb49169ff16e0030f80270286ba8870b2ab4e96acc0b52",
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasConclusion",
+            "quote": {
+              "evidence_id": "5e1d671a9bad8167e1712c646e087452783eef450485277bc1436ce030aed305",
+              "text": "无危险反应步骤，风险可以接受。",
+              "context_text": "通过反应安全风险评估，得出以下结论：无危险反应步骤，风险可以接受。"
+            },
+            "kind": "unknown",
+            "reason": "no_target_entity_identified_for_conclusion"
+          }
+        ],
+        "reference_bindings": [],
+        "assertion_generation": 1,
+        "evidence_revision": 1,
+        "content_hash": "58a1c3657235c1c4ac24e197096a4fff5d99c2aae4fe7d8571a79a0e121423d2",
+        "local_ref_map": {},
+        "claim_issues": {}
+      },
+      "quote_checks": [
+        {
+          "evidence_id": "31996b3c1ff1d4c82c7f02c97497fa71ba4892d5c21e07cbf108d2eeae544df4",
+          "table_path": null,
+          "row_0_based": null,
+          "column_0_based": null,
+          "paragraph_1_based": 87,
+          "source_text": "安全评估",
+          "quote": "安全评估",
+          "context_text": null,
+          "exact_intervals": [
+            [
+              0,
+              4
+            ]
+          ],
+          "context_encloses_quote": null
+        },
+        {
+          "evidence_id": "5e1d671a9bad8167e1712c646e087452783eef450485277bc1436ce030aed305",
+          "table_path": null,
+          "row_0_based": null,
+          "column_0_based": null,
+          "paragraph_1_based": 88,
+          "source_text": "通过反应安全风险评估，得出以下结论：无危险反应步骤，风险可以接受。",
+          "quote": "无危险反应步骤，风险可以接受。",
+          "context_text": "通过反应安全风险评估，得出以下结论：无危险反应步骤，风险可以接受。",
+          "exact_intervals": [
+            [
+              18,
+              33
+            ]
+          ],
+          "context_encloses_quote": true
+        }
+      ],
+      "raw_verification_summary": [],
+      "stored_verification_summary": [],
+      "outcome": {
+        "semantic_outcome": "undetermined",
+        "complete": false,
+        "reason_code": "record_undetermined",
+        "reason": "当前记录仍有待核实的声明或观察。",
+        "model_calls": 1
+      },
+      "published_counts": {
+        "nodes": 0,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      },
+      "attribute_candidates": [],
+      "published_nodes": [],
+      "independent_conclusions": [
+        "P87安全评估标题与P88反应安全结论均真实；未提出实体、仅unknown不构成新事实。",
+        "fact_eligible=false是引用授权，不等于原文缺失；把evidence_id当subject_id并自造isFactual/hasConclusion不构成合法本体声明。",
+        "记录仍未决，不能据此说原文未做安全评估。"
+      ]
+    }
+  ],
+  "source_context": [
+    {
+      "evidence_id": "31996b3c1ff1d4c82c7f02c97497fa71ba4892d5c21e07cbf108d2eeae544df4",
+      "paragraph_index": 86,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "text": "安全评估"
+    },
+    {
+      "evidence_id": "08ba498fafac11b6aeda65a3c8fbb4e7c6fe5b21344ddfa45b4bf608c38f4eff",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:8"
+      ],
+      "row_index": 0,
+      "column_index": 0,
+      "text": "1"
+    },
+    {
+      "evidence_id": "c0c7829e491854ff28117aa531cd4e5a9939cee7f46885d60251495cb1932e9f",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:8"
+      ],
+      "row_index": 0,
+      "column_index": 1,
+      "text": "反应是否为异常放热，反应速率异常的应在表格下方文字说明。"
+    },
+    {
+      "evidence_id": "b338c126cbdaba9dba5605426c49df378a6964dad03ef30867799b250f9c025e",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:8"
+      ],
+      "row_index": 0,
+      "column_index": 2,
+      "text": "是 / 否"
+    },
+    {
+      "evidence_id": "3078aeff6f4bf1b73267fb415ed148be0b4164727398fc203e300649374e4685",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:8"
+      ],
+      "row_index": 0,
+      "column_index": 3,
+      "text": "否"
+    },
+    {
+      "evidence_id": "6a587955ec53bcc33d707247998c3501aefec624fa1718cd0b5a2172cfe37c2b",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:8"
+      ],
+      "row_index": 2,
+      "column_index": 0,
+      "text": "3"
+    },
+    {
+      "evidence_id": "9534183369f1fd1d6d1106f261a594c08da716997a4920e0c707eea1f9cedf68",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:8"
+      ],
+      "row_index": 2,
+      "column_index": 1,
+      "text": "曾经发生过的反应异常事件，若有，请描述。"
+    },
+    {
+      "evidence_id": "ddbb695dc68062f46944b38a7f1f5435b42ace600a9b750f5c079e20a752b570",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:8"
+      ],
+      "row_index": 2,
+      "column_index": 2,
+      "text": "是 / 否"
+    },
+    {
+      "evidence_id": "65fbd29d0fe766f1c43c5dc6395903b26aad852544207d768de174930dc848a8",
+      "paragraph_index": 0,
+      "table_path": [
+        "table:8"
+      ],
+      "row_index": 2,
+      "column_index": 3,
+      "text": "否"
+    },
+    {
+      "evidence_id": "5e1d671a9bad8167e1712c646e087452783eef450485277bc1436ce030aed305",
+      "paragraph_index": 87,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "text": "通过反应安全风险评估，得出以下结论：无危险反应步骤，风险可以接受。"
+    },
+    {
+      "evidence_id": "3ceaa7c8fba8c013544dbe194c3ebdee343221b1c020d2961f198afd74280257",
+      "paragraph_index": 116,
+      "table_path": null,
+      "row_index": null,
+      "column_index": null,
+      "text": "备注：“√”代表有相应毒性；“×”代表没有相应的毒性 ；“—”代表相关的研究数据不充分。"
+    }
+  ],
+  "graph_snapshot": {
+    "run_revision": 317,
+    "event_head": 22,
+    "summary": {
+      "relationships": {
+        "total": 12,
+        "supported": 0,
+        "completed": 0,
+        "percent": 0.0
+      },
+      "properties": {
+        "total": 202,
+        "supported": 2,
+        "completed": 0,
+        "percent": 0.0
+      },
+      "pending_expansion_count": 21,
+      "notes": [
+        "分母是冻结本体在当前主体与范围上的识别目标，不表示每个字段在文档中必填。",
+        "完整度按完成目标数计算；候选记录覆盖不等于开放文档召回率。",
+        "未知多值成员总数保持未完成；待展开分支不计为已完成。",
+        "否定、条件、计划及备选关系保留原图标签；虚拟目标不是事实。"
+      ]
+    },
+    "counts": {
+      "entities": 11,
+      "properties": 2,
+      "relationships": 0,
+      "relationship_groups": 0
+    }
+  },
+  "input_file_sha256": {
+    "review-20bf2d25-results-08.json": "3015e8e94bf5ead141c15458bf44cfb8f9fce8cfd32a748f9eb0a976074e8f42",
+    "review-20bf2d25-target-07.json": "734c64f55faff9c23b9335964874d59310b4f085353169e96c03b6ba74d9ac4a",
+    "review-20bf2d25-type-definitions-11-15.json": "fbacb29d51f869626749d242f9af4700a8c24f57e89756d1c3c5d2c22701f9e5"
+  },
+  "frozen_ontology_definitions": {
+    "ontology_snapshot_id": "54c748b83397a74fd7268f96c8f72826c572bc0b5a457fec8e8e18da055831f2",
+    "types": [
+      {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/QualityRiskAssessment",
+        "label": "质量风险评估",
+        "description": "Assessment of quality risks during manufacturing: impurity carry-over, incomplete reaction, product degradation, contamination.",
+        "parent_iris": [],
+        "declared_properties": [],
+        "declared_relationships": [],
+        "source_hash": "ad39acb4c857825c831ba8f92a3528da96311a1ed65033a483a939a05a8a848c"
+      },
+      {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SafetyRiskAssessment",
+        "label": "安全风险评估",
+        "description": "Assessment of occupational safety risks during manufacturing: flammability, toxicity exposure, oxygen depletion, thermal runaway.",
+        "parent_iris": [],
+        "declared_properties": [],
+        "declared_relationships": [],
+        "source_hash": "c320c149567a0ca4d4bf624652e39af988066eabc2904eee767174070fed2730"
+      },
+      {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisRoute",
+        "label": "合成路线",
+        "description": "The overall synthetic pathway from starting materials through intermediates to the drug substance (API). A route comprises an ordered chain of SynthesisSteps.",
+        "parent_iris": [],
+        "declared_properties": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/processBasis",
+            "label": "工艺依据",
+            "description": "The source-document section or controlled reference on which the process route is based.\n工艺路线所依据的源文章节或受控文件引用，例如3.1.1合成路线图。",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisRoute"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ],
+            "canonical_unit": null,
+            "identity_key": false
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/processDescription",
+            "label": "工艺描述",
+            "description": "对合成路线所代表的整体工艺及其主要操作、衔接关系和控制要点的文字说明。",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisRoute"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ],
+            "canonical_unit": null,
+            "identity_key": false
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/processName",
+            "label": "工艺名称",
+            "description": "The business-facing name of the overall manufacturing process represented by the route, e.g. crystallization purification.\n该路线所表示的整体生产工艺名称，例如结晶纯化。",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisRoute"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ],
+            "canonical_unit": null,
+            "identity_key": false
+          }
+        ],
+        "declared_relationships": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasStep",
+            "label": "含步骤",
+            "description": "连接合成路线与构成该路线的工艺步骤；步骤先后关系由步骤序号或步骤间的顺序关系另行表达。",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisRoute"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "relationship",
+            "range_class_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisStep"
+            ],
+            "range_classes": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/producesFinalProduct",
+            "label": "产出最终产品/API",
+            "description": "Links a synthesis route or its final synthesis step to the DrugProduct or API that is its final output. Process intermediates must use producesIntermediate instead.\n连接合成路线或其最终合成步骤与最终产出的药物产品或原料药（API）；工艺中间体应使用 producesIntermediate。",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisRoute"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "relationship",
+            "range_class_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/drug/ActivePharmaceuticalIngredient",
+              "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct"
+            ],
+            "range_classes": []
+          }
+        ],
+        "source_hash": "073e0ba711f5d695f489ab82472c60fa4e1d4e46ad812d01727de2e7c683b037"
+      }
+    ]
+  }
+}

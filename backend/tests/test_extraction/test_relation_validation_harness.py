@@ -20,6 +20,11 @@ from tests.test_extraction.test_tool_engine_adapter import setup_adapter
 pytest_plugins = ["tests.test_extraction.test_tool_engine_freeze"]
 
 
+@pytest.fixture
+def source(tool_source):
+    return tool_source
+
+
 def registered_b(source):
     proposal = EntityProposal.model_validate(source["proposal"]["entities"][0])
     quote = proposal.mentions[0]
@@ -34,31 +39,32 @@ def registered_b(source):
     return EntityDependencyView(**values, content_hash=evidence_hash(values))
 
 
-def test_model_cannot_skip_relation_tool_by_repeating_supported(source, monkeypatch):
+def test_controller_validation_does_not_depend_on_model_tool_choice(source, monkeypatch):
     adapter, task, context, predicate, menu, stored, requests = setup_adapter(
         source, monkeypatch, skip_relation_check=True,
     )
-    with pytest.raises(RuntimeError, match="required_relation_validation_missing"):
-        adapter.inspect(task, context, predicate, menu)
-    assert len(requests) == 3
-    assert all(request["tool_choice"] == "required" for request in requests[1:])
-    assert stored["protocol"]["tool_calls_used"] == 0
-    assert not stored["protocol"]["verification_ref"]
-    assert not stored["protocol"]["outcome_ref"]
+    outcome = adapter.inspect(task, context, predicate, menu)
+    assert outcome.complete and len(outcome.relationship_groups) == 1
+    assert len(requests) == 2
+    assert all(request["tool_choice"] != "required" for request in requests)
+    assert stored["protocol"]["tool_calls_used"] == 1
+    assert stored["protocol"]["verification_ref"]
+    assert stored["protocol"]["outcome_ref"]
 
 
-def test_insufficient_budget_never_skips_required_check(source, monkeypatch):
+def test_two_call_budget_includes_controller_relation_check(source, monkeypatch):
     adapter, task, context, predicate, menu, stored, requests = setup_adapter(
         source, monkeypatch, budget=2,
     )
-    with pytest.raises(RuntimeError, match="required_relation_validation_missing"):
-        adapter.inspect(task, context, predicate, menu)
-    assert len(requests) == len(stored["reservations"]) == 1
-    assert not stored["protocol"]["outcome_ref"]
+    outcome = adapter.inspect(task, context, predicate, menu)
+    assert outcome.complete and len(outcome.relationship_groups) == 1
+    assert len(requests) == len(stored["reservations"]) == 2
+    assert stored["protocol"]["tool_calls_used"] == 1
+    assert stored["protocol"]["outcome_ref"]
 
 
 @pytest.mark.parametrize("budget", [3, 4])
-def test_required_checks_respect_batch_limit_and_reserve_semantic_answer(
+def test_controller_checks_do_not_consume_model_response_batch_limit(
     source, monkeypatch, budget,
 ):
     relation = source["proposal"]["relations"][0]
@@ -70,20 +76,12 @@ def test_required_checks_respect_batch_limit_and_reserve_semantic_answer(
         source, monkeypatch, budget=budget,
     )
     adapter.tool_limits = replace(adapter.tool_limits, max_calls_per_response=1)
-    if budget == 3:
-        with pytest.raises(RuntimeError, match="required_relation_validation_missing"):
-            adapter.inspect(task, context, predicate, menu)
-        assert len(requests) == 1 and not stored["protocol"]["outcome_ref"]
-    else:
-        outcome = adapter.inspect(task, context, predicate, menu)
-        assert outcome.complete and len(outcome.edges) == 2
-        assert len(requests) == 4 and stored["protocol"]["tool_calls_used"] == 2
-        for request in requests[1:3]:
-            required = json.loads(request["instructions"].splitlines()[-1])
-            assert len(required["required_relation_checks"]) == 1
-        for previous, current in zip(requests[1:3], requests[2:]):
-            inputs = previous["input_items"]
-            assert current["input_items"][:len(inputs)] == inputs
+    outcome = adapter.inspect(task, context, predicate, menu)
+    assert outcome.complete and len(outcome.edges) == 2
+    assert len(requests) == 2 and stored["protocol"]["tool_calls_used"] == 2
+    validations = [ref for ref in stored["protocol"]["materialized_refs"].values()
+                   if ref["kind"] == "relation_validation"]
+    assert len(validations) == 2
 
 
 def test_validator_technical_failure_is_not_semantic_rejection(source, monkeypatch):
@@ -96,10 +94,10 @@ def test_validator_technical_failure_is_not_semantic_rejection(source, monkeypat
         adapter.inspect(task, context, predicate, menu)
     results = [r["value"]["result"] for r in stored["results"].values()
                if r["field"] == "tool_result"]
-    assert len(results) == 2
+    assert len(results) == 1
     assert all(r["status"] == "error" and r["data"] is None for r in results)
     assert all(r["issues"][0]["code"] == "tool_execution_failed" for r in results)
-    assert len(requests) == 3 and not stored["protocol"]["outcome_ref"]
+    assert len(requests) == 1 and not stored["protocol"]["outcome_ref"]
 
 
 @pytest.mark.parametrize("mutation", [
@@ -162,12 +160,12 @@ def test_model_supported_cannot_override_failed_relation_tool(source, monkeypatc
     outcome = adapter.inspect(task, context, predicate, menu)
     assert not outcome.complete and not outcome.edges and not outcome.relationship_groups
     assert "entity_referent_already_registered" in outcome.reason
-    assert len(requests) == 3 and stored["protocol"]["tool_calls_used"] == 1
-    result = next(item for item in requests[-1]["input_items"]
-                  if item.get("type") == "function_call_output")
-    assert json.loads(result["output"])["data"]["identity_status"] == "failed"
+    assert len(requests) == 2 and stored["protocol"]["tool_calls_used"] == 1
+    result = next(r["value"]["result"] for r in stored["results"].values()
+                  if r["field"] == "tool_result")
+    assert result["data"]["identity_status"] == "failed"
     response = next(r["value"] for r in stored["results"].values()
-                    if r["field"] == "model_turn" and r["value"]["attempt"] == 3)
+                    if r["field"] == "model_turn" and r["value"]["attempt"] == 2)
     payload = json.loads(response["output_items"][0]["content"][0]["text"])
     assert all(f["verdict"] == "supported" for t in payload["verifications"] for f in t["facets"])
 
@@ -268,7 +266,7 @@ def test_resume_consumes_saved_validation_without_rerunning_tool(source, monkeyp
     )
     with pytest.raises(RuntimeError, match="pause after durable commit"):
         adapter.inspect(task, context, predicate, menu)
-    assert len(requests) == 2
+    assert len(requests) == 1
     saved = copy.deepcopy(stored)
     adapter, task, context, predicate, menu, stored, requests = setup_adapter(source, monkeypatch)
     stored.update(saved)
@@ -282,8 +280,6 @@ def test_resume_consumes_saved_validation_without_rerunning_tool(source, monkeyp
     outcome = adapter.inspect(task, context, predicate, menu)
     assert outcome.complete and len(outcome.relationship_groups) == 1
     assert len(requests) == 1 and stored["protocol"]["tool_calls_used"] == 1
-    results = [item for item in requests[0]["input_items"]
-               if item.get("type") == "function_call_output"]
-    assert len(results) == 1 and json.loads(results[0]["output"])["data"]["profile"] == (
-        "ontology-relation-v1"
-    )
+    results = [row["value"]["result"] for row in saved["results"].values()
+               if row["field"] == "tool_result"]
+    assert len(results) == 1 and results[0]["data"]["profile"] == "ontology-relation-v1"

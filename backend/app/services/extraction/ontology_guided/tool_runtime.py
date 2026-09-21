@@ -185,6 +185,7 @@ class ToolContext:
     check_cancelled: Callable[[], None] = runtime_check_cancelled
     reference_resolution: bool = False
     evidence_text_in_prompt: bool = False
+    allow_mention_discovery: bool = True
 
     def __post_init__(self):
         if self.stage not in ("discovery", "verification", "finalize"):
@@ -288,13 +289,18 @@ def parse_tool_arguments(name: ToolName, arguments_json: str) -> EvidenceModel:
 def _permitted(name, ctx, caller):
     definition = TOOL_DEFINITIONS.get(name)
     if isinstance(ctx.task, RecordDiscoveryTask):
-        allowed = {"inspect_evidence", "resolve_source_anchor", "propose_mentions",
+        # Record discovery reads the authorized text already present in the
+        # LLM request. Boundary NER is not a record-pipeline capability, even
+        # if a caller accidentally injects an extractor into this context.
+        allowed = {"inspect_evidence", "resolve_source_anchor",
                    "find_referent_candidates", "check_claim_binding"}
         if caller == "controller":
             allowed.update({"validate_metric", "validate_graph"})
         if name not in allowed:
             return False
     if name == "find_referent_candidates" and not ctx.reference_resolution:
+        return False
+    if name == "propose_mentions" and not ctx.allow_mention_discovery:
         return False
     if name == "validate_graph" and caller == "model" and (
         ctx.stage != "verification"
@@ -320,6 +326,8 @@ def build_tool_definitions(ctx: ToolContext, stage: str, *, strict: bool = False
     if ctx.evidence_text_in_prompt:
         unavailable.add("inspect_evidence")
     if ctx.mention_extractor is None or ctx.ontology_snapshot is None:
+        unavailable.add("propose_mentions")
+    if not ctx.allow_mention_discovery:
         unavailable.add("propose_mentions")
     if ctx.instance_reader is None or not ctx.external_source_ids:
         unavailable.add("query_instances")
@@ -759,6 +767,8 @@ def _resolve_source_anchor(
 ) -> ToolResult[AnchorData]:
     if args.evidence_id not in {f.anchor.evidence_id for f in ctx.context.fragments}:
         raise _ToolFailure("reference_outside_scope", "/evidence_id")
+    if not args.quote.strip():
+        raise _ToolFailure("citation_quote_not_in_source", "/quote")
     # Tolerate empty/null sentinels for an optional disambiguator at this boundary.
     # Preserve the raw call; never rewrite source context or frozen claims.
     context_text = None if args.context_text in ("", "null") else args.context_text
@@ -1003,7 +1013,10 @@ def _check_claim_binding(args: CheckClaimBindingArgs, ctx: ToolContext) -> ToolR
                 resolved.extend(
                     _quote(q, ctx) for q in (*payload.bridge_support, *payload.selection_support)
                 )
-                if not payload.bridge_support:
+                if (not payload.bridge_support
+                        and not (ctx.context.tool_inputs.get("graph_phase") == "evidence_review"
+                                 and payload.source_assertion
+                                 and payload.source_assertion.predicate_support)):
                     issues.append(_issue("bridge_source_missing"))
                 if len(payload.object_ids) > 1 and not payload.selection_support:
                     issues.append(_issue("selection_source_missing"))

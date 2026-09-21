@@ -1,0 +1,30 @@
+{
+  "probe_run_id": "cmc-verification-structure-probe-20260921",
+  "read_only_transaction": true,
+  "request_count": 1,
+  "requests": [
+    {
+      "request_id": "3f4fd90b3b50403585a5154265d8b8ac",
+      "logical_call_id": "b8b62e1bd45d4f43857a2366ec7142d8",
+      "attempt": 1,
+      "job_id": null,
+      "run_id": "cmc-verification-structure-probe-20260921",
+      "task_id": "provider-structure-probe",
+      "stage": "verification_structure_probe",
+      "status": "complete",
+      "metrics": {
+        "transport_version": "responses",
+        "queue_seconds": 0.167,
+        "prompt_tokens": 12762,
+        "completion_tokens": 1002,
+        "total_tokens": 13764,
+        "cache_tokens": 12246,
+        "request_seconds": 20.388,
+        "elapsed_seconds": 20.556
+      },
+      "created_at": "2026-09-21T06:03:44.323070+00:00",
+      "started_at": "2026-09-21T06:03:44.490751+00:00",
+      "finished_at": "2026-09-21T06:04:04.878738+00:00"
+    }
+  ]
+}

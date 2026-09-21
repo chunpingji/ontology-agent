@@ -19,6 +19,7 @@ from app.services.extraction.ontology_guided.contracts import (
     VersionedRef,
 )
 from app.services.extraction.ontology_guided.dependencies import DependencyIndex
+from app.services.extraction.ontology_guided.executor import semantic_retrieval_plan_key
 from app.services.extraction.ontology_guided.lazy_frontier import slot_key, subject_key
 from app.services.extraction.ontology_guided.projection import (
     TOOL_EXTRACTION_PROTOCOL,
@@ -165,6 +166,28 @@ def plan(task):
                            predicate_kind=task.predicate_kind, records=[
                                SimpleNamespace(record_id="record", phase=1, section_node_id="s"),
                            ])
+
+
+def test_semantic_plan_identity_uses_search_scope_endpoints_and_exact_proofs():
+    subject = SubjectRef(entity_id="a", revision=1, class_iri="urn:Class")
+    first = SimpleNamespace(
+        plan_id="scoped-plan-a", subject=subject, predicate_iri="urn:p",
+        frozen_record_hash="f" * 64, search_scope_ref=None,
+    )
+    second = SimpleNamespace(
+        plan_id="scoped-plan-b", subject=subject, predicate_iri="urn:p",
+        frozen_record_hash="f" * 64, search_scope_ref=None,
+    )
+    proof = [ref("relation"), ref("proof")]
+    identity = semantic_retrieval_plan_key(first, dependency_refs=proof, generation=0)
+    assert semantic_retrieval_plan_key(
+        second, dependency_refs=list(reversed(proof)), generation=0,
+    ) == identity
+    assert semantic_retrieval_plan_key(
+        second, dependency_refs=[*proof, ref("condition")], generation=0,
+    ) != identity
+    second.frozen_record_hash = "e" * 64
+    assert semantic_retrieval_plan_key(second, dependency_refs=proof, generation=0) != identity
 
 
 @pytest.mark.parametrize("lazy", [False, True])

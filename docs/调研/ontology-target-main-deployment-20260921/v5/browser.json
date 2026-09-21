@@ -1,0 +1,84 @@
+{
+  "runId": "84956c8a-6988-43cb-bab6-e4ad7e3d026d",
+  "phase": "candidate_graph",
+  "candidates": 1,
+  "subjects": 2,
+  "dashed": 12,
+  "solid": 0,
+  "selectedText": "通过反应安全风险评估，得出以下结论：无危险反应步骤，风险可以接受。",
+  "endpointText": "反应安全风险评估",
+  "endpointSelectionRef": "03d2753d270f1e42673b09c2bfb9c36827f6e9355febb2db1ad2ae813d0f9d1f",
+  "selectionRef": "24b3bffdb1078f85d336705d8bbea97f1e6e14277bd939c1edc9b9dc9a2f5b1e",
+  "selectionAnchors": 1,
+  "summary": {
+    "relationships": {
+      "total": 12,
+      "supported": 0,
+      "completed": 0,
+      "percent": null
+    },
+    "properties": {
+      "total": 0,
+      "supported": 0,
+      "completed": 0,
+      "percent": null
+    },
+    "pending_expansion_count": 0,
+    "notes": [
+      "当前仅发现实体与原文关系候选；关系全部以虚线显示，尚未核验。",
+      "本体关系目标不是原文事实，未连接的实体也可选择并展开。",
+      "本阶段不识别或校验属性，也不计算关系或属性的实证完整度。",
+      "候选的否定、条件、计划及备选成员保留原文标签。"
+    ]
+  },
+  "writes": [],
+  "errors": [],
+  "api": [
+    {
+      "path": "/api/document-analysis/runs",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/84956c8a-6988-43cb-bab6-e4ad7e3d026d",
+      "status": 200
+    },
+    {
+      "path": "/api/entities",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/84956c8a-6988-43cb-bab6-e4ad7e3d026d/target-graph",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/84956c8a-6988-43cb-bab6-e4ad7e3d026d/source",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/84956c8a-6988-43cb-bab6-e4ad7e3d026d",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/84956c8a-6988-43cb-bab6-e4ad7e3d026d/source",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/84956c8a-6988-43cb-bab6-e4ad7e3d026d/target-graph",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/84956c8a-6988-43cb-bab6-e4ad7e3d026d/source-selection",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/84956c8a-6988-43cb-bab6-e4ad7e3d026d/source-selection",
+      "status": 200
+    }
+  ],
+  "selectionBounds": {
+    "top": 557,
+    "bottom": 574,
+    "left": 913.75,
+    "right": 1041.75
+  }
+}

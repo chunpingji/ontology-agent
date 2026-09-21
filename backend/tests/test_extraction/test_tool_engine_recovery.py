@@ -10,6 +10,11 @@ from tests.test_extraction.test_tool_engine_adapter import setup_adapter
 pytest_plugins = ["tests.test_extraction.test_tool_engine_freeze"]
 
 
+@pytest.fixture
+def source(tool_source):
+    return tool_source
+
+
 @pytest.mark.parametrize("change", [False, True])
 def test_empty_targets_recover_with_a_new_proposal_instead_of_empty_verification(
     source, monkeypatch, change,
@@ -40,7 +45,7 @@ def test_empty_targets_recover_with_a_new_proposal_instead_of_empty_verification
     outcome = adapter.inspect(task, context, predicate, menu)
     assert storage["protocol"]["recovery_kind"] == "reproposal"
     assert storage["protocol"]["assertion_generation"] == (2 if change else 1)
-    assert len(requests) == len(storage["reservations"]) == (4 if change else 2)
+    assert len(requests) == len(storage["reservations"]) == (3 if change else 2)
     assert outcome.complete == change
     assert bool(outcome.relationship_groups) == change
     frozen = next(row["value"] for row in storage["results"].values()
@@ -107,13 +112,13 @@ def test_reproposal_rechecks_changed_claims_and_does_not_loop(source, monkeypatc
         if turn.output_items[0]["type"] == "function_call":
             return turn
         payload = json.loads(turn.output_items[0]["content"][0]["text"])
-        if len(requests) == 3:
+        if len(requests) == 2:
             for target in payload["verifications"]:
                 for facet in target["facets"]:
                     if facet["name"] == "type":
                         facet["verdict"] = "undetermined"
                         facet["support"] = []
-        elif len(requests) == 4 and change:
+        elif len(requests) == 3 and change:
             # A different grounded endpoint is a semantic edit, not a new label order.
             payload = copy.deepcopy(source["proposal"])
             payload["entities"] = payload["entities"][:1]
@@ -127,7 +132,7 @@ def test_reproposal_rechecks_changed_claims_and_does_not_loop(source, monkeypatc
     outcome = adapter.inspect(task, context, predicate, menu)
     assert storage["protocol"]["recovery_used"]
     assert storage["protocol"]["recovery_kind"] == "reproposal"
-    assert len(storage["reservations"]) == (6 if change else 4)
+    assert len(storage["reservations"]) == (4 if change else 3)
     assert storage["protocol"]["assertion_generation"] == (2 if change else 1)
     if change:
         assert outcome.complete and len(outcome.edges) == 1
@@ -146,7 +151,7 @@ def test_recovery_does_not_borrow_calls_from_the_next_lineage(source, monkeypatc
 
     def respond(client, **kwargs):
         turn = transport(client, **kwargs)
-        if len(requests) == 3:
+        if len(requests) == 2:
             value = json.loads(turn.output_items[0]["content"][0]["text"])
             for target in value["verifications"]:
                 for facet in target["facets"]:
@@ -156,11 +161,11 @@ def test_recovery_does_not_borrow_calls_from_the_next_lineage(source, monkeypatc
         return turn
 
     monkeypatch.setattr(local_client, "responses_create", respond)
-    with pytest.raises(RuntimeError, match="required_relation_validation_missing"):
-        adapter.inspect(task, context, predicate, menu)
-    assert len(requests) == len(storage["reservations"]) == 1
+    outcome = adapter.inspect(task, context, predicate, menu)
+    assert not outcome.complete and not outcome.relationship_groups
+    assert len(requests) == len(storage["reservations"]) == 2
     assert not storage["protocol"]["recovery_used"]
-    assert not storage["protocol"]["outcome_ref"]
+    assert storage["protocol"]["outcome_ref"]
 
 
 
@@ -198,7 +203,7 @@ def test_reproposal_receives_specific_frozen_source_errors_without_expanding_sco
     assert outcome.complete and len(outcome.relationship_groups) == 1
     assert storage["protocol"]["recovery_kind"] == "reproposal"
     assert storage["protocol"]["evidence_revision"] == 1
-    assert len(requests) == len(storage["reservations"]) == 5
+    assert len(requests) == len(storage["reservations"]) == 4
 
 
 @pytest.mark.parametrize("new_evidence,cold_resume", [(False, False), (True, False), (True, True)])
@@ -241,7 +246,7 @@ def test_supplement_reverifies_only_after_confirming_new_authorized_sources(
 
     def respond(client, **kwargs):
         turn = transport(client, **kwargs)
-        if len(requests) == 3:
+        if len(requests) == 2:
             value = json.loads(turn.output_items[0]["content"][0]["text"])
             for target in value["verifications"]:
                 for facet in target["facets"]:
@@ -249,7 +254,7 @@ def test_supplement_reverifies_only_after_confirming_new_authorized_sources(
                         facet["verdict"] = "undetermined"
                         facet["support"] = []
             turn.output_items[0]["content"][0]["text"] = json.dumps(value)
-        if len(requests) == 4:
+        if len(requests) == 3:
             turn.output_items[:] = [{
                 "type": "function_call", "id": "item-retrieve", "call_id": "call-retrieve",
                 "name": "retrieve_evidence", "arguments": json.dumps({
@@ -273,7 +278,7 @@ def test_supplement_reverifies_only_after_confirming_new_authorized_sources(
         context.bind_protocol_hook(pause_after_tool)
         with pytest.raises(RuntimeError, match="pause after supplement commit"):
             adapter.inspect(task, context, predicate, menu)
-        assert len(requests) == 4
+        assert len(requests) == 3
         saved, metadata, old_requests = copy.deepcopy(storage), adapter.metadata, list(requests)
         adapter, task, context, predicate, menu, storage, requests = setup_adapter(
             source, monkeypatch, budget=6,
@@ -283,7 +288,7 @@ def test_supplement_reverifies_only_after_confirming_new_authorized_sources(
         context.protocol_state, context.protocol_results = saved["protocol"], saved["results"]
         context.remaining_model_calls = 2
     outcome = adapter.inspect(task, context, predicate, menu)
-    assert len(old_requests) + len(requests) == (6 if new_evidence else 4)
+    assert len(old_requests) + len(requests) == (4 if new_evidence else 3)
     assert storage["protocol"]["assertion_generation"] == 1
     assert storage["protocol"]["evidence_revision"] == (2 if new_evidence else 1)
     assert len([row for row in storage["results"].values() if row["field"] == "discovery"]) == 1

@@ -113,18 +113,18 @@ const harnessCard = { schema_card_id: "card-current", class_iris: [rootIri],
     allowed_target_units: ["mg"], unit_requirement: "physical", declaration_ref: "test-policy" }],
   identity_keys: [], unsupported_constraints: [] };
 const makeHarness = (run) => ({ recognition_run_id: run.recognition_run_id,
-  configuration: { model: "Qwen-browser-fixture", api_protocol: "responses", gliner_enabled: true,
+  configuration: { model: "Qwen-browser-fixture", api_protocol: "responses",
     mock_enabled: true, vocabulary_enabled: true, request_budget: { max_input_tokens: 24000, max_output_tokens: 4000, max_context_tokens: 32768 } },
   snapshot: { session_id: "session-1", sequence: 1, output: '{"阶段":"合成浏览器测试"}', thinking: "服务端可读内容（合成）",
-    truncated: [], tool_counts: { propose_mentions: 1 }, updated_at: "2026-09-17T10:00:00Z",
+    truncated: [], tool_counts: { inspect_evidence: 1 }, updated_at: "2026-09-17T10:00:00Z",
     call: { call_id: "call-current", stage: "discovery", status: run.status === "running" ? "running" : "completed",
       model: "Qwen-browser-fixture", subject_label: "CMC 报告", predicate_label: "含合成路线", input_tokens: 1200,
       started_at: "2026-09-17T10:00:00Z", usage: null },
-    operations: [{ id: "op1", kind: "tool", name: "propose_mentions", status: "success", elapsed_ms: 32,
+    operations: [{ id: "op1", kind: "tool", name: "inspect_evidence", status: "success", elapsed_ms: 32,
       started_at: "2026-09-17T10:00:00Z", arguments: { text: '{"text":"原文"}', truncated: false },
       result: { text: '{"mentions":["合成路线"]}', truncated: false } }] } });
 const actionsFor = (run) => run.recognition_run_id === "history-12"
-  ? ["resume", "cancel", run.ranking_budget_enabled ? "ranking_budget_disable" : "ranking_budget_enable"]
+  ? ["resume", "cancel"]
   : run.status === "running" ? ["pause", "cancel"] : [];
 let createCount = 0;
 let failHistory = false;
@@ -136,8 +136,6 @@ let sourceRequested = null;
 let releaseSource = null;
 let sourceCompleted = null;
 let sourceReads = 0;
-let budgetConflict = false;
-const budgetRequests = [];
 const writes = [];
 const errors = [];
 const reads = [];
@@ -194,24 +192,6 @@ await page.route("**/api/**", async (route) => {
     const [id, artifact, operation] = pathname.slice("/api/document-analysis/runs/".length).split("/");
     const run = runs.find((item) => item.recognition_run_id === id);
     assert.ok(run, `Unexpected run ${id}`);
-    if (artifact === "ranking-budget") {
-      assert.equal(request.method(), "POST");
-      assert.ok(["enable", "disable"].includes(operation));
-      assert.ok(actionsFor(run).includes(`ranking_budget_${operation}`), "Budget changes require an available action");
-      const body = request.postDataJSON();
-      budgetRequests.push({ operation, body });
-      assert.equal(body.expected_revision, run.run_revision);
-      assert.ok(body.request_key && body.reason);
-      run.run_revision += 1;
-      run.event_head += 1;
-      if (budgetConflict) {
-        budgetConflict = false;
-        return route.fulfill({ status: 409, json: { error: { message: "运行版本已更新，请重试" } } });
-      }
-      run.ranking_budget_enabled = operation === "enable";
-      return route.fulfill({ json: { ...run, operation: `ranking_budget_${operation}`,
-        operation_status: "accepted", available_actions: actionsFor(run) } });
-    }
     if (!artifact && id === delayedRunId) {
       delayedRequest?.();
       await new Promise((resolve) => { releaseDelayed = resolve; });
@@ -247,9 +227,17 @@ await page.route("**/api/**", async (route) => {
     return route.fulfill({ json: {
       ...run, identities: {}, artifacts: { source: "ready", structure: "ready", metadata: "ready", graph: "ready" },
       progress: {
-        model_calls: 0, tasks_attempted: 0, phase_counts: {}, stop_reason: null,
-        records_planned: 0, records_examined: 0, records_incomplete: 0, records_unattempted: 0,
-        decisions: { supported: 0, unsupported: 0, undetermined: 0, prerequisite_failed: 0 },
+        model_calls: 12, model_calls_reserved: 14, model_calls_unresolved: 2,
+        tasks_attempted: 24, phase_counts: {}, stop_reason: null,
+        records_planned: 64, records_examined: 18, records_incomplete: 2, records_unattempted: 44,
+        decisions: { supported: 8, unsupported: 3, undetermined: 2, prerequisite_failed: 0 },
+        record_discovery: {
+          policy: "semantic-record-discovery-v1", mode: "semantic",
+          reading_groups: 60, ranked_groups: 47, remaining_pairs: 72,
+          admitted_pairs: 22, unselected_pairs: 26, unselected_groups: 13,
+          routing_cards: 12, metadata_nodes: 27, routed_groups: 47,
+          unrouted_groups: 13, selected_regions: 13,
+        },
         event_head: 1, artifact_revision: 1,
       },
       available_actions: actionsFor(run), error: null,
@@ -266,7 +254,6 @@ const drawer = page.getByRole("dialog", { name: "文档分析详情", exact: tru
 const preview = page.getByLabel("原始文档预览", { exact: true });
 const metadataTab = page.getByRole("tab", { name: "节点元数据", exact: true });
 const graphTab = page.getByRole("tab", { name: "关系图谱", exact: true });
-const budgetControl = status.getByLabel("排序预算限制", { exact: true });
 const layoutChecks = [];
 const assertNoHorizontalOverflow = async () => {
   const dimensions = await page.evaluate(() => ({
@@ -289,16 +276,25 @@ try {
   await expect(status).toContainText("history-12");
   await expect(page).toHaveURL(/documentRun=history-12/);
   await expect(graphTab).toHaveAttribute("aria-selected", "true");
+  const guidedProgress = status.getByLabel("本体引导识别进度", { exact: true });
+  await expect(guidedProgress).toContainText("根关系卡片");
+  await expect(guidedProgress.getByText("12", { exact: true })).toBeVisible();
+  await expect(guidedProgress).toContainText("元数据节点");
+  await expect(guidedProgress.getByText("27", { exact: true })).toBeVisible();
+  await expect(guidedProgress).toContainText("选中区域");
+  await expect(guidedProgress.getByText("13", { exact: true })).toBeVisible();
+  await expect(guidedProgress).toContainText("47 / 60");
+  await expect(guidedProgress).toContainText("13 组未命中 Schema 区域");
+  await expect(guidedProgress).toContainText("已调度");
+  await expect(guidedProgress.getByText("22", { exact: true })).toBeVisible();
+  await expect(guidedProgress).toContainText("待调度");
+  await expect(guidedProgress.getByText("72", { exact: true })).toBeVisible();
+  await expect(guidedProgress).toContainText("26 个原文组与执行卡组合未入选");
+  await expect(status.getByLabel("排序预算限制", { exact: true })).toHaveCount(0);
+  layoutChecks.push("schema cards, metadata regions, routed groups, candidates and verification progress replace the old budget control");
   await expect(status.locator("details").filter({ has: page.locator("summary", { hasText: /^Harness运行信息$/ }) }).first()).not.toHaveAttribute("open", "");
   await status.locator("summary").filter({ hasText: /^Harness运行信息$/ }).click();
-  await expect(budgetControl).toContainText("已启用");
-  await budgetControl.getByRole("button", { name: "禁用排序预算限制", exact: true }).click();
-  await expect(budgetControl).toContainText("已禁用");
-  await expect(budgetControl).toContainText("预算统计已暂停（显示启用期间累计值）");
-  await expect(budgetControl).toContainText("禁用期间不预扣或累计排序预算");
-  await expect(budgetControl).toContainText("不关闭 embedding 召回或 reranker 精排");
   await expect(status.getByRole("button", { name: "恢复", exact: true })).toBeVisible();
-  assert.equal(runs[0].status, "paused", "Changing the ranking budget must not resume the run");
   const streamPanel = page.getByLabel("Harness实时输出", { exact: true });
   await expect(streamPanel.getByLabel("LLM 输出文本")).toContainText("合成浏览器测试");
   const harnessInfo = status.getByLabel("Harness运行信息", { exact: true });
@@ -307,7 +303,7 @@ try {
   await harnessInfo.locator("summary").filter({ hasText: /^Thinking/ }).click();
   await expect(harnessInfo).toContainText("服务端可读内容（合成）");
   await harnessInfo.locator("summary").filter({ hasText: /^操作/ }).click();
-  await harnessInfo.locator("summary").filter({ hasText: /工具调用.*实体提及识别/ }).click();
+  await harnessInfo.locator("summary").filter({ hasText: /工具调用.*读取原文证据/ }).click();
   await expect(harnessInfo).toContainText('"mentions"');
   await harnessInfo.locator("summary").filter({ hasText: /^上下文/ }).click();
   const promptTab = harnessInfo.getByRole("tab", { name: "提示词", exact: true });
@@ -331,26 +327,13 @@ try {
   await harnessInfo.locator("summary").filter({ hasText: /^操作/ }).click();
   layoutChecks.push("Harness contains Thinking, operations and context; output remains separate; context tabs retain scroll");
   await graphTab.click();
-  await expect(details.getByLabel("图谱排序预算限制", { exact: true })).toContainText("已禁用");
+  await expect(details.getByLabel("图谱排序预算限制", { exact: true })).toHaveCount(0);
   await details.locator("summary").filter({ hasText: "记录处理顺序与检索诊断" }).click();
   await expect(details).toContainText("预留 tokens 100");
-  await expect(details).toContainText("预算统计已暂停（显示启用期间累计值）");
-  await page.screenshot({ path: path.join(output, "ranking-budget-disabled.png"), fullPage: true });
-  budgetConflict = true;
-  await budgetControl.getByRole("button", { name: "启用排序预算限制", exact: true }).click();
-  await expect(status.getByRole("alert")).toContainText("运行版本已更新，请重试");
-  await expect(budgetControl).toContainText("已禁用");
-  await expect(status).toContainText(`revision ${runs[0].run_revision} / event ${runs[0].event_head}`);
-  await budgetControl.getByRole("button", { name: "启用排序预算限制", exact: true }).click();
-  await expect(budgetControl).toContainText("已启用");
-  await expect(status.getByRole("alert")).toHaveCount(0);
-  await expect(details.getByLabel("图谱排序预算限制", { exact: true })).toContainText("已启用");
-  await expect(details).toContainText("预留 tokens 100");
-  assert.equal(runs[0].status, "paused");
-  assert.equal(new Set(budgetRequests.map((item) => item.body.request_key)).size, 3);
-  await page.screenshot({ path: path.join(output, "ranking-budget-enabled.png"), fullPage: true });
+  await expect(details).not.toContainText("预算统计已暂停（显示启用期间累计值）");
+  await page.screenshot({ path: path.join(output, "ranking-diagnostics.png"), fullPage: true });
   await metadataTab.click();
-  layoutChecks.push("explicit budget disable/enable keeps run paused, preserves accounting and handles CAS conflicts");
+  layoutChecks.push("ranking accounting remains available as diagnostics without exposing the retired budget control");
   await expect(preview.locator(".tiptap")).toContainText("合成预览 history-12");
   await expect(metadataTab).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("tab", { name: "分层元数据", exact: true })).toHaveCount(0);
@@ -438,7 +421,7 @@ try {
   await expect(tasks).toHaveCount(10);
   await tasks.nth(1).click();
   await expect(status).toContainText("history-11");
-  await expect(budgetControl.getByRole("button")).toHaveCount(0);
+  await expect(status.getByLabel("排序预算限制", { exact: true })).toHaveCount(0);
   await page.reload();
   await expect(status).toContainText("history-11");
   await close();
@@ -486,10 +469,9 @@ try {
   assert.equal(reads.filter((url) => url.endsWith("history-10/graph")).length, graphReadsBefore);
   layoutChecks.push("stream updates do not reload graph; manual scroll stops follow; reconnect status and end cursor are independent");
 
-  await expect(budgetControl).toContainText("运行期间不可调整排序预算限制，请先暂停运行");
-  await expect(budgetControl.getByRole("button")).toHaveCount(0);
+  await expect(status.getByLabel("排序预算限制", { exact: true })).toHaveCount(0);
   await close();
-  layoutChecks.push("read-only and running states do not expose budget mutation controls");
+  layoutChecks.push("read-only and running states use the same current progress view without legacy budget controls");
   await history.getByRole("button", { name: "下一页" }).click();
   await expect(tasks).toHaveCount(2);
   await tasks.last().click();
@@ -580,13 +562,10 @@ try {
   assert.equal(createCount, 1);
   assert.equal(sourceReads, 2);
   assert.deepEqual(writes, [
-    { method: "POST", pathname: "/api/document-analysis/runs/history-12/ranking-budget/disable" },
-    { method: "POST", pathname: "/api/document-analysis/runs/history-12/ranking-budget/enable" },
-    { method: "POST", pathname: "/api/document-analysis/runs/history-12/ranking-budget/enable" },
     { method: "POST", pathname: "/api/document-analysis/runs" },
   ]);
   assert.deepEqual(errors, []);
-  const report = { status: "passed", browser: browser.version(), createCount, sourceReads, budgetRequests, output, layoutChecks,
+  const report = { status: "passed", browser: browser.version(), createCount, sourceReads, output, layoutChecks,
     writes, scope: "Synthetic API UI regression; no backend or model execution" };
   await writeFile(path.join(output, "report.json"), JSON.stringify(report, null, 2) + "\n");
   console.log(JSON.stringify(report));

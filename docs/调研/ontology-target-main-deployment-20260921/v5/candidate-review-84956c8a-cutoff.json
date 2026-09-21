@@ -1,0 +1,2794 @@
+{
+  "run_id": "84956c8a-6988-43cb-bab6-e4ad7e3d026d",
+  "review_kind": "read_only_delivery_cutoff_not_run_completion",
+  "archived_at": "2026-09-21T07:07:40.888319+00:00",
+  "reviewer_model_calls": 0,
+  "reviewer_application_mutations": 0,
+  "reviewer_polling_stopped": true,
+  "scope_note": "API and DB were adjacent read-only captures, not an atomic cross-endpoint snapshot. Running work after this cutoff is excluded.",
+  "source_hashes": {
+    "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+    "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+    "parser_version": "9"
+  },
+  "ontology_snapshot_id": "54c748b83397a74fd7268f96c8f72826c572bc0b5a457fec8e8e18da055831f2",
+  "counts": {
+    "confirmed_extraction_calls": 18,
+    "entity_discovery_calls": 10,
+    "entity_verification_calls": 7,
+    "relationship_discovery_calls": 1,
+    "relationship_verification_calls": 0,
+    "attribute_tasks": 0,
+    "attribute_verification_calls": 0,
+    "validate_graph_calls": 0,
+    "tool_result_rows": 0,
+    "entity_protocols": 10,
+    "entity_final_outcomes": 9,
+    "relationship_protocols": 1,
+    "relationship_final_outcomes": 1,
+    "pending_entity_verification_requests": 1,
+    "nonroot_registered_entities": 1,
+    "relationship_candidates": 1,
+    "max_relationship_members": 1,
+    "max_relationship_predicates": 1,
+    "nonroot_relationship_tasks": 0,
+    "verification_result_rows_including_deterministic_empty": 9,
+    "deterministic_empty_verification_rows": 2,
+    "ranking_calls_separate_scope": 42
+  },
+  "confirmed_model_turn_ledger": [
+    {
+      "immutable_result_key": "c933ef5a6c12481ab79614a4f177ddb8ddc152763faecff73fb20c34a3547f26",
+      "lineage_id": "a50d6a7d21ad0694dc0e9ff85a1a6803986076a7f37d49f1c2dbe227df5f602a",
+      "category": "entity",
+      "stage": "discovery",
+      "attempt": 1,
+      "member_task_ids": null,
+      "tool_calls": []
+    },
+    {
+      "immutable_result_key": "a500fadcf74380ec09b74aaaef01374be72683da981eb231bd7fb45be617e846",
+      "lineage_id": "3687f111e97c9bec40fd294450e8dbba1c53ebbbe6098534aa988cdb3bcbe099",
+      "category": "entity",
+      "stage": "discovery",
+      "attempt": 1,
+      "member_task_ids": null,
+      "tool_calls": []
+    },
+    {
+      "immutable_result_key": "02b85c2e6cba456581fdce4366104b8aebeca0311e951982ca7193344d093acd",
+      "lineage_id": "c93af360c67383e8c8a4e8f065854755e07103d2ed8a98095ed089951ed23543",
+      "category": "entity",
+      "stage": "verification",
+      "attempt": 2,
+      "member_task_ids": null,
+      "tool_calls": []
+    },
+    {
+      "immutable_result_key": "29106c2170e8fd855b0155274b028409a157d09c8777aaef50c9e418166a6c5c",
+      "lineage_id": "5a41a66a4c1c88abbae9287737859da98a32f8c2aa6cb0d53e018e66bb91dce8",
+      "category": "entity",
+      "stage": "discovery",
+      "attempt": 1,
+      "member_task_ids": null,
+      "tool_calls": []
+    },
+    {
+      "immutable_result_key": "562178d1afbe76a7a0ce21ea5baf254fa2d67062e9d23eb88fdcbfd4e0ec7481",
+      "lineage_id": "c93af360c67383e8c8a4e8f065854755e07103d2ed8a98095ed089951ed23543",
+      "category": "entity",
+      "stage": "discovery",
+      "attempt": 1,
+      "member_task_ids": null,
+      "tool_calls": []
+    },
+    {
+      "immutable_result_key": "2cb85432d0dae7ab68ee1080f38826be1b3ab4c2e81ec0836de01097197fe953",
+      "lineage_id": "105de741241b58c8fc80ba6169f49d59decd06423b4127bb36661a6a8f22346b",
+      "category": "entity",
+      "stage": "discovery",
+      "attempt": 1,
+      "member_task_ids": null,
+      "tool_calls": []
+    },
+    {
+      "immutable_result_key": "707143da8150cd3c1e0cbe8b062eb6f5f0bb7c05ebda3e6e63e6ef10c62599ac",
+      "lineage_id": "1154fc94444255223065a15e9a5ae51b8079a9188d0d975c449d45649b3379a4",
+      "category": "entity",
+      "stage": "verification",
+      "attempt": 2,
+      "member_task_ids": null,
+      "tool_calls": []
+    },
+    {
+      "immutable_result_key": "5be78b037ef106df32da84b56a021c345a918fcb732e8eab08c63d58a272065b",
+      "lineage_id": "787821d67ebafb7a7dec89bf6f560dba53bd3d66b59544b8dfc7c9a64059d694",
+      "category": "entity",
+      "stage": "verification",
+      "attempt": 2,
+      "member_task_ids": null,
+      "tool_calls": []
+    },
+    {
+      "immutable_result_key": "adada4e0d94eeeadb72940492270ae13a9ab83c627dc26cb92afd2c85e389376",
+      "lineage_id": "105de741241b58c8fc80ba6169f49d59decd06423b4127bb36661a6a8f22346b",
+      "category": "entity",
+      "stage": "verification",
+      "attempt": 2,
+      "member_task_ids": null,
+      "tool_calls": []
+    },
+    {
+      "immutable_result_key": "5f3f2c92fd3e94caeaa6e73ac29c03345fe904c7ff9bc57379227048bc21346f",
+      "lineage_id": "048f8d046fefb25e2716ea2e3a6a388d4b88bfe356277af6f7dc30b46f767d5e",
+      "category": "entity",
+      "stage": "discovery",
+      "attempt": 1,
+      "member_task_ids": null,
+      "tool_calls": []
+    },
+    {
+      "immutable_result_key": "487dbcd3cef653ad51fa794b39c460065c008f622853621d5660317b473d38a4",
+      "lineage_id": "3687f111e97c9bec40fd294450e8dbba1c53ebbbe6098534aa988cdb3bcbe099",
+      "category": "entity",
+      "stage": "verification",
+      "attempt": 2,
+      "member_task_ids": null,
+      "tool_calls": []
+    },
+    {
+      "immutable_result_key": "dee71b9c17c2d1c336307f8f0b9a1f14c0fd5f27987ba76b079a573e0d6b69bf",
+      "lineage_id": "5f9ec57f72c51f2a5a97281a12f42e4ecc9219dbbb2f60c1c21813d7dd1e8756",
+      "category": "entity",
+      "stage": "discovery",
+      "attempt": 1,
+      "member_task_ids": null,
+      "tool_calls": []
+    },
+    {
+      "immutable_result_key": "6f336358678f445f788082a664f09e77829129667d096fc53d51742e5297fb2b",
+      "lineage_id": "787821d67ebafb7a7dec89bf6f560dba53bd3d66b59544b8dfc7c9a64059d694",
+      "category": "entity",
+      "stage": "discovery",
+      "attempt": 1,
+      "member_task_ids": null,
+      "tool_calls": []
+    },
+    {
+      "immutable_result_key": "c8d9622402f5ce723143c9d620a68736197934ee540f647ff544847c8fca38d6",
+      "lineage_id": "709d90fcebbabfb2568ca849561b14489bc72d42bf75a0e1cf57d6fed0a58f59",
+      "category": "entity",
+      "stage": "discovery",
+      "attempt": 1,
+      "member_task_ids": null,
+      "tool_calls": []
+    },
+    {
+      "immutable_result_key": "fc2e40941a836d72f13951d41bf88ef810c54f50d00958f47820f2ba5683f3ee",
+      "lineage_id": "1154fc94444255223065a15e9a5ae51b8079a9188d0d975c449d45649b3379a4",
+      "category": "entity",
+      "stage": "discovery",
+      "attempt": 1,
+      "member_task_ids": null,
+      "tool_calls": []
+    },
+    {
+      "immutable_result_key": "681cc1d5c1a890b8a408d8a00fe0a232158c396bfd4cbb40c8df833bbcc87285",
+      "lineage_id": "971ad259e7b3f1d2f26fa1da8f88dc413aafdf40df0dd8566a5ea45628824a79",
+      "category": "relationship",
+      "stage": "discovery",
+      "attempt": 1,
+      "member_task_ids": [
+        "8a51d556bf6518d48026dc148903434f9ced1a2a811485eff845f86a09de4489"
+      ],
+      "tool_calls": []
+    },
+    {
+      "immutable_result_key": "07ec6a61a66fb05c08d9fe210ef817319c9917ac31f180411d2847d642446761",
+      "lineage_id": "5a41a66a4c1c88abbae9287737859da98a32f8c2aa6cb0d53e018e66bb91dce8",
+      "category": "entity",
+      "stage": "verification",
+      "attempt": 2,
+      "member_task_ids": null,
+      "tool_calls": []
+    },
+    {
+      "immutable_result_key": "4d9623436cb2ef6724101db991710ccd3e49410c5156da351ece203e51e05189",
+      "lineage_id": "709d90fcebbabfb2568ca849561b14489bc72d42bf75a0e1cf57d6fed0a58f59",
+      "category": "entity",
+      "stage": "verification",
+      "attempt": 2,
+      "member_task_ids": null,
+      "tool_calls": []
+    }
+  ],
+  "protocol_inventory": [
+    {
+      "lineage_id": "5f9ec57f72c51f2a5a97281a12f42e4ecc9219dbbb2f60c1c21813d7dd1e8756",
+      "task": {
+        "kind": "record_discovery",
+        "task_id": "f62211007021af3053da42fecc8657553db7d0152f88826b5e5c862eabbd20a3",
+        "claim_lineage_id": "5f9ec57f72c51f2a5a97281a12f42e4ecc9219dbbb2f60c1c21813d7dd1e8756",
+        "record_id": "5d10148e2bb8f002c900138f92b003a4f5f3d43d3f2dc7002ba93ef3f1aad060",
+        "schema_card_id": "cf6cb40009bccf09fa790900aa841b167d3327553bfbedaeac16c8bcb8d68aa1",
+        "analysis_scope_ref": "875105c6e91d82dbae822b9fecd36c8d15869052b39c195a1ab47ea8949c1ee5",
+        "dependency_hash": "8f7cf2a939ad0a7709235a4b33b5746fd118b51843f6a8070c021f9c57a75107",
+        "scope": {
+          "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "members": []
+        },
+        "source_record_ids": [
+          "5d10148e2bb8f002c900138f92b003a4f5f3d43d3f2dc7002ba93ef3f1aad060",
+          "edf55e35963b43c1850afa5219fa5329536e3561febe42a473aee9a733ad1029"
+        ],
+        "reading_section_ids": [
+          "section:94"
+        ]
+      },
+      "members": [],
+      "current_stage": "finalize",
+      "pending_request": false,
+      "confirmed_model_turns": [
+        "dee71b9c17c2d1c336307f8f0b9a1f14c0fd5f27987ba76b079a573e0d6b69bf"
+      ],
+      "final_outcomes": [
+        {
+          "result_key": "864df43bfbd97d3d04b5a18cae8bfc7c261536a5639950bfe3c511b200f35037",
+          "semantic_outcome": "undetermined",
+          "complete": false,
+          "reason_code": "ambiguous_source_quote"
+        }
+      ]
+    },
+    {
+      "lineage_id": "1154fc94444255223065a15e9a5ae51b8079a9188d0d975c449d45649b3379a4",
+      "task": {
+        "kind": "record_discovery",
+        "task_id": "61e346f88561e6577085f208169e4520f3e080c5ff64edfb039f7475ed63a87c",
+        "claim_lineage_id": "1154fc94444255223065a15e9a5ae51b8079a9188d0d975c449d45649b3379a4",
+        "record_id": "504613c49ad2718bd59a4c614418b180ddfe1962aaa751fa9e4645ab743440a7",
+        "schema_card_id": "72ace4a266b08a6f71b03978d34761f781997b60cd496a29dd04034e1d9831b7",
+        "analysis_scope_ref": "875105c6e91d82dbae822b9fecd36c8d15869052b39c195a1ab47ea8949c1ee5",
+        "dependency_hash": "531b9ac76ae71f2a3448fb2c9f199acc0255cffd783e660cb182e90ecd54c48b",
+        "scope": {
+          "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "members": []
+        },
+        "source_record_ids": [
+          "504613c49ad2718bd59a4c614418b180ddfe1962aaa751fa9e4645ab743440a7",
+          "f2624e6913d38ead3e74fcf2c93ccccb0aa5a4f5eadeccd1e806d20d1f598034",
+          "cb31973a1963b19800fa14748fd2c45aaf8c529c4ae9e9e78ca14f0b1e9315a8",
+          "9e3549601fd1890174992da0819afaf6e78ddc2459ef8e6ab1b645d263ae4656",
+          "365c6729e179e2561787e02e5e91777a051d9ceed9bd783c8a38aa784a0b7dac",
+          "c30ae18921a41ff479485b58eeb97b95de90999587ec7a01217ef60df0a888bf",
+          "829e82054693729f674ffd64f08df85f4add18462a773aa6c87904bf770cdaeb",
+          "8b5267e2eff148a0a9df200b882f8ad535aa380ae053a65eaf194b57ef401134"
+        ],
+        "reading_section_ids": [
+          "section:28"
+        ]
+      },
+      "members": [],
+      "current_stage": "finalize",
+      "pending_request": false,
+      "confirmed_model_turns": [
+        "707143da8150cd3c1e0cbe8b062eb6f5f0bb7c05ebda3e6e63e6ef10c62599ac",
+        "fc2e40941a836d72f13951d41bf88ef810c54f50d00958f47820f2ba5683f3ee"
+      ],
+      "final_outcomes": [
+        {
+          "result_key": "17c2bdfa8a3f6bbd0be8d265bba8075c7c2e3d821ad51f39ffc9788d6c9c25e2",
+          "semantic_outcome": "undetermined",
+          "complete": false,
+          "reason_code": "record_composition_source_coverage_missing"
+        }
+      ]
+    },
+    {
+      "lineage_id": "a50d6a7d21ad0694dc0e9ff85a1a6803986076a7f37d49f1c2dbe227df5f602a",
+      "task": {
+        "kind": "record_discovery",
+        "task_id": "fe4b0178b6101648cbf5f6cb69095b530efdc50456b4c8d3bda800cbee65cb16",
+        "claim_lineage_id": "a50d6a7d21ad0694dc0e9ff85a1a6803986076a7f37d49f1c2dbe227df5f602a",
+        "record_id": "62c0dccee4a6db98d9eaf66031a442249f8ac3e14200816676324c4b1a304b70",
+        "schema_card_id": "f80c91325d46bbf13cfd0521e3b912708c83fdf282531dbe3a8a2b868e0ac42f",
+        "analysis_scope_ref": "875105c6e91d82dbae822b9fecd36c8d15869052b39c195a1ab47ea8949c1ee5",
+        "dependency_hash": "416157100e61a2947cafacbbf64b7f4ac871de1ae8c2bb40fb33df2577210720",
+        "scope": {
+          "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "members": []
+        },
+        "source_record_ids": [
+          "62c0dccee4a6db98d9eaf66031a442249f8ac3e14200816676324c4b1a304b70"
+        ]
+      },
+      "members": [],
+      "current_stage": "finalize",
+      "pending_request": false,
+      "confirmed_model_turns": [
+        "c933ef5a6c12481ab79614a4f177ddb8ddc152763faecff73fb20c34a3547f26"
+      ],
+      "final_outcomes": [
+        {
+          "result_key": "58be223ac441f33a97492b39a9c59c8b06248047fe944b98d9fb6b4899cba478",
+          "semantic_outcome": "undetermined",
+          "complete": false,
+          "reason_code": "entity_referent_missing"
+        }
+      ]
+    },
+    {
+      "lineage_id": "c93af360c67383e8c8a4e8f065854755e07103d2ed8a98095ed089951ed23543",
+      "task": {
+        "kind": "record_discovery",
+        "task_id": "0d0812053488f44d5bc9ffd339b33cd8374d058a7c25b394385129e168403f48",
+        "claim_lineage_id": "c93af360c67383e8c8a4e8f065854755e07103d2ed8a98095ed089951ed23543",
+        "record_id": "b7df89f3cf3af96e25008fa7356fde69da0c49c2e80144a774fc3693bdfe0a37",
+        "schema_card_id": "72ace4a266b08a6f71b03978d34761f781997b60cd496a29dd04034e1d9831b7",
+        "analysis_scope_ref": "875105c6e91d82dbae822b9fecd36c8d15869052b39c195a1ab47ea8949c1ee5",
+        "dependency_hash": "7b020794d0a5af4b13dc73ee79e35f901fbdf9e484638f861b34683489762e9f",
+        "scope": {
+          "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "members": []
+        },
+        "source_record_ids": [
+          "b7df89f3cf3af96e25008fa7356fde69da0c49c2e80144a774fc3693bdfe0a37",
+          "f80887751fb86b87d07e2f792f7606e444214948bd2d77edab2de7cec26ef687",
+          "5de81e6f64b1601fda38679e2d6665b4dd52da2fc6f88d42cced01c79e097ada",
+          "8e180ae7f9d29d2408469a8b458b52d60b108120d69aa98664f9293b359cff78",
+          "93cc391906b88a3627544195f5c1e0c8635f81429f6456b3222eecd6ff2e067e",
+          "7a0a948e3e8eb49f32f491351874c6a397b16be6d3087e1adf8862e5b3bde8ac",
+          "1b6796ebae49a51080923d2713b1b26acd5e5ceb4e72cefa327103562014ff7c",
+          "bd1b20eb19d26bf720f145568a78145c98506ae5dda43cb4311a665e9be30196"
+        ],
+        "reading_section_ids": [
+          "section:28"
+        ]
+      },
+      "members": [],
+      "current_stage": "finalize",
+      "pending_request": false,
+      "confirmed_model_turns": [
+        "02b85c2e6cba456581fdce4366104b8aebeca0311e951982ca7193344d093acd",
+        "562178d1afbe76a7a0ce21ea5baf254fa2d67062e9d23eb88fdcbfd4e0ec7481"
+      ],
+      "final_outcomes": [
+        {
+          "result_key": "74f1486e5a13fc86be17b7c385e5689a200d554b94440f952babcef39118801c",
+          "semantic_outcome": "undetermined",
+          "complete": false,
+          "reason_code": "entity_referent_missing"
+        }
+      ]
+    },
+    {
+      "lineage_id": "5a41a66a4c1c88abbae9287737859da98a32f8c2aa6cb0d53e018e66bb91dce8",
+      "task": {
+        "kind": "record_discovery",
+        "task_id": "cb209141cf09589e3da611cc4ac91a2b13b97bbf3c86ecc468b933778256d3b8",
+        "claim_lineage_id": "5a41a66a4c1c88abbae9287737859da98a32f8c2aa6cb0d53e018e66bb91dce8",
+        "record_id": "7151b6e397038cd147f790b740f0b89ab6876bf34306a75b0a1b7fc4fe423dc8",
+        "schema_card_id": "9817bd6f3f109d8478f656bfc505c45419093a9f77494891bee0f8b3f9e5a13e",
+        "analysis_scope_ref": "875105c6e91d82dbae822b9fecd36c8d15869052b39c195a1ab47ea8949c1ee5",
+        "dependency_hash": "1c35f617ec34976d755662a21b9f2a0091cadc583af3729169a1e54d6b4d8c75",
+        "scope": {
+          "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "members": []
+        },
+        "source_record_ids": [
+          "7151b6e397038cd147f790b740f0b89ab6876bf34306a75b0a1b7fc4fe423dc8"
+        ]
+      },
+      "members": [],
+      "current_stage": "finalize",
+      "pending_request": false,
+      "confirmed_model_turns": [
+        "29106c2170e8fd855b0155274b028409a157d09c8777aaef50c9e418166a6c5c",
+        "07ec6a61a66fb05c08d9fe210ef817319c9917ac31f180411d2847d642446761"
+      ],
+      "final_outcomes": [
+        {
+          "result_key": "6de4587fb8e16e55c4285db006a16c1194979ed2824e884e20f18de21fc9e17a",
+          "semantic_outcome": "undetermined",
+          "complete": false,
+          "reason_code": "source_excerpt_mismatch"
+        }
+      ]
+    },
+    {
+      "lineage_id": "971ad259e7b3f1d2f26fa1da8f88dc413aafdf40df0dd8566a5ea45628824a79",
+      "task": null,
+      "members": [
+        {
+          "task_id": "8a51d556bf6518d48026dc148903434f9ced1a2a811485eff845f86a09de4489",
+          "claim_lineage_id": "597fa9fa80ee3521725d51f419ef0ccab005dfab09eae3682cc647d1451f8334",
+          "subject": {
+            "entity_id": "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+            "revision": 1,
+            "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+            "referent_id": null,
+            "is_document_root": true
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSafetyRiskAssessment",
+          "predicate_kind": "relationship",
+          "record_id": "b297f5c4d9725c2725fb49169ff16e0030f80270286ba8870b2ab4e96acc0b52",
+          "phase": 1,
+          "hop": 0,
+          "dependency_hash": "68af7d511d4d7651aba126eac8625fd98df58802c40a815a7d79a64d4b5cafa9",
+          "retry_kind": "candidate_page:68af7d511d4d7651aba126eac8625fd98df58802c40a815a7d79a64d4b5cafa9",
+          "section_node_id": "section:86",
+          "source_position": 63,
+          "ranking_epoch_seq": null,
+          "pool_rank": null,
+          "scope": {
+            "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "members": []
+          }
+        }
+      ],
+      "current_stage": "discovery",
+      "pending_request": false,
+      "confirmed_model_turns": [
+        "681cc1d5c1a890b8a408d8a00fe0a232158c396bfd4cbb40c8df833bbcc87285"
+      ],
+      "final_outcomes": [
+        {
+          "result_key": "055df2df339bbfb5bcb3a412adbd1d108fed9a26b7df8897ea8c4d492673c1e9",
+          "semantic_outcome": "not_checked",
+          "complete": true,
+          "reason_code": "relation_candidates_discovered"
+        }
+      ]
+    },
+    {
+      "lineage_id": "709d90fcebbabfb2568ca849561b14489bc72d42bf75a0e1cf57d6fed0a58f59",
+      "task": {
+        "kind": "record_discovery",
+        "task_id": "054ee97a42cc4d15b80f4f09a7b094a7e7a2bc448f7ee8c919eaf0844c76eea7",
+        "claim_lineage_id": "709d90fcebbabfb2568ca849561b14489bc72d42bf75a0e1cf57d6fed0a58f59",
+        "record_id": "b7df89f3cf3af96e25008fa7356fde69da0c49c2e80144a774fc3693bdfe0a37",
+        "schema_card_id": "154bec25af7250658181ebb907c0f95e2a73edb059f1829838efa1d0e54db690",
+        "analysis_scope_ref": "875105c6e91d82dbae822b9fecd36c8d15869052b39c195a1ab47ea8949c1ee5",
+        "dependency_hash": "31f5161fcb5030de07ca2f0c9f36d8387b1c85bad65f7b7efdacd4e9e9907a8d",
+        "scope": {
+          "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "members": []
+        },
+        "source_record_ids": [
+          "b7df89f3cf3af96e25008fa7356fde69da0c49c2e80144a774fc3693bdfe0a37",
+          "f80887751fb86b87d07e2f792f7606e444214948bd2d77edab2de7cec26ef687",
+          "5de81e6f64b1601fda38679e2d6665b4dd52da2fc6f88d42cced01c79e097ada",
+          "8e180ae7f9d29d2408469a8b458b52d60b108120d69aa98664f9293b359cff78",
+          "93cc391906b88a3627544195f5c1e0c8635f81429f6456b3222eecd6ff2e067e",
+          "7a0a948e3e8eb49f32f491351874c6a397b16be6d3087e1adf8862e5b3bde8ac",
+          "1b6796ebae49a51080923d2713b1b26acd5e5ceb4e72cefa327103562014ff7c",
+          "bd1b20eb19d26bf720f145568a78145c98506ae5dda43cb4311a665e9be30196"
+        ],
+        "reading_section_ids": [
+          "section:28"
+        ]
+      },
+      "members": [],
+      "current_stage": "finalize",
+      "pending_request": false,
+      "confirmed_model_turns": [
+        "c8d9622402f5ce723143c9d620a68736197934ee540f647ff544847c8fca38d6",
+        "4d9623436cb2ef6724101db991710ccd3e49410c5156da351ece203e51e05189"
+      ],
+      "final_outcomes": [
+        {
+          "result_key": "3c442ce182f36d0fb7d5b4e35766c9c0a3456de748375e9e65b5d966cd60b517",
+          "semantic_outcome": "undetermined",
+          "complete": false,
+          "reason_code": "type_not_supported"
+        }
+      ]
+    },
+    {
+      "lineage_id": "105de741241b58c8fc80ba6169f49d59decd06423b4127bb36661a6a8f22346b",
+      "task": {
+        "kind": "record_discovery",
+        "task_id": "b906ece44657c4af1bac0a4c4c6cbb3d58140f9795f5384283a73b27f70a4b09",
+        "claim_lineage_id": "105de741241b58c8fc80ba6169f49d59decd06423b4127bb36661a6a8f22346b",
+        "record_id": "504613c49ad2718bd59a4c614418b180ddfe1962aaa751fa9e4645ab743440a7",
+        "schema_card_id": "154bec25af7250658181ebb907c0f95e2a73edb059f1829838efa1d0e54db690",
+        "analysis_scope_ref": "875105c6e91d82dbae822b9fecd36c8d15869052b39c195a1ab47ea8949c1ee5",
+        "dependency_hash": "13d43fcc340fe43a49be0b8d2d2448b2ab5ecaca08bad9b4ee566e956272a5c0",
+        "scope": {
+          "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "members": []
+        },
+        "source_record_ids": [
+          "504613c49ad2718bd59a4c614418b180ddfe1962aaa751fa9e4645ab743440a7",
+          "f2624e6913d38ead3e74fcf2c93ccccb0aa5a4f5eadeccd1e806d20d1f598034",
+          "cb31973a1963b19800fa14748fd2c45aaf8c529c4ae9e9e78ca14f0b1e9315a8",
+          "9e3549601fd1890174992da0819afaf6e78ddc2459ef8e6ab1b645d263ae4656",
+          "365c6729e179e2561787e02e5e91777a051d9ceed9bd783c8a38aa784a0b7dac",
+          "c30ae18921a41ff479485b58eeb97b95de90999587ec7a01217ef60df0a888bf",
+          "829e82054693729f674ffd64f08df85f4add18462a773aa6c87904bf770cdaeb",
+          "8b5267e2eff148a0a9df200b882f8ad535aa380ae053a65eaf194b57ef401134"
+        ],
+        "reading_section_ids": [
+          "section:28"
+        ]
+      },
+      "members": [],
+      "current_stage": "finalize",
+      "pending_request": false,
+      "confirmed_model_turns": [
+        "2cb85432d0dae7ab68ee1080f38826be1b3ab4c2e81ec0836de01097197fe953",
+        "adada4e0d94eeeadb72940492270ae13a9ab83c627dc26cb92afd2c85e389376"
+      ],
+      "final_outcomes": [
+        {
+          "result_key": "ea563fe7f890b51f5e7ae9e99fd6e7d4264a94fa1a21a45f7eb5e15b6b0fc3a0",
+          "semantic_outcome": "undetermined",
+          "complete": false,
+          "reason_code": "type_not_supported"
+        }
+      ]
+    },
+    {
+      "lineage_id": "787821d67ebafb7a7dec89bf6f560dba53bd3d66b59544b8dfc7c9a64059d694",
+      "task": {
+        "kind": "record_discovery",
+        "task_id": "cdd47ed6a2f6f6c23cca82b28e8cb3fc20524afceb431149d97f9ff090cdecbf",
+        "claim_lineage_id": "787821d67ebafb7a7dec89bf6f560dba53bd3d66b59544b8dfc7c9a64059d694",
+        "record_id": "b297f5c4d9725c2725fb49169ff16e0030f80270286ba8870b2ab4e96acc0b52",
+        "schema_card_id": "37f87dc0bab5d22e615c0add725ca700b5c55570d4a83f4be5aa998f58720e64",
+        "analysis_scope_ref": "875105c6e91d82dbae822b9fecd36c8d15869052b39c195a1ab47ea8949c1ee5",
+        "dependency_hash": "72f25df49b109987e17775afa4efeb717a62530bfcd620291235c549781fc99f",
+        "scope": {
+          "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "members": []
+        },
+        "source_record_ids": [
+          "b297f5c4d9725c2725fb49169ff16e0030f80270286ba8870b2ab4e96acc0b52"
+        ]
+      },
+      "members": [],
+      "current_stage": "finalize",
+      "pending_request": false,
+      "confirmed_model_turns": [
+        "5be78b037ef106df32da84b56a021c345a918fcb732e8eab08c63d58a272065b",
+        "6f336358678f445f788082a664f09e77829129667d096fc53d51742e5297fb2b"
+      ],
+      "final_outcomes": [
+        {
+          "result_key": "fb8471f35ad2b9e724569cc51d9403fb89f2747052007e30029e7a7af0388a5f",
+          "semantic_outcome": "supported",
+          "complete": false,
+          "reason_code": "source_excerpt_mismatch"
+        }
+      ]
+    },
+    {
+      "lineage_id": "3687f111e97c9bec40fd294450e8dbba1c53ebbbe6098534aa988cdb3bcbe099",
+      "task": {
+        "kind": "record_discovery",
+        "task_id": "0e511310c3aed3312cf346c9141c50d02e934fccb038e4b62d58ae0a2044f8dc",
+        "claim_lineage_id": "3687f111e97c9bec40fd294450e8dbba1c53ebbbe6098534aa988cdb3bcbe099",
+        "record_id": "303f9f97208df63d0fd9fce6d0ebbed5296022f51d3ecca64527843d6dcc6c5a",
+        "schema_card_id": "37f87dc0bab5d22e615c0add725ca700b5c55570d4a83f4be5aa998f58720e64",
+        "analysis_scope_ref": "875105c6e91d82dbae822b9fecd36c8d15869052b39c195a1ab47ea8949c1ee5",
+        "dependency_hash": "d2a1f88967f7a4d7bf816330d10cd138750769c045f575f7dbfa8d6ce410f2fd",
+        "scope": {
+          "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "members": []
+        },
+        "source_record_ids": [
+          "303f9f97208df63d0fd9fce6d0ebbed5296022f51d3ecca64527843d6dcc6c5a",
+          "02ad3e01f238f0eaef61d1374283c1f4eb66aab781c6644e4049746ade156484",
+          "c85426b0e388a42b1588204875847b4f0403f9d85d275a34006b617d210d32e6",
+          "03ecf6fd0c427f28aa9e052a64a4df603a94de32b2c742caca34685b01946699"
+        ]
+      },
+      "members": [],
+      "current_stage": "finalize",
+      "pending_request": false,
+      "confirmed_model_turns": [
+        "a500fadcf74380ec09b74aaaef01374be72683da981eb231bd7fb45be617e846",
+        "487dbcd3cef653ad51fa794b39c460065c008f622853621d5660317b473d38a4"
+      ],
+      "final_outcomes": [
+        {
+          "result_key": "321b82ca24c04ab28980bce489801ec5676d0828427e60c1db1585af36a1cb75",
+          "semantic_outcome": "undetermined",
+          "complete": false,
+          "reason_code": "type_not_supported"
+        }
+      ]
+    },
+    {
+      "lineage_id": "048f8d046fefb25e2716ea2e3a6a388d4b88bfe356277af6f7dc30b46f767d5e",
+      "task": {
+        "kind": "record_discovery",
+        "task_id": "8175cf0a0ae0b283ff0fb87365c2f913749981bc1c2a62342af09a3991ecf1bb",
+        "claim_lineage_id": "048f8d046fefb25e2716ea2e3a6a388d4b88bfe356277af6f7dc30b46f767d5e",
+        "record_id": "fb56bfe53bad37e6f6f7402423bc2684013919421f384de7a834d60f90de5fc6",
+        "schema_card_id": "12881d1b10579045851630e9c0015c5e45b306adc99f7db4500a66f832556adf",
+        "analysis_scope_ref": "875105c6e91d82dbae822b9fecd36c8d15869052b39c195a1ab47ea8949c1ee5",
+        "dependency_hash": "4420eb43a72d168717e856ed5a2762efb858989f2b5f7df1cfab7849ab9c84a2",
+        "scope": {
+          "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "members": []
+        },
+        "source_record_ids": [
+          "fb56bfe53bad37e6f6f7402423bc2684013919421f384de7a834d60f90de5fc6"
+        ]
+      },
+      "members": [],
+      "current_stage": "verification",
+      "pending_request": true,
+      "confirmed_model_turns": [
+        "5f3f2c92fd3e94caeaa6e73ac29c03345fe904c7ff9bc57379227048bc21346f"
+      ],
+      "final_outcomes": []
+    }
+  ],
+  "registered_subjects": [
+    {
+      "key": [
+        "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+        1,
+        "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      ],
+      "value": {
+        "subject": {
+          "entity_id": "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+          "revision": 1,
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+          "referent_id": null,
+          "is_document_root": true
+        },
+        "hop": 0,
+        "binding_refs": [],
+        "reopen": false,
+        "scope": {
+          "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "members": []
+        }
+      },
+      "position": 0
+    },
+    {
+      "key": [
+        "772cbed945edb891e5502681e0b03474fef7741dbbb8d8e90327b5cde16fd1d4",
+        1,
+        "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      ],
+      "value": {
+        "subject": {
+          "entity_id": "772cbed945edb891e5502681e0b03474fef7741dbbb8d8e90327b5cde16fd1d4",
+          "revision": 1,
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SafetyRiskAssessment",
+          "referent_id": null,
+          "is_document_root": false
+        },
+        "scope": {
+          "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "members": []
+        },
+        "hop": 1,
+        "binding_refs": [],
+        "reopen": false,
+        "origin": {
+          "lineage_id": "787821d67ebafb7a7dec89bf6f560dba53bd3d66b59544b8dfc7c9a64059d694",
+          "discovery_ref": "dfdedd3f6896aeb93fae6b75e62523ce96d59af3cb1d291f0df2c5de3e9b064d",
+          "local_id": "e1",
+          "claim_ref": {
+            "id": "8cfaf7c3ccf27c5c143b18a03fa7cd91f1918c4e5e8479d3952bc6a1d3ac11bc",
+            "revision": 1
+          },
+          "scope": {
+            "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "members": []
+          }
+        }
+      },
+      "position": 1
+    }
+  ],
+  "scheduled_predicates": [
+    {
+      "key": [
+        "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+        1,
+        "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/describes"
+      ],
+      "value": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+        "label": "描述",
+        "description": "Links a CMC report to the drug product / drug substance it documents.",
+        "declared_by": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport"
+        ],
+        "multiplicity": "unspecified",
+        "min_count": null,
+        "max_count": null,
+        "constraint_status": "resolved",
+        "kind": "relationship",
+        "range_class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct"
+        ],
+        "range_classes": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+            "label": "药物产品",
+            "description": "A finished dosage form drug product that bears a clinical drug role.",
+            "parent_iris": [],
+            "identity_property_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/drug/productIdentifier"
+            ],
+            "direct_field_labels": [
+              "注册分类",
+              "申报/注册状态",
+              "目标适应症",
+              "性状",
+              "CAS号",
+              "化学名英文",
+              "化学名中文",
+              "制剂剂型",
+              "规格",
+              "是否有朊病毒风险",
+              "灭活方法",
+              "是否β-内酰胺类药物",
+              "是否细胞毒药物",
+              "是否高活性药物",
+              "是否高致敏药物",
+              "是否激素类药物",
+              "是否肿瘤药物",
+              "是否青霉素类药物",
+              "最大日剂量 (mg)",
+              "最小治疗剂量 (mg)",
+              "分子式",
+              "分子量",
+              "产品或原料药唯一标识",
+              "项目代码",
+              "项目名称",
+              "给药途径",
+              "溶解性"
+            ]
+          }
+        ]
+      },
+      "position": 0
+    },
+    {
+      "key": [
+        "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+        1,
+        "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod"
+      ],
+      "value": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod",
+        "label": "含清洗方法",
+        "description": "Links a CMC report to the equipment cleaning process described therein.",
+        "declared_by": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport"
+        ],
+        "multiplicity": "unspecified",
+        "min_count": null,
+        "max_count": null,
+        "constraint_status": "resolved",
+        "kind": "relationship",
+        "range_class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/cleaning/CIPCleaning",
+          "https://ontology.pharma-gmp.cn/slpra/cleaning/ChemicalInactivation",
+          "https://ontology.pharma-gmp.cn/slpra/cleaning/CleaningProcess",
+          "https://ontology.pharma-gmp.cn/slpra/cleaning/HeatInactivation",
+          "https://ontology.pharma-gmp.cn/slpra/cleaning/InactivationProcess",
+          "https://ontology.pharma-gmp.cn/slpra/cleaning/ManualCleaning",
+          "https://ontology.pharma-gmp.cn/slpra/cleaning/SIPSterilization",
+          "https://ontology.pharma-gmp.cn/slpra/cleaning/pHInactivation"
+        ],
+        "range_classes": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/cleaning/CIPCleaning",
+            "label": "CIP在线清洁",
+            "description": "在设备和管路保持安装状态、无需拆卸主要部件的条件下，通过受控循环、喷淋或冲洗清洗介质，对其内部接触表面实施清洁的过程，即原位清洗。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/cleaning/CleaningProcess"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/cleaning/ChemicalInactivation",
+            "label": "化学灭活",
+            "description": "利用化学试剂的作用，降低或消除目标微生物、病毒或其他生物活性物质活性的灭活过程。试剂种类、浓度和接触条件共同限定处理效果。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/cleaning/InactivationProcess"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/cleaning/CleaningProcess",
+            "label": "清洁过程",
+            "description": "用于清除或降低设备、器具及接触表面残留污染的处理过程，本模块将清洗及其配套的灭活、原位灭菌步骤归入这一过程类别。各步骤的处理目标和效果分别由相应工艺条件与评价标准确定。",
+            "parent_iris": [],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/cleaning/HeatInactivation",
+            "label": "热灭活",
+            "description": "以热作用降低或消除目标微生物、病毒或其他生物活性物质活性的灭活过程，其效果取决于温度、作用时间及处理对象。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/cleaning/InactivationProcess"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/cleaning/InactivationProcess",
+            "label": "灭活过程",
+            "description": "通过物理或化学处理，降低或消除目标微生物、病毒或其他生物活性物质活性的过程。灭活效果针对规定的处理对象和活性终点，不等同于物质去除或达到无菌状态。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/cleaning/CleaningProcess"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/cleaning/ManualCleaning",
+            "label": "手动清洁",
+            "description": "由操作人员直接实施刷洗、擦拭、冲洗等操作，去除设备、器具或接触表面残留物和污染物的清洁过程。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/cleaning/CleaningProcess"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/cleaning/SIPSterilization",
+            "label": "SIP灭菌",
+            "description": "在设备或管路保持装配状态下，对其内部实施原位灭菌的过程，通常采用受控蒸汽处理，以达到规定的无菌保证要求；该过程的终点是灭菌效果，不能仅凭灭菌操作认定残留物已被清除。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/cleaning/CleaningProcess"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/cleaning/pHInactivation",
+            "label": "pH灭活",
+            "description": "通过调节并维持规定的酸性或碱性条件，降低或消除目标微生物、病毒或其他生物活性物质活性的灭活过程。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/cleaning/InactivationProcess"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          }
+        ]
+      },
+      "position": 1
+    },
+    {
+      "key": [
+        "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+        1,
+        "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningResidue"
+      ],
+      "value": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningResidue",
+        "label": "含清洗残留物",
+        "description": "Links a CMC report to the residue information for cleaning validation.",
+        "declared_by": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport"
+        ],
+        "multiplicity": "unspecified",
+        "min_count": null,
+        "max_count": null,
+        "constraint_status": "resolved",
+        "kind": "relationship",
+        "range_class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug/ActiveSubstanceResidue",
+          "https://ontology.pharma-gmp.cn/slpra/drug/CleaningAgentResidue",
+          "https://ontology.pharma-gmp.cn/slpra/drug/MicrobialResidue",
+          "https://ontology.pharma-gmp.cn/slpra/drug/ParticulateResidue",
+          "https://ontology.pharma-gmp.cn/slpra/drug/Residue"
+        ],
+        "range_classes": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/ActiveSubstanceResidue",
+            "label": "活性物质残留",
+            "description": "生产、使用或清洁后仍留存在设备、器具或相关表面的活性药物成分残留，可成为后续产品中非预期活性成分的来源。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/drug/Residue"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/CleaningAgentResidue",
+            "label": "清洁剂残留",
+            "description": "清洁或后续冲洗结束后，仍留存在设备、器具或相关表面的清洁剂成分残留。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/drug/Residue"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/MicrobialResidue",
+            "label": "微生物残留",
+            "description": "生产、使用或清洁后仍留存在设备、器具或相关表面的微生物性残留，包括细菌、真菌及其孢子等微生物实体。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/drug/Residue"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/ParticulateResidue",
+            "label": "颗粒残留",
+            "description": "生产、使用或清洁后仍留存的固体颗粒状物质，如产品颗粒、设备磨损颗粒或外来异物颗粒。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/drug/Residue"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/Residue",
+            "label": "残留物",
+            "description": "生产、使用、处理或清洁后仍留存在设备、器具或相关环境表面的物质，可包括药物成分、清洁剂、微生物和颗粒等。",
+            "parent_iris": [],
+            "identity_property_iris": [],
+            "direct_field_labels": [
+              "残留物溶解度",
+              "溶解度测试温度",
+              "残留物清洗溶剂"
+            ]
+          }
+        ]
+      },
+      "position": 2
+    },
+    {
+      "key": [
+        "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+        1,
+        "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway"
+      ],
+      "value": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway",
+        "label": "含降解途径",
+        "description": "Links a CMC report or parent degradation pathway to its sub-pathways.",
+        "declared_by": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport"
+        ],
+        "multiplicity": "unspecified",
+        "min_count": null,
+        "max_count": null,
+        "constraint_status": "resolved",
+        "kind": "relationship",
+        "range_class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/AcidDegradation",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/AlkalineDegradation",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/HumidityDegradation",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/OxidativeDegradation",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/PhotoDegradation",
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/ThermalDegradation"
+        ],
+        "range_classes": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/AcidDegradation",
+            "label": "酸降解",
+            "description": "在酸性应力条件下发生的药物降解过程，用于研究酸敏感性和相关降解产物；具体条件由试验记录限定。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/AlkalineDegradation",
+            "label": "碱降解",
+            "description": "在碱性应力条件下发生的药物降解过程，用于研究碱敏感性和相关降解产物；具体条件由试验记录限定。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway",
+            "label": "降解途径",
+            "description": "A characterized forced-degradation pathway of the drug substance used for cleaning validation and stability assessment.",
+            "parent_iris": [],
+            "identity_property_iris": [],
+            "direct_field_labels": [
+              "降解条件",
+              "降解百分比（%）",
+              "主要降解杂质"
+            ]
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/HumidityDegradation",
+            "label": "湿降解",
+            "description": "在水分或高湿应力作用下发生的药物降解过程，其评价与湿度、水分接触方式、温度及作用时间有关。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/OxidativeDegradation",
+            "label": "氧化降解",
+            "description": "在氧化剂或其他氧化应力作用下发生的药物降解过程，用于研究氧化敏感性和相关降解产物。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/PhotoDegradation",
+            "label": "光降解",
+            "description": "在光照应力作用下发生的药物降解过程，其评价与光源、光谱、照射量及其他试验条件有关。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ThermalDegradation",
+            "label": "热降解",
+            "description": "在热应力作用下发生的药物降解过程，其评价与温度、作用时间及试验环境有关。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          }
+        ]
+      },
+      "position": 3
+    },
+    {
+      "key": [
+        "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+        1,
+        "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan"
+      ],
+      "value": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan",
+        "label": "含备样生产计划",
+        "description": "Links a CMC report to the clinical sample production plan it describes.",
+        "declared_by": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport"
+        ],
+        "multiplicity": "unspecified",
+        "min_count": null,
+        "max_count": null,
+        "constraint_status": "resolved",
+        "kind": "relationship",
+        "range_class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/ClinicalSampleProductionPlan"
+        ],
+        "range_classes": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ClinicalSampleProductionPlan",
+            "label": "临床备样生产计划",
+            "description": "The planned production of clinical trial sample batches described in a CMC report: production date, workshop, batch count, purpose, and expected batch size.",
+            "parent_iris": [],
+            "identity_property_iris": [],
+            "direct_field_labels": [
+              "计划生产批次数",
+              "预计批量上限（kg）",
+              "预计批量下限（kg）",
+              "计划生产时间",
+              "生产用途"
+            ]
+          }
+        ]
+      },
+      "position": 4
+    },
+    {
+      "key": [
+        "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+        1,
+        "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionRiskAssessment"
+      ],
+      "value": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionRiskAssessment",
+        "label": "含生产风险评估",
+        "description": "连接 CMC 报告与其中记载的生产风险评估信息，涉及人员、设备、物料、操作及其他生产环节。",
+        "declared_by": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport"
+        ],
+        "multiplicity": "unspecified",
+        "min_count": null,
+        "max_count": null,
+        "constraint_status": "resolved",
+        "kind": "relationship",
+        "range_class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/ProductionRiskAssessment"
+        ],
+        "range_classes": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ProductionRiskAssessment",
+            "label": "生产风险评估",
+            "description": "Broader HazID-dimension production risk assessment covering personnel, equipment, materials, documents, and waste management — the full 7-column risk evaluation table.",
+            "parent_iris": [],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          }
+        ]
+      },
+      "position": 5
+    },
+    {
+      "key": [
+        "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+        1,
+        "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasQualityRiskAssessment"
+      ],
+      "value": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasQualityRiskAssessment",
+        "label": "含质量风险评估",
+        "description": "连接 CMC 报告与其中记载的产品质量风险评估信息，例如杂质、降解或污染相关风险。",
+        "declared_by": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport"
+        ],
+        "multiplicity": "unspecified",
+        "min_count": null,
+        "max_count": null,
+        "constraint_status": "resolved",
+        "kind": "relationship",
+        "range_class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/QualityRiskAssessment"
+        ],
+        "range_classes": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/QualityRiskAssessment",
+            "label": "质量风险评估",
+            "description": "Assessment of quality risks during manufacturing: impurity carry-over, incomplete reaction, product degradation, contamination.",
+            "parent_iris": [],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          }
+        ]
+      },
+      "position": 6
+    },
+    {
+      "key": [
+        "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+        1,
+        "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSafetyRiskAssessment"
+      ],
+      "value": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSafetyRiskAssessment",
+        "label": "含安全风险评估",
+        "description": "连接 CMC 报告与其中记载的生产作业及职业安全风险评估信息。",
+        "declared_by": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport"
+        ],
+        "multiplicity": "unspecified",
+        "min_count": null,
+        "max_count": null,
+        "constraint_status": "resolved",
+        "kind": "relationship",
+        "range_class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/SafetyRiskAssessment"
+        ],
+        "range_classes": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SafetyRiskAssessment",
+            "label": "安全风险评估",
+            "description": "Assessment of occupational safety risks during manufacturing: flammability, toxicity exposure, oxygen depletion, thermal runaway.",
+            "parent_iris": [],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          }
+        ]
+      },
+      "position": 7
+    },
+    {
+      "key": [
+        "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+        1,
+        "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData"
+      ],
+      "value": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData",
+        "label": "含共线评估数据",
+        "description": "连接 CMC 报告与其中提供的共线生产评估数据，包括毒理、给药和暴露限值等评估输入。",
+        "declared_by": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport"
+        ],
+        "multiplicity": "unspecified",
+        "min_count": null,
+        "max_count": null,
+        "constraint_status": "resolved",
+        "kind": "relationship",
+        "range_class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData"
+        ],
+        "range_classes": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+            "label": "共线评估数据",
+            "description": "Aggregated toxicological and dosing data required for shared-line (SLPRA) production risk assessment: NOAEL, F-factor, PDE, daily dose, and degradation profiles.",
+            "parent_iris": [],
+            "identity_property_iris": [],
+            "direct_field_labels": [
+              "活性成分（API）",
+              "给药方案",
+              "F1",
+              "F2",
+              "F3",
+              "F4",
+              "F5",
+              "人体等效剂量（mg/kg）",
+              "NOAEL 试验周期",
+              "NOAEL 动物种属",
+              "NOAEL（mg/kg/天）",
+              "OEB",
+              "PDE（mg/天）",
+              "拟定最高剂量（mg）",
+              "拟定临床起始剂量（mg）",
+              "安全系数（F值）",
+              "来源",
+              "试验项目"
+            ]
+          }
+        ]
+      },
+      "position": 8
+    },
+    {
+      "key": [
+        "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+        1,
+        "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasStorageCondition"
+      ],
+      "value": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasStorageCondition",
+        "label": "存放条件",
+        "description": "Links a CMC report, synthesis step, or process intermediate to its storage conditions.",
+        "declared_by": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport"
+        ],
+        "multiplicity": "unspecified",
+        "min_count": null,
+        "max_count": null,
+        "constraint_status": "resolved",
+        "kind": "relationship",
+        "range_class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition"
+        ],
+        "range_classes": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition",
+            "label": "存放条件",
+            "description": "Specified storage requirements for an intermediate or drug substance: temperature, humidity, light protection, packaging, and shelf life / retest period.",
+            "parent_iris": [],
+            "identity_property_iris": [],
+            "direct_field_labels": [
+              "是否避光",
+              "包装方式",
+              "有效期/复测期",
+              "存放湿度",
+              "存放温度"
+            ]
+          }
+        ]
+      },
+      "position": 9
+    },
+    {
+      "key": [
+        "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+        1,
+        "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSynthesisRoute"
+      ],
+      "value": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSynthesisRoute",
+        "label": "含合成路线",
+        "description": "连接 CMC 报告与该报告描述的具体合成路线，表示文档内容归属。",
+        "declared_by": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport"
+        ],
+        "multiplicity": "unspecified",
+        "min_count": null,
+        "max_count": null,
+        "constraint_status": "resolved",
+        "kind": "relationship",
+        "range_class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisRoute"
+        ],
+        "range_classes": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisRoute",
+            "label": "合成路线",
+            "description": "The overall synthetic pathway from starting materials through intermediates to the drug substance (API). A route comprises an ordered chain of SynthesisSteps.",
+            "parent_iris": [],
+            "identity_property_iris": [],
+            "direct_field_labels": [
+              "工艺依据",
+              "工艺描述",
+              "工艺名称"
+            ]
+          }
+        ]
+      },
+      "position": 10
+    },
+    {
+      "key": [
+        "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+        1,
+        "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment"
+      ],
+      "value": {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+        "label": "使用设备",
+        "description": "Links a synthesis step or CMC report to the equipment required.",
+        "declared_by": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport"
+        ],
+        "multiplicity": "unspecified",
+        "min_count": null,
+        "max_count": null,
+        "constraint_status": "resolved",
+        "kind": "relationship",
+        "range_class_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/equipment/CIPSystem",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/CapsuleFiller",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/Centrifuge",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/ChromatographyColumnSystem",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/CoatingMachine",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/CompressedAirSystem",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/Dryer",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/ElectricVacuumDryer",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/FillingMachine",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/FilterPress",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/Granulator",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/HVACSystem",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirBlastDryer",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirDryer",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/ManualCleaningTool",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/Mixer",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/RotaryEvaporator",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/TabletPress",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/UtilityEquipment",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/VacuumDryer",
+          "https://ontology.pharma-gmp.cn/slpra/equipment/WaterSystem"
+        ],
+        "range_classes": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CIPSystem",
+            "label": "在线清洗系统",
+            "description": "在主要设备和管路保持安装状态的条件下，制备、输送或循环清洗介质以清洁其内部接触表面的设备系统。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CapsuleFiller",
+            "label": "胶囊填充机",
+            "description": "将粉末、颗粒、微丸或其他适用内容物按规定装量填入胶囊壳的生产设备。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Centrifuge",
+            "label": "离心机",
+            "description": "通过旋转产生离心作用，利用物料组分的密度等差异实现固液或液液分离的生产设备。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ChromatographyColumnSystem",
+            "label": "微压柱系统",
+            "description": "使物料随流动相通过装填固定相的柱体，利用各组分与两相相互作用的差异实现分离或纯化的工艺设备系统。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment",
+            "label": "清洗设备",
+            "description": "用于向待清洁对象施加清洗介质或机械作用，以去除设备、器具或表面残留物及污染物的设备或工具。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CoatingMachine",
+            "label": "包衣机",
+            "description": "将包衣材料施加于片剂、颗粒、微丸等基体表面，形成具有保护、掩味、释药调节或其他功能覆盖层的生产设备。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CompressedAirSystem",
+            "label": "压缩空气系统",
+            "description": "对空气进行压缩、处理、储存或输送，为工艺操作及气动装置提供所需压力和质量空气的设备系统。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/UtilityEquipment"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Dryer",
+            "label": "干燥设备",
+            "description": "通过传热、减压或气体交换等方式降低物料中水分或其他溶剂含量的生产设备。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ElectricVacuumDryer",
+            "label": "电热真空干燥箱",
+            "description": "采用电加热提供干燥所需热量，并在减压条件下去除物料中水分或溶剂的真空干燥箱。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/VacuumDryer"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+            "label": "设备",
+            "description": "用于制药生产、物料处理、环境保障或清洗操作的装置、器械及其组合，是承载相应工艺功能的实体。",
+            "parent_iris": [],
+            "identity_property_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentID"
+            ],
+            "direct_field_labels": [
+              "设备编号",
+              "设备名称",
+              "is dedicated equipment",
+              "is in clean area",
+              "规格型号",
+              "requires dedication",
+              "requires inactivation validation",
+              "requires independent HVAC"
+            ]
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/FillingMachine",
+            "label": "灌装机",
+            "description": "按规定装量将液体、粉末或其他适用物料装入瓶、袋、安瓿等容器的生产设备。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/FilterPress",
+            "label": "压滤器",
+            "description": "利用压差推动流体通过过滤介质，使固体被截留而液体通过，以实现固液分离的过滤设备。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Granulator",
+            "label": "制粒机",
+            "description": "通过润湿黏结、压实或其他成粒方式，将粉末等物料制成具有一定粒度颗粒的生产设备。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HVACSystem",
+            "label": "暖通空调系统",
+            "description": "通过空气处理、输送和排放，对生产环境的温度、湿度、通风及空气洁净条件进行调节的暖通空调系统。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/UtilityEquipment"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirBlastDryer",
+            "label": "电热鼓风干燥箱",
+            "description": "采用电加热和风机强制送风，使箱内热空气与物料进行传热和传质的箱式干燥设备。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/Dryer"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirDryer",
+            "label": "热风循环干燥箱",
+            "description": "使加热空气在箱体内循环并与物料进行传热和传质，以去除物料中水分或溶剂的箱式干燥设备。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/Dryer"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ManualCleaningTool",
+            "label": "手动清洗工具",
+            "description": "由操作人员直接操持，用于刷洗、擦拭、冲洗等清洁操作的工具，包括适用的刷具、擦拭器具等。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Mixer",
+            "label": "混合机",
+            "description": "通过搅拌、翻转、剪切等机械作用，使两种或多种物料组分达到所需分布均匀程度的生产设备。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+            "label": "生产设备",
+            "description": "直接用于药品或其中间物料的反应、分离、混合、成型、灌装等工艺操作的设备。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+            "label": "反应器",
+            "description": "为物料的化学或生物化学反应提供容纳空间及所需混合、传热等条件的生产设备，包括反应釜等形式。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/RotaryEvaporator",
+            "label": "旋蒸",
+            "description": "通过旋转蒸发容器扩大液体蒸发表面，并结合加热及通常采用的减压条件，进行溶剂蒸发、浓缩或回收的设备。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/TabletPress",
+            "label": "压片机",
+            "description": "利用冲模对粉末或颗粒等物料施加压力，使其形成规定形状片剂的生产设备。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/UtilityEquipment",
+            "label": "公用设备",
+            "description": "为制药生产及其环境提供空气、水或其他公用介质与运行条件的辅助设备或系统。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/VacuumDryer",
+            "label": "真空干燥箱",
+            "description": "在低于环境大气压力的条件下促使物料中的水分或溶剂蒸发，并将蒸气移出的箱式干燥设备。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/Dryer"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/WaterSystem",
+            "label": "水系统",
+            "description": "对制药生产所需用水进行制备、储存或分配，并维持其适用水质条件的设备系统。",
+            "parent_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/equipment/UtilityEquipment"
+            ],
+            "identity_property_iris": [],
+            "direct_field_labels": []
+          }
+        ]
+      },
+      "position": 11
+    }
+  ],
+  "menu_counts": [
+    {
+      "subject": {
+        "entity_id": "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+        "revision": 1,
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "referent_id": null,
+        "is_document_root": true
+      },
+      "relationship_count": 12,
+      "property_definition_count": 8
+    },
+    {
+      "subject": {
+        "entity_id": "772cbed945edb891e5502681e0b03474fef7741dbbb8d8e90327b5cde16fd1d4",
+        "revision": 1,
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SafetyRiskAssessment",
+        "referent_id": null,
+        "is_document_root": false
+      },
+      "relationship_count": 0,
+      "property_definition_count": 0
+    }
+  ],
+  "work_partition_counts": {
+    "nodes": 2,
+    "edges": 1,
+    "properties": 0,
+    "plans": 12,
+    "predicates": 12,
+    "menus": 2,
+    "subject_priorities": 1,
+    "proof_generations": 0,
+    "ranking_contexts": 12,
+    "search_tasks": 12,
+    "attribute_sources": 0,
+    "lineage_calls": 9,
+    "candidate_tasks": 1,
+    "required_by_lineage": 0,
+    "recheck_counts": 0,
+    "pause_counts": 0,
+    "applied_model_results": 10,
+    "expert_lineages": 0,
+    "expert_rejected": 0,
+    "expert_review_heads": 0,
+    "registered_subjects": 2,
+    "expert_operations": 0,
+    "evidence_work": 0,
+    "slot_completion": 0,
+    "relationship_groups": 0,
+    "record_discovery": 10,
+    "record_relation_inputs": 9,
+    "record_searches": 43,
+    "entity_origins": 1,
+    "reference_resolutions": 1,
+    "searches": 12
+  },
+  "status_snapshot": {
+    "contract_version": "document-analysis-runs-v1",
+    "recognition_run_id": "84956c8a-6988-43cb-bab6-e4ad7e3d026d",
+    "run_revision": 249,
+    "event_head": 15,
+    "artifact_revision": 4,
+    "extraction_protocol": "ontology-tool-extraction-v1",
+    "status": "running",
+    "stage": "extracting",
+    "ranking_budget_enabled": true,
+    "input": {
+      "filename": "HRS-1597原料临床备样生产信息表_--脱敏-原 - PDE-冲突.docx",
+      "root_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "root_class_label": "CMC 报告",
+      "metadata_mode": "generate_summary",
+      "scope_mode": "document_graph"
+    },
+    "identities": {
+      "analysis_id": "93d6af4b32eda5f759d0c40a79b1dddb73937f7aa2a07b84c9a676c99bf728dd",
+      "ontology_snapshot_id": "54c748b83397a74fd7268f96c8f72826c572bc0b5a457fec8e8e18da055831f2",
+      "metadata_snapshot_id": "612bbd3fc300c4f6c61f99382e5777033a13c21173c95fe0fe00e1de770d8018",
+      "graph_snapshot_id": "15c3489725ca99d2d8cdfd463460e2afa15c73d21bff046785fcebab3ca256f0",
+      "structure_snapshot_id": "6498bd236a9c1928c4a6ab2627dcf99fadadf0792e7457211ce972a7722ae749",
+      "ranking_summary_id": "7c58ca69d30e2f1ba7da695b47aeb7b83e919fdcfec4136cf03b7cbbf1ab21bc",
+      "fingerprint_status": "frozen"
+    },
+    "artifacts": {
+      "source": "ready",
+      "structure": "ready",
+      "metadata": "ready",
+      "graph": "partial"
+    },
+    "progress": {
+      "record_discovery": {
+        "policy": "semantic-record-discovery-v1",
+        "mode": "semantic",
+        "reading_groups": 43,
+        "ranked_groups": 43,
+        "remaining_pairs": 30,
+        "admitted_pairs": 9,
+        "unselected_pairs": 412,
+        "unselected_groups": 0,
+        "routing_cards": 12,
+        "metadata_nodes": 29,
+        "routed_groups": 34,
+        "unrouted_groups": 9,
+        "selected_regions": 15,
+        "execution_mode": "region_batch",
+        "property_field_mode": "region_batch"
+      },
+      "candidate_policy": "sparse-candidates-v1",
+      "tasks_attempted": 10,
+      "model_calls": 18,
+      "model_calls_reserved": 19,
+      "model_calls_unresolved": 1,
+      "records_planned": 125,
+      "records_examined": 1,
+      "records_incomplete": 9,
+      "records_unattempted": 115,
+      "phase_counts": {
+        "phase1": 1,
+        "phase2": 0
+      },
+      "decisions": {
+        "supported": 0,
+        "unsupported": 0,
+        "undetermined": 0,
+        "not_checked": 10
+      },
+      "pending_frontiers": 0,
+      "stop_reason": null,
+      "completion": "incomplete",
+      "contract_version": "document-analysis-runs-v1",
+      "event_head": 15,
+      "artifact_revision": 4
+    },
+    "error": null,
+    "available_actions": [
+      "pause",
+      "cancel",
+      "delete"
+    ],
+    "created_at": "2026-09-21T06:45:46.493526Z",
+    "started_at": "2026-09-21T06:45:46.580530Z",
+    "paused_at": null,
+    "finished_at": null,
+    "expires_at": null
+  },
+  "target_graph_snapshot": {
+    "contract_version": "document-analysis-runs-v1",
+    "recognition_run_id": "84956c8a-6988-43cb-bab6-e4ad7e3d026d",
+    "run_revision": 249,
+    "event_head": 15,
+    "artifact_revision": 4,
+    "phase": "candidate_graph",
+    "availability": "partial",
+    "ontology_snapshot_id": "54c748b83397a74fd7268f96c8f72826c572bc0b5a457fec8e8e18da055831f2",
+    "root": {
+      "entity_id": "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+      "revision": 1,
+      "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+      "label": "HRS-1597原料临床备样生产信息表_--脱敏-原 - PDE-冲突.docx"
+    },
+    "graph": {
+      "contract_version": "document-analysis-runs-v1",
+      "recognition_run_id": "84956c8a-6988-43cb-bab6-e4ad7e3d026d",
+      "run_revision": 249,
+      "event_head": 15,
+      "artifact_revision": 4,
+      "extraction_protocol": "ontology-tool-extraction-v1",
+      "availability": "partial",
+      "projection": "all_candidates",
+      "graph_snapshot": {
+        "snapshot_id": "15c3489725ca99d2d8cdfd463460e2afa15c73d21bff046785fcebab3ca256f0",
+        "analysis_id": "93d6af4b32eda5f759d0c40a79b1dddb73937f7aa2a07b84c9a676c99bf728dd",
+        "metadata_snapshot_id": "612bbd3fc300c4f6c61f99382e5777033a13c21173c95fe0fe00e1de770d8018",
+        "ontology_snapshot_id": "54c748b83397a74fd7268f96c8f72826c572bc0b5a457fec8e8e18da055831f2",
+        "root_ref": {
+          "entity_id": "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+          "revision": 1
+        },
+        "projection_policy": "ontology-tool-graph-v1",
+        "generated_at": "2026-09-21T07:00:50.192553Z"
+      },
+      "entities": [
+        {
+          "entity_id": "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+          "revision": 1,
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+          "class_label": "CMC 报告",
+          "label": "HRS-1597原料临床备样生产信息表_--脱敏-原 - PDE-冲突.docx",
+          "seed_origin": "user_selected",
+          "identity_state": "document_local",
+          "independent_review": "unreviewed",
+          "source_selection_refs": [],
+          "predicate_menu": [
+            {
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+              "predicate_label": "描述",
+              "kind": "relationship"
+            },
+            {
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod",
+              "predicate_label": "含清洗方法",
+              "kind": "relationship"
+            },
+            {
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningResidue",
+              "predicate_label": "含清洗残留物",
+              "kind": "relationship"
+            },
+            {
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway",
+              "predicate_label": "含降解途径",
+              "kind": "relationship"
+            },
+            {
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan",
+              "predicate_label": "含备样生产计划",
+              "kind": "relationship"
+            },
+            {
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionRiskAssessment",
+              "predicate_label": "含生产风险评估",
+              "kind": "relationship"
+            },
+            {
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasQualityRiskAssessment",
+              "predicate_label": "含质量风险评估",
+              "kind": "relationship"
+            },
+            {
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSafetyRiskAssessment",
+              "predicate_label": "含安全风险评估",
+              "kind": "relationship"
+            },
+            {
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData",
+              "predicate_label": "含共线评估数据",
+              "kind": "relationship"
+            },
+            {
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasStorageCondition",
+              "predicate_label": "存放条件",
+              "kind": "relationship"
+            },
+            {
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSynthesisRoute",
+              "predicate_label": "含合成路线",
+              "kind": "relationship"
+            },
+            {
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+              "predicate_label": "使用设备",
+              "kind": "relationship"
+            },
+            {
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/document/approvalStatus",
+              "predicate_label": "审批状态",
+              "kind": "property"
+            },
+            {
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/document/confidentialityLevel",
+              "predicate_label": "密级",
+              "kind": "property"
+            },
+            {
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/document/contentHash",
+              "predicate_label": "内容哈希 (SHA-256)",
+              "kind": "property"
+            },
+            {
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/document/documentName",
+              "predicate_label": "文档名称",
+              "kind": "property"
+            },
+            {
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/document/documentNumber",
+              "predicate_label": "文档编号",
+              "kind": "property"
+            },
+            {
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/document/documentVersion",
+              "predicate_label": "文档版本",
+              "kind": "property"
+            },
+            {
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/document/sourceSystem",
+              "predicate_label": "来源系统",
+              "kind": "property"
+            },
+            {
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ctdModuleNumber",
+              "predicate_label": "CTD 模块编号",
+              "kind": "property"
+            }
+          ],
+          "grounding_kind": "document_root"
+        },
+        {
+          "entity_id": "772cbed945edb891e5502681e0b03474fef7741dbbb8d8e90327b5cde16fd1d4",
+          "revision": 1,
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SafetyRiskAssessment",
+          "class_label": "https://ontology.pharma-gmp.cn/slpra/drug-development/SafetyRiskAssessment",
+          "label": "反应安全风险评估",
+          "seed_origin": "recognized",
+          "identity_state": "document_local",
+          "independent_review": "unreviewed",
+          "source_selection_refs": [
+            "03d2753d270f1e42673b09c2bfb9c36827f6e9355febb2db1ad2ae813d0f9d1f"
+          ],
+          "predicate_menu": [],
+          "grounding_kind": "mention",
+          "type_decision_ref": {
+            "id": "2d49295f2c04bd4a57f6c51f1d9efa8cc65c7ea1fd1338596c5107493849736c",
+            "revision": 1
+          },
+          "referent_decision_ref": {
+            "id": "49e1d73703a9a834fd4240ecf378454bc9d49d5711cbd7e7e1c611eedcfe4ada",
+            "revision": 1
+          },
+          "composition_decision_ref": null
+        }
+      ],
+      "properties": [],
+      "attribute_candidates": [],
+      "relationships": [
+        {
+          "candidate_id": "ffaa993487d254aad53a254332eb3c49d76d3161dd21cdf2dd15b9c0a3313519",
+          "revision": 1,
+          "subject_ref": {
+            "entity_id": "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+            "revision": 1
+          },
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSafetyRiskAssessment",
+          "predicate_label": "含安全风险评估",
+          "polarity": "affirmed",
+          "conditions": [],
+          "applicability": {},
+          "structural_valid": false,
+          "model_supported": false,
+          "policy_eligible": false,
+          "independent_review": "unreviewed",
+          "proof_ref": null,
+          "decision_refs": [],
+          "dependency_refs": [
+            {
+              "id": "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+              "revision": 1
+            },
+            {
+              "id": "772cbed945edb891e5502681e0b03474fef7741dbbb8d8e90327b5cde16fd1d4",
+              "revision": 1
+            }
+          ],
+          "invalidated": false,
+          "reason_code": "relation_candidate_discovered",
+          "reason": "已发现带原文证据的关系候选；未执行关系语义核验或图约束证明。",
+          "source_selection_refs": {
+            "unit": [],
+            "subject": [],
+            "object": [],
+            "value": [],
+            "predicate_bridge": [
+              "24b3bffdb1078f85d336705d8bbea97f1e6e14277bd939c1edc9b9dc9a2f5b1e"
+            ],
+            "condition": [],
+            "counterevidence": []
+          },
+          "modality": "asserted",
+          "scope": {
+            "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "members": []
+          },
+          "object_ref": {
+            "entity_id": "772cbed945edb891e5502681e0b03474fef7741dbbb8d8e90327b5cde16fd1d4",
+            "revision": 1
+          },
+          "direction": "subject_to_object"
+        }
+      ],
+      "relationship_groups": [],
+      "scope_resolutions": [],
+      "invalidated_refs": [],
+      "coverage": {
+        "record_discovery": {
+          "policy": "semantic-record-discovery-v1",
+          "mode": "semantic",
+          "reading_groups": 43,
+          "ranked_groups": 43,
+          "remaining_pairs": 30,
+          "admitted_pairs": 9,
+          "unselected_pairs": 412,
+          "unselected_groups": 0,
+          "routing_cards": 12,
+          "metadata_nodes": 29,
+          "routed_groups": 34,
+          "unrouted_groups": 9,
+          "selected_regions": 15,
+          "execution_mode": "region_batch",
+          "property_field_mode": "region_batch"
+        },
+        "candidate_policy": "sparse-candidates-v1",
+        "subjects": [
+          {
+            "retrieval_diagnostics": null,
+            "record_discovery": null,
+            "candidate_policy": "sparse-candidates-v1",
+            "scope": {
+              "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+              "members": []
+            },
+            "subject_ref": {
+              "entity_id": "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+              "revision": 1
+            },
+            "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSafetyRiskAssessment",
+            "predicate_label": "含安全风险评估",
+            "records_planned": 8,
+            "records_examined": 1,
+            "records_incomplete": 0,
+            "records_unattempted": 7,
+            "phase_counts": {
+              "phase1": 8,
+              "phase2": 0
+            },
+            "executed_phase_counts": {
+              "phase1": 1,
+              "phase2": 0
+            },
+            "pending_frontiers": 0,
+            "stop_reason": null
+          }
+        ],
+        "records_planned": 125,
+        "records_examined": 1,
+        "records_incomplete": 9,
+        "records_unattempted": 115,
+        "phase2_started": false,
+        "pending_frontiers": 0,
+        "stop_reason": null
+      },
+      "unresolved": {
+        "unsupported": 0,
+        "undetermined": 0,
+        "not_checked": 10,
+        "unassociated_entities": 0
+      },
+      "ranking": {
+        "budget_enabled": true,
+        "requested_mode": "semantic",
+        "actual_modes": [],
+        "degraded": false,
+        "paused": false,
+        "reasons": [],
+        "committed_epochs": 0,
+        "epochs": [],
+        "cost": {
+          "model_calls": 42,
+          "observed_requests": 42,
+          "input_pairs": 0,
+          "input_tokens": 28348,
+          "reserved_input_tokens": 28348,
+          "measured_input_tokens": 28348,
+          "unknown_request_count": 0,
+          "queue_seconds": 1.431,
+          "retries": 0,
+          "elapsed_seconds": 0.0
+        }
+      },
+      "evidence_repair": {
+        "enabled": false,
+        "total": 0,
+        "status_counts": {},
+        "reason_counts": {},
+        "rechecks": 0
+      },
+      "error": null
+    },
+    "targets": [
+      {
+        "target_id": "8ad3135172de1a62c24c335aae3838345d0af8279d28b09076a1c8f7d20359f1",
+        "subject_ref": {
+          "entity_id": "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+          "revision": 1
+        },
+        "subject_label": "HRS-1597原料临床备样生产信息表_--脱敏-原 - PDE-冲突.docx",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "kind": "relationship",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+        "predicate_label": "描述",
+        "range_types": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+            "label": "药物产品"
+          }
+        ],
+        "datatype_iris": [],
+        "multiplicity": "unspecified",
+        "state": "pending",
+        "supported_count": 0,
+        "negated_count": 0,
+        "completed": false,
+        "assertion_refs": [],
+        "supported_assertion_refs": [],
+        "coverage": {
+          "records_planned": 0,
+          "records_examined": 0,
+          "records_incomplete": 0,
+          "records_unattempted": 0,
+          "pending_frontiers": 0,
+          "scope_checked": false
+        },
+        "scope_id": null,
+        "reason": "本体允许的关系目标，尚未发现原文关系候选。"
+      },
+      {
+        "target_id": "f3ffa7c81aee7119a8de2014cec693408493f66429ac44fb438ee814575545a6",
+        "subject_ref": {
+          "entity_id": "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+          "revision": 1
+        },
+        "subject_label": "HRS-1597原料临床备样生产信息表_--脱敏-原 - PDE-冲突.docx",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "kind": "relationship",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod",
+        "predicate_label": "含清洗方法",
+        "range_types": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/cleaning/CIPCleaning",
+            "label": "CIP在线清洁"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/cleaning/ChemicalInactivation",
+            "label": "化学灭活"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/cleaning/CleaningProcess",
+            "label": "清洁过程"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/cleaning/HeatInactivation",
+            "label": "热灭活"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/cleaning/InactivationProcess",
+            "label": "灭活过程"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/cleaning/ManualCleaning",
+            "label": "手动清洁"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/cleaning/SIPSterilization",
+            "label": "SIP灭菌"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/cleaning/pHInactivation",
+            "label": "pH灭活"
+          }
+        ],
+        "datatype_iris": [],
+        "multiplicity": "unspecified",
+        "state": "pending",
+        "supported_count": 0,
+        "negated_count": 0,
+        "completed": false,
+        "assertion_refs": [],
+        "supported_assertion_refs": [],
+        "coverage": {
+          "records_planned": 0,
+          "records_examined": 0,
+          "records_incomplete": 0,
+          "records_unattempted": 0,
+          "pending_frontiers": 0,
+          "scope_checked": false
+        },
+        "scope_id": null,
+        "reason": "本体允许的关系目标，尚未发现原文关系候选。"
+      },
+      {
+        "target_id": "89f5b79d26e07fcd90641b70c3b8a6d415539552660a83d7edc94824b8fe2c98",
+        "subject_ref": {
+          "entity_id": "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+          "revision": 1
+        },
+        "subject_label": "HRS-1597原料临床备样生产信息表_--脱敏-原 - PDE-冲突.docx",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "kind": "relationship",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningResidue",
+        "predicate_label": "含清洗残留物",
+        "range_types": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/ActiveSubstanceResidue",
+            "label": "活性物质残留"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/CleaningAgentResidue",
+            "label": "清洁剂残留"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/MicrobialResidue",
+            "label": "微生物残留"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/ParticulateResidue",
+            "label": "颗粒残留"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug/Residue",
+            "label": "残留物"
+          }
+        ],
+        "datatype_iris": [],
+        "multiplicity": "unspecified",
+        "state": "pending",
+        "supported_count": 0,
+        "negated_count": 0,
+        "completed": false,
+        "assertion_refs": [],
+        "supported_assertion_refs": [],
+        "coverage": {
+          "records_planned": 0,
+          "records_examined": 0,
+          "records_incomplete": 0,
+          "records_unattempted": 0,
+          "pending_frontiers": 0,
+          "scope_checked": false
+        },
+        "scope_id": null,
+        "reason": "本体允许的关系目标，尚未发现原文关系候选。"
+      },
+      {
+        "target_id": "c9186bf5001949a8bd8618cb426a104ad5f045927fb49df81de7e9d5fa93961b",
+        "subject_ref": {
+          "entity_id": "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+          "revision": 1
+        },
+        "subject_label": "HRS-1597原料临床备样生产信息表_--脱敏-原 - PDE-冲突.docx",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "kind": "relationship",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway",
+        "predicate_label": "含降解途径",
+        "range_types": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/AcidDegradation",
+            "label": "酸降解"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/AlkalineDegradation",
+            "label": "碱降解"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway",
+            "label": "降解途径"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/HumidityDegradation",
+            "label": "湿降解"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/OxidativeDegradation",
+            "label": "氧化降解"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/PhotoDegradation",
+            "label": "光降解"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ThermalDegradation",
+            "label": "热降解"
+          }
+        ],
+        "datatype_iris": [],
+        "multiplicity": "unspecified",
+        "state": "pending",
+        "supported_count": 0,
+        "negated_count": 0,
+        "completed": false,
+        "assertion_refs": [],
+        "supported_assertion_refs": [],
+        "coverage": {
+          "records_planned": 0,
+          "records_examined": 0,
+          "records_incomplete": 0,
+          "records_unattempted": 0,
+          "pending_frontiers": 0,
+          "scope_checked": false
+        },
+        "scope_id": null,
+        "reason": "本体允许的关系目标，尚未发现原文关系候选。"
+      },
+      {
+        "target_id": "041d0700c9ec6e3dcf41e334c4cd483d9324c510274bf2daf66723fa4a5a5e4d",
+        "subject_ref": {
+          "entity_id": "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+          "revision": 1
+        },
+        "subject_label": "HRS-1597原料临床备样生产信息表_--脱敏-原 - PDE-冲突.docx",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "kind": "relationship",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan",
+        "predicate_label": "含备样生产计划",
+        "range_types": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ClinicalSampleProductionPlan",
+            "label": "临床备样生产计划"
+          }
+        ],
+        "datatype_iris": [],
+        "multiplicity": "unspecified",
+        "state": "pending",
+        "supported_count": 0,
+        "negated_count": 0,
+        "completed": false,
+        "assertion_refs": [],
+        "supported_assertion_refs": [],
+        "coverage": {
+          "records_planned": 0,
+          "records_examined": 0,
+          "records_incomplete": 0,
+          "records_unattempted": 0,
+          "pending_frontiers": 0,
+          "scope_checked": false
+        },
+        "scope_id": null,
+        "reason": "本体允许的关系目标，尚未发现原文关系候选。"
+      },
+      {
+        "target_id": "3feb94c811bf55f08b2d12872007e882dcd7205c1cb3d89c6e452d50996a4edb",
+        "subject_ref": {
+          "entity_id": "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+          "revision": 1
+        },
+        "subject_label": "HRS-1597原料临床备样生产信息表_--脱敏-原 - PDE-冲突.docx",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "kind": "relationship",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionRiskAssessment",
+        "predicate_label": "含生产风险评估",
+        "range_types": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ProductionRiskAssessment",
+            "label": "生产风险评估"
+          }
+        ],
+        "datatype_iris": [],
+        "multiplicity": "unspecified",
+        "state": "pending",
+        "supported_count": 0,
+        "negated_count": 0,
+        "completed": false,
+        "assertion_refs": [],
+        "supported_assertion_refs": [],
+        "coverage": {
+          "records_planned": 0,
+          "records_examined": 0,
+          "records_incomplete": 0,
+          "records_unattempted": 0,
+          "pending_frontiers": 0,
+          "scope_checked": false
+        },
+        "scope_id": null,
+        "reason": "本体允许的关系目标，尚未发现原文关系候选。"
+      },
+      {
+        "target_id": "65caf78143c95526b0dc9334668139a4f3d20f428cdd9dc4d8bb154fdd9ed87a",
+        "subject_ref": {
+          "entity_id": "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+          "revision": 1
+        },
+        "subject_label": "HRS-1597原料临床备样生产信息表_--脱敏-原 - PDE-冲突.docx",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "kind": "relationship",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasQualityRiskAssessment",
+        "predicate_label": "含质量风险评估",
+        "range_types": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/QualityRiskAssessment",
+            "label": "质量风险评估"
+          }
+        ],
+        "datatype_iris": [],
+        "multiplicity": "unspecified",
+        "state": "pending",
+        "supported_count": 0,
+        "negated_count": 0,
+        "completed": false,
+        "assertion_refs": [],
+        "supported_assertion_refs": [],
+        "coverage": {
+          "records_planned": 0,
+          "records_examined": 0,
+          "records_incomplete": 0,
+          "records_unattempted": 0,
+          "pending_frontiers": 0,
+          "scope_checked": false
+        },
+        "scope_id": null,
+        "reason": "本体允许的关系目标，尚未发现原文关系候选。"
+      },
+      {
+        "target_id": "43b3779fdf7b48f28b17da435c8af8ed3c1fd6dbfa2de56860846b1115484f02",
+        "subject_ref": {
+          "entity_id": "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+          "revision": 1
+        },
+        "subject_label": "HRS-1597原料临床备样生产信息表_--脱敏-原 - PDE-冲突.docx",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "kind": "relationship",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSafetyRiskAssessment",
+        "predicate_label": "含安全风险评估",
+        "range_types": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SafetyRiskAssessment",
+            "label": "安全风险评估"
+          }
+        ],
+        "datatype_iris": [],
+        "multiplicity": "unspecified",
+        "state": "undetermined",
+        "supported_count": 0,
+        "negated_count": 0,
+        "completed": false,
+        "assertion_refs": [
+          {
+            "id": "ffaa993487d254aad53a254332eb3c49d76d3161dd21cdf2dd15b9c0a3313519",
+            "revision": 1
+          }
+        ],
+        "supported_assertion_refs": [],
+        "coverage": {
+          "records_planned": 0,
+          "records_examined": 0,
+          "records_incomplete": 0,
+          "records_unattempted": 0,
+          "pending_frontiers": 0,
+          "scope_checked": false
+        },
+        "scope_id": null,
+        "reason": "原文关系候选，尚未核验；虚线不表示关系成立。"
+      },
+      {
+        "target_id": "de84b91e1846c3af6bfd9ef857a211a8ebf5c057623816a4a5ff1906fb7a32ad",
+        "subject_ref": {
+          "entity_id": "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+          "revision": 1
+        },
+        "subject_label": "HRS-1597原料临床备样生产信息表_--脱敏-原 - PDE-冲突.docx",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "kind": "relationship",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData",
+        "predicate_label": "含共线评估数据",
+        "range_types": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+            "label": "共线评估数据"
+          }
+        ],
+        "datatype_iris": [],
+        "multiplicity": "unspecified",
+        "state": "pending",
+        "supported_count": 0,
+        "negated_count": 0,
+        "completed": false,
+        "assertion_refs": [],
+        "supported_assertion_refs": [],
+        "coverage": {
+          "records_planned": 0,
+          "records_examined": 0,
+          "records_incomplete": 0,
+          "records_unattempted": 0,
+          "pending_frontiers": 0,
+          "scope_checked": false
+        },
+        "scope_id": null,
+        "reason": "本体允许的关系目标，尚未发现原文关系候选。"
+      },
+      {
+        "target_id": "dc40e180dab81d21f11194b4d323bfe70c0c3c405976873c839cb05039f810cb",
+        "subject_ref": {
+          "entity_id": "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+          "revision": 1
+        },
+        "subject_label": "HRS-1597原料临床备样生产信息表_--脱敏-原 - PDE-冲突.docx",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "kind": "relationship",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasStorageCondition",
+        "predicate_label": "存放条件",
+        "range_types": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/StorageCondition",
+            "label": "存放条件"
+          }
+        ],
+        "datatype_iris": [],
+        "multiplicity": "unspecified",
+        "state": "pending",
+        "supported_count": 0,
+        "negated_count": 0,
+        "completed": false,
+        "assertion_refs": [],
+        "supported_assertion_refs": [],
+        "coverage": {
+          "records_planned": 0,
+          "records_examined": 0,
+          "records_incomplete": 0,
+          "records_unattempted": 0,
+          "pending_frontiers": 0,
+          "scope_checked": false
+        },
+        "scope_id": null,
+        "reason": "本体允许的关系目标，尚未发现原文关系候选。"
+      },
+      {
+        "target_id": "2b009db6ffb4ac358bc4b940292903c27838af3d7794000d3b2dedd06496da45",
+        "subject_ref": {
+          "entity_id": "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+          "revision": 1
+        },
+        "subject_label": "HRS-1597原料临床备样生产信息表_--脱敏-原 - PDE-冲突.docx",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "kind": "relationship",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSynthesisRoute",
+        "predicate_label": "含合成路线",
+        "range_types": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SynthesisRoute",
+            "label": "合成路线"
+          }
+        ],
+        "datatype_iris": [],
+        "multiplicity": "unspecified",
+        "state": "pending",
+        "supported_count": 0,
+        "negated_count": 0,
+        "completed": false,
+        "assertion_refs": [],
+        "supported_assertion_refs": [],
+        "coverage": {
+          "records_planned": 0,
+          "records_examined": 0,
+          "records_incomplete": 0,
+          "records_unattempted": 0,
+          "pending_frontiers": 0,
+          "scope_checked": false
+        },
+        "scope_id": null,
+        "reason": "本体允许的关系目标，尚未发现原文关系候选。"
+      },
+      {
+        "target_id": "703186c51ecc4e988c2206f058e32a7a044103e2370470ac9ec449b005909125",
+        "subject_ref": {
+          "entity_id": "3d50cc049f437135d99c4d0fb3446901c4a27fe4615bf753ba119cfbf6ae9926",
+          "revision": 1
+        },
+        "subject_label": "HRS-1597原料临床备样生产信息表_--脱敏-原 - PDE-冲突.docx",
+        "subject_class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport",
+        "kind": "relationship",
+        "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+        "predicate_label": "使用设备",
+        "range_types": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CIPSystem",
+            "label": "在线清洗系统"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CapsuleFiller",
+            "label": "胶囊填充机"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Centrifuge",
+            "label": "离心机"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ChromatographyColumnSystem",
+            "label": "微压柱系统"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CleaningEquipment",
+            "label": "清洗设备"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CoatingMachine",
+            "label": "包衣机"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/CompressedAirSystem",
+            "label": "压缩空气系统"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Dryer",
+            "label": "干燥设备"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ElectricVacuumDryer",
+            "label": "电热真空干燥箱"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+            "label": "设备"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/FillingMachine",
+            "label": "灌装机"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/FilterPress",
+            "label": "压滤器"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Granulator",
+            "label": "制粒机"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HVACSystem",
+            "label": "暖通空调系统"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirBlastDryer",
+            "label": "电热鼓风干燥箱"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/HotAirDryer",
+            "label": "热风循环干燥箱"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ManualCleaningTool",
+            "label": "手动清洗工具"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Mixer",
+            "label": "混合机"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/ProcessEquipment",
+            "label": "生产设备"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Reactor",
+            "label": "反应器"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/RotaryEvaporator",
+            "label": "旋蒸"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/TabletPress",
+            "label": "压片机"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/UtilityEquipment",
+            "label": "公用设备"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/VacuumDryer",
+            "label": "真空干燥箱"
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/equipment/WaterSystem",
+            "label": "水系统"
+          }
+        ],
+        "datatype_iris": [],
+        "multiplicity": "unspecified",
+        "state": "pending",
+        "supported_count": 0,
+        "negated_count": 0,
+        "completed": false,
+        "assertion_refs": [],
+        "supported_assertion_refs": [],
+        "coverage": {
+          "records_planned": 0,
+          "records_examined": 0,
+          "records_incomplete": 0,
+          "records_unattempted": 0,
+          "pending_frontiers": 0,
+          "scope_checked": false
+        },
+        "scope_id": null,
+        "reason": "本体允许的关系目标，尚未发现原文关系候选。"
+      }
+    ],
+    "summary": {
+      "relationships": {
+        "total": 12,
+        "supported": 0,
+        "completed": 0,
+        "percent": null
+      },
+      "properties": {
+        "total": 0,
+        "supported": 0,
+        "completed": 0,
+        "percent": null
+      },
+      "pending_expansion_count": 0,
+      "notes": [
+        "当前仅发现实体与原文关系候选；关系全部以虚线显示，尚未核验。",
+        "本体关系目标不是原文事实，未连接的实体也可选择并展开。",
+        "本阶段不识别或校验属性，也不计算关系或属性的实证完整度。",
+        "候选的否定、条件、计划及备选成员保留原文标签。"
+      ]
+    }
+  },
+  "first_entity_and_relation_source": {
+    "evidence_id": "5e1d671a9bad8167e1712c646e087452783eef450485277bc1436ce030aed305",
+    "kind": "paragraph",
+    "text": "通过反应安全风险评估，得出以下结论：无危险反应步骤，风险可以接受。",
+    "section_node_id": "section:86",
+    "block_id": "paragraph:87:0",
+    "paragraph_index": 87,
+    "fragment_index": 0,
+    "table_path": null,
+    "row_index": null,
+    "column_index": null,
+    "physical_page_number": 6,
+    "source_cell_id": null,
+    "paragraph_offset": 0,
+    "navigation_role": null
+  },
+  "review_artifacts": [
+    "candidate-review-84956c8a-increment-01.json",
+    "candidate-review-84956c8a-increment-02.json",
+    "candidate-review-84956c8a-increment-03.json",
+    "candidate-review-84956c8a-increment-04.json"
+  ],
+  "raw_input_files": {
+    "status": {
+      "filename": "review-84956c8a-status-07.json",
+      "sha256": "07bd43828934f0ad276b2a27e2512abe8d7d117888c0878aac592d9c7f578816",
+      "file_written_at_utc": "2026-09-21T07:03:48.604505+00:00"
+    },
+    "target": {
+      "filename": "review-84956c8a-target-06.json",
+      "sha256": "5911d8b41adda60c954f9659c6c68b52659c8b80379f7a50ca8dea650a8b6b5b",
+      "file_written_at_utc": "2026-09-21T07:03:48.784503+00:00"
+    },
+    "results": {
+      "filename": "review-84956c8a-results-06.json",
+      "sha256": "4d0daef125bcbaed422f428971e3de6a0ea45d88ed6986c01a98ed8b14c15791",
+      "file_written_at_utc": "2026-09-21T07:03:50.344479+00:00"
+    },
+    "source": {
+      "filename": "review-84956c8a-source.json",
+      "sha256": "97786d0cfc1728a50ac7023527d2c172dff19a1e7f98f8450c2ec16e1904b4ad",
+      "file_written_at_utc": "2026-09-21T06:47:39.493726+00:00"
+    }
+  }
+}

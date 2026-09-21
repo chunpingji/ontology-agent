@@ -53,7 +53,7 @@ def focus_ontology():
     )
 
 
-def test_record_evaluation_schedules_deeper_focus_predicate_for_independent_entity(
+def test_record_evaluation_does_not_expand_deeper_focus_from_independent_entity(
     tmp_path, monkeypatch, current_run,
 ):
     args, executor, requests, _hooks = record_setup(
@@ -66,14 +66,16 @@ def test_record_evaluation_schedules_deeper_focus_predicate_for_independent_enti
     )
     result = runner.run(**{key: value for key, value in args.items() if key != "run_fingerprint"})
 
-    # No incoming edge exists: the independently proved A is registered at depth 1,
-    # while the frozen type route also permits its outgoing EDGE at depth 2.
+    # The independently proved A remains available with its properties, but no
+    # incoming edge proves that it belongs under this root traversal.
     assert {node.class_iri for node in result.graph.nodes} == {ROOT, A, B}
     assert not result.graph.edges
     predicates = {member["predicate_iri"] for view in requests if view["stage"] == "discovery"
                   for member in view.get("members", [])}
-    assert predicates == set(FOCUS), result.diagnostics
-    assert UNRELATED not in {item.predicate_iri for item in result.graph.coverage}
+    assert predicates == {ROOT_EDGE}, result.diagnostics
+    assert not {SELF_EDGE, EDGE, UNRELATED}.intersection(
+        item.predicate_iri for item in result.graph.coverage
+    )
     assert result.graph.progress.completion == "policy_complete", result.diagnostics
 
 

@@ -6,6 +6,9 @@ from docx import Document
 from app.models.document_analysis import DocumentRunCurrentState
 from app.services.document_analysis import current_state
 from app.services.extraction.ontology_guided.metadata import prepare_metadata
+from app.services.extraction.ontology_guided.model_reference_projection import (
+    project_reference_payload,
+)
 from app.services.extraction.ontology_guided.record_discovery import ContextualDiscoveryPolicy
 from app.services.extraction.ontology_guided.records import RecordIndex
 from app.services.extraction.word_analysis import analyze_word_core
@@ -53,10 +56,13 @@ def test_continuous_sections_share_discovery_and_restore_the_same_work(
     index = RecordIndex(args["ir"])
     assert len(index.records) == 2
     sources = {unit.evidence_id for record in index.records for unit in record.source_units}
+    wire_sources = set(project_reference_payload({"evidence_ids": sorted(sources)})[
+        "evidence_ids"
+    ])
     for view in discovery:
         actual = {unit["evidence_id"] for unit in view["evidence_units"]
                   if unit["fact_eligible"]}
-        assert actual == sources if enabled else len(actual) == 1
+        assert actual == wire_sources if enabled else len(actual) == 1
     store, run, _ = current_run
     rows = current_state.read_rows(store, run, DocumentRunCurrentState,
                                    prefix="work:record_discovery")["work:record_discovery"]

@@ -17,6 +17,11 @@ from tests.test_extraction.test_tool_engine_adapter import setup_adapter
 pytest_plugins = ["tests.test_extraction.test_tool_engine_freeze"]
 
 
+@pytest.fixture
+def source(tool_source):
+    return tool_source
+
+
 @pytest.mark.parametrize("batch", [False, True])
 def test_wire_request_matches_count_hash_and_canonical_paid_results(source, monkeypatch, batch):
     if batch:
@@ -30,6 +35,7 @@ def test_wire_request_matches_count_hash_and_canonical_paid_results(source, monk
 
         def execute():
             return adapter.inspect(task, context, predicate, menu)
+    adapter.chat_template_kwargs = {"enable_thinking": False}
     events = []
     with model_scope(on_harness_event=lambda kind, data: events.append((kind, data))):
         execute()
@@ -42,6 +48,9 @@ def test_wire_request_matches_count_hash_and_canonical_paid_results(source, monk
         wire.pop("stream")
         assert wire["input"] == request["input_items"]
         assert wire["instructions"] == request["instructions"]
+        assert wire["extra_body"] == request["extra_body"] == {
+            "chat_template_kwargs": {"enable_thinking": False},
+        }
         assert event["input_tokens"] == adapter.token_counter(canonical_json(wire))
         assert result["input_hash"] == responses_request_hash(wire)
         assert "@r:" in canonical_json(wire["input"])
@@ -95,8 +104,8 @@ def test_tool_arguments_restore_and_new_result_reference_survives_cold_resume(so
     context.protocol_state, context.protocol_results = saved["protocol"], saved["results"]
     context.remaining_model_calls = 3
     outcome = adapter.inspect(task, context, predicate, menu)
-    assert outcome.complete and len(requests) == 3
-    assert len(stored["reservations"]) == 4
+    assert outcome.complete and len(requests) == 2
+    assert len(stored["reservations"]) == 3
     continued = next(item for item in requests[0]["input_items"]
                      if item.get("type") == "function_call_output")
     assert continued["call_id"] == "provider-call"

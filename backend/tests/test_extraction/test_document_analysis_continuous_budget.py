@@ -74,7 +74,11 @@ def test_paid_results_survive_budget_pause_and_cold_resume(
     assert sum(saved["lineage_calls"].values()) == len(requests)
     assert all(item["pending_request"] is None for item in saved["protocols"].values())
     if limit == 2:
-        assert any(item["completed_tool_results"] for item in saved["protocols"].values())
+        assert any(
+            any(ref["kind"] == "relation_validation"
+                for ref in item["materialized_refs"].values())
+            for item in saved["protocols"].values()
+        )
 
     if expire_during_request:
         monkeypatch.setattr(local_client, "responses_create", transport)
@@ -88,7 +92,7 @@ def test_paid_results_survive_budget_pause_and_cold_resume(
         resume_state={"work_state": rows, "frontier": control["frontier_policy"],
                       "diagnostics": control["diagnostics"]},
     )
-    assert len([request for request in requests if request["predicate_iri"] == LINK]) == 3
+    assert len([request for request in requests if request["predicate_iri"] == LINK]) == 2
     assert len(resumed.graph.relationship_groups) == 1
     final_calls = current_state.restore_calls(store, run, run.run_fingerprint)
     assert final_calls["reservations"][:len(before)] == before
@@ -207,7 +211,7 @@ def test_new_run_policy_freezes_the_reference_protocol_and_budget(monkeypatch):
     monkeypatch.setattr(execution.settings, "document_analysis_execution_max_seconds", 60)
     assert policy["reference_resolution_version"] == 1
     assert policy["execution_budget"] == {"max_seconds": 30, "max_model_calls": 2}
-    assert policy["max_lineage_calls"] == 4
+    assert policy["max_lineage_calls"] == 6
 
 
 def test_adjusted_time_limit_preserves_frozen_policy_and_call_budget(monkeypatch):

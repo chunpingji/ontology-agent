@@ -238,24 +238,6 @@ class TaskCitationProtocol:
                     schema_walk(item, field)
 
         schema_walk(self.schema)
-        if "type_support_source_ids" in request:
-            type_ids = set(request["type_support_source_ids"])
-            definitions["TypeRoleProof"] = deepcopy(definitions["BindingProof"])
-            if type_ids:
-                definitions["TypeRoleProof"]["properties"]["evidence_id"]["enum"] = [
-                    alias for alias, identity in self.references["evidence_id"].items()
-                    if identity in type_ids
-                ]
-            for definition in definitions.values():
-                support = definition.get("properties", {}).get("type_support")
-                if support is not None:
-                    support["items"] = {"$ref": "#/$defs/TypeRoleProof"}
-                    support["description"] = (
-                        "引用表达药品角色的同源正文；项目名称/代码仅用于定位，不能充当类型证明。"
-                        "无需判定原料药或制剂；无药品角色原文时type_verdict=undetermined且此处[]。"
-                    )
-                    if not type_ids:
-                        support["maxItems"] = 0
         # The nested owner verdict cannot claim support without its own source.
         # Only the frozen document root has an explicit programmatic exemption.
         owner_ids = {r.evidence_id for r in context.subject_evidence_refs}
@@ -347,7 +329,6 @@ class TaskCitationProtocol:
                 self.schema, relationship=request["predicate"]["kind"] == "relationship",
             )
         transport = _compact_request(request) if self.compact else deepcopy(request)
-        transport.pop("type_support_source_ids", None)
         self.user = json.dumps(
             self._walk(transport, encode=True),
             ensure_ascii=False, separators=(",", ":"),

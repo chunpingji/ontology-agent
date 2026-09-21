@@ -1,0 +1,113 @@
+{
+  "verified_at": "2026-09-21T05:03:24.971388+00:00",
+  "mode": "readonly_reparse_and_record_scope_comparison",
+  "baseline_run_id": "8b97fa57-e2a2-477e-b836-1e8094813dc0",
+  "source_document_sha256": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+  "baseline_source_api_json_sha256": "864f2c4e72763fef6dd2aea3e7b5c1849a5a2794113360c58a4513a4ebca6265",
+  "parser_version_before": "8",
+  "parser_version_after": "9",
+  "structure_hash_before": "a9e5a6207e4f9b52e7bfc434ee2634136e536b7f9d3ec9b3b1fbb33e5d3d0655",
+  "structure_hash_after": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+  "analysis_id_before": "4bafc66702e3b03b71d9b177e2a29bd88969f4c7511e6a193893b1a011226050",
+  "analysis_id_after": "93d6af4b32eda5f759d0c40a79b1dddb73937f7aa2a07b84c9a676c99bf728dd",
+  "source_document_unchanged": true,
+  "frozen_source_api_json_unchanged": true,
+  "all_evidence_text_and_coordinates_unchanged": true,
+  "table_source_cells_and_grids_unchanged": true,
+  "table_count": 12,
+  "unchanged_header_tables": 10,
+  "table_role_changes": [
+    {
+      "table_path": [
+        "table:0"
+      ],
+      "header_rows_before": 1,
+      "header_rows_after": 0,
+      "data_row_indices_before": [
+        1,
+        2,
+        3
+      ],
+      "data_row_indices_after": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "table_path": [
+        "table:8"
+      ],
+      "header_rows_before": 1,
+      "header_rows_after": 0,
+      "data_row_indices_before": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "data_row_indices_after": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ]
+    }
+  ],
+  "record_scope": {
+    "records_before": 88,
+    "records_after": 90,
+    "table_records_before": 38,
+    "table_records_after": 40,
+    "fact_source_units_before": 298,
+    "fact_source_units_after": 312,
+    "removed_records": 0,
+    "removed_fact_source_units": 0,
+    "added_records": [
+      {
+        "table_path": [
+          "table:0"
+        ],
+        "row_index": 0,
+        "source_unit_count": 10,
+        "header_unit_count": 0,
+        "verbatim_source_characters": 680
+      },
+      {
+        "table_path": [
+          "table:8"
+        ],
+        "row_index": 0,
+        "source_unit_count": 4,
+        "header_unit_count": 0,
+        "verbatim_source_characters": 35
+      }
+    ]
+  },
+  "model_requests": 0,
+  "application_runs_modified": false,
+  "service_restarted": false,
+  "validation": {
+    "pytest": "114 passed, 4 existing warnings",
+    "ruff": "passed",
+    "git_diff_check": "passed",
+    "command": ".venv/bin/python -m pytest -p no:cacheprovider -q tests/test_extraction/test_docx_table_headers.py tests/test_extraction/test_docx_structure.py tests/test_extraction/test_document_ir.py tests/test_extraction/test_toc_analysis_filtering.py tests/test_extraction/test_template_atomic_records.py tests/test_extraction/test_table_reading.py tests/test_extraction/test_evaluation_citation_tables_v2.py"
+  },
+  "limitations": [
+    "Structural scope restoration only; no recognition or quality result.",
+    "No routing, reranking, or task planning was rerun.",
+    "Existing application processes and frozen runs still use their own loaded or frozen parser state.",
+    "Uncertain, merged, omitted-cell and nested-table cases keep conservative fallback behavior."
+  ],
+  "parser_source_sha256": "6c431f42eee6786d0f250c3b0155f028b0d8e1111530146c0452c95c2f30486a"
+}

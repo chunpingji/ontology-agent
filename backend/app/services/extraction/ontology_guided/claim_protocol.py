@@ -5,10 +5,18 @@ Schemas are generated from these types; the application does not load specs/.
 """
 from __future__ import annotations
 
+from copy import deepcopy
 from decimal import Decimal, InvalidOperation
 from typing import Literal
 
-from pydantic import ConfigDict, Field, ValidationError, model_serializer, model_validator
+from pydantic import (
+    ConfigDict,
+    Field,
+    ValidationError,
+    field_validator,
+    model_serializer,
+    model_validator,
+)
 
 from app.schemas.attribute_value import ParsedAttributeValue
 from app.schemas.evidence import EvidenceAnchor, EvidenceModel
@@ -19,6 +27,7 @@ from app.services.extraction.ontology_guided.contracts import (
     SemanticDecision,
     SlotSpec,
     TraversalScope,
+    ValidationDiagnostic,
     VersionedRef,
 )
 from app.services.extraction.ontology_guided.reference_dependencies import (
@@ -42,9 +51,18 @@ TargetKind = Literal["entity", "reference_binding", "property", "relation", "ext
 
 class Quote(EvidenceModel):
     model_config = ConfigDict(extra="forbid", strict=True, allow_inf_nan=False)
-    evidence_id: str
-    text: str
+    evidence_id: str = Field(min_length=1)
+    text: str = Field(min_length=1)
     context_text: str | None
+
+    @field_validator("text")
+    @classmethod
+    def nonblank_source_text(cls, value: str) -> str:
+        # Keep whitespace rejection local: provider grammar compilers do not
+        # all support Unicode non-whitespace regexes. Preserve the exact quote.
+        if not value.strip():
+            raise ValueError("quote_text_must_be_nonblank")
+        return value
 
 
 class ScopeQualifier(EvidenceModel):
@@ -339,7 +357,10 @@ def validate_verification(
                         destination.append(anchor)
                     except ValueError as exc:
                         source_issues.append(f"{name}:{exc}")
-            if facet.verdict == "supported" and not support:
+            if facet.verdict == "supported" and not support and (
+                facet_requires_quote(target, name, context)
+                or facet.counterevidence_support or not facet.reason.strip()
+            ):
                 source_issues.append(f"{name}:support_missing")
             if (name == "referent" and facet.verdict == "supported"
                     and isinstance(target.payload, EntityProposal)
@@ -367,11 +388,13 @@ def validate_verification(
             decisions.append(SemanticDecision(
                 decision_id=stable_id("claim-facet", identity), target_id=target.target_id,
                 check_kind=name, verdict=verdict,
-                reason_code=source_issues[0] if source_issues else f"facet_{verdict}",
+                reason_code=(source_issues[0] if source_issues else
+                             f"scope_checked_no_{name}" if verdict == "supported" and not support
+                             else f"facet_{verdict}"),
                 reason=facet.reason or "模型未提供理由", reason_status=(
                     "provided" if facet.reason else "missing"
                 ), support_refs=support, counterevidence_refs=counter,
-                searched_context_refs=[fragment.anchor for fragment in context.fragments],
+                searched_context_refs=[fragment.bounded_anchor() for fragment in context.fragments],
                 verifier_version="ontology-tool-extraction-v1",
                 attempt_id=stable_id("claim-verification", identity[:3]),
             ))
@@ -485,6 +508,7 @@ def compile_stage_schema(
     evidence_ids: list[str], targets: list[VerificationTargetSpec],
     reference_resolution: bool = False,
     relation_bridges: list[AllowedBridge] | None = None,
+    fact_evidence_ids: list[str] | None = None,
 ) -> dict:
     """Generate then narrow model schemas; local semantic validation remains mandatory."""
     from .record_discovery import RecordDiscoverySchemaCard
@@ -508,14 +532,65 @@ def compile_stage_schema(
             for name in ("ReferenceBindingProposal", "SourceAssertion", "ObjectSourceSupport"):
                 definitions.pop(name, None)
     definitions["Quote"]["properties"]["evidence_id"]["enum"] = sorted(set(evidence_ids))
+    if stage == "discovery" and fact_evidence_ids is not None:
+        fact_ids = sorted(set(fact_evidence_ids))
+        if not set(fact_ids) <= set(evidence_ids):
+            raise ValueError("fact_evidence_outside_context")
+        if fact_ids:
+            definitions["FactQuote"] = deepcopy(definitions["Quote"])
+            definitions["FactQuote"]["properties"]["evidence_id"]["enum"] = fact_ids
+            for name in ("PropertyProposal", "IdentifierProposal"):
+                definitions[name]["properties"]["value_quote"] = {
+                    "$ref": "#/$defs/FactQuote",
+                }
+            definitions["EntityProposal"]["properties"]["mentions"]["items"] = {
+                "$ref": "#/$defs/FactQuote",
+            }
+            factual_component = deepcopy(definitions["RecordComponent"])
+            factual_component["properties"]["role"]["enum"] = ["subject", "value"]
+            factual_component["properties"]["quote"] = {"$ref": "#/$defs/FactQuote"}
+            contextual_component = deepcopy(definitions["RecordComponent"])
+            contextual_component["properties"]["role"]["enum"] = ["field", "context"]
+            definitions["RecordComponent"] = {"anyOf": [
+                factual_component, contextual_component,
+            ]}
+        else:
+            # Auxiliary text can check claims, but cannot start new discovery.
+            for name in ("entities", "properties", "relations", "external_links"):
+                schema["properties"][name]["maxItems"] = 0
     if stage == "verification":
+        # Reasons explain a verdict but do not carry evidence. Bound them in the
+        # provider schema so a large target set cannot consume the response
+        # budget by repeating source text and chain-of-thought style prose.
+        definitions["FacetVerification"]["properties"]["reason"]["maxLength"] = 160
         if targets:
-            definitions["TargetVerification"]["properties"]["target_id"]["enum"] = [
-                target.target_id for target in targets
-            ]
-            definitions["TargetVerification"]["properties"]["content_hash"]["enum"] = [
-                target.content_hash for target in targets
-            ]
+            answers = []
+            for target in targets:
+                answer = deepcopy(definitions["TargetVerification"])
+                for name in ("target_id", "content_hash"):
+                    answer["properties"][name] = {
+                        "type": "string", "const": getattr(target, name),
+                    }
+                facets = []
+                for name in target.required_facets:
+                    definition = f"VerificationFacet_{name}"
+                    if definition not in definitions:
+                        facet = deepcopy(definitions["FacetVerification"])
+                        facet["properties"]["name"] = {"type": "string", "const": name}
+                        definitions[definition] = facet
+                    facets.append({"$ref": f"#/$defs/{definition}"})
+                answer["properties"]["facets"] = {
+                    "type": "array", "prefixItems": facets,
+                    "minItems": len(facets), "maxItems": len(facets),
+                }
+                answers.append(answer)
+            # Replace items: llama.cpp gives it precedence over prefixItems and
+            # cannot compile items:false. Both bounds retain standard JSON Schema
+            # tuple semantics. Verdicts and original-source checks stay independent.
+            schema["properties"]["verifications"] = {
+                "type": "array", "prefixItems": answers,
+                "minItems": len(answers), "maxItems": len(answers),
+            }
         else:
             # Empty discoveries have no claims to verify. Empty target enums
             # can break provider grammar/output parsing; require an empty list.
@@ -545,7 +620,15 @@ def compile_stage_schema(
         else:
             definitions["EntityProposal"]["properties"]["identifier_claims"]["maxItems"] = 0
         if record_discovery:
-            schema["properties"]["relations"]["maxItems"] = 0
+            # Record discovery has no registered bridge objects. Keep that
+            # invariant in the provider grammar so an otherwise usable answer
+            # cannot trigger a second, full-answer correction round.
+            for name in ("PropertyProposal", "RelationProposal"):
+                definitions[name]["properties"]["bridge_ref_ids"]["maxItems"] = 0
+                definitions[name]["properties"]["bridge_kind"]["enum"] = [
+                    bridge for bridge in AllowedBridge.__args__
+                    if bridge != "resolved_reference_chain"
+                ]
             schema["properties"]["external_links"]["maxItems"] = 0
         elif relation_bridges is not None:
             if relation_bridges:
@@ -561,6 +644,8 @@ def compile_stage_schema(
 
 
 def allowed_entity_classes(card: SchemaCard) -> set[str]:
+    if hasattr(card, "class_cards"):
+        return set(card.class_iris)
     return set(card.class_iris).union(*(
         set(predicate.range_class_iris)
         for predicate in card.predicates if isinstance(predicate, EdgeSpec)
@@ -630,6 +715,7 @@ class ClaimCheckResult(EvidenceModel):
     quantity: QuantityValue | None = None
     normalized_literal: str | bool | None = None
     parsed_value: ParsedAttributeValue | None = None
+    validation_diagnostics: list[ValidationDiagnostic] = Field(default_factory=list)
 
 
 class ExternalMatch(EvidenceModel):
@@ -815,6 +901,8 @@ class VerificationInput(EvidenceModel):
     bridge_dependencies: list[BridgeDependencyView]
     scope_resolutions: list[VerificationScopeResolution]
     reference_dependencies: list[ReferenceBindingDependencyView] = Field(default_factory=list)
+    # Source-grounded observations, not trusted facts or prerequisites for a relation.
+    attribute_candidates: list[PropertyProposal] = Field(default_factory=list)
 
     @model_serializer(mode="wrap")
     def preserve_legacy_shape(self, handler):
@@ -897,6 +985,121 @@ class VerificationInput(EvidenceModel):
         return self
 
 
+def plan_verification_target_batches(
+    verification: VerificationInput, *, max_targets: int = 8, max_facets: int = 48,
+) -> list[list[str]]:
+    """Pack dependent verification targets into small, stable response batches.
+
+    Connected claims stay together when they fit.  Large components are split in
+    frozen target order, which keeps an entity before its properties while still
+    bounding the JSON response.
+    """
+    if type(max_targets) is not int or max_targets < 1:
+        raise ValueError("verification_batch_target_limit_invalid")
+    if type(max_facets) is not int or max_facets < 1:
+        raise ValueError("verification_batch_facet_limit_invalid")
+    targets = verification.targets
+    if not targets:
+        return []
+    positions = {ref_key(target.claim_ref): index for index, target in enumerate(targets)}
+    parent = list(range(len(targets)))
+
+    def find(index):
+        while parent[index] != index:
+            parent[index] = parent[parent[index]]
+            index = parent[index]
+        return index
+
+    def union(left, right):
+        left, right = find(left), find(right)
+        if left != right:
+            parent[max(left, right)] = min(left, right)
+
+    for index, target in enumerate(targets):
+        for dependency in target.dependency_refs:
+            dependency_index = positions.get(ref_key(dependency))
+            if dependency_index is not None:
+                union(index, dependency_index)
+
+    components: dict[int, list[int]] = {}
+    for index in range(len(targets)):
+        components.setdefault(find(index), []).append(index)
+    ordered = sorted(components.values(), key=lambda values: values[0])
+
+    units: list[list[int]] = []
+    for component in ordered:
+        chunk: list[int] = []
+        facets = 0
+        for index in component:
+            weight = len(targets[index].required_facets)
+            if chunk and (len(chunk) >= max_targets or facets + weight > max_facets):
+                units.append(chunk)
+                chunk, facets = [], 0
+            chunk.append(index)
+            facets += weight
+        if chunk:
+            units.append(chunk)
+
+    batches: list[list[int]] = []
+    current: list[int] = []
+    current_facets = 0
+    for unit in units:
+        unit_facets = sum(len(targets[index].required_facets) for index in unit)
+        if current and (
+            len(current) + len(unit) > max_targets
+            or current_facets + unit_facets > max_facets
+        ):
+            batches.append(current)
+            current, current_facets = [], 0
+        current.extend(unit)
+        current_facets += unit_facets
+    if current:
+        batches.append(current)
+    return [[targets[index].target_id for index in batch] for batch in batches]
+
+
+def select_verification_targets(
+    verification: VerificationInput, target_ids: list[str],
+) -> VerificationInput:
+    """Create the exact model view for one verifier batch.
+
+    The full local reference map and authorized dependencies remain visible.  A
+    split component can therefore verify a property after its entity target was
+    handled by an earlier batch without changing the frozen claim identities.
+    """
+    if not target_ids or len(target_ids) != len(set(target_ids)):
+        raise ValueError("verification_batch_targets_invalid")
+    requested = set(target_ids)
+    selected = [target for target in verification.targets if target.target_id in requested]
+    if len(selected) != len(requested):
+        raise ValueError("verification_batch_target_unknown")
+    # A batch is a projection of the already validated full closure.  Revalidating
+    # the projection would incorrectly require excluded entity claims to become
+    # external dependencies.
+    return verification.model_copy(update={"targets": selected}, deep=True)
+
+
+def merge_verified_claim_sets(
+    verification: VerificationInput, parts: list[VerifiedClaimSet], *, context_hash: str,
+) -> VerifiedClaimSet:
+    """Merge only a complete, duplicate-free set of independently checked targets."""
+    expected = [target.target_id for target in verification.targets]
+    received = {}
+    for part in parts:
+        if part.context_hash != context_hash:
+            raise ValueError("verification_context_mismatch")
+        for target in part.targets:
+            if target.target_id in received:
+                raise ValueError("duplicate_verification_target")
+            received[target.target_id] = target
+    if set(received) != set(expected):
+        raise ValueError("verification_target_set_mismatch")
+    return VerifiedClaimSet(
+        context_hash=context_hash,
+        targets=[received[target_id] for target_id in expected],
+    )
+
+
 class FrozenClaimSet(DiscoveryEnvelope):
     assertion_generation: int = Field(ge=1)
     evidence_revision: int = Field(ge=1)
@@ -915,7 +1118,24 @@ class FrozenClaimSet(DiscoveryEnvelope):
         return self
 
 
-def required_facets(kind: TargetKind, payload, card: SchemaCard) -> list[FacetName]:
+def facet_requires_quote(target, name, context) -> bool:
+    """Absence checks cite the inspected scope, never an invented absent quotation."""
+    if (context.tool_inputs.get("graph_phase") != "evidence_review"
+            or target.target_kind not in {"relation", "property"}
+            or not context.fragments):
+        return True
+    if name == "counterevidence":
+        return bool(context.counterevidence_refs)
+    if name == "qualifiers":
+        qualifiers = target.payload.qualifiers
+        return bool(qualifiers.polarity != "affirmed" or qualifiers.modality != "asserted"
+                    or qualifiers.condition_support or qualifiers.scope_qualifiers)
+    return True
+
+
+def required_facets(
+    kind: TargetKind, payload, card: SchemaCard, *, graph_phase="evidence_verification",
+) -> list[FacetName]:
     facets = {
         "entity": ["type", "referent", "subject_role"],
         "reference_binding": ["reference_identity", "reference_scope", "counterevidence"],
@@ -927,9 +1147,9 @@ def required_facets(kind: TargetKind, payload, card: SchemaCard) -> list[FacetNa
     }[kind].copy()
     if kind == "relation" and len(payload.object_ids) == 1:
         facets.remove("selection")
-    if kind == "property" and payload.predicate_iri not in {
+    if kind == "property" and (payload.predicate_iri not in {
         policy.predicate_iri for policy in card.quantity_policies
-    }:
+    } or graph_phase == "evidence_review" and not payload.unit_support):
         facets.remove("unit")
     return facets
 
@@ -1020,7 +1240,10 @@ def build_verification_input(
         targets.append(VerificationTargetSpec(
             target_id=evidence_hash({"claim_ref": claim_ref, "content_hash": digest}),
             target_kind=kind, claim_ref=claim_ref, content_hash=digest,
-            required_facets=required_facets(kind, payload, owner_card),
+            required_facets=required_facets(
+                kind, payload, owner_card,
+                graph_phase=context.tool_inputs.get("graph_phase", "evidence_verification"),
+            ),
             payload=payload.model_copy(deep=True),
             scope=scope, dependency_refs=dependencies,
         ))
@@ -1031,6 +1254,8 @@ def build_verification_input(
                              if ref_key(e.entity_ref) not in current_entities],
         external_candidates=external_candidates, bridge_dependencies=bridge_dependencies,
         scope_resolutions=scope_resolutions,
+        attribute_candidates=[p.model_copy(deep=True) for p in claims.properties
+                              if p.local_id not in claims.claim_issues],
         **({"reference_dependencies": reference_dependencies}
            if reference_dependencies is not None else {}),
     )
@@ -1076,6 +1301,7 @@ def finalize_claims(
     from .record_discovery import resolve_claim_schema
 
     FrozenClaimSet.model_validate(claims.model_dump(mode="json"), strict=True)
+    evidence_review = context.tool_inputs.get("graph_phase") == "evidence_review"
     if (verified.context_hash != context.context_hash
             or verified.context_hash != context.target.context_hash):
         raise ValueError("verification_context_mismatch")
@@ -1106,6 +1332,7 @@ def finalize_claims(
             proofs[ref_key(dependency.entity_ref)] = dependency
     nodes, edges, groups, properties, proof_payloads, decision_payloads = [], [], [], [], [], []
     reference_proofs, canonical, resolutions = {}, {}, {}
+    claim_reviews = {}
     statuses, issues = [], [issue for values in claims.claim_issues.values() for issue in values]
     if claims.claim_issues:
         statuses.append("undetermined")
@@ -1162,8 +1389,11 @@ def finalize_claims(
         ) else "undetermined")
         statuses.append(status)
         issues.extend(missing)
+        claim_reviews[payload.local_id] = {
+            "status": status, "issues": missing, "decisions": result.decisions,
+        }
         decision_payloads.extend(decision.model_dump(mode="json") for decision in result.decisions)
-        if bundle.predicate_evidence is not None:
+        if bundle.predicate_evidence is not None and (accepted or not evidence_review):
             proof_payloads.append(bundle.predicate_evidence.model_dump(mode="json"))
         if target.target_kind == "entity":
             proofs[ref_key(target.claim_ref)] = bundle
@@ -1250,10 +1480,12 @@ def finalize_claims(
                 entity_id=target.claim_ref.id, revision=target.claim_ref.revision,
                 class_iri=payload.class_iri, class_label=payload.class_iri,
                 label=" / ".join(dict.fromkeys(registry.ir.resolve(anchor) for anchor in sources)),
-                evidence_refs=list({evidence_hash(anchor): anchor for anchor in [
-                    *sources, *(anchor for decision in result.decisions
-                                for anchor in decision.support_refs),
-                ]}.values()), grounding_kind=payload.representation,
+                # Endpoint sources describe its physical referent, not every
+                # source used to verify its type or role. Those supports remain
+                # in decision_payloads, linked by the decision/dependency refs.
+                # Keep every record component; a short name cannot replace it.
+                evidence_refs=list({evidence_hash(anchor): anchor for anchor in sources}.values()),
+                grounding_kind=payload.representation,
                 referent_ref=VersionedRef(id=referent.referent_id, revision=referent.revision),
                 type_decision_ref=decision_ref("type"),
                 referent_decision_ref=decision_ref("referent"),
@@ -1368,6 +1600,9 @@ def finalize_claims(
                    for ref in endpoint_bindings):
                 statuses[-1] = "undetermined"
                 issues.append("reference_binding_dependency_missing")
+                claim_reviews[payload.local_id].update(
+                    status="undetermined", issues=["reference_binding_dependency_missing"],
+                )
                 continue
         qualifier = payload.qualifiers
         applicability = [GroundedScopeQualifier(
@@ -1399,19 +1634,27 @@ def finalize_claims(
             subject_evidence_refs=support("subject_binding"),
             predicate_evidence_refs=support("predicate"),
             counterevidence_refs=[a for d in result.decisions for a in d.counterevidence_refs],
-            reason_code="claim_verified", reason="所有适用核验维度及确定性检查通过。",
+            reason_code="claim_verified", reason=(
+                "原文来源、主体绑定及语义核验通过；规范化和图约束结果另见诊断。"
+                if evidence_review else "所有适用核验维度及确定性检查通过。"
+            ),
+            **({"validation_diagnostics": checks.validation_diagnostics}
+               if evidence_review else {}),
         )
         if target.target_kind == "property":
             quantity = checks.quantity
             normalized = (checks.normalized_literal if checks.normalized_literal is not None
-                          else payload.value_quote.text)
+                          else None if evidence_review else payload.value_quote.text)
             if quantity is not None:
                 normalized = (quantity.scalar if quantity.form == "scalar" else
                               getattr(quantity, quantity.endpoint_role)
                               if quantity.endpoint_role else quantity.model_dump(mode="json"))
             properties.append(GraphProperty(
                 **shared, raw_value=payload.value_quote.text, normalized_value=normalized,
+                raw_unit="；".join(dict.fromkeys(q.text for q in payload.unit_support)) or None,
                 normalization_record=quantity.model_dump(mode="json") if quantity else {},
+                normalization_available=(checks.checks.get("metric") is True
+                                         and normalized is not None),
                 unit_evidence_refs=anchors(payload.unit_support),
                 value_evidence_refs=anchors([payload.value_quote]),
             ))
@@ -1420,6 +1663,9 @@ def finalize_claims(
             if len({ref_key(reference) for reference in objects}) != len(objects):
                 statuses[-1] = "undetermined"
                 issues.append("selection_members_resolve_to_same_entity")
+                claim_reviews[payload.local_id].update(
+                    status="undetermined", issues=["selection_members_resolve_to_same_entity"],
+                )
                 continue
             if len(objects) == 1:
                 edges.append(GraphEdge(**shared, object_ref=objects[0],
@@ -1458,6 +1704,26 @@ def finalize_claims(
                 "dependency_refs": [*node.dependency_refs, claim_ref],
             }))
         nodes = list(materialized.values())
+    if evidence_review:
+        from .reviewed_candidates import retain_review_candidates
+
+        current_nodes = {node.entity_id: node for node in (entity_proofs or {}).values()
+                         if isinstance(node, GraphNode)}
+        for dependency in verification_input.entity_dependencies:
+            if (dependency.grounding_kind == "document_root"
+                    and "subject_node" in context.tool_inputs):
+                root_node = GraphNode.model_validate(context.tool_inputs["subject_node"])
+                if root_node.root and root_node.entity_id == dependency.entity_ref.id:
+                    current_nodes[root_node.entity_id] = root_node
+        current_nodes.update({node.entity_id: node for node in nodes})
+        retained_edges, retained_groups, retained_properties = retain_review_candidates(
+            claims, context=context, card=card, scope=scope, current_entities=current_nodes,
+            accepted_ids={item.candidate_id for item in [*edges, *groups, *properties]},
+            canonical_refs=canonical, reviews=claim_reviews, checks=deterministic_results,
+        )
+        edges.extend(retained_edges)
+        groups.extend(retained_groups)
+        properties.extend(retained_properties)
     return TaskOutcome(
         semantic_outcome=semantic, complete="undetermined" not in statuses,
         reason_code=issues[0] if issues else f"record_{semantic}",

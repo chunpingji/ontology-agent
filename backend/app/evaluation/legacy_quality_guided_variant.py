@@ -30,6 +30,7 @@ from app.schemas.evidence import (
 from app.services.extraction.evidence_identity import evidence_hash, stable_id
 from app.services.extraction.evidence_scope import candidate_ref, document_anchors
 from app.services.extraction.extraction_tasks import (
+    OUTPUT_SPLIT_VERSION,
     SYSTEM,
     ExtractionRun,
     PartialTaskFailure,
@@ -86,11 +87,25 @@ class QualityGuidedRunner(RootGuidedRunner):
         self.focus_path = tuple(focus_path)
         self._staged_plans = {}
 
-    def input_id(self, ir, effective_class="", *, scheduler_version=None):
+    def input_id(
+        self,
+        ir,
+        effective_class="",
+        *,
+        scheduler_version=None,
+        output_split_version=OUTPUT_SPLIT_VERSION,
+        execution_policy="configured",
+    ):
         return stable_id(
             "quality-record-graph",
             [
-                super().input_id(ir, effective_class, scheduler_version=POLICY_VERSION),
+                super().input_id(
+                    ir,
+                    effective_class,
+                    scheduler_version=POLICY_VERSION,
+                    output_split_version=output_split_version,
+                    execution_policy=execution_policy,
+                ),
                 POLICY_VERSION,
                 self.route_batch_size,
                 self.focus_path,

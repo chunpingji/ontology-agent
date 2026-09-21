@@ -635,8 +635,6 @@ def _failure_payload(exc: Exception) -> tuple[str, str]:
         return "INVALID_WORD", "文档转换失败"
     if isinstance(exc, SourceArtifactError):
         return exc.code, exc.message
-    if isinstance(exc, ValueError):
-        return "INVALID_WORD", "Word 文档解析失败"
     return "ANALYSIS_FAILED", "文档分析执行失败"
 
 
@@ -840,6 +838,9 @@ def freeze_tool_engine_policy() -> dict:
         ContextualDiscoveryPolicy,
         RecordDiscoveryPolicy,
     )
+    from app.services.extraction.ontology_guided.schema_region_routing import (
+        SchemaRegionRoutingPolicy,
+    )
     from app.services.extraction.ontology_guided.tool_model_adapter import (
         validate_responses_options,
     )
@@ -850,6 +851,9 @@ def freeze_tool_engine_policy() -> dict:
         "profile", "vocabulary_overlay", "gliner2", "external_sources", "responses", "batching",
     }:
         raise ValueError("unknown_ontology_extraction_option")
+    # The record pipeline reads the authorized evidence already present in the
+    # discovery request. Do not freeze or initialize the boundary-only model.
+    options.pop("gliner2", None)
     options["profile"] = ExtractionProfile.model_validate(
         options.get("profile", {}), strict=True,
     ).model_dump(mode="json")
@@ -861,14 +865,28 @@ def freeze_tool_engine_policy() -> dict:
         options.pop("batching", {}), strict=True,
     ).model_dump(mode="json")
     capabilities = validate_responses_options(options.pop("responses", {}))
+    capabilities.setdefault("reasoning", {"effort": "none"})
+    capabilities.setdefault("chat_template_kwargs", {"enable_thinking": False})
     return {
         "state_storage_version": 4, "frontier_version": 2, "recognition_inflight": 1,
         "extraction_protocol": "ontology-tool-extraction-v1", "api_protocol": "responses",
-        "max_lineage_calls": 4, "model_call_state_version": 3,
+        "max_lineage_calls": 6, "model_call_state_version": 3,
         "recognition_batching": batching,
         "recognition_pipeline": RECORD_PIPELINE,
         "record_discovery": RecordDiscoveryPolicy(
+            graph_phase="evidence_review",
+            max_feedback_reopens=1,
             contextual=ContextualDiscoveryPolicy(),
+            schema_region_routing=SchemaRegionRoutingPolicy(
+                # A root branch may be stated in a narrative overview and then
+                # detailed in a structured section. Keep both bounded regions so
+                # endpoint discovery can compare their record-level relevance.
+                max_regions_per_card=2,
+                max_group_chars=1200,
+                max_group_records=8,
+                execution_mode="region_batch",
+                property_field_mode="region_batch",
+            ),
         ).model_dump(mode="json"),
         "reference_resolution_version": 1,
         "execution_budget": {
@@ -885,6 +903,10 @@ def freeze_tool_engine_policy() -> dict:
             "max_input_tokens": settings.evidence_max_input_tokens,
             "max_output_tokens": settings.evidence_max_output_tokens,
             "max_context_tokens": settings.evidence_max_context_tokens,
+            "stage_output_tokens": {
+                "discovery": min(8192, settings.evidence_max_output_tokens),
+                "verification": min(16384, settings.evidence_max_output_tokens),
+            },
         },
     }
 
@@ -912,7 +934,8 @@ def _configured_tool_adapter(performance, *, ir, ontology, metadata):
     reference_version = performance.get("reference_resolution_version")
     if (performance.get("api_protocol") != "responses"
             or performance.get("state_storage_version") != 4
-            or performance.get("max_lineage_calls") != 4
+            or type(performance.get("max_lineage_calls")) is not int
+            or not 1 <= performance["max_lineage_calls"] <= 8
             or (reference_version is not None
                 and (type(reference_version) is not int or reference_version != 1))
             or performance.get("model") != settings.local_llm_model
@@ -945,7 +968,7 @@ def _configured_tool_adapter(performance, *, ir, ontology, metadata):
     overlay = (VocabularyOverlay.model_validate(options["vocabulary_overlay"], strict=True)
                if options.get("vocabulary_overlay") else None)
     mention_extractor = None
-    if options.get("gliner2"):
+    if options.get("gliner2") and pipeline != RECORD_PIPELINE:
         config = options["gliner2"]
         vocabulary = build_extraction_vocabulary(
             ontology, list(ontology.classes), overlay=overlay,
@@ -993,12 +1016,6 @@ def _configured_recognition_adapter(performance: dict, *, ir=None, ontology=None
         return _configured_tool_adapter(performance, ir=ir, ontology=ontology, metadata=metadata)
     if performance.get("extraction_protocol") is not None:
         raise CheckpointMismatch("unknown extraction protocol")
-    if performance.get("cmc_describes_type_scope") not in {None, "drug-product-only-v1"}:
-        raise CheckpointMismatch("unknown CMC describes type scope")
-    if performance.get("cmc_describes_type_scope") and not performance.get(
-        "source_object_recognition"
-    ):
-        raise CheckpointMismatch("CMC describes type scope requires source object recognition")
     if performance.get("candidate_planning") not in {None, "sparse-candidates-v1"}:
         raise CheckpointMismatch("unknown candidate planning policy")
     if performance.get("source_object_recognition") not in {None, "source-object-recognition-v1"}:
@@ -1029,7 +1046,6 @@ def _configured_recognition_adapter(performance: dict, *, ir=None, ontology=None
             **({"state_storage_version": 4} if performance.get("state_storage_version") == 4
                else {"state_storage_version": 3, "state_baseline_interval": 32}),
             "semantic_expansion": "bounded-semantic-v1",
-            "process_granularity": "whole-method-field-v1",
             "attribute_priority": "source-field-priority-v1",
             "heuristic_policy": "heuristic-first-v4" if performance.get("adaptive_retrieval")
             else "heuristic-first-v3",
@@ -1974,7 +1990,9 @@ def _execute_claimed(
             raise RuntimeError("structure-only parser returned an extraction checkpoint")
         section_tree = analysis.structure.section_tree
         if section_tree is None:
-            raise ValueError("Word parser did not produce a section tree")
+            raise SourceArtifactError(
+                "INVALID_WORD", "Word 文档解析失败", status_code=422,
+            )
         common_payload = {
             "filename": run.filename,
             "content": content,
@@ -2276,7 +2294,6 @@ def _execute_claimed(
                 candidate_policy=performance.get("candidate_planning"),
                 layered_recognition=bool(performance.get("layered_recognition")),
                 source_object_recognition=bool(performance.get("source_object_recognition")),
-                cmc_describes_type_scope=bool(performance.get("cmc_describes_type_scope")),
                 current_state=current_mode,
                 max_tasks=settings.evidence_max_tasks,
                 max_model_calls_per_record=(
@@ -2461,6 +2478,7 @@ def _execute_claimed(
 
     if terminal_progress.stop_reason in {
         "execution_time_budget_exhausted", "execution_model_call_budget_exhausted",
+        "evidence_review_pending",
     }:
         _finish(
             db, store, current, token,
@@ -2607,7 +2625,9 @@ def _execute_dispatched_run(
             db.rollback()
             try:
                 current = store.get_owned(run.recognition_run_id, run.owner_id)
-                store.assert_fence(current.recognition_run_id, current.owner_id, token)
+                execution = store.assert_fence(
+                    current.recognition_run_id, current.owner_id, token,
+                )
                 public_stage = {
                     "ingest": "accepted", "parse": "parsing", "metadata": "preparing_metadata",
                 }.get(current.stage, "extracting")
@@ -2615,15 +2635,20 @@ def _execute_dispatched_run(
                     db, store, current, token, public_stage=public_stage
                 ):
                     return
+                stalled = _execution_stalled(execution)
                 # An interrupted request without a durable operator pause is
                 # incomplete. Preserve its reservations for an explicit retry.
                 _finish(
                     db, store, current, token,
                     status="failed", public_status="retryable_failure", public_stage=public_stage,
                     progress=RunProgress.model_validate(current.progress or {}),
-                    stop_reason="model_interrupted",
-                    error={"code": "MODEL_INTERRUPTED", "message": "模型请求被中断，已保留恢复水位",
-                           "retryable": True},
+                    stop_reason="execution_stalled" if stalled else "model_interrupted",
+                    error={
+                        "code": "ANALYSIS_STALLED" if stalled else "MODEL_INTERRUPTED",
+                        "message": ("运行长时间没有持久进展，已保留恢复水位和模型结果"
+                                    if stalled else "模型请求被中断，已保留恢复水位"),
+                        "retryable": True,
+                    },
                 )
             except (FenceViolation, RunDeleted, RunNotFound):
                 # Cancel/delete/replacement has already revoked this worker.

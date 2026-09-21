@@ -460,12 +460,23 @@ class GraphEntity(ApiModel):
         return data
 
 
+class GraphValidationDiagnostic(ApiModel):
+    check: Literal["metric", "shacl", "relation_graph", "schema"]
+    status: Literal["passed", "failed", "incomplete", "not_checked"]
+    reason_codes: list[str] = Field(default_factory=list)
+    message: str = ""
+
+
 class GraphAssertion(ApiModel):
     candidate_id: NonEmpty
     revision: int = Field(ge=1)
     subject_ref: EntityRef
     predicate_iri: FullIri
     predicate_label: NonEmpty
+    decision_status: Literal[
+        "supported", "unsupported", "undetermined", "not_checked"
+    ] = "not_checked"
+    validation_diagnostics: list[GraphValidationDiagnostic] = Field(default_factory=list)
     polarity: AssertionPolarity = "affirmed"
     conditions: list[dict[str, Any]] = Field(default_factory=list)
     applicability: dict[str, Any] = Field(default_factory=dict)
@@ -495,7 +506,9 @@ class GraphAssertion(ApiModel):
 class GraphProperty(GraphAssertion):
     direction: Literal["subject_to_value"] = "subject_to_value"
     raw_value: str
+    raw_unit: str | None = None
     normalized_value: Any = None
+    normalization_available: bool = False
     datatype_iri: str | None = None
     unit: str | None = None
     normalization_record: dict[str, Any] = Field(default_factory=dict)

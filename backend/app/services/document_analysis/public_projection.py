@@ -346,8 +346,13 @@ def _property(
         "predicate_label": item.predicate_label,
         "direction": "subject_to_value",
         "raw_value": item.raw_value,
+        "raw_unit": item.raw_unit,
         "normalized_value": item.normalized_value,
+        "normalization_available": item.normalization_available,
         "normalization_record": item.normalization_record,
+        "decision_status": item.decision_status,
+        "validation_diagnostics": [diagnostic.model_dump(mode="json")
+                                   for diagnostic in item.validation_diagnostics],
         "polarity": item.polarity,
         "conditions": [{"text": value} for value in item.conditions],
         "applicability": item.applicability,
@@ -383,6 +388,9 @@ def _relationship(
         "predicate_iri": item.predicate_iri,
         "predicate_label": item.predicate_label,
         "direction": ("subject_to_object" if item.direction == "outbound" else "object_to_subject"),
+        "decision_status": item.decision_status,
+        "validation_diagnostics": [diagnostic.model_dump(mode="json")
+                                   for diagnostic in item.validation_diagnostics],
         "polarity": item.polarity,
         "conditions": [{"text": value} for value in item.conditions],
         "applicability": item.applicability,

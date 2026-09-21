@@ -7,6 +7,7 @@ import pytest
 
 from app.config import settings
 from app.services.document_analysis import execution
+from app.services.extraction.ontology_guided.claim_protocol import ExtractionProfile
 from app.services.extraction.ontology_guided.contracts import (
     MetadataSnapshot,
     OntologyClassDefinition,
@@ -15,8 +16,14 @@ from app.services.extraction.ontology_guided.contracts import (
 from app.services.extraction.ontology_guided.executor import OntologyGuidedExecutor
 from app.services.extraction.ontology_guided.record_discovery import RECORD_PIPELINE
 from app.services.extraction.ontology_guided.tool_model_adapter import ToolModelRecognitionAdapter
+from app.services.extraction.ontology_guided.tool_runtime import ToolLimits
 
 pytest_plugins = ["tests.test_extraction.test_tool_engine_freeze"]
+
+
+@pytest.fixture
+def source(tool_source):
+    return tool_source
 
 
 def test_new_factory_uses_frozen_config_without_legacy_domain_policies(source, monkeypatch):
@@ -24,6 +31,7 @@ def test_new_factory_uses_frozen_config_without_legacy_domain_policies(source, m
 
     monkeypatch.setattr(settings, "local_llm_model", "qwen-configured")
     monkeypatch.setattr(settings, "local_llm_model_revision", "fixed-model-revision")
+    monkeypatch.setattr(settings, "evidence_max_output_tokens", 20480)
     options = {"responses": {"strict_tools": False, "strict_answers": False,
                              "reasoning": {"effort": "none"}}}
     monkeypatch.setattr(settings, "ontology_extraction_options", options)
@@ -32,11 +40,14 @@ def test_new_factory_uses_frozen_config_without_legacy_domain_policies(source, m
     options["responses"]["strict_tools"] = True
     options["responses"]["reasoning"]["effort"] = "high"
     assert frozen["responses"]["strict_tools"] is False
-    assert frozen["max_lineage_calls"] == 4
+    assert frozen["max_lineage_calls"] == 6
+    assert "cmc_describes_type_scope" not in frozen
     assert frozen["recognition_pipeline"] == RECORD_PIPELINE
     assert frozen["record_discovery"] == {
         "version": "record-discovery-v2", "max_classes_per_card": 4, "endpoint_page_size": 8,
+        "graph_phase": "evidence_review",
         "candidate_cards_per_record": 2, "minimum_similarity": 0.25,
+        "max_feedback_reopens": 1,
         "attribute_calibration": "source-observations-v1",
         "table_reading": "bounded-table-rows-v2",
         "contextual": {
@@ -44,13 +55,18 @@ def test_new_factory_uses_frozen_config_without_legacy_domain_policies(source, m
             "max_group_chars": 1200, "max_group_records": 8, "max_table_rows_per_group": 4,
             "max_attribute_candidates": 8, "max_disambiguation_attempts": 2,
         },
+            "schema_region_routing": {
+                "version": "schema-region-routing-v1", "max_regions_per_card": 2,
+                "minimum_similarity": 0.25, "max_region_records": 32,
+                "max_group_chars": 1200, "max_group_records": 8,
+                "execution_mode": "region_batch", "property_field_mode": "region_batch",
+            },
     }
     assert frozen["candidate_planning"] == "sparse-candidates-v1"
     assert frozen["heuristic_policy"]["query_rules_version"] == "ontology-controlled-labels-v1"
     frozen_budget = dict(frozen["request_budget"])
     monkeypatch.setattr(settings, "evidence_max_input_tokens", 999)
-    assert not {"evidence_repair", "cmc_describes_type_scope",
-                "source_object_recognition"} & frozen.keys()
+    assert not {"evidence_repair", "source_object_recognition"} & frozen.keys()
     ir = source["index"].ir
     ontology = OntologySnapshot(
         snapshot_id="ontology", ontology_hash="a" * 64,
@@ -71,9 +87,16 @@ def test_new_factory_uses_frozen_config_without_legacy_domain_policies(source, m
     assert adapter.model_identity == "qwen-configured"
     assert not adapter.strict_tools and not adapter.strict_answers and adapter.include is None
     assert adapter.reasoning == {"effort": "none"}
+    assert adapter.chat_template_kwargs == {"enable_thinking": False}
+    assert frozen["responses"]["chat_template_kwargs"] == {"enable_thinking": False}
+    assert frozen["request_budget"]["stage_output_tokens"] == {
+        "discovery": min(8192, frozen_budget["max_output_tokens"]),
+        "verification": 16384,
+    }
     assert adapter.instance_reader is adapter.mention_extractor is None
     assert adapter.max_input_tokens == frozen_budget["max_input_tokens"]
     assert adapter.max_output_tokens == frozen_budget["max_output_tokens"]
+    assert adapter.stage_output_tokens == frozen_budget["stage_output_tokens"]
     assert adapter.tool_limits.max_result_tokens == min(8192, frozen_budget["max_input_tokens"])
     assert adapter.index.ir.document_hash == ir.document_hash
     assert adapter.recognition_batching.max_members == 4
@@ -83,6 +106,17 @@ def test_new_factory_uses_frozen_config_without_legacy_domain_policies(source, m
     assert adapter.record_discovery.contextual.max_disambiguation_attempts == 2
     assert adapter.record_discovery.candidate_cards_per_record == 2
     assert adapter.record_discovery.minimum_similarity == 0.25
+    assert adapter.record_discovery.schema_region_routing.max_group_chars == 1200
+    assert adapter.record_discovery.schema_region_routing.max_group_records == 8
+    assert adapter.record_discovery.schema_region_routing.execution_mode == "region_batch"
+    assert adapter.record_discovery.schema_region_routing.property_field_mode == "region_batch"
+    executor = OntologyGuidedExecutor(
+        ontology=ontology, engine=None, adapter=adapter, current_state=True,
+        candidate_policy="sparse-candidates-v1",
+        incremental_performance=True,
+        heuristic_policy=execution.HeuristicSearchPolicy.generic(),
+    )
+    assert not hasattr(executor, "cmc_describes_type_scope")
     old_record = deepcopy(frozen)
     old_record["record_discovery"].pop("contextual")
     old_record_adapter = execution._configured_recognition_adapter(
@@ -116,6 +150,28 @@ def test_new_factory_uses_frozen_config_without_legacy_domain_policies(source, m
         )
 
 
+def test_new_record_run_does_not_freeze_boundary_model(monkeypatch):
+    monkeypatch.setattr(settings, "ontology_extraction_options", {
+        "gliner2": {"model_path": "/unused", "device": "cpu", "manifest": {}},
+    })
+    frozen = execution.freeze_tool_engine_policy()
+    assert frozen["recognition_pipeline"] == RECORD_PIPELINE
+    assert "gliner2" not in frozen["extraction_options"]
+
+
+def test_record_adapter_rejects_boundary_ner_injection():
+    with pytest.raises(
+        ValueError, match="^record_pipeline_does_not_support_mention_extractor$"
+    ):
+        ToolModelRecognitionAdapter(
+            object(), index=object(), ontology=object(), metadata=object(),
+            profile=ExtractionProfile(), token_counter=len, model_identity="qwen-test",
+            max_input_tokens=1000, max_output_tokens=1000,
+            tool_limits=ToolLimits(max_result_tokens=1000),
+            recognition_pipeline=RECORD_PIPELINE, mention_extractor=object(),
+        )
+
+
 def test_required_qwen_absence_is_not_success_or_chat_fallback(monkeypatch):
     from app.services.llm import local_client
 
@@ -131,6 +187,8 @@ def test_required_qwen_absence_is_not_success_or_chat_fallback(monkeypatch):
     {"responses": {"reasoning": {"effort": "invented"}}},
     {"responses": {"reasoning": {"effort": "none", "budget": 100}}},
     {"responses": {"reasoning": "none"}},
+    {"responses": {"chat_template_kwargs": {"enable_thinking": "no"}}},
+    {"responses": {"chat_template_kwargs": {"enable_thinking": False, "other": 1}}},
 ])
 def test_unknown_or_ambiguous_capabilities_cannot_be_frozen(monkeypatch, options):
     monkeypatch.setattr(settings, "ontology_extraction_options", options)
@@ -172,6 +230,7 @@ def test_invalid_record_policy_stops_before_loading_model(monkeypatch, pipeline,
     frozen.update(recognition_pipeline=pipeline, record_discovery=policy)
     with pytest.raises(execution.CheckpointMismatch, match="invalid frozen record discovery"):
         execution._configured_recognition_adapter(frozen)
+
 
 
 def test_fingerprint_keeps_old_executor_identity_and_freezes_new_pipeline(source, monkeypatch):

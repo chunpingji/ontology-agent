@@ -126,7 +126,7 @@ def test_late_candidates_wake_the_same_field_once_and_cold_continue_does_not_rep
     )
     result = factory().run(**args, **hooks)
     fields = [view for view in requests if view.get("attribute_disambiguation")]
-    assert len(fields) == 2, {
+    assert len(fields) == 1, {
         "diagnostics": result.diagnostics,
         "outcomes": [value for kind, value in result.events if kind == "task_outcome"],
     }
@@ -137,22 +137,21 @@ def test_late_candidates_wake_the_same_field_once_and_cold_continue_does_not_rep
     assert {node.label for node in result.graph.nodes if not node.root} >= {
         "装置甲", "部件乙", "装置丙",
     }, result.events
-    assert len(fields[0]["attribute_disambiguation"]["options"]) == 2
-    # Calibration runs after normal discovery and sees both later entities together.
-    assert len(fields[1]["attribute_disambiguation"]["options"]) == 4
-    assert next(i for i, view in enumerate(requests) if view == fields[1]) > max(
+    # Same-section discovery is coalesced before the one bounded calibration.
+    assert len(fields[0]["attribute_disambiguation"]["options"]) == 4
+    assert next(i for i, view in enumerate(requests) if view == fields[0]) > max(
         i for i, view in enumerate(requests)
         if view.get("stage") == "discovery" and not view.get("attribute_disambiguation")
         and "members" not in view
     )
     rows = field_rows(current_run)
-    assert len(rows) == 1 and rows[0]["disambiguation_attempts"] == 2
+    assert len(rows) == 1 and rows[0]["disambiguation_attempts"] == 1
     assert rows[0]["attribute_status"] == "unresolved"
     store, run, _ = current_run
     calls = current_state.restore_calls(store, run, run.run_fingerprint)
     lineage = rows[0]["task"]["claim_lineage_id"]
-    assert calls["protocols"][lineage]["assertion_generation"] == 2
-    assert calls["lineage_calls"][lineage] == 2
+    assert calls["protocols"][lineage]["assertion_generation"] == 1
+    assert calls["lineage_calls"][lineage] == 1
     count = len(requests)
     restored = vars(current_state.restore_work(store, run, run.run_fingerprint))
     factory().run(**args, **hooks, resume_state=restored, model_call_state=calls)
@@ -284,14 +283,17 @@ def test_merged_value_is_deferred_in_each_logical_row_but_has_one_field_task(
     ordinary = [view for view in requests if view["stage"] == "discovery"
                 and "members" not in view and not view.get("attribute_disambiguation")]
     assert len(ordinary) == 4, result.diagnostics  # Two candidate cards per logical row.
-    assert {view["record_id"] for view in ordinary} == {record.record_id for record in owners}
+    # The model view uses request-local short references; physical membership is
+    # checked through the unchanged evidence units below.
+    assert len({view["record_id"] for view in ordinary}) == len(owners)
     rows = field_rows(current_run)
     assert len(rows) == 1, result.events
     field_id = rows[0]["task"]["field_id"]
     for view in ordinary:
         deferred = view["deferred_property_fields"]
-        assert [field["field_id"] for field in deferred] == [field_id]
+        assert [field["field_id"] for field in deferred] == [f"@r:{field_id[:12]}"]
         assert deferred[0]["value"] == "A-001"
-        assert {ref["evidence_id"] for ref in deferred[0]["value_refs"]} == {shared.evidence_id}
-        assert shared.evidence_id in {unit["evidence_id"] for unit in view["evidence_units"]
-                                      if unit["fact_eligible"]}
+        evidence_id = f"@r:{shared.evidence_id[:12]}"
+        assert {ref["evidence_id"] for ref in deferred[0]["value_refs"]} == {evidence_id}
+        assert evidence_id in {unit["evidence_id"] for unit in view["evidence_units"]
+                               if unit["fact_eligible"]}

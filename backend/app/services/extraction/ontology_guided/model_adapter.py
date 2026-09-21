@@ -571,16 +571,6 @@ class LocalModelRecognitionAdapter:
                 claim["field_binding_id"] = context.protocol_state.get("bindings", {}).get(
                     evidence_hash(endpoint_quote.model_dump(mode="json"))
                 )
-                if context.incremental_performance and proposal.kind == "relationship":
-                    from app.services.extraction.ontology_guided.process_granularity import (
-                        method_scope,
-                    )
-
-                    method, _ = method_scope(
-                        context, predicate, proposal.object_class_iri, endpoint_anchor,
-                    )
-                    if method:
-                        claim["whole_method_field"] = method
             target_values = context.target.model_dump(mode="python", exclude={"target_id"})
             target_values.update(
                 assertion_polarity=proposal.polarity,
@@ -749,14 +739,6 @@ class LocalModelRecognitionAdapter:
                             proposal.value_quote.text, predicate, source_unit=source_unit,
                             normalization_record=normalization_record,
                         )
-                elif context.incremental_performance:
-                    from app.services.extraction.ontology_guided.process_granularity import (
-                        validate_method_scope,
-                    )
-
-                    field_issue = field_issue or validate_method_scope(
-                        context, predicate, proposal.object_class_iri, endpoint_anchor, bridge_refs,
-                    )
                 if field_issue:
                     proposal.role_verdict = "undetermined"
                 # Naming the owner does not make an assertion conditional.
@@ -1040,18 +1022,14 @@ class LocalModelRecognitionAdapter:
                  *condition_refs, *counterevidence_refs, *unit_refs]
             )
             if proposal.kind == "relationship":
-                method = item["claim"].get("whole_method_field")
-                object_sources = ([EvidenceAnchor.model_validate(ref)
-                                   for ref in method["source_refs"]]
-                                  if method else [endpoint_anchor])
+                object_sources = [endpoint_anchor]
                 entity_id = stable_id(
                     "document-local-entity",
                     [
                         context.target.document_context.document_hash,
                         ("physical-mention-v1" if context.repair_enabled
                          else proposal.object_class_iri),
-                        ([ref.model_dump(mode="json") for ref in object_sources]
-                         if method else endpoint_anchor.model_dump(mode="json")),
+                        endpoint_anchor.model_dump(mode="json"),
                     ],
                 )
                 node = GraphNode(
@@ -1066,7 +1044,7 @@ class LocalModelRecognitionAdapter:
                         ),
                         proposal.object_class_iri.rsplit("/", 1)[-1],
                     ),
-                    label=method["text"] if method else endpoint_quote.text,
+                    label=endpoint_quote.text,
                     identity_status="document_local",
                     decision_status=status,
                     evidence_refs=object_sources,

@@ -508,7 +508,14 @@ class SemanticDecision(EvidenceModel):
     def coherent_reason(self):
         if self.model_refusal and self.verdict != "undetermined":
             raise ValueError("model refusal must remain semantically undetermined")
-        if self.verdict == "supported" and not self.support_refs:
+        absence_check = (
+            self.check_kind in {"qualifiers", "counterevidence"}
+            and self.reason_code == f"scope_checked_no_{self.check_kind}"
+            and self.verifier_version == "ontology-tool-extraction-v1"
+            and self.searched_context_refs and not self.counterevidence_refs
+            and self.reason.strip()
+        )
+        if self.verdict == "supported" and not self.support_refs and not absence_check:
             raise ValueError("supported decision requires replayable support")
         return self
 
@@ -647,6 +654,13 @@ class GraphNode(EvidenceModel):
         return data
 
 
+class ValidationDiagnostic(EvidenceModel):
+    check: Literal["metric", "shacl", "relation_graph", "schema"]
+    status: Literal["passed", "failed", "incomplete", "not_checked"]
+    reason_codes: list[str] = Field(default_factory=list)
+    message: str = ""
+
+
 class GraphProperty(EvidenceModel):
     candidate_id: str = Field(min_length=1)
     revision: int = Field(ge=1)
@@ -654,8 +668,11 @@ class GraphProperty(EvidenceModel):
     predicate_iri: str = Field(min_length=1)
     predicate_label: str = Field(min_length=1)
     raw_value: str
+    raw_unit: str | None = None
     normalized_value: Any = None
     normalization_record: dict[str, Any] = Field(default_factory=dict)
+    normalization_available: bool = False
+    validation_diagnostics: list[ValidationDiagnostic] = Field(default_factory=list)
     unit_evidence_refs: list[EvidenceAnchor] = Field(default_factory=list)
     direction: Literal["outbound"] = "outbound"
     polarity: AssertionPolarity = "affirmed"
@@ -704,6 +721,7 @@ class GraphEdge(EvidenceModel):
     structural_valid: bool = False
     model_supported: bool = False
     policy_eligible: bool = False
+    validation_diagnostics: list[ValidationDiagnostic] = Field(default_factory=list)
     independent_review: Literal["unreviewed", "accepted", "rejected"] = "unreviewed"
     proof_ref: VersionedRef | None = None
     decision_refs: list[VersionedRef] = Field(default_factory=list)
@@ -747,6 +765,7 @@ class GraphRelationshipGroup(EvidenceModel):
     structural_valid: bool = False
     model_supported: bool = False
     policy_eligible: bool = False
+    validation_diagnostics: list[ValidationDiagnostic] = Field(default_factory=list)
     independent_review: Literal["unreviewed", "accepted", "rejected"] = "unreviewed"
     proof_ref: VersionedRef | None = None
     decision_refs: list[VersionedRef] = Field(default_factory=list)

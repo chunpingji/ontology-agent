@@ -28,16 +28,6 @@ SEARCH_POLICY_VERSION = "heuristic-first-v1"
 QUERY_RULES_VERSION = "ontology-labels-and-registered-aliases-v1"
 GENERIC_QUERY_RULES_VERSION = "ontology-controlled-labels-v1"
 
-# Retrieval vocabulary only: no document names, expected entities or values.
-_ALIASES = (
-    ("分子量", "molecular weight", "molecularWeight"),
-    ("分子式", "molecular formula", "molecularFormula"),
-    ("项目名称", "产品名称", "project name", "projectName"),
-    ("合成路线", "合成工艺", "制备工艺", "工艺描述", "synthesis route"),
-    ("清洗方法", "清洁方法", "清洗流程", "清洁规程", "cleaning procedure"),
-    ("设备", "设备清单", "equipment"),
-    ("物料", "物料清单", "material"),
-)
 _GENERIC_TERMS = {"名称", "描述", "信息", "内容", "name", "description", "describes"}
 
 
@@ -199,11 +189,6 @@ class HeuristicSearchIndex:
                         continue
                     add(label, 14 if _identity_field(label) else 3)
         expanded = dict(direct)
-        aliases = () if policy.query_rules_version == GENERIC_QUERY_RULES_VERSION else _ALIASES
-        for group in aliases:
-            normalized = [_normalize(value) for value in group]
-            if any(value in direct for value in normalized):
-                expanded.update((value, max(expanded.get(value, 0), 4)) for value in normalized)
         # Definition phrases help only H1. A single generic word/fragment must
         # not activate the universe. Reordered Chinese compounds require a
         # conjunction of fragments from one frozen ontology label below.

@@ -1,0 +1,88 @@
+{
+  "runId": "53947eca-2a87-4f5c-a51e-59128dd1a085",
+  "phase": "evidence_review",
+  "assertions": 2,
+  "properties": 1,
+  "subjects": 10,
+  "dashed": 13,
+  "solid": 0,
+  "sources": [
+    {
+      "kind": "relationship",
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+      "selectionRef": "37c19ece6de390ac8dc8c2f8d9dc56390be403d1285d981bd76a49f042426ffc",
+      "text": "项目名称：HRS-1597"
+    },
+    {
+      "kind": "property",
+      "predicate": "https://ontology.pharma-gmp.cn/slpra/document/approvalStatus",
+      "selectionRef": "5db6e1c9e228791598d85e972cf01814bb8ae2c87b28df665aaaa13a053daa86",
+      "text": "HRS-1597"
+    }
+  ],
+  "summary": {
+    "relationships": {
+      "total": 48,
+      "supported": 0,
+      "completed": 0,
+      "percent": 0
+    },
+    "properties": {
+      "total": 219,
+      "supported": 0,
+      "completed": 0,
+      "percent": 0
+    },
+    "pending_expansion_count": 48,
+    "notes": [
+      "实线表示原文证据已采信；虚线表示待定候选或尚无证据的本体目标。",
+      "未采信候选可切换显示；显示筛选不改变本体关系和属性目标总数。",
+      "Schema 语义对齐与原文证据决定采信；规范化结果和 SHACL 告警单独展示。",
+      "采信目标数不表示全文信息已穷尽；否定、条件及备选成员保留限定。"
+    ]
+  },
+  "writes": [],
+  "errors": [],
+  "api": [
+    {
+      "path": "/api/document-analysis/runs",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/53947eca-2a87-4f5c-a51e-59128dd1a085",
+      "status": 200
+    },
+    {
+      "path": "/api/entities",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/53947eca-2a87-4f5c-a51e-59128dd1a085/target-graph",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/53947eca-2a87-4f5c-a51e-59128dd1a085/source",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/53947eca-2a87-4f5c-a51e-59128dd1a085",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/53947eca-2a87-4f5c-a51e-59128dd1a085/source",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/53947eca-2a87-4f5c-a51e-59128dd1a085/target-graph",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/53947eca-2a87-4f5c-a51e-59128dd1a085/source-selection",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/53947eca-2a87-4f5c-a51e-59128dd1a085/source-selection",
+      "status": 200
+    }
+  ]
+}

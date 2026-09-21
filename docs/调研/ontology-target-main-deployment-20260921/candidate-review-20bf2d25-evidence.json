@@ -1,0 +1,924 @@
+{
+  "run_id": "20bf2d25-98f3-4efe-99f0-1e5dbbae5d05",
+  "reviewed_at": "2026-09-21T05:15:39.680061+00:00",
+  "review_kind": "independent_posthoc_source_review_not_business_gold",
+  "model_requests_made_by_reviewer": 0,
+  "application_runs_modified": false,
+  "reviewed_model_turns": [
+    {
+      "result_key": "8c3dee9d291d8d079748b2daec8e1e94b5ab258150c75324e8dc8a5c218e8fb1",
+      "lineage_id": "3ade30e97846dcf7932f909142038ceca00c52925202dbac26dee9be15ec3111",
+      "stage": "discovery",
+      "attempt": 1,
+      "response_id": "resp_81T3OfXgNBfvrCMwAvZQk9cFzW88ZCOz",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 10008,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 1861,
+        "total_tokens": 11869
+      },
+      "output_sha256": "8fc8b4dcf72d796e955d8c715ce27ca79c5526696e759d6c4c63fbd59fcc0db6"
+    },
+    {
+      "result_key": "fdf1419ea8d453ea3eeb04a5af096fb5c062e244107c6ccce477d7c4f1f33829",
+      "lineage_id": "3ade30e97846dcf7932f909142038ceca00c52925202dbac26dee9be15ec3111",
+      "stage": "verification",
+      "attempt": 2,
+      "response_id": "resp_KSXLJedaW41VdAQBkSVxZSQcHr8aWUHF",
+      "response_status": "completed",
+      "usage": {
+        "input_tokens": 12305,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 4355,
+        "total_tokens": 16660
+      },
+      "output_sha256": "52fcf84483c0295ab9f497df5901e58891ae094fd07bb1a49559ea49d1b13751"
+    }
+  ],
+  "ontology_snapshot_id": "54c748b83397a74fd7268f96c8f72826c572bc0b5a457fec8e8e18da055831f2",
+  "frozen_type_definition": {
+    "iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+    "description": "A finished dosage form drug product that bears a clinical drug role."
+  },
+  "scope": {
+    "lineage_id": "3ade30e97846dcf7932f909142038ceca00c52925202dbac26dee9be15ec3111",
+    "reviewed_discovery_calls": 1,
+    "reviewed_verification_calls": 1,
+    "future_calls_reviewed": false
+  },
+  "source_hashes": {
+    "review-20bf2d25-results-01.json": "ee97295aab252dd28c21fc5a79925761cb738cbe09ea2b05f35e2f24641417ab",
+    "review-20bf2d25-results-02.json": "a8b985ae19ed2eff8703f51e982e5f9c330891db7856e1b3d6d2f817ca0b2241",
+    "review-20bf2d25-target-02.json": "f3566f03ae84d9b3fd421e005e8ed6b19d7b61b6c55b77b25078ef825629f539",
+    "review-20bf2d25-source.json": "89bdffa8677a7eab1ee1b3ba0b5844ce7257f2635383d3091c92d636fbff5651",
+    "supported-evidence-v3.json": "3f51b9fed2326e02f12b5a79e59146b24f37c1d0bd139643f0a1060e8b3c67c5"
+  },
+  "graph_observation": {
+    "run_revision": 99,
+    "event_head": 9,
+    "artifact_revision": 4,
+    "summary": {
+      "relationships": {
+        "total": 12,
+        "supported": 0,
+        "completed": 0,
+        "percent": 0.0
+      },
+      "properties": {
+        "total": 169,
+        "supported": 2,
+        "completed": 0,
+        "percent": 0.0
+      },
+      "pending_expansion_count": 18,
+      "notes": [
+        "分母是冻结本体在当前主体与范围上的识别目标，不表示每个字段在文档中必填。",
+        "完整度按完成目标数计算；候选记录覆盖不等于开放文档召回率。",
+        "未知多值成员总数保持未完成；待展开分支不计为已完成。",
+        "否定、条件、计划及备选关系保留原图标签；虚拟目标不是事实。"
+      ]
+    },
+    "recognized_entities": [
+      {
+        "entity_id": "3a566d93f5e803a791e84b2c39cb580b29f5a139bb588b897df8797527da452b",
+        "revision": 1,
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "class_label": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "label": "制剂剂型：口服片剂",
+        "seed_origin": "recognized",
+        "identity_state": "document_local",
+        "independent_review": "unreviewed",
+        "source_selection_refs": [
+          "4b863c4996fc8474d58a285b83d3787d9a76ccc0416f8072994d67b24309e335"
+        ],
+        "grounding_kind": "mention",
+        "type_decision_ref": {
+          "id": "229b6ec7ea68f9019dd3bf18534fe2e0e9a3f969f9987cc02fe61150df9ca9be",
+          "revision": 1
+        },
+        "referent_decision_ref": {
+          "id": "ffe3e5d0f9bb7a475946ca824f95bcda4eebd69055e9b59a34ef410eb9de6553",
+          "revision": 1
+        },
+        "composition_decision_ref": null
+      },
+      {
+        "entity_id": "7fa3f99f970113f21ed3c003e4d4d206393ebe4e9502abe74967eabfbe0cc7c4",
+        "revision": 1,
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "class_label": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "label": "是否细胞毒药物：否",
+        "seed_origin": "recognized",
+        "identity_state": "document_local",
+        "independent_review": "unreviewed",
+        "source_selection_refs": [
+          "752a49736025864abf708310b207b8ab113682cd347b58867eeb3371f43ff2c4"
+        ],
+        "grounding_kind": "mention",
+        "type_decision_ref": {
+          "id": "dc91f103117235d5344d27e8d457891ad87234532f59cbf36a46e8470efd47e5",
+          "revision": 1
+        },
+        "referent_decision_ref": {
+          "id": "f7e519c0adeef1675c5e6ade3f708c49f349d6538938fa8ec8d34817cb4294cc",
+          "revision": 1
+        },
+        "composition_decision_ref": null
+      },
+      {
+        "entity_id": "8976c5a84dd278c25be42e3c7eb82438e4bb4e3650c2b27163cd8ff87d15a408",
+        "revision": 1,
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "class_label": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "label": "溶解性： DCM易溶，H2O、Heptane难溶",
+        "seed_origin": "recognized",
+        "identity_state": "document_local",
+        "independent_review": "unreviewed",
+        "source_selection_refs": [
+          "7169f6605555037bf2484c93ffc9c74755d46afa357924db0fe24f93014a3dea"
+        ],
+        "grounding_kind": "mention",
+        "type_decision_ref": {
+          "id": "66c4ab74664f8f01fdee723de8cc9e00f0f43894913e9e195ff7ce9aeee231e7",
+          "revision": 1
+        },
+        "referent_decision_ref": {
+          "id": "d944c566971db0b194873fa8ca6149727138ac97053a9a451674b8e9ab713f8c",
+          "revision": 1
+        },
+        "composition_decision_ref": null
+      },
+      {
+        "entity_id": "7a3bea3509ff22badb5d08a47393c213658acc6b8f43796d994ebe10f3e99212",
+        "revision": 1,
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "class_label": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "label": "制剂剂型：口服片剂",
+        "seed_origin": "recognized",
+        "identity_state": "document_local",
+        "independent_review": "unreviewed",
+        "source_selection_refs": [
+          "4b863c4996fc8474d58a285b83d3787d9a76ccc0416f8072994d67b24309e335"
+        ],
+        "grounding_kind": "record",
+        "type_decision_ref": {
+          "id": "31b6633114584665ac987df705f12726cb66232525ecf2df58191b3a41d11d0b",
+          "revision": 1
+        },
+        "referent_decision_ref": {
+          "id": "172656f6e0dff43cc9934099af4e7653a5e7bc5ff80ed77299de8fe1a987a1c6",
+          "revision": 1
+        },
+        "composition_decision_ref": {
+          "id": "172656f6e0dff43cc9934099af4e7653a5e7bc5ff80ed77299de8fe1a987a1c6",
+          "revision": 1
+        }
+      },
+      {
+        "entity_id": "83654437cb1cfe3d5af8d57d39e8333d7aede6ed87cb6ccae02b9d238d414b93",
+        "revision": 1,
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "class_label": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "label": "是否细胞毒药物：否",
+        "seed_origin": "recognized",
+        "identity_state": "document_local",
+        "independent_review": "unreviewed",
+        "source_selection_refs": [
+          "752a49736025864abf708310b207b8ab113682cd347b58867eeb3371f43ff2c4"
+        ],
+        "grounding_kind": "record",
+        "type_decision_ref": {
+          "id": "9f6f5cca689efeaa7a8bb478ab08e242c69fd0d4cc9aefa578c675534b81184e",
+          "revision": 1
+        },
+        "referent_decision_ref": {
+          "id": "0d12112f0fd429ea68e31c1385433647ecad79ed58f6031407e81f45410bb4af",
+          "revision": 1
+        },
+        "composition_decision_ref": {
+          "id": "0d12112f0fd429ea68e31c1385433647ecad79ed58f6031407e81f45410bb4af",
+          "revision": 1
+        }
+      },
+      {
+        "entity_id": "da1a902428537a963d0cdee858b861cef7934d761d4e970eee0bbe7a1699725b",
+        "revision": 1,
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "class_label": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "label": "溶解性： DCM易溶，H2O、Heptane难溶",
+        "seed_origin": "recognized",
+        "identity_state": "document_local",
+        "independent_review": "unreviewed",
+        "source_selection_refs": [
+          "7169f6605555037bf2484c93ffc9c74755d46afa357924db0fe24f93014a3dea"
+        ],
+        "grounding_kind": "record",
+        "type_decision_ref": {
+          "id": "55f70fd1288007dbbc2317be92718bf843d76039dee6520faac816a3e3d518ba",
+          "revision": 1
+        },
+        "referent_decision_ref": {
+          "id": "c6fed62baa3a484f0e6babaa735927ec0ce556ec4335a8eb5a5c2ec79eeb3cdd",
+          "revision": 1
+        },
+        "composition_decision_ref": {
+          "id": "c6fed62baa3a484f0e6babaa735927ec0ce556ec4335a8eb5a5c2ec79eeb3cdd",
+          "revision": 1
+        }
+      }
+    ],
+    "relationships": [],
+    "relationship_groups": []
+  },
+  "discovery_claim_issues": {
+    "rb1": [
+      "reference_binding_endpoint_invalid"
+    ],
+    "rb2": [
+      "reference_binding_endpoint_invalid"
+    ],
+    "rb3": [
+      "reference_binding_endpoint_invalid"
+    ],
+    "p2": [
+      "ambiguous_source_quote"
+    ]
+  },
+  "final_outcome": {
+    "semantic_outcome": "supported",
+    "complete": false,
+    "reason_code": "reference_binding_endpoint_invalid",
+    "reason": "reference_binding_endpoint_invalid；ambiguous_source_quote"
+  },
+  "raw_model_verification": {
+    "verifications": [
+      {
+        "content_hash": "671b5cb8cfffc6af938f822356325f882291465f67a632811def475702ce47ba",
+        "facets": [
+          {
+            "counterevidence_support": [],
+            "name": "type",
+            "reason": "原文指明'制剂剂型：口服片剂'，符合DrugProduct定义为'finished dosage form'的关键限定。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                "text": "制剂剂型：口服片剂"
+              }
+            ],
+            "verdict": "supported"
+          },
+          {
+            "counterevidence_support": [],
+            "name": "referent",
+            "reason": "原文记载了该实体的具体制剂形态，支持其作为特定药物产品实例的身份。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                "text": "制剂剂型：口服片剂"
+              }
+            ],
+            "verdict": "supported"
+          },
+          {
+            "counterevidence_support": [],
+            "name": "subject_role",
+            "reason": "原文描述的是药物产品的物理属性，实体在语义中作为被描述对象，符合subject_role。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                "text": "制剂剂型：口服片剂"
+              }
+            ],
+            "verdict": "supported"
+          }
+        ],
+        "target_id": "491c690746893dec9657047e51e0b82afa9f737f723e69ef980c20b7909597d4"
+      },
+      {
+        "content_hash": "d265c61be1a19cba0f7f6f9d93dcc03a24b217300d9a19e45301e956eef63606",
+        "facets": [
+          {
+            "counterevidence_support": [],
+            "name": "type",
+            "reason": "原文通过排除法确认实体为'细胞毒药物：否'，隐含其属于药物产品类别，符合DrugProduct定义。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "bbc77ec05164fc68500520c9b37a410c205318f87e1ac764b7b259be9fb54e35",
+                "text": "是否细胞毒药物：否"
+              }
+            ],
+            "verdict": "supported"
+          },
+          {
+            "counterevidence_support": [],
+            "name": "referent",
+            "reason": "原文针对该特定实体进行了分类属性描述，确立了其作为特定实例的身份。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "bbc77ec05164fc68500520c9b37a410c205318f87e1ac764b7b259be9fb54e35",
+                "text": "是否细胞毒药物：否"
+              }
+            ],
+            "verdict": "supported"
+          },
+          {
+            "counterevidence_support": [],
+            "name": "subject_role",
+            "reason": "实体在语句中作为被评估药理类别的对象，符合subject_role。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "bbc77ec05164fc68500520c9b37a410c205318f87e1ac764b7b259be9fb54e35",
+                "text": "是否细胞毒药物：否"
+              }
+            ],
+            "verdict": "supported"
+          }
+        ],
+        "target_id": "2af950761f4e20533ac574e1be0583d3ac168bbf229cec68f8697eaed28d43c6"
+      },
+      {
+        "content_hash": "580452f614335a411fe83427811113872f871a9cbda9976edfda58979f31a8de",
+        "facets": [
+          {
+            "counterevidence_support": [],
+            "name": "type",
+            "reason": "原文描述实体的溶解性，这是药物产品（DrugProduct）的物理性质，符合类型定义。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                "text": "溶解性： DCM易溶，H2O、Heptane难溶"
+              }
+            ],
+            "verdict": "supported"
+          },
+          {
+            "counterevidence_support": [],
+            "name": "referent",
+            "reason": "原文明确记录了该实体的物理属性，支持其作为特定药物产品实例的身份。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                "text": "溶解性： DCM易溶，H2O、Heptane难溶"
+              }
+            ],
+            "verdict": "supported"
+          },
+          {
+            "counterevidence_support": [],
+            "name": "subject_role",
+            "reason": "实体在语句中作为被描述物理性质的对象，符合subject_role。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                "text": "溶解性： DCM易溶，H2O、Heptane难溶"
+              }
+            ],
+            "verdict": "supported"
+          }
+        ],
+        "target_id": "9c9e6f27c398dddc2d49f875533d3e150429838e9e0aae053afc2595951e0a69"
+      },
+      {
+        "content_hash": "4e7818add6ef257d3f35bcdefbd4b378dac9c16233918ada928d6071ba9fb8ac",
+        "facets": [
+          {
+            "counterevidence_support": [],
+            "name": "type",
+            "reason": "record_component指明该实体具有'口服片剂'属性，符合DrugProduct的制剂形态定义。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                "text": "制剂剂型：口服片剂"
+              }
+            ],
+            "verdict": "supported"
+          },
+          {
+            "counterevidence_support": [],
+            "name": "referent",
+            "reason": "记录组件引用了该实体具有具体制剂剂型的事实，支持其作为特定药物产品实例的身份。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                "text": "制剂剂型：口服片剂"
+              }
+            ],
+            "verdict": "supported"
+          },
+          {
+            "counterevidence_support": [],
+            "name": "subject_role",
+            "reason": "实体在语义结构中作为属性的持有者（Subject），符合subject_role。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                "text": "制剂剂型：口服片剂"
+              }
+            ],
+            "verdict": "supported"
+          }
+        ],
+        "target_id": "6941b459c82b042a0787ab2f8f8904226292325b7a0017bbdda56ef41ce82d50"
+      },
+      {
+        "content_hash": "2c635575833d17eeaf5a27bdf2e6dd4d830ad6820da7690abfed51aa226360be",
+        "facets": [
+          {
+            "counterevidence_support": [],
+            "name": "type",
+            "reason": "record_component指明该实体具有'细胞毒药物：否'属性，属于药物产品分类，符合DrugProduct定义。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "bbc77ec05164fc68500520c9b37a410c205318f87e1ac764b7b259be9fb54e35",
+                "text": "是否细胞毒药物：否"
+              }
+            ],
+            "verdict": "supported"
+          },
+          {
+            "counterevidence_support": [],
+            "name": "referent",
+            "reason": "记录组件引用了该实体具有特定药理分类属性，支持其作为特定实例的身份。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "bbc77ec05164fc68500520c9b37a410c205318f87e1ac764b7b259be9fb54e35",
+                "text": "是否细胞毒药物：否"
+              }
+            ],
+            "verdict": "supported"
+          },
+          {
+            "counterevidence_support": [],
+            "name": "subject_role",
+            "reason": "实体在语义结构中作为属性的持有者（Subject），符合subject_role。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "bbc77ec05164fc68500520c9b37a410c205318f87e1ac764b7b259be9fb54e35",
+                "text": "是否细胞毒药物：否"
+              }
+            ],
+            "verdict": "supported"
+          }
+        ],
+        "target_id": "2b6414a0f34a4af78035aee3a6aa6b22a8f755c238ffd9077bf837daf0a914a4"
+      },
+      {
+        "content_hash": "dcccf29374b3e6587ab0393fada19803ba6fdf5bdbc36bf6cf3880852a60397f",
+        "facets": [
+          {
+            "counterevidence_support": [],
+            "name": "type",
+            "reason": "record_component指明该实体具有'溶解性'属性，符合DrugProduct的物理性质定义。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                "text": "溶解性： DCM易溶，H2O、Heptane难溶"
+              }
+            ],
+            "verdict": "supported"
+          },
+          {
+            "counterevidence_support": [],
+            "name": "referent",
+            "reason": "记录组件引用了该实体具有具体溶解性属性，支持其作为特定药物产品实例的身份。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                "text": "溶解性： DCM易溶，H2O、Heptane难溶"
+              }
+            ],
+            "verdict": "supported"
+          },
+          {
+            "counterevidence_support": [],
+            "name": "subject_role",
+            "reason": "实体在语义结构中作为属性的持有者（Subject），符合subject_role。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                "text": "溶解性： DCM易溶，H2O、Heptane难溶"
+              }
+            ],
+            "verdict": "supported"
+          }
+        ],
+        "target_id": "a099064aa21af25e5e6219c75cbad65fb71d97f8d35c972a36c1e72d61fca3a1"
+      },
+      {
+        "content_hash": "80fcccd58ac0184bef3e874061bd649ffcb356fe909be90c96394457629ae4a1",
+        "facets": [
+          {
+            "counterevidence_support": [],
+            "name": "subject_binding",
+            "reason": "Subject e4被record_components引用，且e4与e1共指（均源于'口服片剂'描述），绑定正确。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                "text": "制剂剂型：口服片剂"
+              }
+            ],
+            "verdict": "supported"
+          },
+          {
+            "counterevidence_support": [],
+            "name": "field_role",
+            "reason": "原文字段标签为'制剂剂型'，与属性predicate_iri对应的label'制剂剂型'完全一致。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                "text": "制剂剂型：口服片剂"
+              }
+            ],
+            "verdict": "supported"
+          },
+          {
+            "counterevidence_support": [],
+            "name": "predicate",
+            "reason": "属性定义描述为记录制剂形态，原文'口服片剂'符合该定义，且字段标签匹配。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                "text": "制剂剂型：口服片剂"
+              }
+            ],
+            "verdict": "supported"
+          },
+          {
+            "counterevidence_support": [],
+            "name": "bridge",
+            "reason": "声明直接源自原文的结构化数据提取，属于explicit_assertion桥接。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                "text": "制剂剂型：口服片剂"
+              }
+            ],
+            "verdict": "supported"
+          },
+          {
+            "counterevidence_support": [],
+            "name": "value",
+            "reason": "原文逐字值为'口服片剂'，与声明value_quote一致。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                "text": "制剂剂型：口服片剂"
+              }
+            ],
+            "verdict": "supported"
+          },
+          {
+            "counterevidence_support": [],
+            "name": "qualifiers",
+            "reason": "原文为肯定陈述，无模态或条件限制，polarity为affirmed，modality为asserted。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                "text": "制剂剂型：口服片剂"
+              }
+            ],
+            "verdict": "supported"
+          },
+          {
+            "counterevidence_support": [],
+            "name": "counterevidence",
+            "reason": "核查相关段落，未发现与'口服片剂'相反的剂型描述。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                "text": "制剂剂型：口服片剂"
+              }
+            ],
+            "verdict": "supported"
+          }
+        ],
+        "target_id": "77edb675779c043bc41d1e97022b90f67fe24a0479750941ad218cb6adfee876"
+      },
+      {
+        "content_hash": "ea95ef346d9c21cd3770cf1d100327ed3e527ac0d6039b8426bff91fe72a9b4d",
+        "facets": [
+          {
+            "counterevidence_support": [],
+            "name": "subject_binding",
+            "reason": "Subject e6被record_components引用，且e6与e3共指（均源于'溶解性'描述），绑定正确。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                "text": "溶解性： DCM易溶，H2O、Heptane难溶"
+              }
+            ],
+            "verdict": "supported"
+          },
+          {
+            "counterevidence_support": [],
+            "name": "field_role",
+            "reason": "原文字段标签为'溶解性'，与属性predicate_iri对应的label'溶解性'完全一致。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                "text": "溶解性： DCM易溶，H2O、Heptane难溶"
+              }
+            ],
+            "verdict": "supported"
+          },
+          {
+            "counterevidence_support": [],
+            "name": "predicate",
+            "reason": "属性定义描述为记录溶解性，原文'DCM易溶，H2O、Heptane难溶'符合该定义，且字段标签匹配。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                "text": "溶解性： DCM易溶，H2O、Heptane难溶"
+              }
+            ],
+            "verdict": "supported"
+          },
+          {
+            "counterevidence_support": [],
+            "name": "bridge",
+            "reason": "声明直接源自原文的结构化数据提取，属于explicit_assertion桥接。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                "text": "溶解性： DCM易溶，H2O、Heptane难溶"
+              }
+            ],
+            "verdict": "supported"
+          },
+          {
+            "counterevidence_support": [],
+            "name": "value",
+            "reason": "原文逐字值为'DCM易溶，H2O、Heptane难溶'，与声明value_quote一致。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                "text": "溶解性： DCM易溶，H2O、Heptane难溶"
+              }
+            ],
+            "verdict": "supported"
+          },
+          {
+            "counterevidence_support": [],
+            "name": "qualifiers",
+            "reason": "原文为肯定陈述，无模态或条件限制，polarity为affirmed，modality为asserted。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                "text": "溶解性： DCM易溶，H2O、Heptane难溶"
+              }
+            ],
+            "verdict": "supported"
+          },
+          {
+            "counterevidence_support": [],
+            "name": "counterevidence",
+            "reason": "核查相关段落，未发现与该溶解性描述相反的证据。",
+            "support": [
+              {
+                "context_text": null,
+                "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                "text": "溶解性： DCM易溶，H2O、Heptane难溶"
+              }
+            ],
+            "verdict": "supported"
+          }
+        ],
+        "target_id": "91ce93805cf138e8079ac3c0b203173e6f8ab53bd55aaa8bf4aceef1ed675ff9"
+      }
+    ]
+  },
+  "property_source_selections": [
+    {
+      "candidate_id": "9a903d4e3d54ef66d90e3900f30aa72e80666e3550095b5176b05c530377ab75",
+      "subject": "制剂剂型：口服片剂",
+      "predicate": "制剂剂型",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/dosageForm",
+      "value": "口服片剂",
+      "polarity": "affirmed",
+      "modality": "asserted",
+      "conditions": [],
+      "selection": null,
+      "evidence": {
+        "subject": [
+          {
+            "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+            "paragraph_index": 41,
+            "table_index": null,
+            "row_index": null,
+            "column_index": null,
+            "quote": "制剂剂型：口服片剂",
+            "anchor": {
+              "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+              "parser_version": "9",
+              "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+              "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+              "section_node_id": "section:28",
+              "block_id": "paragraph:41:0",
+              "paragraph_index": 41,
+              "fragment_index": 0,
+              "table_path": null,
+              "row_index": null,
+              "column_index": null,
+              "span_start": 0,
+              "span_end": 9,
+              "physical_page_number": 3
+            }
+          }
+        ],
+        "value": [
+          {
+            "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+            "paragraph_index": 41,
+            "table_index": null,
+            "row_index": null,
+            "column_index": null,
+            "quote": "口服片剂",
+            "anchor": {
+              "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+              "parser_version": "9",
+              "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+              "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+              "section_node_id": "section:28",
+              "block_id": "paragraph:41:0",
+              "paragraph_index": 41,
+              "fragment_index": 0,
+              "table_path": null,
+              "row_index": null,
+              "column_index": null,
+              "span_start": 5,
+              "span_end": 9,
+              "physical_page_number": 3
+            }
+          }
+        ],
+        "predicate_bridge": [
+          {
+            "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+            "paragraph_index": 41,
+            "table_index": null,
+            "row_index": null,
+            "column_index": null,
+            "quote": "制剂剂型：口服片剂",
+            "anchor": {
+              "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+              "parser_version": "9",
+              "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+              "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+              "section_node_id": "section:28",
+              "block_id": "paragraph:41:0",
+              "paragraph_index": 41,
+              "fragment_index": 0,
+              "table_path": null,
+              "row_index": null,
+              "column_index": null,
+              "span_start": 0,
+              "span_end": 9,
+              "physical_page_number": 3
+            }
+          }
+        ]
+      }
+    },
+    {
+      "candidate_id": "cd0828b2587a89b835636462dbb3b47e55a580871bc12232395f7df54213c151",
+      "subject": "溶解性： DCM易溶，H2O、Heptane难溶",
+      "predicate": "溶解性",
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/solubility",
+      "value": "DCM易溶，H2O、Heptane难溶",
+      "polarity": "affirmed",
+      "modality": "asserted",
+      "conditions": [],
+      "selection": null,
+      "evidence": {
+        "subject": [
+          {
+            "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+            "paragraph_index": 38,
+            "table_index": null,
+            "row_index": null,
+            "column_index": null,
+            "quote": "溶解性： DCM易溶，H2O、Heptane难溶",
+            "anchor": {
+              "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+              "parser_version": "9",
+              "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+              "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+              "section_node_id": "section:28",
+              "block_id": "paragraph:38:0",
+              "paragraph_index": 38,
+              "fragment_index": 0,
+              "table_path": null,
+              "row_index": null,
+              "column_index": null,
+              "span_start": 0,
+              "span_end": 24,
+              "physical_page_number": 3
+            }
+          }
+        ],
+        "value": [
+          {
+            "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+            "paragraph_index": 38,
+            "table_index": null,
+            "row_index": null,
+            "column_index": null,
+            "quote": "DCM易溶，H2O、Heptane难溶",
+            "anchor": {
+              "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+              "parser_version": "9",
+              "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+              "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+              "section_node_id": "section:28",
+              "block_id": "paragraph:38:0",
+              "paragraph_index": 38,
+              "fragment_index": 0,
+              "table_path": null,
+              "row_index": null,
+              "column_index": null,
+              "span_start": 5,
+              "span_end": 24,
+              "physical_page_number": 3
+            }
+          }
+        ],
+        "predicate_bridge": [
+          {
+            "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+            "paragraph_index": 38,
+            "table_index": null,
+            "row_index": null,
+            "column_index": null,
+            "quote": "溶解性： DCM易溶，H2O、Heptane难溶",
+            "anchor": {
+              "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+              "parser_version": "9",
+              "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+              "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+              "section_node_id": "section:28",
+              "block_id": "paragraph:38:0",
+              "paragraph_index": 38,
+              "fragment_index": 0,
+              "table_path": null,
+              "row_index": null,
+              "column_index": null,
+              "span_start": 0,
+              "span_end": 24,
+              "physical_page_number": 3
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "independent_conclusions": {
+    "e1": "P42剂型值可定位；字段整句不是独立产品名称或被充分识别的新增成品实例。实体提及/实例粒度未通过。",
+    "e2": "P44细胞毒性否定是属性声明，既不证明DrugProduct定义限定，也不证明独立实例。类型推理错误。",
+    "e3": "P39溶解性是共有物理属性，不证明DrugProduct定义限定或独立实例。类型推理错误。",
+    "e4": "P42可作产品剂型属性记录；仅将字段整句标为subject不能充分证明新增成品实例，与e1重复粒度。归属/身份未通过。",
+    "e5": "P44被重复建为record实体；非细胞毒不能证明finished dosage form或clinical drug role，类型未通过。",
+    "e6": "P39被重复建为record实体；溶解性不能证明finished dosage form或clinical drug role，类型未通过。",
+    "p1": "口服片剂的值/字段/方向/肯定语义与P42一致；具体主体e4身份与类型不足，不能作为整体事实质量通过。",
+    "p2": "P44末尾否表示false，但单字引用在偏移1和8各出现一次；系统因来源歧义拒绝。未检验最终布尔归一与否定表达。",
+    "p3": "溶剂配对和溶解性值与P39一致；具体主体e6类型证据不足，不能作为整体事实质量通过。",
+    "rb1-rb3": "同一物理字段重复建mention/record不证明多个独立实体；系统已按端点无效拒绝，未建立共指或关系。",
+    "N/A": "本批未提出N/A属性；不能声称本运行已经验证缺失值门。",
+    "relationships": "本批无关系候选、关系事实或实线，不构成关系召回/方向能力的通过或失败结论。"
+  }
+}

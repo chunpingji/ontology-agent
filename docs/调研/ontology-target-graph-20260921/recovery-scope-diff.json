@@ -1,0 +1,54 @@
+{
+  "recognition_run_id": "e3763123-4c23-4cbf-8276-19825b0782d5",
+  "failure": "record_discovery_scope_changed",
+  "catalog_saved": "875105c6e91d82dbae822b9fecd36c8d15869052b39c195a1ab47ea8949c1ee5",
+  "catalog_rebuilt": "875105c6e91d82dbae822b9fecd36c8d15869052b39c195a1ab47ea8949c1ee5",
+  "scope_saved": "f24fc28cfcb297f60f337a02a50f32a325e79d31d90ba782b0d7af791931fbd7",
+  "scope_rebuilt": "f24fc28cfcb297f60f337a02a50f32a325e79d31d90ba782b0d7af791931fbd7",
+  "cards_saved": 63,
+  "cards_rebuilt": 62,
+  "missing_cards": [
+    "f4769ef0a737697ec28be5a594f557cfb592aa95c46bfa3fee1e53c89b295485"
+  ],
+  "extra_cards": [],
+  "discovery_tasks": [
+    {
+      "schema_card_id": "80f189e1e52a2eb309fca822d8f5ac78be6f942bc40c3139edf4585c0fca2724",
+      "status": "active",
+      "purpose": null
+    },
+    {
+      "schema_card_id": "80f189e1e52a2eb309fca822d8f5ac78be6f942bc40c3139edf4585c0fca2724",
+      "status": "incomplete",
+      "purpose": null
+    }
+  ],
+  "missing_projection_matches": {
+    "f4769ef0a737697ec28be5a594f557cfb592aa95c46bfa3fee1e53c89b295485": [
+      {
+        "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+        "source_card_ids": [
+          "3454e347e56db6840b40f4118452e01788e56c5fe69e2ceb9eea5dcbbdb51fda",
+          "790682ad6012c6535e54a0a072ec595bcf30dc54dd21f0336db621a988153565",
+          "cf358a9f5eac73f0c79eb95798e6ffa39a01d8587463c3933a683be1847e0d3e"
+        ],
+        "source_record_ids": [
+          "eab3baba52455eea2a94bcc2a40d137bbe9935ea1c522a463e05c74c705e1c88",
+          "2477aa98a7c1b1fc1f9a523c4cb73278c8ab39b2698eb7dec20edcac5595e7e2"
+        ],
+        "remaining_ids": [
+          "124681456c9209243cb8165dc3b85b104104f1ad9cde822a8ac17b3e679fd515"
+        ]
+      }
+    ]
+  },
+  "review": {
+    "database_read_only_transaction": true,
+    "run_state_modified": false,
+    "recognition_model_called": false,
+    "ranking_or_device_probe_called": false,
+    "repository_code_modified": false,
+    "fix_implemented": false,
+    "investigation_processes_finished": true
+  }
+}

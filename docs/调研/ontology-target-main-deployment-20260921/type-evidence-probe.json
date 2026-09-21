@@ -1,0 +1,32 @@
+{
+  "run_id": "cmc-type-evidence-probe-20260921-0455",
+  "source_run_id": "8b97fa57-e2a2-477e-b836-1e8094813dc0",
+  "changed_fields": [
+    "instructions"
+  ],
+  "original_input_sha256": "69564c8d806fa86a08bec728df5679f3c86359342485590db874080f0bf1ab23",
+  "schema_sha256": "031324e8e9c8bbe318ffb646e5f4c9e246a1898e904b612ff43269834cbf2472",
+  "original_instruction_sha256": "ec91c1e311d5fa4e4aa919724245de779a7ce1fba8bce9e79776ce34ca1adfa1",
+  "new_instruction_sha256": "3a0ba17d8ad2c29c2371e7ec081457f2749c97ea1337aef7281dde5a0115f51c",
+  "max_output_tokens": 16384,
+  "seconds": 146.12923350487836,
+  "response_status": "completed",
+  "usage": {
+    "input_tokens": 13119,
+    "input_tokens_details": {
+      "cached_tokens": 0
+    },
+    "output_tokens": 5613,
+    "total_tokens": 18732
+  },
+  "target_count": 6,
+  "type_facets": [
+    {
+      "target_id": "@r:b804520631db",
+      "verdict": "supported",
+      "reason": "原文指明该物质为'口服片剂'（制剂形态），符合'finished dosage form'的关键限定；且作为'HRS-1597'项目标识的实体，符合'drug product'定义。"
+    }
+  ],
+  "result": "not_passed_against_independent_type_expectation",
+  "limits": "single fixed-batch prompt probe; no application state or business facts changed; no speed conclusion"
+}

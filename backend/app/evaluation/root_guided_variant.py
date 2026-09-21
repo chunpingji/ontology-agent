@@ -30,6 +30,7 @@ from app.services.extraction.evidence_scope import (
 )
 from app.services.extraction.extraction_diagnostics import MODEL_FAILURES
 from app.services.extraction.extraction_tasks import (
+    OUTPUT_SPLIT_VERSION,
     SYSTEM,
     ExtractionRun,
     GenericExtractionRunner,
@@ -71,8 +72,22 @@ class RootGuidedRunner(GenericExtractionRunner):
         self.variant_statistics = Counter(planning_wall_seconds=plan["planning_wall_seconds"])
         self.coverage = []
 
-    def input_id(self, ir, effective_class="", *, scheduler_version=None):
-        base = super().input_id(ir, effective_class, scheduler_version=POLICY_VERSION)
+    def input_id(
+        self,
+        ir,
+        effective_class="",
+        *,
+        scheduler_version=None,
+        output_split_version=OUTPUT_SPLIT_VERSION,
+        execution_policy="configured",
+    ):
+        base = super().input_id(
+            ir,
+            effective_class,
+            scheduler_version=POLICY_VERSION,
+            output_split_version=output_split_version,
+            execution_policy=execution_policy,
+        )
         return stable_id("root-guided", [base, self.plan["dependency_hash"]])
 
     def direct_range_classes(self, predicate):

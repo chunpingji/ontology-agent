@@ -229,11 +229,12 @@ def test_current_entity_identity_survives_cross_task_binding_and_cold_resume(
     ]
     assert len(product_nodes) == 1, result.diagnostics
     canonical = product_nodes[0].entity_id
+    canonical_wire = f"@r:{canonical[:12]}"
     assert product_nodes[0].label == "HRS-9267 粗品"
     for view in discoveries[1:]:
         candidates = [entity for entity in view["registered_entities"]
                       if entity["class_iri"] == execution_fixture.CHILD]
-        assert len(candidates) == 1 and candidates[0]["entity_ref"]["id"] == canonical
+        assert len(candidates) == 1 and candidates[0]["entity_ref"]["id"] == canonical_wire
         prior_ids = {anchor["evidence_id"] for anchor in candidates[0]["source_refs"]}
         assert all(not unit["fact_eligible"] for unit in view["evidence_units"]
                    if unit["evidence_id"] in prior_ids)

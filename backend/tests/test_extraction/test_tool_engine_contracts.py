@@ -174,6 +174,7 @@ def test_empty_verification_targets_require_empty_answer_without_invalid_enums()
                                profile=ExtractionProfile(), scope=TraversalScope.create())
     schema = compile_stage_schema('verification', card=card, evidence_ids=['ev-1'], targets=[])
     assert schema['properties']['verifications']['maxItems'] == 0
+    assert schema['$defs']['FacetVerification']['properties']['reason']['maxLength'] == 160
     assert '"enum": []' not in json.dumps(schema)
     for field in ('target_id', 'content_hash'):
         assert 'enum' not in schema['$defs']['TargetVerification']['properties'][field]
@@ -236,6 +237,7 @@ def build_frozen_example(examples, mutation=None):
     frozen = FrozenClaimSet(content_hash=evidence_hash(frozen_values), **frozen_values)
     anchor = view.entity_dependencies[0].source_refs[0]
     context = SimpleNamespace(
+        tool_inputs={},
         protocol_state={'evidence_revision': 1},
         fragments=[ContextFragment(anchor=anchor, text=request['evidence_units'][0]['text'],
                                    purpose='target', fact_eligible=True)],

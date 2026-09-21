@@ -37,15 +37,18 @@ vm.runInNewContext(compiled, {
     if (name === "@/components/analysis/document-graph-canvas") return {
       DocumentGraphCanvas: () => React.createElement("div", { "aria-label": "可交互关系图谱" }),
     };
+    if (name === "@/components/analysis/attribute-calibration-list") return {
+      AttributeCalibrationList: () => null,
+    };
     return require(name);
   },
   fetch() { assert.fail("rendering ranking diagnostics must never issue requests"); },
 });
 
-function render(artifact, runStatus, rankingBudgetEnabled) {
+function render(artifact, runStatus) {
   return renderToStaticMarkup(React.createElement(exports.DocumentRelationshipGraph, {
     artifact: { properties: [], relationships: [], ...artifact },
-    runStatus, rankingBudgetEnabled, projection: "effective_affirmed", selectedSelectionRef: null,
+    runStatus, projection: "effective_affirmed", selectedSelectionRef: null,
     onProjectionChange() { assert.fail("render caused projection mutation"); },
     onSelectionRef() { assert.fail("render caused source request"); },
   }));
@@ -75,6 +78,9 @@ function renderTemplateSummary(candidatePolicy) {
       if (name === "@/lib/document-analysis") return reasons;
       if (name === "./property-review-dialog") return {
         PropertyReviewDialog: () => assert.fail("summary render must not open property review"),
+      };
+      if (name === "./attribute-calibration-list") return {
+        AttributeCalibrationList: () => null,
       };
       if (name === "@/lib/document-property-review") return {
         freezePropertyReviewTarget: () => assert.fail("summary render must not freeze a review target"),
@@ -215,55 +221,48 @@ test("a resumed run labels paused ranking evidence as its latest submitted snaps
   assert.doesNotMatch(html, /停止原因/);
 });
 
-test("disabled ranking budgets expose frozen accounting and mark unaccounted epochs without hiding models", () => {
+test("ranking diagnostics retain historical accounting without restoring the removed budget control", () => {
   const artifact = { availability: "pending", graph_snapshot: null, entities: [], ranking: {
     ...ranking, budget_enabled: false, epochs: [{ ...ranking.epochs[0], budget_accounted: false }],
   } };
   const html = render(artifact, "paused");
-  assert.match(html, /排序预算限制：已禁用/);
-  assert.match(html, /预算统计已暂停（显示启用期间累计值）/);
-  assert.match(html, /排序模型仍可运行/);
-  assert.match(html, /从关闭前的累计量继续/);
+  assert.doesNotMatch(html, /排序预算限制：|启用排序预算限制|禁用排序预算限制|预算统计已暂停/);
   assert.match(html, /预算未计账/);
   assert.match(html, /不代表没有模型资源消耗/);
   assert.match(html, /预留 tokens 100/);
-  const reenabled = render(artifact, "paused", true);
-  assert.match(reenabled, /排序预算限制：已启用/);
-  assert.doesNotMatch(reenabled, /预算统计已暂停/);
-  assert.match(reenabled, /预算未计账/);
 });
 
-test("disabled run control explains that an old budget pause can resume despite the enabled snapshot", () => {
+test("historical budget pauses are explained from the committed graph snapshot", () => {
   for (const code of ["ranking_call_budget_exhausted", "ranking_token_budget_exhausted"]) {
     const artifact = { availability: "partial", graph_snapshot: {}, entities: [],
       properties: [], relationships: [], coverage: { records_planned: 2, records_examined: 0,
         records_incomplete: 0, records_unattempted: 2, pending_frontiers: 0, subjects: [],
         stop_reason: "ranking_paused" }, unresolved: { undetermined: 0, unsupported: 0 },
-      ranking: { ...ranking, paused: true, budget_enabled: true, reasons: [code], epochs: [] },
+      ranking: { ...ranking, paused: true, budget_enabled: false, reasons: [code], epochs: [] },
     };
-    const html = render(artifact, "paused", false);
+    const html = render(artifact, "paused");
     const notice = visibleContent(html);
     assert.match(notice, /此前因排序预算耗尽暂停；预算限制现已禁用，可显式恢复运行，禁用期间不计账/);
     assert.doesNotMatch(notice, /恢复不会重置已用额度/);
     assert.doesNotMatch(html, /覆盖与未完成范围|覆盖未完成说明/);
     assert.ok(html.includes(code), "The historical cause remains available for diagnosis");
 
-    const continuing = visibleContent(render(artifact, "running", false));
+    const continuing = visibleContent(render(artifact, "running"));
     assert.match(continuing, /此前因排序预算耗尽暂停；预算限制现已禁用，运行正在继续，禁用期间不计账/);
     assert.doesNotMatch(continuing, /可显式恢复运行|恢复不会重置已用额度/);
 
-    const reenabled = visibleContent(render({ ...artifact, ranking: { ...artifact.ranking, budget_enabled: false } },
-      "paused", true));
+    const reenabled = visibleContent(render({ ...artifact, ranking: { ...artifact.ranking, budget_enabled: true } },
+      "paused"));
     assert.match(reenabled, /预算已用完，恢复不会重置已用额度/);
     assert.doesNotMatch(reenabled, /可显式恢复运行|预算限制现已禁用/);
   }
 });
 
-test("disabling the budget preserves explanations of technical pauses", () => {
+test("technical ranking pauses remain readable without a budget control", () => {
   const html = visibleContent(render({ availability: "pending", graph_snapshot: null, entities: [], ranking: {
     ...ranking, paused: true, budget_enabled: true,
     reasons: ["ranking_technical_failure:DataError"], epochs: [],
-  } }, "paused", false));
+  } }, "paused"));
   assert.match(html, /排序发生技术故障，本轮排序尚未完成/);
   assert.doesNotMatch(html, /此前因排序预算耗尽暂停|可显式恢复运行/);
 });

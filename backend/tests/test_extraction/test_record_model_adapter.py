@@ -4,13 +4,17 @@ from __future__ import annotations
 
 import copy
 import json
+from dataclasses import replace
 from types import SimpleNamespace
 
 import pytest
 from docx import Document
 
 from app.services.extraction.evidence_identity import evidence_hash
-from app.services.extraction.ontology_guided.claim_protocol import ExtractionProfile
+from app.services.extraction.ontology_guided.claim_protocol import (
+    ExtractionProfile,
+    plan_verification_target_batches,
+)
 from app.services.extraction.ontology_guided.context import assemble_record_discovery_context
 from app.services.extraction.ontology_guided.contracts import (
     DocumentContext,
@@ -19,7 +23,10 @@ from app.services.extraction.ontology_guided.contracts import (
     SlotSpec,
     VersionedRef,
 )
-from app.services.extraction.ontology_guided.current_work import validate_tool_protocol
+from app.services.extraction.ontology_guided.current_work import (
+    call_request_key,
+    validate_tool_protocol,
+)
 from app.services.extraction.ontology_guided.model_adapter import RecognitionModelFailure
 from app.services.extraction.ontology_guided.record_discovery import (
     RECORD_PIPELINE,
@@ -140,7 +147,10 @@ def setup_record(source, monkeypatch, *, stop_at=None, empty=False, tool_first=F
     def transport(client, **kwargs):
         requests.append(copy.deepcopy(kwargs))
         view = json.loads(kwargs["input_items"][0]["content"][0]["text"])
-        if tool_first and len(requests) == 1:
+        has_paired_tool_result = any(
+            item.get("type") == "function_call_output" for item in kwargs["input_items"]
+        )
+        if tool_first and kwargs.get("tools") and not has_paired_tool_result:
             output = [{"type": "function_call", "id": "fc-1", "call_id": "anchor-1",
                        "name": "resolve_source_anchor", "arguments": json.dumps({
                            "evidence_id": source["source_unit"].evidence_id,
@@ -189,18 +199,219 @@ def test_record_entities_and_each_owner_property_use_complete_verifier(source, m
     assert "subject_ref" not in first and "predicate_iri" not in first
     assert "subject" not in first["task"]
     assert len(first["schema_card"]["class_cards"]) == 2
+    assert not requests[0].get("tools")
+    assert requests[0].get("tool_choice") is None
     verified = json.loads(requests[1]["input_items"][0]["content"][0]["text"])
     assert len(verified["verification_input"]["targets"]) == 4
     assert outcome.controller_checks["metric"] == outcome.controller_checks["shacl"] == 2
     for request in requests:
-        assert {tool["name"] for tool in request.get("tools") or []} <= {
-            "inspect_evidence", "resolve_source_anchor", "propose_mentions",
+        offered = {tool["name"] for tool in request.get("tools") or []}
+        assert "propose_mentions" not in offered
+        assert offered <= {
+            "inspect_evidence", "resolve_source_anchor",
             "find_referent_candidates", "check_claim_binding",
         }
 
 
+def test_record_saved_request_cannot_restore_boundary_ner(source, monkeypatch):
+    adapter, task, context, card, storage, _, _ = setup_record(source, monkeypatch)
+    assert adapter.inspect_record(task, context, card).complete
+    protocol = copy.deepcopy(storage["protocol"])
+    protocol["stage"] = "discovery"
+    protocol["request_attempt"] += 1
+    protocol["pending_request"] = {
+        "attempt": protocol["request_attempt"],
+        "stage": "discovery",
+        "request_hash": evidence_hash("saved-boundary-request"),
+        "reservation_key": call_request_key({
+            "lineage_id": protocol["lineage_id"],
+            "protocol_attempt": protocol["request_attempt"],
+        }),
+        "allowed_tool_names": ["propose_mentions"],
+    }
+    with pytest.raises(ValueError, match="^record_protocol_tool_outside_scope$"):
+        validate_tool_protocol(protocol)
+
+
+def test_competing_record_types_use_entity_only_first_pass(source, monkeypatch):
+    from app.services.llm import local_client
+
+    adapter, task, context, card, _, requests, _ = setup_record(source, monkeypatch)
+    adapter.record_discovery = adapter.record_discovery.model_copy(
+        update={"max_classes_per_card": 1},
+    )
+    transport = local_client.responses_create
+
+    def entity_only(client, **kwargs):
+        view = json.loads(kwargs["input_items"][0]["content"][0]["text"])
+        if view["stage"] == "discovery":
+            assert kwargs["text_format"]["schema"]["properties"]["properties"][
+                "maxItems"
+            ] == 0
+            assert "本轮只做实体识别" in kwargs["instructions"]
+            turn = transport(client, **kwargs)
+            payload = json.loads(turn.output_items[0]["content"][0]["text"])
+            payload["properties"] = []
+            turn.output_items[0]["content"][0]["text"] = json.dumps(payload)
+            return turn
+        return transport(client, **kwargs)
+
+    monkeypatch.setattr(local_client, "responses_create", entity_only)
+    outcome = adapter.inspect_record(task, context, card)
+    assert outcome.complete
+    assert len(outcome.nodes) == 2
+    assert not outcome.properties
+    assert len(requests) == 2
+    assert not requests[0].get("tools")
+
+
+def test_dependency_aware_verification_batches_bound_twenty_three_targets():
+    entities = [VersionedRef(id=f"{'e' * 63}{index}", revision=1) for index in range(6)]
+    targets = []
+    for index, entity in enumerate(entities):
+        targets.append(SimpleNamespace(
+            target_id=evidence_hash(["entity", index]), claim_ref=entity,
+            dependency_refs=[], required_facets=["type", "referent", "subject_role"],
+        ))
+        property_count = (5, 3, 3, 2, 2, 2)[index]
+        for ordinal in range(property_count):
+            targets.append(SimpleNamespace(
+                target_id=evidence_hash(["property", index, ordinal]),
+                claim_ref=VersionedRef(
+                    id=evidence_hash(["property-ref", index, ordinal]), revision=1,
+                ),
+                dependency_refs=[entity],
+                required_facets=[
+                    "subject_binding", "field_role", "predicate", "bridge", "value",
+                    "qualifiers", "counterevidence",
+                ],
+            ))
+    assert len(targets) == 23
+    batches = plan_verification_target_batches(SimpleNamespace(targets=targets))
+    assert len(batches) > 1
+    assert {target_id for batch in batches for target_id in batch} == {
+        target.target_id for target in targets
+    }
+    assert all(1 <= len(batch) <= 8 for batch in batches)
+    by_id = {target.target_id: target for target in targets}
+    assert all(
+        sum(len(by_id[target_id].required_facets) for target_id in batch) <= 48
+        for batch in batches
+    )
+
+
+def test_truncated_completed_json_is_split_without_replaying_fragment(source, monkeypatch):
+    from app.services.llm import local_client
+
+    adapter, task, context, card, storage, requests, _ = setup_record(
+        source, monkeypatch, budget=10,
+    )
+    transport = local_client.responses_create
+    truncated = False
+    marker = "TRUNCATED_FRAGMENT_MUST_NOT_REPLAY"
+
+    def truncate_first_verification(client, **kwargs):
+        nonlocal truncated
+        view = json.loads(kwargs["input_items"][0]["content"][0]["text"])
+        turn = transport(client, **kwargs)
+        if view["stage"] == "verification" and not truncated:
+            truncated = True
+            return replace(
+                turn,
+                output_items=[{
+                    "type": "message", "role": "assistant", "status": "completed",
+                    "content": [{"type": "output_text",
+                                 "text": '{"verifications":["' + marker}],
+                }],
+                response_status="completed", incomplete_details=None,
+                usage={"input_tokens": 10, "output_tokens": adapter.max_output_tokens},
+            )
+        return turn
+
+    monkeypatch.setattr(local_client, "responses_create", truncate_first_verification)
+    outcome = adapter.inspect_record(task, context, card)
+    assert outcome.complete
+    verification_views = [
+        json.loads(request["input_items"][0]["content"][0]["text"])
+        for request in requests
+        if json.loads(request["input_items"][0]["content"][0]["text"])["stage"]
+        == "verification"
+    ]
+    assert [len(view["verification_input"]["targets"]) for view in verification_views] == [4, 2, 2]
+    verification_texts = [
+        request["input_items"][0]["content"][0]["text"]
+        for request in requests
+        if json.loads(request["input_items"][0]["content"][0]["text"])["stage"]
+        == "verification"
+    ]
+    stable_prefixes = [text.split(',"verification_input":', 1)[0]
+                       for text in verification_texts]
+    assert len(set(stable_prefixes)) == 1
+    assert all(marker not in json.dumps(request["input_items"], ensure_ascii=False)
+               for request in requests[2:])
+    batches = storage["protocol"]["verification_batches"]["batches"]
+    assert [batch["status"] for batch in batches].count("split") == 1
+    assert [batch["status"] for batch in batches].count("completed") == 2
+
+
+def test_completed_verification_batch_survives_single_target_truncation_and_resume(
+    source, monkeypatch,
+):
+    from app.services.llm import local_client
+
+    adapter, task, context, card, storage, requests, _ = setup_record(
+        source, monkeypatch, budget=12,
+    )
+    transport = local_client.responses_create
+    verification_call = 0
+
+    def split_then_fail_one(client, **kwargs):
+        nonlocal verification_call
+        view = json.loads(kwargs["input_items"][0]["content"][0]["text"])
+        turn = transport(client, **kwargs)
+        if view["stage"] != "verification":
+            return turn
+        verification_call += 1
+        if verification_call in {1, 3, 4}:
+            return replace(
+                turn,
+                output_items=[{
+                    "type": "message", "role": "assistant", "status": "completed",
+                    "content": [{"type": "output_text", "text": '{"verifications":['}],
+                }],
+                usage={"input_tokens": 10, "output_tokens": adapter.max_output_tokens},
+            )
+        return turn
+
+    monkeypatch.setattr(local_client, "responses_create", split_then_fail_one)
+    with pytest.raises(RecognitionModelFailure, match="model_output_truncated"):
+        adapter.inspect_record(task, context, card)
+    batches = storage["protocol"]["verification_batches"]["batches"]
+    completed_ids = {
+        target_id for batch in batches if batch["status"] == "completed"
+        for target_id in batch["target_ids"]
+    }
+    assert completed_ids
+    assert any(batch["status"] == "failed" for batch in batches)
+    paid_before_resume = len(requests)
+
+    context.remaining_model_calls = 12
+    outcome = adapter.inspect_record(task, context, card)
+    assert outcome.complete
+    resumed_views = [
+        json.loads(request["input_items"][0]["content"][0]["text"])
+        for request in requests[paid_before_resume:]
+    ]
+    resumed_target_ids = {
+        target["target_id"] for view in resumed_views
+        if view["stage"] == "verification"
+        for target in view["verification_input"]["targets"]
+    }
+    assert completed_ids.isdisjoint(resumed_target_ids)
+
+
 @pytest.mark.parametrize("stop_at", ["model_turn", "tool_result", "discovery", "verification"])
-def test_record_cold_resume_reuses_paid_responses_and_paired_tool_results(
+def test_record_cold_resume_reuses_paid_responses_and_verification_tool_results(
     source, monkeypatch, stop_at,
 ):
     adapter, task, context, card, saved, paid, _ = setup_record(
@@ -210,7 +421,9 @@ def test_record_cold_resume_reuses_paid_responses_and_paired_tool_results(
         adapter.inspect_record(task, context, card)
     saved = copy.deepcopy(saved)
     paid_count = len(paid)
-    adapter, task, context, card, storage, resumed, _ = setup_record(source, monkeypatch)
+    adapter, task, context, card, storage, resumed, _ = setup_record(
+        source, monkeypatch, tool_first=True,
+    )
     storage.update(copy.deepcopy(saved))
     context.protocol_state, context.protocol_results = saved["protocol"], saved["results"]
     context.remaining_model_calls = 6 - paid_count
@@ -222,7 +435,7 @@ def test_record_cold_resume_reuses_paid_responses_and_paired_tool_results(
     tools = [v for v in storage["results"].values() if v["field"] == "tool_result"]
     assert len(tools) == 1
     assert tools[0]["value"]["result"]["status"] == "ok"
-    if resumed and stop_at in {"model_turn", "tool_result"}:
+    if resumed and stop_at == "tool_result":
         assert len([item for item in resumed[0]["input_items"]
                     if item.get("type") == "function_call_output"]) == 1
 
@@ -246,6 +459,7 @@ def test_record_malformed_answer_corrects_without_changing_task_or_schema(source
     assert outcome.model_calls == 3
     assert requests[0]["text_format"] == requests[1]["text_format"]
     assert "stage_answer_invalid" in json.dumps(requests[1]["input_items"])
+    assert "invalid response" not in json.dumps(requests[1]["input_items"])
 
 
 def test_record_context_capacity_failure_is_incomplete_without_paid_call(source, monkeypatch):
@@ -345,7 +559,9 @@ def test_record_entity_requires_every_component_while_other_entity_survives(
     assert outcome.complete is (not partial_composition)
     if partial_composition:
         assert outcome.reason_code == "record_composition_source_coverage_missing"
-    assert len(requests) == (3 if partial_composition else 2)
+    # Missing composition proof is downgraded locally; it never resends the
+    # same source and full verification answer for correction.
+    assert len(requests) == 2
     assert any(node.class_iri == "urn:Other" for node in outcome.nodes)
     records = [node for node in outcome.nodes if node.grounding_kind == "record"]
     if partial_composition:

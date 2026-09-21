@@ -240,7 +240,7 @@ def compile_batch_stage_schema(
     reference_resolution: bool = False,
     relation_bridges_by_member: Mapping[str, list] | None = None,
 ) -> dict:
-    """Reuse one atomic schema; member-specific authority stays in freeze/verification."""
+    """Share claim definitions, binding verification targets to their stage member."""
     members = list(member_inputs)
     if not members or len({member.task_id for member in members}) != len(members):
         raise ValueError("batch_schema_members_invalid")
@@ -262,6 +262,34 @@ def compile_batch_stage_schema(
         reference_resolution=reference_resolution, relation_bridges=bridges,
     )
     definitions = schema.pop("$defs")
+    if stage == "verification":
+        answers = schema["properties"]["verifications"].get("prefixItems", [])
+        member_schemas, offset = [], 0
+        for member in members:
+            count = len((targets_by_member or {}).get(member.task_id, []))
+            verifications = {
+                "type": "array", "minItems": count, "maxItems": count,
+                **({"prefixItems": answers[offset:offset + count]} if count else {
+                    "items": {"type": "string"},
+                }),
+            }
+            offset += count
+            member_schemas.append({
+                "type": "object", "additionalProperties": False,
+                "properties": {
+                    "task_id": {"type": "string", "const": member.task_id},
+                    "result": {**schema, "properties": {"verifications": verifications}},
+                },
+                "required": ["task_id", "result"],
+            })
+        return {
+            "type": "object", "additionalProperties": False,
+            "properties": {"members": {
+                "type": "array", "prefixItems": member_schemas,
+                "minItems": len(members), "maxItems": len(members),
+            }},
+            "required": ["members"], "$defs": definitions,
+        }
     name = "BatchMemberResult"
     definitions[name] = schema
     return {

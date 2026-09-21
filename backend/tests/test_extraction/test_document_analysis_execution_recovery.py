@@ -120,14 +120,12 @@ def frozen_legacy_policy(*, current_state, evidence_repair):
             "evidence_repair": "evidence-repair-v1",
             "layered_recognition": "dependency-ready-v1",
             "source_object_recognition": "source-object-recognition-v1",
-            "cmc_describes_type_scope": "drug-product-only-v1",
             "expert_review_repair": "expert-review-repair-v1",
             "candidate_planning": "sparse-candidates-v1",
             "incremental_performance": "incremental-performance-v1",
             "state_storage_version": 4 if current_state else 3,
             **({"state_baseline_interval": 32} if not current_state else {}),
             "semantic_expansion": "bounded-semantic-v1",
-            "process_granularity": "whole-method-field-v1",
             "attribute_priority": "source-field-priority-v1",
             "heuristic_policy": "heuristic-first-v3",
             **({"heuristic_policy": "heuristic-first-v4",
@@ -234,7 +232,35 @@ def test_stalled_recovery_stops_before_replay_and_keeps_paid_artifacts(
     assert store.list_events(run_id, "analyst")[-1].payload["error"]["code"] == "ANALYSIS_STALLED"
 
 
-@pytest.mark.parametrize("failure_class", [RuntimeError, ModelWaitFailure])
+@pytest.mark.parametrize("stalled", [False, True])
+def test_model_cancellation_reports_durable_stall_when_progress_expired(
+    client, db, analyst_headers, tmp_path, monkeypatch, stalled,
+):
+    from app.services.llm.model_runtime import ModelCancelled
+
+    run_id = _create_pending_run(
+        client, analyst_headers, tmp_path, monkeypatch, key="cancelled-progress-clock",
+    )
+    store, token = _claim(db, run_id)
+
+    def cancelled(db, _store, run, _token, **_kwargs):
+        if stalled:
+            row = db.get(DocumentAnalysisExecution, run.recognition_run_id)
+            row.last_progress_at = datetime.now(UTC) - timedelta(hours=2)
+            db.commit()
+        raise ModelCancelled("synthetic cancellation")
+
+    monkeypatch.setattr(execution_service, "_execute_claimed", cancelled)
+    execution_service._execute_dispatched_run(
+        db, store, store.get_owned(run_id, "analyst"), token,
+    )
+    run = store.get_owned(run_id, "analyst")
+    assert run.execution_status == "failed"
+    assert run.stop_reason == ("execution_stalled" if stalled else "model_interrupted")
+    assert run.error["code"] == ("ANALYSIS_STALLED" if stalled else "MODEL_INTERRUPTED")
+
+
+@pytest.mark.parametrize("failure_class", [RuntimeError, ValueError, ModelWaitFailure])
 def test_worker_failure_keeps_bounded_diagnostics_private(
     client, db, analyst_headers, tmp_path, monkeypatch, failure_class,
 ):

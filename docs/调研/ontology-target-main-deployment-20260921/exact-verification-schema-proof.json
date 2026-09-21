@@ -1,0 +1,215 @@
+{
+  "source_run": "8b97fa57-e2a2-477e-b836-1e8094813dc0",
+  "source_call_id": "f74b6b251315888e0adedd76bda52e8ffd5184e4fff13a69fb794f24eb0ebc2c",
+  "schema_source": "production compile_stage_schema",
+  "real_targets": 6,
+  "facets": 39,
+  "experiments": {
+    "original": {
+      "returncode": 0,
+      "grammar_bytes": 6108,
+      "cases": {
+        "valid_all_unsupported": {
+          "jsonschema": true,
+          "gbnf": true
+        },
+        "missing_target": {
+          "jsonschema": true,
+          "gbnf": true
+        },
+        "duplicate_target": {
+          "jsonschema": true,
+          "gbnf": true
+        },
+        "swapped_hash": {
+          "jsonschema": true,
+          "gbnf": true
+        },
+        "swapped_target_id": {
+          "jsonschema": true,
+          "gbnf": true
+        },
+        "unsupported_omits_referent_subject_role": {
+          "jsonschema": true,
+          "gbnf": true
+        },
+        "duplicate_facet": {
+          "jsonschema": true,
+          "gbnf": true
+        },
+        "wrong_facet": {
+          "jsonschema": true,
+          "gbnf": true
+        },
+        "target_order_reversed": {
+          "jsonschema": true,
+          "gbnf": true
+        },
+        "facet_order_reversed": {
+          "jsonschema": true,
+          "gbnf": true
+        }
+      },
+      "schema_bytes": 3799
+    },
+    "exact": {
+      "returncode": 0,
+      "grammar_bytes": 32060,
+      "cases": {
+        "valid_all_unsupported": {
+          "jsonschema": true,
+          "gbnf": true
+        },
+        "missing_target": {
+          "jsonschema": false,
+          "gbnf": false
+        },
+        "duplicate_target": {
+          "jsonschema": false,
+          "gbnf": false
+        },
+        "swapped_hash": {
+          "jsonschema": false,
+          "gbnf": false
+        },
+        "swapped_target_id": {
+          "jsonschema": false,
+          "gbnf": false
+        },
+        "unsupported_omits_referent_subject_role": {
+          "jsonschema": false,
+          "gbnf": false
+        },
+        "duplicate_facet": {
+          "jsonschema": false,
+          "gbnf": false
+        },
+        "wrong_facet": {
+          "jsonschema": false,
+          "gbnf": false
+        },
+        "target_order_reversed": {
+          "jsonschema": false,
+          "gbnf": false
+        },
+        "facet_order_reversed": {
+          "jsonschema": false,
+          "gbnf": false
+        }
+      },
+      "schema_bytes": 14938
+    },
+    "compact": {
+      "returncode": 0,
+      "grammar_bytes": 32060,
+      "cases": {
+        "valid_all_unsupported": {
+          "jsonschema": true,
+          "gbnf": true
+        },
+        "missing_target": {
+          "jsonschema": false,
+          "gbnf": false
+        },
+        "duplicate_target": {
+          "jsonschema": false,
+          "gbnf": false
+        },
+        "swapped_hash": {
+          "jsonschema": false,
+          "gbnf": false
+        },
+        "swapped_target_id": {
+          "jsonschema": false,
+          "gbnf": false
+        },
+        "unsupported_omits_referent_subject_role": {
+          "jsonschema": false,
+          "gbnf": false
+        },
+        "duplicate_facet": {
+          "jsonschema": false,
+          "gbnf": false
+        },
+        "wrong_facet": {
+          "jsonschema": false,
+          "gbnf": false
+        },
+        "target_order_reversed": {
+          "jsonschema": false,
+          "gbnf": false
+        },
+        "facet_order_reversed": {
+          "jsonschema": false,
+          "gbnf": false
+        }
+      },
+      "schema_bytes": 11979
+    },
+    "compact_projection_responses": {
+      "returncode": 0,
+      "grammar_bytes": 30443,
+      "const_aliases_roundtrip": true,
+      "responses_schema_preserved": true
+    },
+    "tuple_only": {
+      "returncode": 0,
+      "grammar_bytes": 135,
+      "accepts_ab": true,
+      "accepts_aa": false
+    },
+    "tuple_items_false": {
+      "returncode": 2,
+      "error": "JSON schema conversion failed:\nUnrecognized schema: false\n"
+    },
+    "tuple_items_retained": {
+      "returncode": 0,
+      "grammar_bytes": 197,
+      "accepts_ab": true,
+      "accepts_aa": true
+    },
+    "split_2": {
+      "returncode": 0,
+      "grammar_bytes": 23628,
+      "subset_only": true
+    },
+    "split_4": {
+      "returncode": 0,
+      "grammar_bytes": 23838,
+      "subset_only": true
+    },
+    "batch_projected": {
+      "returncode": 0,
+      "grammar_bytes": 35341,
+      "schema_source": "production compile_batch_stage_schema",
+      "two_members_distinct_target_sets": true,
+      "const_task_aliases_roundtrip": true,
+      "rejected": [
+        "missing_member",
+        "duplicate_member",
+        "all_targets_in_one_member",
+        "swapped_member_targets"
+      ]
+    }
+  },
+  "library_sha256": {
+    "libllama-common.so.0.0.9853": "42f38815332fa0e2502947da10cd3ad9ae8599314e38e1f885df4a0ef46785b3",
+    "libllama-server-impl.so": "b11d2f1f87c211efe1213e05a4a0433b19ba16a7df9b053ae6d205435bd847af",
+    "test-gbnf-validator": "8d6c3c4a74b20c3e6149c27b7c1ffd5d9c0ecc50b77bdb325d8ea4dddfaac842"
+  },
+  "source_schema_sha256": "651add8ae02386cfd74aa73c0eb1817365c92daceaa2ee29ce3d667ae4ff482b",
+  "llama_git_head": "7af4279f4579094cbe121cccb3c28357396e55d0",
+  "validation": {
+    "targeted_pytest": "138 passed",
+    "new_exact_schema_tests": "16 passed",
+    "ruff": "passed",
+    "model_calls": 0,
+    "runtime_state_mutations": 0
+  },
+  "scope_notes": [
+    "真实已保存核验请求来自8b97fa57，6个冻结target/39个facets；目标严格反序列化后由当前生产compile_stage_schema重新生成。",
+    "batch实验使用真实target的2/4分组及合成member ids，经当前compile_batch_stage_schema编译，不声称这是历史批调用本身。",
+    "离线C++工具链接运行服务同一动态库，仅调用schema/Responses转换，未加载模型或调用服务。",
+    "结构成立不等于semantic verdict正确；本地validate_verification_targets与证据校验保留。"
+  ]
+}

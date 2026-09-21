@@ -42,7 +42,6 @@ def configuration(store, run):
     return {
         "model": policy.get("model"), "model_revision": policy.get("model_revision"),
         "api_protocol": policy.get("api_protocol"),
-        "gliner_enabled": bool(options.get("gliner2")),
         "mock_enabled": bool(options.get("external_sources")),
         "vocabulary_enabled": bool(options.get("vocabulary_overlay")),
         "request_budget": policy.get("request_budget"),

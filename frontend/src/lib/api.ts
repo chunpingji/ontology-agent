@@ -1966,6 +1966,13 @@ export interface DocumentRecordDiscoveryDiagnostics {
   admitted_pairs: number;
   unselected_pairs: number;
   unselected_groups: number;
+  routing_cards?: number;
+  metadata_nodes?: number;
+  routed_groups?: number;
+  unrouted_groups?: number;
+  selected_regions?: number;
+  execution_mode?: "per_card" | "region_batch";
+  property_field_mode?: "separate" | "region_batch";
 }
 
 export interface DocumentAnalysisProgress {
@@ -2170,6 +2177,13 @@ export function defaultDocumentGraphProjection(run?: { extraction_protocol?: str
 }
 
 export interface DocumentGraphAssertionBase {
+  decision_status: "supported" | "unsupported" | "undetermined" | "not_checked";
+  validation_diagnostics: Array<{
+    check: "metric" | "shacl" | "relation_graph" | "schema";
+    status: "passed" | "failed" | "incomplete" | "not_checked";
+    reason_codes: string[];
+    message: string;
+  }>;
   modality?: DocumentAssertionModality | null;
   scope?: DocumentGraphScope | null;
   candidate_id: string;
@@ -2205,6 +2219,8 @@ export interface DocumentGraphAssertionBase {
 export interface DocumentGraphProperty extends DocumentGraphAssertionBase {
   direction: "subject_to_value";
   raw_value: string;
+  raw_unit: string | null;
+  normalization_available: boolean;
   normalized_value: unknown;
   datatype_iri: string | null;
   unit: string | null;
@@ -2690,6 +2706,57 @@ export const getDocumentAnalysisGraph = (
   `${documentRunPath(recognitionRunId)}/graph?projection=${encodeURIComponent(projection)}`,
   { signal },
 );
+
+export interface DocumentAnalysisTarget {
+  target_id: string;
+  subject_ref: DocumentAnalysisEntityRef;
+  subject_label: string;
+  subject_class_iri: string;
+  kind: "relationship" | "property";
+  predicate_iri: string;
+  predicate_label: string;
+  range_types: Array<{ iri: string; label: string }>;
+  datatype_iris: string[];
+  multiplicity: "single" | "multiple" | "unspecified";
+  state: "pending" | "partial" | "supported" | "not_found" | "undetermined" | "rejected" | "negated";
+  supported_count: number;
+  negated_count: number;
+  completed: boolean;
+  assertion_refs: DocumentAnalysisObjectRef[];
+  supported_assertion_refs: DocumentAnalysisObjectRef[];
+  coverage: {
+    records_planned: number;
+    records_examined: number;
+    records_incomplete: number;
+    records_unattempted: number;
+    pending_frontiers: number;
+    scope_checked: boolean;
+  };
+  scope_id: string | null;
+  reason: string;
+}
+
+export interface DocumentAnalysisTargetGraph extends Pick<
+  DocumentAnalysisRun, "contract_version" | "recognition_run_id" | "run_revision" | "event_head" | "artifact_revision"
+> {
+  phase: "candidate_graph" | "evidence_review" | "evidence_verification";
+  availability: DocumentAnalysisAvailability;
+  ontology_snapshot_id: string | null;
+  root: DocumentAnalysisEntityRef & { class_iri: string; label: string };
+  graph: DocumentAnalysisGraphArtifact;
+  targets: DocumentAnalysisTarget[];
+  summary: {
+    relationships: { total: number; supported: number; completed: number; percent: number | null };
+    properties: { total: number; supported: number; completed: number; percent: number | null };
+    pending_expansion_count: number;
+    notes: string[];
+  };
+}
+
+export const getDocumentAnalysisTargetGraph = (runId: string, signal?: AbortSignal) =>
+  fetchAPI<DocumentAnalysisTargetGraph>(`${documentRunPath(runId)}/target-graph`, {
+    signal, cache: "no-store",
+  });
 
 export const getDocumentPropertyReviews = (runId: string, signal?: AbortSignal) =>
   fetchAPI<DocumentPropertyReviewList>(`${documentRunPath(runId)}/reviews`, { signal });
@@ -4778,7 +4845,7 @@ export interface DocumentHarness {
   recognition_run_id: string;
   configuration: {
     model: string | null; model_revision: string | null; api_protocol: string | null;
-    gliner_enabled: boolean; mock_enabled: boolean; vocabulary_enabled: boolean;
+    mock_enabled: boolean; vocabulary_enabled: boolean;
     request_budget: Record<string, number> | null;
   };
   snapshot: HarnessSnapshot | null;

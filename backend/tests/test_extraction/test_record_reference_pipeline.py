@@ -14,6 +14,9 @@ from app.services.extraction.ontology_guided.contracts import (
     TraversalScope,
 )
 from app.services.extraction.ontology_guided.executor import OntologyGuidedExecutor
+from app.services.extraction.ontology_guided.model_reference_projection import (
+    project_reference_payload,
+)
 from app.services.extraction.ontology_guided.record_discovery import RECORD_PIPELINE
 from app.services.extraction.ontology_guided.records import RecordIndex
 from app.services.extraction.ontology_guided.reference_dependencies import (
@@ -27,7 +30,7 @@ from tests.test_extraction.test_ontology_guided_core import _definition
 
 pytest_plugins = ["tests.test_extraction.test_tool_engine_resume"]
 ROOT, DEVICE, PART = "urn:Report", "urn:Device", "urn:Part"
-EDGE = "urn:contains"
+DESCRIBES, EDGE = "urn:describes", "urn:contains"
 FIRST, NEXT = "装置甲是一台装置。", "该装置包含部件乙。"
 
 
@@ -46,7 +49,7 @@ def reference_setup(tmp_path, monkeypatch, current_run, *, missing_binding=False
     store.db.commit()
     classes = {
         ROOT: _definition(ROOT, "报告", relationships=[
-            EdgeSpec(iri="urn:describes", label="描述", declared_by=[ROOT],
+            EdgeSpec(iri=DESCRIBES, label="描述", declared_by=[ROOT],
                      range_class_iris=[DEVICE]),
         ]),
         DEVICE: _definition(DEVICE, "装置", relationships=[
@@ -62,10 +65,20 @@ def reference_setup(tmp_path, monkeypatch, current_run, *, missing_binding=False
     first = next(record for record in index.records if record.text == FIRST)
     second = next(record for record in index.records if record.text == NEXT)
     units = {FIRST: first.source_units[0], NEXT: second.source_units[0]}
+    record_refs = project_reference_payload({
+        "record_ids": [first.record_id, second.record_id],
+    })["record_ids"]
+    record_ref = dict(zip((first.record_id, second.record_id), record_refs, strict=True))
+    evidence_refs = project_reference_payload({
+        "evidence_ids": [units[FIRST].evidence_id, units[NEXT].evidence_id],
+    })["evidence_ids"]
+    evidence_ref = dict(zip(
+        (units[FIRST].evidence_id, units[NEXT].evidence_id), evidence_refs, strict=True,
+    ))
     requests = []
 
     def quote(text, *, antecedent=False):
-        return dict(evidence_id=units[FIRST if antecedent else NEXT].evidence_id,
+        return dict(evidence_id=evidence_ref[units[FIRST if antecedent else NEXT].evidence_id],
                     text=text, context_text=None)
 
     def entity(identity, class_iri, text, *, antecedent=False):
@@ -89,7 +102,7 @@ def reference_setup(tmp_path, monkeypatch, current_run, *, missing_binding=False
         device = next((item["entity_ref"]["id"] for item in registered
                        if item["class_iri"] == DEVICE), None)
         if record:
-            if view["record_id"] == first.record_id:
+            if view["record_id"] == record_ref[first.record_id]:
                 if device is None:
                     result["entities"] = [entity("device", DEVICE, "装置甲", antecedent=True)]
             else:
@@ -101,23 +114,39 @@ def reference_setup(tmp_path, monkeypatch, current_run, *, missing_binding=False
                         binding_kind="anaphora",
                         support=[quote("装置甲", antecedent=True), quote("该装置")],
                     )]
-        elif view["predicate_iri"] == EDGE:
+        elif view["predicate_iri"] in {DESCRIBES, EDGE}:
+            is_root = view["predicate_iri"] == DESCRIBES
+            target_class = DEVICE if is_root else PART
             destination = next((item["entity_ref"]["id"] for item in registered
-                                if item["class_iri"] == PART), None)
-            eligible = any(unit["evidence_id"] == units[NEXT].evidence_id and unit["fact_eligible"]
+                                if item["class_iri"] == target_class), None)
+            source_text = FIRST if is_root else NEXT
+            eligible = any(unit["evidence_id"] == evidence_ref[units[source_text].evidence_id]
+                           and unit["fact_eligible"]
                            for unit in view["evidence_units"])
             if destination and eligible:
-                dependencies = [dep["binding_ref"] for dep in view["reference_dependencies"]]
+                dependencies = ([] if is_root else [
+                    dep["binding_ref"] for dep in view["reference_dependencies"]
+                ])
                 result["relations"] = [dict(
-                    local_id="relation", subject_id=view["subject_ref"]["id"], predicate_iri=EDGE,
-                    object_ids=[destination], selection="all", bridge_support=[quote(NEXT)],
+                    local_id="relation", subject_id=view["subject_ref"]["id"],
+                    predicate_iri=view["predicate_iri"], object_ids=[destination], selection="all",
+                    bridge_support=[quote(source_text, antecedent=is_root)],
                     selection_support=[], qualifiers=dict(polarity="affirmed", modality="asserted",
                                                          condition_support=[], scope_qualifiers=[]),
-                    bridge_kind="resolved_reference_chain", bridge_ref_ids=[],
-                    source_assertion=dict(subject_support=[quote("该装置")],
+                    bridge_kind=("document_subject_description"
+                                 if is_root else "explicit_assertion"), bridge_ref_ids=[],
+                    source_assertion=dict(subject_support=([] if is_root else [quote("该装置")]),
                                           object_support=[dict(object_id=destination,
-                                                               support=[quote("部件乙")])],
-                                          predicate_support=[quote(NEXT)], binding_ids=[],
+                                                               support=[quote(
+                                                                   (
+                                                                       "装置甲" if is_root
+                                                                       else "部件乙"
+                                                                   ),
+                                                                   antecedent=is_root,
+                                                               )])],
+                                          predicate_support=[quote(source_text,
+                                                                   antecedent=is_root)],
+                                          binding_ids=[],
                                           binding_dependency_refs=dependencies),
                 )]
         return result
@@ -188,7 +217,11 @@ def test_record_binding_reconstructs_original_proof_before_relationship(
     args, executor, requests, hooks = reference_setup(tmp_path, monkeypatch, current_run)
     result = executor().run(**args, **hooks)
     assert len([node for node in result.graph.nodes if node.class_iri == DEVICE]) == 1
-    assert any(edge.predicate_iri == EDGE for edge in result.graph.edges), result.events
+    assert any(edge.predicate_iri == EDGE for edge in result.graph.edges), [
+        (kind, value) for kind, value in result.events
+        if kind in {"candidate_rejected", "model_answer_invalid"}
+        or kind == "task_outcome" and value["task"].get("predicate_iri") == EDGE
+    ]
     relation_views = [member for view in requests for member in view.get("members", [])
                       if member["predicate_iri"] == EDGE and member["reference_dependencies"]]
     assert relation_views

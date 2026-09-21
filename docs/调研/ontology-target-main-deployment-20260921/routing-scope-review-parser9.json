@@ -1,0 +1,2902 @@
+{
+  "review_kind": "parser9_frozen_source_and_actual_routing_scope_comparison_no_semantic_scoring",
+  "baseline_run_id": "8b97fa57-e2a2-477e-b836-1e8094813dc0",
+  "run_id": "20bf2d25-98f3-4efe-99f0-1e5dbbae5d05",
+  "run_created_at": "2026-09-21T05:02:51.797046+00:00",
+  "observed_at": "2026-09-21T05:07:46.294443+00:00",
+  "status_at_observation": "running",
+  "stage_at_observation": "recognition",
+  "read_only_database_transaction": "REPEATABLE READ, READ ONLY",
+  "observations": [
+    {
+      "at": "2026-09-21T05:04:40.752438+00:00",
+      "stage": "metadata",
+      "route_decision_ready": false
+    },
+    {
+      "at": "2026-09-21T05:06:10.037051+00:00",
+      "stage": "recognition",
+      "reading_groups_prepared": 43,
+      "groups_with_route_decision": 0,
+      "route_decision_ready": false
+    },
+    {
+      "at": "2026-09-21T05:07:46.294443+00:00",
+      "stage": "recognition",
+      "reading_groups_prepared": 43,
+      "groups_with_route_decision": 43,
+      "route_decision_ready": true
+    }
+  ],
+  "source_identity": {
+    "document_sha256_before": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+    "document_sha256_after": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+    "same_source_document": true,
+    "parser_before": "8",
+    "parser_after": "9",
+    "structure_hash_before": "a9e5a6207e4f9b52e7bfc434ee2634136e536b7f9d3ec9b3b1fbb33e5d3d0655",
+    "structure_hash_after": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+    "analysis_id_before": "4bafc66702e3b03b71d9b177e2a29bd88969f4c7511e6a193893b1a011226050",
+    "analysis_id_after": "93d6af4b32eda5f759d0c40a79b1dddb73937f7aa2a07b84c9a676c99bf728dd",
+    "same_evidence_text_and_coordinates": true,
+    "frozen_parser9_matches_independent_reparse_proof": true,
+    "catalog_recompiled_hash_matches": true,
+    "ontology_snapshot_unchanged": true
+  },
+  "summary": {
+    "records_before": 88,
+    "records_after": 90,
+    "fact_source_units_before": 298,
+    "fact_source_units_after": 312,
+    "reading_groups_before": 41,
+    "reading_groups_after": 43,
+    "routing_groups_before": {
+      "routed": 33,
+      "unrouted": 8
+    },
+    "routing_groups_after": {
+      "routed": 34,
+      "unrouted": 9
+    },
+    "routing_records_before": {
+      "routed": 71,
+      "unrouted": 17
+    },
+    "routing_records_after": {
+      "routed": 72,
+      "unrouted": 18
+    },
+    "selected_regions_before": 15,
+    "selected_regions_after": 15,
+    "same_selected_region_sets": 12,
+    "changed_selected_region_orders": [
+      "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment"
+    ],
+    "existing_records_changing_route_status": 0,
+    "unchanged_reading_group_memberships": 38,
+    "execution_group_counts_at_observation": {
+      "routed_not_model_called": 33,
+      "unrouted_not_model_called": 9,
+      "model_called_not_examined": 1
+    },
+    "execution_record_counts_at_observation": {
+      "routed_not_model_called": 64,
+      "unrouted_not_model_called": 18,
+      "model_called_not_examined": 8
+    },
+    "discovery_task_statuses": {
+      "active": 1
+    },
+    "persisted_model_turns_by_stage": {
+      "discovery": 1
+    }
+  },
+  "table_header_role_changes": [
+    {
+      "table_path": [
+        "table:0"
+      ],
+      "header_rows_before": 1,
+      "header_rows_after": 0
+    },
+    {
+      "table_path": [
+        "table:8"
+      ],
+      "header_rows_before": 1,
+      "header_rows_after": 0
+    }
+  ],
+  "first_row_fact_eligibility_and_actual_routing": [
+    {
+      "location": "T1R1",
+      "source_record_created": true,
+      "record_id": "0fab2c17d9015a2d348b73e9f161230edd3003c8eafa16cea3110a405e7b38ec",
+      "fact_source_unit_count": 10,
+      "header_context_unit_count": 0,
+      "source_text_excerpt": "投料\n步骤一：200L反应釜（RE64611）内加入AR级别丙酮(丙酮投料量/L= HRS-1597粗品投入量/kg×13.5*0.79)和纯化水(纯化水投料量/L= HRS-1597粗品投入量/kg×1.5*1)，氮气置换4次。加入HRS-1597粗品，釜内温度上升至55℃，搅拌溶清。随后氮气保护下加入颗粒活性炭（活性炭投料量/Kg= HRS-1597粗品",
+      "source_evidence_ids": [
+        "eb9ae47dd5c6b18adda384240c1f7032136e69117273a3795413955814415df2",
+        "25b2f474f2ba36213c43e291746e2675a407be26ffe9e24fd5696562dcd433b5",
+        "95740b2aa44859d2606f6dc881d8c5de2e7240d356a6dc5ea12b80fbb62ca433",
+        "58d2870e1b125f3116ab90ae8d7b33856eea38b2cbcd82cb30192a671e25faa2",
+        "96fde791236a9b2c1e5fc1ba9839f60039459b938c378442f9bee26abeb27c26",
+        "3341bdfcd39667597a1ff69f9bf23a40c40852deadfccd4ac38e58d363e2ee27",
+        "3384bc27047c8f0f326eed4796d291bf2dd801ac215e5ce35dc924d89423e191",
+        "badf97b54be3cffce827ce0029cb377572588ccf590ac9f89c6c70318097e56f",
+        "67703544418a6cc96188568e82cc3f79a0450ddbd263726e40451a85ba252bce",
+        "45c60cf03e85eb8170e876595faf9a563a2ad97327327a7fc7b2e773c9a26f3e"
+      ],
+      "group_id": "d5f800eff0aab5a3bffe4c2c52a5d18df6f930c868ca2738ca738474565d120f",
+      "group_locations": [
+        "T1R1",
+        "T1R2",
+        "T1R3"
+      ],
+      "routing_status": "unrouted",
+      "scope_state": "unrouted_not_model_called"
+    },
+    {
+      "location": "T9R1",
+      "source_record_created": true,
+      "record_id": "303f9f97208df63d0fd9fce6d0ebbed5296022f51d3ecca64527843d6dcc6c5a",
+      "fact_source_unit_count": 4,
+      "header_context_unit_count": 0,
+      "source_text_excerpt": "1\n反应是否为异常放热，反应速率异常的应在表格下方文字说明。\n是 / 否\n否",
+      "source_evidence_ids": [
+        "08ba498fafac11b6aeda65a3c8fbb4e7c6fe5b21344ddfa45b4bf608c38f4eff",
+        "c0c7829e491854ff28117aa531cd4e5a9939cee7f46885d60251495cb1932e9f",
+        "b338c126cbdaba9dba5605426c49df378a6964dad03ef30867799b250f9c025e",
+        "3078aeff6f4bf1b73267fb415ed148be0b4164727398fc203e300649374e4685"
+      ],
+      "group_id": "ff79c1b358e999af81bed1862780a5d31554c006faa0a2e696bbe9b8e80db94b",
+      "group_locations": [
+        "T9R1",
+        "T9R2",
+        "T9R3",
+        "T9R4"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called"
+    }
+  ],
+  "unrouted_groups": [
+    {
+      "group_id": "2c9eb39df7c05b74d038c5bc84187bd69b2ce74ab7b47515f65c645d15713d43",
+      "position_zero_based": 1,
+      "source_record_ids": [
+        "ddaa7491e4158181d27fa4d96c7dd16613c9a9b6755463f192b898c3b70584d2",
+        "ec1ec99bb7c70e32c85061382c92f124b697112fd6c55eec52faacc350e85cc5"
+      ],
+      "locations": [
+        "P26",
+        "P27"
+      ],
+      "routing_status": "unrouted",
+      "scope_state": "unrouted_not_model_called",
+      "root_predicates": [],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 0,
+      "content_type": "简介：转移/供样历史、生产计划与重结晶修改"
+    },
+    {
+      "group_id": "d5f800eff0aab5a3bffe4c2c52a5d18df6f930c868ca2738ca738474565d120f",
+      "position_zero_based": 6,
+      "source_record_ids": [
+        "0fab2c17d9015a2d348b73e9f161230edd3003c8eafa16cea3110a405e7b38ec",
+        "dd00d1206ec9106c3995b04cb85504522d1c35ab171bca89687497fc14680f3a",
+        "23e577a3ac5b6b6be2ab24958dac625fcd4d0b20ff47604010880900d1fde7f4"
+      ],
+      "locations": [
+        "T1R1",
+        "T1R2",
+        "T1R3"
+      ],
+      "routing_status": "unrouted",
+      "scope_state": "unrouted_not_model_called",
+      "root_predicates": [],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 0,
+      "content_type": "工艺：新增独立投料首行、甩滤、HPLC"
+    },
+    {
+      "group_id": "960da77e7838fe2c0bb03c1dbaf12f1aa49f488499a72433c28356336d78d137",
+      "position_zero_based": 7,
+      "source_record_ids": [
+        "db04f398f1d637aed00d55ef27e411cf8598156bf19f1b6f227b60884651af48"
+      ],
+      "locations": [
+        "T1R4"
+      ],
+      "routing_status": "unrouted",
+      "scope_state": "unrouted_not_model_called",
+      "root_predicates": [],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 0,
+      "content_type": "工艺：干燥、参考得量收率、包装存放"
+    },
+    {
+      "group_id": "4b7c9d077c75678279229b87e719a71bddfd5bed0ef380c1f98f8ee9669afd75",
+      "position_zero_based": 8,
+      "source_record_ids": [
+        "c25a4f5544281c31de541af36373187d913093ec870b519b10420e8def6190b1"
+      ],
+      "locations": [
+        "T2R2"
+      ],
+      "routing_status": "unrouted",
+      "scope_state": "unrouted_not_model_called",
+      "root_predicates": [],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 0,
+      "content_type": "参考得量与参考收率"
+    },
+    {
+      "group_id": "16da5793db364b93d93cda69bd24b57cdd953c64fd84dbc754e81d568f792156",
+      "position_zero_based": 24,
+      "source_record_ids": [
+        "5e5c12c8cf2773b575baa89cede527b8160f02987e9f2ee205d5b1a3c9d2bee9",
+        "6865f4d0becd850fe9e4cd0338f2159b3ad10b0e260e21fabbaaef948f9045f1",
+        "58117a33e5fda159f5fc5a45521c54373d80c2ab0c3ccc3604e64cd3b44b1212",
+        "5f7c5211ef4ca09be883b856be128f7caa1c56aa24ee5dc8ce833abc2dd70a28"
+      ],
+      "locations": [
+        "T8R2",
+        "T8R3",
+        "T8R4",
+        "T8R5"
+      ],
+      "routing_status": "unrouted",
+      "scope_state": "unrouted_not_model_called",
+      "root_predicates": [],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 0,
+      "content_type": "物料：AR丙酮、活性炭、两类滤芯"
+    },
+    {
+      "group_id": "f98e937353baceeedba1d573eb136524947a192dcf7b0c4452e4a0bcdc6904b1",
+      "position_zero_based": 25,
+      "source_record_ids": [
+        "0aca1d7ee1dd4670db803ae76e56a8a8c5cec6abd797de3d0581364dbba95b3e",
+        "67c4b4cc7b19f0ae8dd76e6a1948122d8e3ec218e853ad14bf4eb7a4d4195948",
+        "8667b31932bd6f1cacf5f5083f7e06be7d2f9d4687b3dd4d5fb364f91093bdf1",
+        "beff00590da4b7fd5fb14bc487bfb92ce85b5e9ba8a529901c7a2b24e192f5db"
+      ],
+      "locations": [
+        "T8R6",
+        "T8R7",
+        "T8R8",
+        "T8R9"
+      ],
+      "routing_status": "unrouted",
+      "scope_state": "unrouted_not_model_called",
+      "root_predicates": [],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 0,
+      "content_type": "物料：晶种、纯化水、工业丙酮、内包材"
+    },
+    {
+      "group_id": "3a2971aba785be3a3204ad2b63ee2baf217a2256610303401b3efe6f2278c71f",
+      "position_zero_based": 26,
+      "source_record_ids": [
+        "dee4ac9a564291047107e21de7edf091e65379b3706fbd05d636bf546b25d8b3"
+      ],
+      "locations": [
+        "T8R10"
+      ],
+      "routing_status": "unrouted",
+      "scope_state": "unrouted_not_model_called",
+      "root_predicates": [],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 0,
+      "content_type": "物料：复合袋外包材"
+    },
+    {
+      "group_id": "35614c6cc0c593b952e93e3f495238da8c34b8a0eecb9522708619175e92a497",
+      "position_zero_based": 31,
+      "source_record_ids": [
+        "48a8e9ee5a849ccfe85185d46576609059f6f85a8655498dac2b7950da1d601b"
+      ],
+      "locations": [
+        "P90"
+      ],
+      "routing_status": "unrouted",
+      "scope_state": "unrouted_not_model_called",
+      "root_predicates": [],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 0,
+      "content_type": "安全风险控制建议N/A占位"
+    },
+    {
+      "group_id": "26e3d92750d76f7ae7bccc2125fe6ff295a42d36f730b4579dfcde4ed370ee91",
+      "position_zero_based": 35,
+      "source_record_ids": [
+        "45d03462b45691dfcbce1db88d1fec1efe120e4d9ce3a2442043d55f11f8dd05"
+      ],
+      "locations": [
+        "P100"
+      ],
+      "routing_status": "unrouted",
+      "scope_state": "unrouted_not_model_called",
+      "root_predicates": [],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 0,
+      "content_type": "临床最小/最大日剂量与频次"
+    }
+  ],
+  "root_relation_region_comparison": [
+    {
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+      "same_region_set": true,
+      "same_region_order": true,
+      "before": [
+        {
+          "node_id": "section:28",
+          "score": 0.4925479610334014,
+          "resolution": "direct",
+          "heading": "产品的结构",
+          "parent_node_id": "section:27"
+        },
+        {
+          "node_id": "section:51",
+          "score": 0.5279787064380339,
+          "resolution": "direct",
+          "heading": "工艺描述",
+          "parent_node_id": "section:50"
+        }
+      ],
+      "after": [
+        {
+          "node_id": "section:28",
+          "score": 0.4911420426648289,
+          "resolution": "direct",
+          "heading": "产品的结构"
+        },
+        {
+          "node_id": "section:51",
+          "score": 0.5280135911525127,
+          "resolution": "direct",
+          "heading": "工艺描述"
+        }
+      ],
+      "score_changes": [
+        {
+          "node_id": "section:28",
+          "before": 0.4925479610334014,
+          "after": 0.4911420426648289
+        },
+        {
+          "node_id": "section:51",
+          "before": 0.5279787064380339,
+          "after": 0.5280135911525127
+        }
+      ]
+    },
+    {
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod",
+      "same_region_set": true,
+      "same_region_order": true,
+      "before": [
+        {
+          "node_id": "section:80",
+          "score": 0.6317612153765126,
+          "resolution": "direct",
+          "heading": "设备清洗方法",
+          "parent_node_id": "section:50"
+        },
+        {
+          "node_id": "section:75",
+          "score": 0.6093849159187504,
+          "resolution": "direct",
+          "heading": "溶解度信息",
+          "parent_node_id": "section:50"
+        }
+      ],
+      "after": [
+        {
+          "node_id": "section:80",
+          "score": 0.6265105762807767,
+          "resolution": "direct",
+          "heading": "设备清洗方法"
+        },
+        {
+          "node_id": "section:75",
+          "score": 0.6093849159187504,
+          "resolution": "direct",
+          "heading": "溶解度信息"
+        }
+      ],
+      "score_changes": [
+        {
+          "node_id": "section:80",
+          "before": 0.6317612153765126,
+          "after": 0.6265105762807767
+        },
+        {
+          "node_id": "section:75",
+          "before": 0.6093849159187504,
+          "after": 0.6093849159187504
+        }
+      ]
+    },
+    {
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningResidue",
+      "same_region_set": true,
+      "same_region_order": true,
+      "before": [
+        {
+          "node_id": "section:78",
+          "score": 0.6964621807347845,
+          "resolution": "direct",
+          "heading": "3.5.2设备清洗残留物基本信息",
+          "parent_node_id": "section:50"
+        },
+        {
+          "node_id": "section:77",
+          "score": 0.48769430326229835,
+          "resolution": "direct",
+          "heading": "3.5.1中间体及成品的溶解度测定结果",
+          "parent_node_id": "section:50"
+        }
+      ],
+      "after": [
+        {
+          "node_id": "section:78",
+          "score": 0.6963117071210637,
+          "resolution": "direct",
+          "heading": "3.5.2设备清洗残留物基本信息"
+        },
+        {
+          "node_id": "section:77",
+          "score": 0.4876292254837242,
+          "resolution": "direct",
+          "heading": "3.5.1中间体及成品的溶解度测定结果"
+        }
+      ],
+      "score_changes": [
+        {
+          "node_id": "section:78",
+          "before": 0.6964621807347845,
+          "after": 0.6963117071210637
+        },
+        {
+          "node_id": "section:77",
+          "before": 0.48769430326229835,
+          "after": 0.4876292254837242
+        }
+      ]
+    },
+    {
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway",
+      "same_region_set": true,
+      "same_region_order": true,
+      "before": [
+        {
+          "node_id": "section:94",
+          "score": 0.7381115108279582,
+          "resolution": "direct",
+          "heading": "4.1降解途径",
+          "parent_node_id": "section:93"
+        },
+        {
+          "node_id": "section:75",
+          "score": 0.6129617600151446,
+          "resolution": "direct",
+          "heading": "溶解度信息",
+          "parent_node_id": "section:50"
+        }
+      ],
+      "after": [
+        {
+          "node_id": "section:94",
+          "score": 0.7380521150786759,
+          "resolution": "direct",
+          "heading": "4.1降解途径"
+        },
+        {
+          "node_id": "section:75",
+          "score": 0.6133752823469859,
+          "resolution": "direct",
+          "heading": "溶解度信息"
+        }
+      ],
+      "score_changes": [
+        {
+          "node_id": "section:94",
+          "before": 0.7381115108279582,
+          "after": 0.7380521150786759
+        },
+        {
+          "node_id": "section:75",
+          "before": 0.6129617600151446,
+          "after": 0.6133752823469859
+        }
+      ]
+    },
+    {
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan",
+      "same_region_set": true,
+      "same_region_order": true,
+      "before": [
+        {
+          "node_id": "section:6",
+          "score": 0.5808342194099239,
+          "resolution": "direct",
+          "heading": "绝密▲长期",
+          "parent_node_id": "section:5"
+        },
+        {
+          "node_id": "section:51",
+          "score": 0.5343070010163239,
+          "resolution": "direct",
+          "heading": "工艺描述",
+          "parent_node_id": "section:50"
+        }
+      ],
+      "after": [
+        {
+          "node_id": "section:6",
+          "score": 0.5808511021376884,
+          "resolution": "direct",
+          "heading": "绝密▲长期"
+        },
+        {
+          "node_id": "section:51",
+          "score": 0.5344429284109828,
+          "resolution": "direct",
+          "heading": "工艺描述"
+        }
+      ],
+      "score_changes": [
+        {
+          "node_id": "section:6",
+          "before": 0.5808342194099239,
+          "after": 0.5808511021376884
+        },
+        {
+          "node_id": "section:51",
+          "before": 0.5343070010163239,
+          "after": 0.5344429284109828
+        }
+      ]
+    },
+    {
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionRiskAssessment",
+      "same_region_set": true,
+      "same_region_order": true,
+      "before": [
+        {
+          "node_id": "section:114",
+          "score": 0.5787239033625954,
+          "resolution": "direct",
+          "heading": "4.2.3产品毒性信息",
+          "parent_node_id": "section:97"
+        },
+        {
+          "node_id": "section:86",
+          "score": 0.5630580161297832,
+          "resolution": "direct",
+          "heading": "安全评估",
+          "parent_node_id": "document"
+        }
+      ],
+      "after": [
+        {
+          "node_id": "section:114",
+          "score": 0.5803401415847839,
+          "resolution": "direct",
+          "heading": "4.2.3产品毒性信息"
+        },
+        {
+          "node_id": "section:86",
+          "score": 0.5557460756685322,
+          "resolution": "direct",
+          "heading": "安全评估"
+        }
+      ],
+      "score_changes": [
+        {
+          "node_id": "section:114",
+          "before": 0.5787239033625954,
+          "after": 0.5803401415847839
+        },
+        {
+          "node_id": "section:86",
+          "before": 0.5630580161297832,
+          "after": 0.5557460756685322
+        }
+      ]
+    },
+    {
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasQualityRiskAssessment",
+      "same_region_set": true,
+      "same_region_order": true,
+      "before": [
+        {
+          "node_id": "section:86",
+          "score": 0.6347654885876477,
+          "resolution": "direct",
+          "heading": "安全评估",
+          "parent_node_id": "document"
+        },
+        {
+          "node_id": "section:91",
+          "score": 0.5834644175592495,
+          "resolution": "direct",
+          "heading": "各步工序制备过程质量控制注意事项",
+          "parent_node_id": "section:90"
+        }
+      ],
+      "after": [
+        {
+          "node_id": "section:86",
+          "score": 0.6136101398830097,
+          "resolution": "direct",
+          "heading": "安全评估"
+        },
+        {
+          "node_id": "section:91",
+          "score": 0.5774744825482144,
+          "resolution": "direct",
+          "heading": "各步工序制备过程质量控制注意事项"
+        }
+      ],
+      "score_changes": [
+        {
+          "node_id": "section:86",
+          "before": 0.6347654885876477,
+          "after": 0.6136101398830097
+        },
+        {
+          "node_id": "section:91",
+          "before": 0.5834644175592495,
+          "after": 0.5774744825482144
+        }
+      ]
+    },
+    {
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSafetyRiskAssessment",
+      "same_region_set": true,
+      "same_region_order": true,
+      "before": [
+        {
+          "node_id": "section:86",
+          "score": 0.7042511309606424,
+          "resolution": "direct",
+          "heading": "安全评估",
+          "parent_node_id": "document"
+        },
+        {
+          "node_id": "section:91",
+          "score": 0.550778730172543,
+          "resolution": "direct",
+          "heading": "各步工序制备过程质量控制注意事项",
+          "parent_node_id": "section:90"
+        }
+      ],
+      "after": [
+        {
+          "node_id": "section:86",
+          "score": 0.6852628427866502,
+          "resolution": "direct",
+          "heading": "安全评估"
+        },
+        {
+          "node_id": "section:91",
+          "score": 0.5508381931742111,
+          "resolution": "direct",
+          "heading": "各步工序制备过程质量控制注意事项"
+        }
+      ],
+      "score_changes": [
+        {
+          "node_id": "section:86",
+          "before": 0.7042511309606424,
+          "after": 0.6852628427866502
+        },
+        {
+          "node_id": "section:91",
+          "before": 0.550778730172543,
+          "after": 0.5508381931742111
+        }
+      ]
+    },
+    {
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData",
+      "same_region_set": true,
+      "same_region_order": true,
+      "before": [
+        {
+          "node_id": "section:114",
+          "score": 0.6564346230816951,
+          "resolution": "direct",
+          "heading": "4.2.3产品毒性信息",
+          "parent_node_id": "section:97"
+        },
+        {
+          "node_id": "section:100",
+          "score": 0.6459117283501492,
+          "resolution": "direct",
+          "heading": "4.2.2产品NOAEL、F值",
+          "parent_node_id": "section:97"
+        }
+      ],
+      "after": [
+        {
+          "node_id": "section:114",
+          "score": 0.6603200062956984,
+          "resolution": "direct",
+          "heading": "4.2.3产品毒性信息"
+        },
+        {
+          "node_id": "section:100",
+          "score": 0.6548566161448377,
+          "resolution": "direct",
+          "heading": "4.2.2产品NOAEL、F值"
+        }
+      ],
+      "score_changes": [
+        {
+          "node_id": "section:114",
+          "before": 0.6564346230816951,
+          "after": 0.6603200062956984
+        },
+        {
+          "node_id": "section:100",
+          "before": 0.6459117283501492,
+          "after": 0.6548566161448377
+        }
+      ]
+    },
+    {
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasStorageCondition",
+      "same_region_set": true,
+      "same_region_order": true,
+      "before": [
+        {
+          "node_id": "section:72",
+          "score": 0.6360138067706094,
+          "resolution": "direct",
+          "heading": "存放条件",
+          "parent_node_id": "section:50"
+        },
+        {
+          "node_id": "section:71",
+          "score": 0.582331857658885,
+          "resolution": "direct",
+          "heading": "中间体及成品的其他相关信息",
+          "parent_node_id": "section:50"
+        }
+      ],
+      "after": [
+        {
+          "node_id": "section:72",
+          "score": 0.6361256803289861,
+          "resolution": "direct",
+          "heading": "存放条件"
+        },
+        {
+          "node_id": "section:71",
+          "score": 0.5823999402261515,
+          "resolution": "direct",
+          "heading": "中间体及成品的其他相关信息"
+        }
+      ],
+      "score_changes": [
+        {
+          "node_id": "section:72",
+          "before": 0.6360138067706094,
+          "after": 0.6361256803289861
+        },
+        {
+          "node_id": "section:71",
+          "before": 0.582331857658885,
+          "after": 0.5823999402261515
+        }
+      ]
+    },
+    {
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSynthesisRoute",
+      "same_region_set": true,
+      "same_region_order": true,
+      "before": [
+        {
+          "node_id": "section:51",
+          "score": 0.6603066298963088,
+          "resolution": "direct",
+          "heading": "工艺描述",
+          "parent_node_id": "section:50"
+        },
+        {
+          "node_id": "section:94",
+          "score": 0.5325384802316013,
+          "resolution": "direct",
+          "heading": "4.1降解途径",
+          "parent_node_id": "section:93"
+        }
+      ],
+      "after": [
+        {
+          "node_id": "section:51",
+          "score": 0.6603029819826899,
+          "resolution": "direct",
+          "heading": "工艺描述"
+        },
+        {
+          "node_id": "section:94",
+          "score": 0.5325909847286775,
+          "resolution": "direct",
+          "heading": "4.1降解途径"
+        }
+      ],
+      "score_changes": [
+        {
+          "node_id": "section:51",
+          "before": 0.6603066298963088,
+          "after": 0.6603029819826899
+        },
+        {
+          "node_id": "section:94",
+          "before": 0.5325384802316013,
+          "after": 0.5325909847286775
+        }
+      ]
+    },
+    {
+      "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment",
+      "same_region_set": true,
+      "same_region_order": false,
+      "before": [
+        {
+          "node_id": "section:83",
+          "score": 0.688450918271743,
+          "resolution": "direct",
+          "heading": "设备需求",
+          "parent_node_id": "section:50"
+        },
+        {
+          "node_id": "section:80",
+          "score": 0.6793205543630356,
+          "resolution": "direct",
+          "heading": "设备清洗方法",
+          "parent_node_id": "section:50"
+        }
+      ],
+      "after": [
+        {
+          "node_id": "section:80",
+          "score": 0.7141850467586327,
+          "resolution": "direct",
+          "heading": "设备清洗方法"
+        },
+        {
+          "node_id": "section:83",
+          "score": 0.688450918271743,
+          "resolution": "direct",
+          "heading": "设备需求"
+        }
+      ],
+      "score_changes": [
+        {
+          "node_id": "section:80",
+          "before": 0.6793205543630356,
+          "after": 0.7141850467586327
+        },
+        {
+          "node_id": "section:83",
+          "before": 0.688450918271743,
+          "after": 0.688450918271743
+        }
+      ]
+    }
+  ],
+  "changed_group_memberships": [
+    {
+      "new_group_id": "d5f800eff0aab5a3bffe4c2c52a5d18df6f930c868ca2738ca738474565d120f",
+      "new_locations": [
+        "T1R1",
+        "T1R2",
+        "T1R3"
+      ],
+      "routing_status": "unrouted",
+      "overlapping_old_groups": [
+        {
+          "old_group_id": "22f60f0118c0ec0cfddf846ad9cef22c5ae8bdc754c66a6ffe3d28f93b240579",
+          "old_locations": [
+            "T1R2",
+            "T1R3",
+            "T1R4"
+          ],
+          "routing_status": "unrouted"
+        }
+      ]
+    },
+    {
+      "new_group_id": "960da77e7838fe2c0bb03c1dbaf12f1aa49f488499a72433c28356336d78d137",
+      "new_locations": [
+        "T1R4"
+      ],
+      "routing_status": "unrouted",
+      "overlapping_old_groups": [
+        {
+          "old_group_id": "22f60f0118c0ec0cfddf846ad9cef22c5ae8bdc754c66a6ffe3d28f93b240579",
+          "old_locations": [
+            "T1R2",
+            "T1R3",
+            "T1R4"
+          ],
+          "routing_status": "unrouted"
+        }
+      ]
+    },
+    {
+      "new_group_id": "ff79c1b358e999af81bed1862780a5d31554c006faa0a2e696bbe9b8e80db94b",
+      "new_locations": [
+        "T9R1",
+        "T9R2",
+        "T9R3",
+        "T9R4"
+      ],
+      "routing_status": "routed",
+      "overlapping_old_groups": [
+        {
+          "old_group_id": "f6defc385073d19a6ed2df78d90144edd2a462e44aaac137b5a6211da8db47c8",
+          "old_locations": [
+            "T9R2",
+            "T9R3",
+            "T9R4",
+            "T9R5"
+          ],
+          "routing_status": "routed"
+        }
+      ]
+    },
+    {
+      "new_group_id": "21dda95734ea01367c1874d5694b2247a455d9222d266758c1ef72d29aa25b47",
+      "new_locations": [
+        "T9R5",
+        "T9R6",
+        "T9R7",
+        "T9R8"
+      ],
+      "routing_status": "routed",
+      "overlapping_old_groups": [
+        {
+          "old_group_id": "f6defc385073d19a6ed2df78d90144edd2a462e44aaac137b5a6211da8db47c8",
+          "old_locations": [
+            "T9R2",
+            "T9R3",
+            "T9R4",
+            "T9R5"
+          ],
+          "routing_status": "routed"
+        },
+        {
+          "old_group_id": "c8d7ab9599360c31dab8618859bbe8dbf58e745518c2f4c7067c92cabed1aa37",
+          "old_locations": [
+            "T9R6",
+            "T9R7",
+            "T9R8",
+            "T9R9"
+          ],
+          "routing_status": "routed"
+        }
+      ]
+    },
+    {
+      "new_group_id": "afd1300553bc02b10593617c1fc54e470364094ec6ac68f00b138ff96672eea7",
+      "new_locations": [
+        "T9R9"
+      ],
+      "routing_status": "routed",
+      "overlapping_old_groups": [
+        {
+          "old_group_id": "c8d7ab9599360c31dab8618859bbe8dbf58e745518c2f4c7067c92cabed1aa37",
+          "old_locations": [
+            "T9R6",
+            "T9R7",
+            "T9R8",
+            "T9R9"
+          ],
+          "routing_status": "routed"
+        }
+      ]
+    }
+  ],
+  "reading_groups": [
+    {
+      "group_id": "49046dfe75ff7169b88610ebaebee6aa8a78272c20f815588a138f8a6026021c",
+      "position_zero_based": 0,
+      "source_record_ids": [
+        "614a84d58c1a8779bbb89644623eebce601317e8518e0dadd111970cb2bf84b2",
+        "8ec13ee276a5ae2bc91af77945da129f082d953243ee1780c1de01d8f0c6aa6c"
+      ],
+      "locations": [
+        "P8",
+        "P20"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "2c9eb39df7c05b74d038c5bc84187bd69b2ce74ab7b47515f65c645d15713d43",
+      "position_zero_based": 1,
+      "source_record_ids": [
+        "ddaa7491e4158181d27fa4d96c7dd16613c9a9b6755463f192b898c3b70584d2",
+        "ec1ec99bb7c70e32c85061382c92f124b697112fd6c55eec52faacc350e85cc5"
+      ],
+      "locations": [
+        "P26",
+        "P27"
+      ],
+      "routing_status": "unrouted",
+      "scope_state": "unrouted_not_model_called",
+      "root_predicates": [],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 0
+    },
+    {
+      "group_id": "ed3758ef752ee873125a7cb55396f245c49497ed758b512031fc7f325a174124",
+      "position_zero_based": 2,
+      "source_record_ids": [
+        "b7df89f3cf3af96e25008fa7356fde69da0c49c2e80144a774fc3693bdfe0a37",
+        "f80887751fb86b87d07e2f792f7606e444214948bd2d77edab2de7cec26ef687",
+        "5de81e6f64b1601fda38679e2d6665b4dd52da2fc6f88d42cced01c79e097ada",
+        "8e180ae7f9d29d2408469a8b458b52d60b108120d69aa98664f9293b359cff78",
+        "93cc391906b88a3627544195f5c1e0c8635f81429f6456b3222eecd6ff2e067e",
+        "7a0a948e3e8eb49f32f491351874c6a397b16be6d3087e1adf8862e5b3bde8ac",
+        "1b6796ebae49a51080923d2713b1b26acd5e5ceb4e72cefa327103562014ff7c",
+        "bd1b20eb19d26bf720f145568a78145c98506ae5dda43cb4311a665e9be30196"
+      ],
+      "locations": [
+        "P31",
+        "P32",
+        "P33",
+        "P34",
+        "P35",
+        "P36",
+        "P37",
+        "P38"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/describes"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "dcfe166ace72b235ef91b73ae9392cde9bb0369ee1fc8d36b004265e781ccc08",
+      "position_zero_based": 3,
+      "source_record_ids": [
+        "504613c49ad2718bd59a4c614418b180ddfe1962aaa751fa9e4645ab743440a7",
+        "f2624e6913d38ead3e74fcf2c93ccccb0aa5a4f5eadeccd1e806d20d1f598034",
+        "cb31973a1963b19800fa14748fd2c45aaf8c529c4ae9e9e78ca14f0b1e9315a8",
+        "9e3549601fd1890174992da0819afaf6e78ddc2459ef8e6ab1b645d263ae4656",
+        "365c6729e179e2561787e02e5e91777a051d9ceed9bd783c8a38aa784a0b7dac",
+        "c30ae18921a41ff479485b58eeb97b95de90999587ec7a01217ef60df0a888bf",
+        "829e82054693729f674ffd64f08df85f4add18462a773aa6c87904bf770cdaeb",
+        "8b5267e2eff148a0a9df200b882f8ad535aa380ae053a65eaf194b57ef401134"
+      ],
+      "locations": [
+        "P39",
+        "P40",
+        "P41",
+        "P42",
+        "P43",
+        "P44",
+        "P45",
+        "P46"
+      ],
+      "routing_status": "routed",
+      "scope_state": "model_called_not_examined",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/describes"
+      ],
+      "discovery_task_ids": [
+        "a74fa04789393c031f332f59c74ace3cf4ec43069c72d2239189a959f35ebd0c"
+      ],
+      "persisted_admitted_pairs": 1,
+      "persisted_remaining_pairs": 0
+    },
+    {
+      "group_id": "5e154aebbd0497aad4af4b7cc4a1f226ff0099ca1d2d91e1ff13bcaf019e6fa0",
+      "position_zero_based": 4,
+      "source_record_ids": [
+        "7fa176f18c739a037025f0ec0d9a50ce0ed10e918e9fa4f5912d886f837e1794",
+        "87859905736279d2f1484be6770882418ad6c7fad82a5b97e605c1182f8cf2f0",
+        "fa1dbe41705659980f2c0e1b155912ff291052016eb975e05ef3c20b181ad01b"
+      ],
+      "locations": [
+        "P47",
+        "P48",
+        "P49"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/describes"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "c1b64b1807cb133d8f74c558e402459df67bde27bc9f36716593c7254ad33550",
+      "position_zero_based": 5,
+      "source_record_ids": [
+        "b84288cbdfb130f6499c6e4ae7a927060ffce4dd20fc51c34206aca233e410d0",
+        "0d2f6b7211d94d47823e1dba7da39be4b3dfd363698f40eead9b3ce82f108626"
+      ],
+      "locations": [
+        "P53",
+        "P66"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/describes",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionPlan",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSynthesisRoute"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "d5f800eff0aab5a3bffe4c2c52a5d18df6f930c868ca2738ca738474565d120f",
+      "position_zero_based": 6,
+      "source_record_ids": [
+        "0fab2c17d9015a2d348b73e9f161230edd3003c8eafa16cea3110a405e7b38ec",
+        "dd00d1206ec9106c3995b04cb85504522d1c35ab171bca89687497fc14680f3a",
+        "23e577a3ac5b6b6be2ab24958dac625fcd4d0b20ff47604010880900d1fde7f4"
+      ],
+      "locations": [
+        "T1R1",
+        "T1R2",
+        "T1R3"
+      ],
+      "routing_status": "unrouted",
+      "scope_state": "unrouted_not_model_called",
+      "root_predicates": [],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 0
+    },
+    {
+      "group_id": "960da77e7838fe2c0bb03c1dbaf12f1aa49f488499a72433c28356336d78d137",
+      "position_zero_based": 7,
+      "source_record_ids": [
+        "db04f398f1d637aed00d55ef27e411cf8598156bf19f1b6f227b60884651af48"
+      ],
+      "locations": [
+        "T1R4"
+      ],
+      "routing_status": "unrouted",
+      "scope_state": "unrouted_not_model_called",
+      "root_predicates": [],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 0
+    },
+    {
+      "group_id": "4b7c9d077c75678279229b87e719a71bddfd5bed0ef380c1f98f8ee9669afd75",
+      "position_zero_based": 8,
+      "source_record_ids": [
+        "c25a4f5544281c31de541af36373187d913093ec870b519b10420e8def6190b1"
+      ],
+      "locations": [
+        "T2R2"
+      ],
+      "routing_status": "unrouted",
+      "scope_state": "unrouted_not_model_called",
+      "root_predicates": [],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 0
+    },
+    {
+      "group_id": "f4c0687dae277fb9c28d2963f1ad3c7cd1b52bcaf33124c6b5c3880018f4eb60",
+      "position_zero_based": 9,
+      "source_record_ids": [
+        "a73c534d4350a3621c765aeedbfc5b58a0eb027d62d159e98be0e18eaa308d6b"
+      ],
+      "locations": [
+        "T3R2"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasStorageCondition"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "adba22c6cff2c38977d253c4b1b68f158e739d2a3c352c35e10a99e3239e9c39",
+      "position_zero_based": 10,
+      "source_record_ids": [
+        "c697113d16e9eb6cbde2d10c1a516badab3e36a2bb6fb485f71c06d8945bf445"
+      ],
+      "locations": [
+        "P74"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasStorageCondition"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "0fab17facd8af7873b4354934fa8cf98e93c57a070801b97e66af7dd94580013",
+      "position_zero_based": 11,
+      "source_record_ids": [
+        "9e1f15c21b9bef1dc2f3b2fa3188fc50b12670e6b6cc2008f4f4ef4409d11273"
+      ],
+      "locations": [
+        "T4R2"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasStorageCondition"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "0390429c2e74809e898c1dede73e83ba606cea242fd37a384e75d4e66dd81561",
+      "position_zero_based": 12,
+      "source_record_ids": [
+        "473f15a2ef066fbd53ca7d8fc2969ccd6468dc0186b92e8c4f612756c6424531"
+      ],
+      "locations": [
+        "P77"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "726b9e3312ddd3408260bd130424e31d3d44c4ac811552bf410db360261a0598",
+      "position_zero_based": 13,
+      "source_record_ids": [
+        "b4b298d324317682932e390c40d18433d30e1c3d549697b7a9fb43f293ff0d53"
+      ],
+      "locations": [
+        "T5R2"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningResidue"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "f1f90ab94c6ba73457d71947d63946a3d18a07091635e8609fc426e0aced6ddb",
+      "position_zero_based": 14,
+      "source_record_ids": [
+        "62c0dccee4a6db98d9eaf66031a442249f8ac3e14200816676324c4b1a304b70"
+      ],
+      "locations": [
+        "P80"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningResidue"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "474b35b38c824af2b64b31939b488c436db34b0bb88715a9ae4b21ad92dc1cd6",
+      "position_zero_based": 15,
+      "source_record_ids": [
+        "a0157008fd4d92e1ebbe84ac2cc60a677e11074bf3980c58fc76edacb5012e85"
+      ],
+      "locations": [
+        "T6R2"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "383e7667f17a4ab6b32e44f1d45f4433b3e2eecfc4de4a2bffa6a97fa02b2960",
+      "position_zero_based": 16,
+      "source_record_ids": [
+        "7151b6e397038cd147f790b740f0b89ab6876bf34306a75b0a1b7fc4fe423dc8"
+      ],
+      "locations": [
+        "T6R3"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "d262fca81b984337b9a3f33cdb90f26b5d62192ce6de3099b85a0bf86e3151f4",
+      "position_zero_based": 17,
+      "source_record_ids": [
+        "30fad75b4bf17c22ac59a61c73b039cd5c945e26c713c1503f1e55f9e0bddec3"
+      ],
+      "locations": [
+        "T6R4"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "9ebe7a4c258aa7a58699c56f2a7f99f80b6f8d7b839b73e8c1d7a3e8c3fee301",
+      "position_zero_based": 18,
+      "source_record_ids": [
+        "49cc50c09af592901ac426e7865b8d525352ff6d4d3990423efd7c8d9338ac2c"
+      ],
+      "locations": [
+        "T6R5"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasCleaningMethod",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "e666a01937d4dc81da3f91843a34ffec61748c07c4a54e9de96027fe333a1ee7",
+      "position_zero_based": 19,
+      "source_record_ids": [
+        "e434ca61f5647e2d1470c77c52c405abeb6d6e67862be4a185dcdc6b59cbc5c7"
+      ],
+      "locations": [
+        "T7R2"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "9da277623261efc46505a8f2f33d9d2bb3f26b11da026742a0c36b5d8b8358a8",
+      "position_zero_based": 20,
+      "source_record_ids": [
+        "9611d33f9a75622fe52338401dc8b114df1ba5d13f788dadb4b49170d9179aaf"
+      ],
+      "locations": [
+        "T7R3"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "05b22fc7b1ad6ece8a73ea7de24aaf1b0f7a0b4b0840e61c9c4b787fc6f9e75c",
+      "position_zero_based": 21,
+      "source_record_ids": [
+        "4f36adc1e8a20c860dbe82abaa8860178e6978b0426c7097b4fb454bc6a10d0b"
+      ],
+      "locations": [
+        "T7R4"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "339d2aa2dea7c616bd65628f450aeacb2597b577d5c7b0400d8072e79694ee8a",
+      "position_zero_based": 22,
+      "source_record_ids": [
+        "c05424206c558901645dfdddd55dbb6a644a2ddfdbaf4ecafdfcf90f101bd430"
+      ],
+      "locations": [
+        "T7R5"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "ea4fd89b5a2d0794486d1f8cc39ac6c4b3ff51dd9481e55304ea816590f1a816",
+      "position_zero_based": 23,
+      "source_record_ids": [
+        "a834f88ce21415098fe34ec422665233dd56fe4ee00cc00917827d9a0246f3d5"
+      ],
+      "locations": [
+        "T7R6"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/usesEquipment"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "16da5793db364b93d93cda69bd24b57cdd953c64fd84dbc754e81d568f792156",
+      "position_zero_based": 24,
+      "source_record_ids": [
+        "5e5c12c8cf2773b575baa89cede527b8160f02987e9f2ee205d5b1a3c9d2bee9",
+        "6865f4d0becd850fe9e4cd0338f2159b3ad10b0e260e21fabbaaef948f9045f1",
+        "58117a33e5fda159f5fc5a45521c54373d80c2ab0c3ccc3604e64cd3b44b1212",
+        "5f7c5211ef4ca09be883b856be128f7caa1c56aa24ee5dc8ce833abc2dd70a28"
+      ],
+      "locations": [
+        "T8R2",
+        "T8R3",
+        "T8R4",
+        "T8R5"
+      ],
+      "routing_status": "unrouted",
+      "scope_state": "unrouted_not_model_called",
+      "root_predicates": [],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 0
+    },
+    {
+      "group_id": "f98e937353baceeedba1d573eb136524947a192dcf7b0c4452e4a0bcdc6904b1",
+      "position_zero_based": 25,
+      "source_record_ids": [
+        "0aca1d7ee1dd4670db803ae76e56a8a8c5cec6abd797de3d0581364dbba95b3e",
+        "67c4b4cc7b19f0ae8dd76e6a1948122d8e3ec218e853ad14bf4eb7a4d4195948",
+        "8667b31932bd6f1cacf5f5083f7e06be7d2f9d4687b3dd4d5fb364f91093bdf1",
+        "beff00590da4b7fd5fb14bc487bfb92ce85b5e9ba8a529901c7a2b24e192f5db"
+      ],
+      "locations": [
+        "T8R6",
+        "T8R7",
+        "T8R8",
+        "T8R9"
+      ],
+      "routing_status": "unrouted",
+      "scope_state": "unrouted_not_model_called",
+      "root_predicates": [],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 0
+    },
+    {
+      "group_id": "3a2971aba785be3a3204ad2b63ee2baf217a2256610303401b3efe6f2278c71f",
+      "position_zero_based": 26,
+      "source_record_ids": [
+        "dee4ac9a564291047107e21de7edf091e65379b3706fbd05d636bf546b25d8b3"
+      ],
+      "locations": [
+        "T8R10"
+      ],
+      "routing_status": "unrouted",
+      "scope_state": "unrouted_not_model_called",
+      "root_predicates": [],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 0
+    },
+    {
+      "group_id": "ff79c1b358e999af81bed1862780a5d31554c006faa0a2e696bbe9b8e80db94b",
+      "position_zero_based": 27,
+      "source_record_ids": [
+        "303f9f97208df63d0fd9fce6d0ebbed5296022f51d3ecca64527843d6dcc6c5a",
+        "02ad3e01f238f0eaef61d1374283c1f4eb66aab781c6644e4049746ade156484",
+        "c85426b0e388a42b1588204875847b4f0403f9d85d275a34006b617d210d32e6",
+        "03ecf6fd0c427f28aa9e052a64a4df603a94de32b2c742caca34685b01946699"
+      ],
+      "locations": [
+        "T9R1",
+        "T9R2",
+        "T9R3",
+        "T9R4"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionRiskAssessment",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasQualityRiskAssessment",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSafetyRiskAssessment"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "21dda95734ea01367c1874d5694b2247a455d9222d266758c1ef72d29aa25b47",
+      "position_zero_based": 28,
+      "source_record_ids": [
+        "60c50077f7c64ffe770b80600fe747c95f6e7a301a13c2faea688480b5862149",
+        "b10834c7bebf6568264b1be7405c624b5a872b27a08f6f406955790dc0442f38",
+        "3915465b6ac0631b310e722fd240f340bfe87b3029a4c5f7e4e2c2097d72eace",
+        "f508c29c53b29a6dea19b8df109d4db96c4326559b49964d4fe8fcfbe31ec5e2"
+      ],
+      "locations": [
+        "T9R5",
+        "T9R6",
+        "T9R7",
+        "T9R8"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionRiskAssessment",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasQualityRiskAssessment",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSafetyRiskAssessment"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "afd1300553bc02b10593617c1fc54e470364094ec6ac68f00b138ff96672eea7",
+      "position_zero_based": 29,
+      "source_record_ids": [
+        "e5d35bf8239a66a83bde02c678afccc044415691457a5d89a269b4e05b48a9fb"
+      ],
+      "locations": [
+        "T9R9"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionRiskAssessment",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasQualityRiskAssessment",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSafetyRiskAssessment"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "e80b2c46693a27d299b74aed368bfd346dcbaae96755eaaf910e7819ed1f6fed",
+      "position_zero_based": 30,
+      "source_record_ids": [
+        "b297f5c4d9725c2725fb49169ff16e0030f80270286ba8870b2ab4e96acc0b52"
+      ],
+      "locations": [
+        "P88"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionRiskAssessment",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasQualityRiskAssessment",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSafetyRiskAssessment"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "35614c6cc0c593b952e93e3f495238da8c34b8a0eecb9522708619175e92a497",
+      "position_zero_based": 31,
+      "source_record_ids": [
+        "48a8e9ee5a849ccfe85185d46576609059f6f85a8655498dac2b7950da1d601b"
+      ],
+      "locations": [
+        "P90"
+      ],
+      "routing_status": "unrouted",
+      "scope_state": "unrouted_not_model_called",
+      "root_predicates": [],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 0
+    },
+    {
+      "group_id": "48850a99caa66cf1b216bfb264bf049504adaddb25714b9d180ca2383da94493",
+      "position_zero_based": 32,
+      "source_record_ids": [
+        "c35257909375ef5f14de773f32db427e200f942f6defcf9272fe98751834f29b"
+      ],
+      "locations": [
+        "T10R2"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasQualityRiskAssessment",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSafetyRiskAssessment"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "5d2deefbc924a9fcba28ef363b7b9b8b031cf4c77eb7c462f45eb4850bf7591f",
+      "position_zero_based": 33,
+      "source_record_ids": [
+        "07dd812e6528bd4921d0f1f10f5f0a4dfed01925a50a98684a1b3e319605f11e"
+      ],
+      "locations": [
+        "T10R3"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasQualityRiskAssessment",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSafetyRiskAssessment"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "4c706d9c7127b90f0983c696beae5a9d08b4a3c3bd926069da1392b723e7050c",
+      "position_zero_based": 34,
+      "source_record_ids": [
+        "5d10148e2bb8f002c900138f92b003a4f5f3d43d3f2dc7002ba93ef3f1aad060",
+        "edf55e35963b43c1850afa5219fa5329536e3561febe42a473aee9a733ad1029"
+      ],
+      "locations": [
+        "P96",
+        "P97"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSynthesisRoute"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "26e3d92750d76f7ae7bccc2125fe6ff295a42d36f730b4579dfcde4ed370ee91",
+      "position_zero_based": 35,
+      "source_record_ids": [
+        "45d03462b45691dfcbce1db88d1fec1efe120e4d9ce3a2442043d55f11f8dd05"
+      ],
+      "locations": [
+        "P100"
+      ],
+      "routing_status": "unrouted",
+      "scope_state": "unrouted_not_model_called",
+      "root_predicates": [],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 0
+    },
+    {
+      "group_id": "372d3fc1895a56c445b0743ad249a14356846611f6d6e8e53d5a18eb8f9962fc",
+      "position_zero_based": 36,
+      "source_record_ids": [
+        "fe4a1a4d32705485ea322ba793a1a3249c2d6a94077e8309fedfc2a9c7e2a52e"
+      ],
+      "locations": [
+        "P102"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "12385876bb260c0b155e882fa17369e40f907ed46645b539dff550fc85bcd339",
+      "position_zero_based": 37,
+      "source_record_ids": [
+        "fb56bfe53bad37e6f6f7402423bc2684013919421f384de7a834d60f90de5fc6"
+      ],
+      "locations": [
+        "T11R2"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "587920c29c63fa43e43de32e853f74934ee0e1fd93ac488196812ee00db7110b",
+      "position_zero_based": 38,
+      "source_record_ids": [
+        "68fcea5af78d58ad7c93873cd4d4868cb2550e740966c40484af97bfe96a0bfa"
+      ],
+      "locations": [
+        "T11R3"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "f21ba0b72203dd9add99f05c5ddb711284bad35be6419ebc8771150b3d971dba",
+      "position_zero_based": 39,
+      "source_record_ids": [
+        "b141a5ed4d0a8d09eda99c6e4d24516601ad914ce661c1ebff37cab2b667fe71",
+        "77a7211739b5c1cf9a29244d62f6e9fddc06711ae7070c6690c0f6688affd522",
+        "ae4af4ae02e12cf83bd6c6d7edd57bdc2d5e6733a7d09f85f8e74d22863b8bae",
+        "7217a2ffa351b20291e6b4337557f3d0c922d0acbc93604bc232cb297ccc217b",
+        "50c37bdcf2de388b3abd3d6025c5cb0744cc0bb238a50fa5d931a82f4ff7b657",
+        "a9b7f3d8a51a14c83fcde62bb90224ed212040a128cbb01c234f872258c68de8",
+        "faecc36a09b1d8e9934fb542316710393b59f8dcc680c1c58ceae8d3867e697e",
+        "18304627eb452bbf13f5ee2d77353be5958a6c7fe8e7ecfef4c70a3d88a398c0"
+      ],
+      "locations": [
+        "P103",
+        "P104",
+        "P105",
+        "P106",
+        "P107",
+        "P108",
+        "P109",
+        "P110"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "21bb74c470841b735217e88d9cc580187ac333291ac08f5b4b26b93789f22baa",
+      "position_zero_based": 40,
+      "source_record_ids": [
+        "aa48edfc9ad22ebeba39f1c9a84295542461de90997550e73620e19f45ed6182",
+        "6c9a8b6a78c0d24c72cb831c6ead47eab7792d15292e4e4e9a4e3106d0752213",
+        "55862febbae4234a5e34431f438aee3eb331c0139afd649ee5ad65733156fc20"
+      ],
+      "locations": [
+        "P111",
+        "P112",
+        "P113"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "ee1a1ae3670cfe6f28d985d43c40844d64f242af97a5e568765a7b0ca89cade5",
+      "position_zero_based": 41,
+      "source_record_ids": [
+        "ef31b2fcd4fa256e852e78179a8b4c36deabddd32d3a55868b5747a7c74f17b0",
+        "6ee03f0c377f222c4ef2547d82752727293efeb6a3bf204fba0c10c6c9779f28"
+      ],
+      "locations": [
+        "T12R2",
+        "P116"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionRiskAssessment",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    },
+    {
+      "group_id": "a54f1bd3f2fd8222de1fcc066dbbabe842bc842e67ffa83a735b64db4db2e86d",
+      "position_zero_based": 42,
+      "source_record_ids": [
+        "78ba035b082b5b62782556544acf3ce1d45275247213bcd2a2302c1229252af9",
+        "a396a65fce673cf61d829c27655faf7b7beb6e4a685b698a27576dfb7188b769",
+        "c33fbf94086f37807bcbe5cc08dbc40eb9fe510139d892c80e13dce92cf1e8b3",
+        "bf1dd35a9e07eef1f844b9bd9f5436fe83c717c901f06217e6bde2eadc828911"
+      ],
+      "locations": [
+        "P117",
+        "P122",
+        "P123",
+        "P124"
+      ],
+      "routing_status": "routed",
+      "scope_state": "routed_not_model_called",
+      "root_predicates": [
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasProductionRiskAssessment",
+        "https://ontology.pharma-gmp.cn/slpra/drug-development/hasSharedLineData"
+      ],
+      "discovery_task_ids": [],
+      "persisted_admitted_pairs": 0,
+      "persisted_remaining_pairs": 1
+    }
+  ],
+  "record_level_comparison": [
+    {
+      "location": "P100",
+      "record_before": "a1d9259a9f763a913e6648a88cfdf225a313ffa03d97cb3577db268cc742574b",
+      "record_after": "45d03462b45691dfcbce1db88d1fec1efe120e4d9ce3a2442043d55f11f8dd05",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "unrouted",
+      "routing_after": "unrouted",
+      "scope_state_after": "unrouted_not_model_called"
+    },
+    {
+      "location": "P102",
+      "record_before": "d7649338a6c654f4c9593741939510f5701bd59ff1642764b4c26b9652a3d7b6",
+      "record_after": "fe4a1a4d32705485ea322ba793a1a3249c2d6a94077e8309fedfc2a9c7e2a52e",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P103",
+      "record_before": "1d9c9ad08856d995cdb182b1630f6aaa7dafae33452be7c0a8dcf16cc1d04164",
+      "record_after": "b141a5ed4d0a8d09eda99c6e4d24516601ad914ce661c1ebff37cab2b667fe71",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P104",
+      "record_before": "f3b9a65cb7fa23f3491bc5e03206c0c9e2bb46587c3e5e00a7039550a06bf707",
+      "record_after": "77a7211739b5c1cf9a29244d62f6e9fddc06711ae7070c6690c0f6688affd522",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P105",
+      "record_before": "1e734cb2fdd7ebde4ff6772c273a7714ac56bacc9bf89a2c8efc431f45df648f",
+      "record_after": "ae4af4ae02e12cf83bd6c6d7edd57bdc2d5e6733a7d09f85f8e74d22863b8bae",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P106",
+      "record_before": "35a08ba747f0cade031fe47ef7c4dfd8a86db0abf39a3bc3c844d2b1528acb44",
+      "record_after": "7217a2ffa351b20291e6b4337557f3d0c922d0acbc93604bc232cb297ccc217b",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P107",
+      "record_before": "b415a41e19ad4f2afd4a5509ceba67422e89bec5aa37fba9a733a9e635684ef1",
+      "record_after": "50c37bdcf2de388b3abd3d6025c5cb0744cc0bb238a50fa5d931a82f4ff7b657",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P108",
+      "record_before": "fef7b50a228dd433a6c6200f227795f96825efcd7f25369c72ac8503ddd66cc1",
+      "record_after": "a9b7f3d8a51a14c83fcde62bb90224ed212040a128cbb01c234f872258c68de8",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P109",
+      "record_before": "da4ef0869498ad1fb59246ee1a8a762213987ea32e59a798cd6b32ec75f92f74",
+      "record_after": "faecc36a09b1d8e9934fb542316710393b59f8dcc680c1c58ceae8d3867e697e",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P110",
+      "record_before": "fea1b18f2e166a36cce461634d3bfce17db0f71dde4c15d886f6315e19a2f075",
+      "record_after": "18304627eb452bbf13f5ee2d77353be5958a6c7fe8e7ecfef4c70a3d88a398c0",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P111",
+      "record_before": "bf87a9509b609ce7f6181285e4eb180ba9a0180029c68bb717df95963188d36c",
+      "record_after": "aa48edfc9ad22ebeba39f1c9a84295542461de90997550e73620e19f45ed6182",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P112",
+      "record_before": "fe47c6813634e6cf66b8495b03d328feffd2733a60a05a5376e8c9230f9f0696",
+      "record_after": "6c9a8b6a78c0d24c72cb831c6ead47eab7792d15292e4e4e9a4e3106d0752213",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P113",
+      "record_before": "0f19ef09a0cbab32407973912ac40b5ba5915e7106e04db436dcdbe044bef45e",
+      "record_after": "55862febbae4234a5e34431f438aee3eb331c0139afd649ee5ad65733156fc20",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P116",
+      "record_before": "82bc173869b309bf2a79ba9243eddff2c01dd916de4b55647465e19641fa0c2d",
+      "record_after": "6ee03f0c377f222c4ef2547d82752727293efeb6a3bf204fba0c10c6c9779f28",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P117",
+      "record_before": "461d299cfc4cf41e9e6206ba314c9850a2a0573da10ad5879b80e278c8e73503",
+      "record_after": "78ba035b082b5b62782556544acf3ce1d45275247213bcd2a2302c1229252af9",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P122",
+      "record_before": "4e42f7164fa76d4db5d1509efc8dd9aa6fe0eaa2f4edd184702547c06cdb115a",
+      "record_after": "a396a65fce673cf61d829c27655faf7b7beb6e4a685b698a27576dfb7188b769",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P123",
+      "record_before": "bd09919b706d3f1a62f24119fcdd665cce7715d5805266efe769da0bd06cbce3",
+      "record_after": "c33fbf94086f37807bcbe5cc08dbc40eb9fe510139d892c80e13dce92cf1e8b3",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P124",
+      "record_before": "a6cc893dd8bd55de8166ba1a8ea4d613324baa5e47a735f678c2f40afb52d7e4",
+      "record_after": "bf1dd35a9e07eef1f844b9bd9f5436fe83c717c901f06217e6bde2eadc828911",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P20",
+      "record_before": "2477aa98a7c1b1fc1f9a523c4cb73278c8ab39b2698eb7dec20edcac5595e7e2",
+      "record_after": "8ec13ee276a5ae2bc91af77945da129f082d953243ee1780c1de01d8f0c6aa6c",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P26",
+      "record_before": "7e254bebd9c5a90a9ba1919d1879d8f9ce1cba669e05b191757bc4469f100d34",
+      "record_after": "ddaa7491e4158181d27fa4d96c7dd16613c9a9b6755463f192b898c3b70584d2",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "unrouted",
+      "routing_after": "unrouted",
+      "scope_state_after": "unrouted_not_model_called"
+    },
+    {
+      "location": "P27",
+      "record_before": "542f212b4c62838b28115e50c58381195dd5f4eabe8065750b8f3794603490ee",
+      "record_after": "ec1ec99bb7c70e32c85061382c92f124b697112fd6c55eec52faacc350e85cc5",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "unrouted",
+      "routing_after": "unrouted",
+      "scope_state_after": "unrouted_not_model_called"
+    },
+    {
+      "location": "P31",
+      "record_before": "6ae7f83fa027fe281c8a4e0fd79f2c21d9f069e1132a505b70ef95740c4bbadb",
+      "record_after": "b7df89f3cf3af96e25008fa7356fde69da0c49c2e80144a774fc3693bdfe0a37",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P32",
+      "record_before": "123d61cc04ed7bf3d9e2090147870013bcb3d08f045d90ada4dbbbd832613fe6",
+      "record_after": "f80887751fb86b87d07e2f792f7606e444214948bd2d77edab2de7cec26ef687",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P33",
+      "record_before": "cf5d97aba99c0f97da4a863695c907fc89105c536f803867f2a1685bddf6214c",
+      "record_after": "5de81e6f64b1601fda38679e2d6665b4dd52da2fc6f88d42cced01c79e097ada",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P34",
+      "record_before": "3ddab6040d5645cf8b1cd64601acaec5cdb412467fa848f6201e34632ffdf995",
+      "record_after": "8e180ae7f9d29d2408469a8b458b52d60b108120d69aa98664f9293b359cff78",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P35",
+      "record_before": "fde4c275307f7de08e27c0ade4c89035e8b8eae553cbdc07c244c3babaaba57e",
+      "record_after": "93cc391906b88a3627544195f5c1e0c8635f81429f6456b3222eecd6ff2e067e",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P36",
+      "record_before": "8e4d3cc115c61e2a1d8eceea4627d7c62ace7f4cebf1ad431fabeea57d11d1c9",
+      "record_after": "7a0a948e3e8eb49f32f491351874c6a397b16be6d3087e1adf8862e5b3bde8ac",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P37",
+      "record_before": "5c164835d2048a995a12c8588df77d48a6c46b8a92eeffac46ec2a95b6d6b8e1",
+      "record_after": "1b6796ebae49a51080923d2713b1b26acd5e5ceb4e72cefa327103562014ff7c",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P38",
+      "record_before": "efc1496e483a34fe10c498ceb239f41a2a6f5a04392f6e6d419a616a53022397",
+      "record_after": "bd1b20eb19d26bf720f145568a78145c98506ae5dda43cb4311a665e9be30196",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P39",
+      "record_before": "320c619b9b5fddd9964e65546783dd958f1627297bc5f6b49b87cee4894e4f64",
+      "record_after": "504613c49ad2718bd59a4c614418b180ddfe1962aaa751fa9e4645ab743440a7",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "model_called_not_examined"
+    },
+    {
+      "location": "P40",
+      "record_before": "b472b2265637225bf33c3f22714d2ec6e5801cc9b96978ea44ce0ee3c1a94ed4",
+      "record_after": "f2624e6913d38ead3e74fcf2c93ccccb0aa5a4f5eadeccd1e806d20d1f598034",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "model_called_not_examined"
+    },
+    {
+      "location": "P41",
+      "record_before": "adb7719d2054cb99c0f2165d61df7c15ea3498c62644cda9f2a1bafced564496",
+      "record_after": "cb31973a1963b19800fa14748fd2c45aaf8c529c4ae9e9e78ca14f0b1e9315a8",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "model_called_not_examined"
+    },
+    {
+      "location": "P42",
+      "record_before": "988c96fe86a9caf1576437249999496c1f1a65d7317b809341dee864130aeab8",
+      "record_after": "9e3549601fd1890174992da0819afaf6e78ddc2459ef8e6ab1b645d263ae4656",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "model_called_not_examined"
+    },
+    {
+      "location": "P43",
+      "record_before": "78e9df83541c59a8a0aa6d4722576d37b96089866af3e0d80f4810ff20d2c5b2",
+      "record_after": "365c6729e179e2561787e02e5e91777a051d9ceed9bd783c8a38aa784a0b7dac",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "model_called_not_examined"
+    },
+    {
+      "location": "P44",
+      "record_before": "96973b042a1807129e89d5060570bd93a945362bda913491f3152344f1f1f2e8",
+      "record_after": "c30ae18921a41ff479485b58eeb97b95de90999587ec7a01217ef60df0a888bf",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "model_called_not_examined"
+    },
+    {
+      "location": "P45",
+      "record_before": "32e47e84b122d6e1f9aeb3723193f5f8d5bfac549d686b9c0bdf430a9f88af98",
+      "record_after": "829e82054693729f674ffd64f08df85f4add18462a773aa6c87904bf770cdaeb",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "model_called_not_examined"
+    },
+    {
+      "location": "P46",
+      "record_before": "49fcaaca3aeeb4f62ea63043985657c8ab139b3ebb514e9c021c66877581ab8b",
+      "record_after": "8b5267e2eff148a0a9df200b882f8ad535aa380ae053a65eaf194b57ef401134",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "model_called_not_examined"
+    },
+    {
+      "location": "P47",
+      "record_before": "55b48081dc823fb638be35d700446bbea835182efb0edfba80bc668bb1de62c5",
+      "record_after": "7fa176f18c739a037025f0ec0d9a50ce0ed10e918e9fa4f5912d886f837e1794",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P48",
+      "record_before": "dedceb76a00357bbfca787f7c3feccc7b8def2674042149aaa24ebbfeaa76b3a",
+      "record_after": "87859905736279d2f1484be6770882418ad6c7fad82a5b97e605c1182f8cf2f0",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P49",
+      "record_before": "a7dc11fe11b0c8379da305076a1fe28b9ce0057032dd11421ec3b1064f999aba",
+      "record_after": "fa1dbe41705659980f2c0e1b155912ff291052016eb975e05ef3c20b181ad01b",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P53",
+      "record_before": "464721f1d72bc8911a0446e7c59a120bf04f94de4a5cd237b19c7441f8739a93",
+      "record_after": "b84288cbdfb130f6499c6e4ae7a927060ffce4dd20fc51c34206aca233e410d0",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P66",
+      "record_before": "eeb1719ad3c5b6d76c6a2f5c32b7541695fb5877dc5e1e8ce8ef9657894d709a",
+      "record_after": "0d2f6b7211d94d47823e1dba7da39be4b3dfd363698f40eead9b3ce82f108626",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P74",
+      "record_before": "413949c3ea12624da9d19203cfbd2515bf975f3044a7a938387d42f28581ae4f",
+      "record_after": "c697113d16e9eb6cbde2d10c1a516badab3e36a2bb6fb485f71c06d8945bf445",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P77",
+      "record_before": "8f7dc25c578b8e241c29948789bb6316ec23c5c99034e6196201c783257f9419",
+      "record_after": "473f15a2ef066fbd53ca7d8fc2969ccd6468dc0186b92e8c4f612756c6424531",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P8",
+      "record_before": "eab3baba52455eea2a94bcc2a40d137bbe9935ea1c522a463e05c74c705e1c88",
+      "record_after": "614a84d58c1a8779bbb89644623eebce601317e8518e0dadd111970cb2bf84b2",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P80",
+      "record_before": "d4178777ba9d432dec40027aea94db1636922e13356f6de7ef335d28d768173a",
+      "record_after": "62c0dccee4a6db98d9eaf66031a442249f8ac3e14200816676324c4b1a304b70",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P88",
+      "record_before": "134272689423479f862b3dd8731b906f4dcf9f626e41a627f48f5b782ccbc9f2",
+      "record_after": "b297f5c4d9725c2725fb49169ff16e0030f80270286ba8870b2ab4e96acc0b52",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P90",
+      "record_before": "9ab0ad66ba13ddcb686f905c80d091f0dc9b32c6802337ca67cc00784f93511a",
+      "record_after": "48a8e9ee5a849ccfe85185d46576609059f6f85a8655498dac2b7950da1d601b",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "unrouted",
+      "routing_after": "unrouted",
+      "scope_state_after": "unrouted_not_model_called"
+    },
+    {
+      "location": "P96",
+      "record_before": "996c492b3d8f3035d1b956066dade5ffe0db998b6dd3eda6566c7334ae7dd6e0",
+      "record_after": "5d10148e2bb8f002c900138f92b003a4f5f3d43d3f2dc7002ba93ef3f1aad060",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "P97",
+      "record_before": "d25a0c0c9f58695fddb2ca3cabe7d9d08f8293b33b47e0eee2de3e1678227122",
+      "record_after": "edf55e35963b43c1850afa5219fa5329536e3561febe42a473aee9a733ad1029",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "T10R2",
+      "record_before": "32d00bbcb456ec1ac8ccaca68cc8245ca6bdad4bebad62ab97b809d7db369f99",
+      "record_after": "c35257909375ef5f14de773f32db427e200f942f6defcf9272fe98751834f29b",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "T10R3",
+      "record_before": "0c02791cb77bfab43e62f3a249745bf5971fdabfc3ea88ccbf53f757d2934d5e",
+      "record_after": "07dd812e6528bd4921d0f1f10f5f0a4dfed01925a50a98684a1b3e319605f11e",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "T11R2",
+      "record_before": "f91501cb5ef01df3295c2579bdb62fc7f8c1d7a2b3defa98ccb249c132f1a33f",
+      "record_after": "fb56bfe53bad37e6f6f7402423bc2684013919421f384de7a834d60f90de5fc6",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "T11R3",
+      "record_before": "e24c825c9c19384028a93b5b4a9bae549e3d07378908998ccaa8888ac3bb0c14",
+      "record_after": "68fcea5af78d58ad7c93873cd4d4868cb2550e740966c40484af97bfe96a0bfa",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "T12R2",
+      "record_before": "30b8209ff92581ef652229f2f44b8184419c20a768a2de5ae93ba6701a5f6cd3",
+      "record_after": "ef31b2fcd4fa256e852e78179a8b4c36deabddd32d3a55868b5747a7c74f17b0",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "T1R1",
+      "record_before": null,
+      "record_after": "0fab2c17d9015a2d348b73e9f161230edd3003c8eafa16cea3110a405e7b38ec",
+      "source_record_before": false,
+      "source_record_after": true,
+      "routing_before": null,
+      "routing_after": "unrouted",
+      "scope_state_after": "unrouted_not_model_called"
+    },
+    {
+      "location": "T1R2",
+      "record_before": "03b42ee5ee1454cdb1747f3cd281270e5f3db4bc14121c5f9849ede13562da59",
+      "record_after": "dd00d1206ec9106c3995b04cb85504522d1c35ab171bca89687497fc14680f3a",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "unrouted",
+      "routing_after": "unrouted",
+      "scope_state_after": "unrouted_not_model_called"
+    },
+    {
+      "location": "T1R3",
+      "record_before": "f8d17b6132ad5d84ff922b06aca5eea453de4c0418c2cdeebedea8afe06757b7",
+      "record_after": "23e577a3ac5b6b6be2ab24958dac625fcd4d0b20ff47604010880900d1fde7f4",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "unrouted",
+      "routing_after": "unrouted",
+      "scope_state_after": "unrouted_not_model_called"
+    },
+    {
+      "location": "T1R4",
+      "record_before": "cac67a6d3b9bdcfe17f5a5f4107907a0f8536a25008d4b22aac010615e6b919c",
+      "record_after": "db04f398f1d637aed00d55ef27e411cf8598156bf19f1b6f227b60884651af48",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "unrouted",
+      "routing_after": "unrouted",
+      "scope_state_after": "unrouted_not_model_called"
+    },
+    {
+      "location": "T2R2",
+      "record_before": "cb748ecfa17f23df5a5c4b963d9571d8c83863d92eeda27ffc339283546ed7bd",
+      "record_after": "c25a4f5544281c31de541af36373187d913093ec870b519b10420e8def6190b1",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "unrouted",
+      "routing_after": "unrouted",
+      "scope_state_after": "unrouted_not_model_called"
+    },
+    {
+      "location": "T3R2",
+      "record_before": "54ef6cfc3ed8a02249ce620b15925aa52227df2c9cb5d6875dec5cf7d654f194",
+      "record_after": "a73c534d4350a3621c765aeedbfc5b58a0eb027d62d159e98be0e18eaa308d6b",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "T4R2",
+      "record_before": "1e06722eddbcfab13455256181cb6cc633a7fab4f3f62e7cab7f605684d89531",
+      "record_after": "9e1f15c21b9bef1dc2f3b2fa3188fc50b12670e6b6cc2008f4f4ef4409d11273",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "T5R2",
+      "record_before": "a7946c5c4c811caf356fdd983f5c3cf2bb6c21439f340d49427115b9602855c8",
+      "record_after": "b4b298d324317682932e390c40d18433d30e1c3d549697b7a9fb43f293ff0d53",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "T6R2",
+      "record_before": "f4a96578eb6c9d8cee65f5dc34fcf60088ff111c1b753e43e66b5d46f02fbaae",
+      "record_after": "a0157008fd4d92e1ebbe84ac2cc60a677e11074bf3980c58fc76edacb5012e85",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "T6R3",
+      "record_before": "8d917c9d4c7f9551cd75f9e1dd4f1d8cf5bd1c2f158b1a13405b53e51999b9b9",
+      "record_after": "7151b6e397038cd147f790b740f0b89ab6876bf34306a75b0a1b7fc4fe423dc8",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "T6R4",
+      "record_before": "fe60edfd2f8e69972500d378199e183b1263cc457c51d08ae0de8cad09bad7b2",
+      "record_after": "30fad75b4bf17c22ac59a61c73b039cd5c945e26c713c1503f1e55f9e0bddec3",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "T6R5",
+      "record_before": "85936ba35a893bf47d660fa41c35af91656311796db00b89fc978df1838e9061",
+      "record_after": "49cc50c09af592901ac426e7865b8d525352ff6d4d3990423efd7c8d9338ac2c",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "T7R2",
+      "record_before": "481c460776e42f1ac5451ed318155464c04a03b04b5f036d47746d510729cdfe",
+      "record_after": "e434ca61f5647e2d1470c77c52c405abeb6d6e67862be4a185dcdc6b59cbc5c7",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "T7R3",
+      "record_before": "3c97161fbde119f228b2d9e3627d2cf405c71cbe08c7ecf13e251321f3b32156",
+      "record_after": "9611d33f9a75622fe52338401dc8b114df1ba5d13f788dadb4b49170d9179aaf",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "T7R4",
+      "record_before": "ba30786e624e6f27442ebc75c433cceb447f0c9d736f518534c2ae8eeb77bcda",
+      "record_after": "4f36adc1e8a20c860dbe82abaa8860178e6978b0426c7097b4fb454bc6a10d0b",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "T7R5",
+      "record_before": "3561fc9426e76f82756c074b16eb0f9a39bb002d8391559731a2b82672f16953",
+      "record_after": "c05424206c558901645dfdddd55dbb6a644a2ddfdbaf4ecafdfcf90f101bd430",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "T7R6",
+      "record_before": "00fb242687f99c2f6ece7a5216b83e3114528b1108531f4ddf1f4d868b7fad83",
+      "record_after": "a834f88ce21415098fe34ec422665233dd56fe4ee00cc00917827d9a0246f3d5",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "T8R10",
+      "record_before": "0eb9846df3c4293887e2eaecbcb3bba36e38d3e82696a263692c3315dd09055d",
+      "record_after": "dee4ac9a564291047107e21de7edf091e65379b3706fbd05d636bf546b25d8b3",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "unrouted",
+      "routing_after": "unrouted",
+      "scope_state_after": "unrouted_not_model_called"
+    },
+    {
+      "location": "T8R2",
+      "record_before": "340d181aad8238615b9adf045bc78f53c4a4275143fbc3c1e730b4e56ee4e809",
+      "record_after": "5e5c12c8cf2773b575baa89cede527b8160f02987e9f2ee205d5b1a3c9d2bee9",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "unrouted",
+      "routing_after": "unrouted",
+      "scope_state_after": "unrouted_not_model_called"
+    },
+    {
+      "location": "T8R3",
+      "record_before": "c59156d4492a271f297be1b051766b820cdeaf4568c531b15645d8c6f812fecd",
+      "record_after": "6865f4d0becd850fe9e4cd0338f2159b3ad10b0e260e21fabbaaef948f9045f1",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "unrouted",
+      "routing_after": "unrouted",
+      "scope_state_after": "unrouted_not_model_called"
+    },
+    {
+      "location": "T8R4",
+      "record_before": "6e8f37221797293382623b47c53aeafcea7543e4ec11f0dd5996952cd67a305e",
+      "record_after": "58117a33e5fda159f5fc5a45521c54373d80c2ab0c3ccc3604e64cd3b44b1212",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "unrouted",
+      "routing_after": "unrouted",
+      "scope_state_after": "unrouted_not_model_called"
+    },
+    {
+      "location": "T8R5",
+      "record_before": "749aae53db426ed61d3c2b381476c13f171bc784be1ede2da5caa6fc2318f368",
+      "record_after": "5f7c5211ef4ca09be883b856be128f7caa1c56aa24ee5dc8ce833abc2dd70a28",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "unrouted",
+      "routing_after": "unrouted",
+      "scope_state_after": "unrouted_not_model_called"
+    },
+    {
+      "location": "T8R6",
+      "record_before": "48ad95ae43fe91be47e08a0d75a5945f9ab8d695180667ae3dc1f713043673d9",
+      "record_after": "0aca1d7ee1dd4670db803ae76e56a8a8c5cec6abd797de3d0581364dbba95b3e",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "unrouted",
+      "routing_after": "unrouted",
+      "scope_state_after": "unrouted_not_model_called"
+    },
+    {
+      "location": "T8R7",
+      "record_before": "29db46bc4c7f6495c88c25a86b94351f208b5297f2b04044dc1474b26b608d00",
+      "record_after": "67c4b4cc7b19f0ae8dd76e6a1948122d8e3ec218e853ad14bf4eb7a4d4195948",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "unrouted",
+      "routing_after": "unrouted",
+      "scope_state_after": "unrouted_not_model_called"
+    },
+    {
+      "location": "T8R8",
+      "record_before": "990082b83f807d6b21025aad84cfff34ee57735f5c94d558190d63b999be4220",
+      "record_after": "8667b31932bd6f1cacf5f5083f7e06be7d2f9d4687b3dd4d5fb364f91093bdf1",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "unrouted",
+      "routing_after": "unrouted",
+      "scope_state_after": "unrouted_not_model_called"
+    },
+    {
+      "location": "T8R9",
+      "record_before": "7ce1817b47751e45860d051c373ef53a94e0683a4598ca55a5c05a9238339d58",
+      "record_after": "beff00590da4b7fd5fb14bc487bfb92ce85b5e9ba8a529901c7a2b24e192f5db",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "unrouted",
+      "routing_after": "unrouted",
+      "scope_state_after": "unrouted_not_model_called"
+    },
+    {
+      "location": "T9R1",
+      "record_before": null,
+      "record_after": "303f9f97208df63d0fd9fce6d0ebbed5296022f51d3ecca64527843d6dcc6c5a",
+      "source_record_before": false,
+      "source_record_after": true,
+      "routing_before": null,
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "T9R2",
+      "record_before": "af645edc8f06c8b557b6561868c93ec564c9d66f02e018c793f5099e32f28248",
+      "record_after": "02ad3e01f238f0eaef61d1374283c1f4eb66aab781c6644e4049746ade156484",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "T9R3",
+      "record_before": "01baeebfac55a76c9ea9e6e30fb67ed318001bb4286515b633a8229d4a7fba75",
+      "record_after": "c85426b0e388a42b1588204875847b4f0403f9d85d275a34006b617d210d32e6",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "T9R4",
+      "record_before": "09ec1412831c4aa4d62c057d7b689d5b820e23f0bd6eb226f669348087420e26",
+      "record_after": "03ecf6fd0c427f28aa9e052a64a4df603a94de32b2c742caca34685b01946699",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "T9R5",
+      "record_before": "7ae2f1b31aebd7b7a4e63b931b36f9789d87ba7c9ef1d5e8af2de2bd6caa571d",
+      "record_after": "60c50077f7c64ffe770b80600fe747c95f6e7a301a13c2faea688480b5862149",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "T9R6",
+      "record_before": "e848c7729e2a74e9501fd898825f69f29bbaa1766512c56c0b07135c59774be7",
+      "record_after": "b10834c7bebf6568264b1be7405c624b5a872b27a08f6f406955790dc0442f38",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "T9R7",
+      "record_before": "7c8818835446fbacb131a373b676081c2752ce7c67b3fb7f02cecc35e3a45943",
+      "record_after": "3915465b6ac0631b310e722fd240f340bfe87b3029a4c5f7e4e2c2097d72eace",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "T9R8",
+      "record_before": "cb4d245a747f54321269f0eaf99e9663fb70d4868adc21076358ad616a8d94c1",
+      "record_after": "f508c29c53b29a6dea19b8df109d4db96c4326559b49964d4fe8fcfbe31ec5e2",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    },
+    {
+      "location": "T9R9",
+      "record_before": "c15b42868950bae725f546ec7810a0b73c7d240a957374630047a451d7640bee",
+      "record_after": "e5d35bf8239a66a83bde02c678afccc044415691457a5d89a269b4e05b48a9fb",
+      "source_record_before": true,
+      "source_record_after": true,
+      "routing_before": "routed",
+      "routing_after": "routed",
+      "scope_state_after": "routed_not_model_called"
+    }
+  ],
+  "discovery_tasks": [
+    {
+      "task_id": "a74fa04789393c031f332f59c74ace3cf4ec43069c72d2239189a959f35ebd0c",
+      "lineage_id": "3ade30e97846dcf7932f909142038ceca00c52925202dbac26dee9be15ec3111",
+      "source_record_ids": [
+        "504613c49ad2718bd59a4c614418b180ddfe1962aaa751fa9e4645ab743440a7",
+        "f2624e6913d38ead3e74fcf2c93ccccb0aa5a4f5eadeccd1e806d20d1f598034",
+        "cb31973a1963b19800fa14748fd2c45aaf8c529c4ae9e9e78ca14f0b1e9315a8",
+        "9e3549601fd1890174992da0819afaf6e78ddc2459ef8e6ab1b645d263ae4656",
+        "365c6729e179e2561787e02e5e91777a051d9ceed9bd783c8a38aa784a0b7dac",
+        "c30ae18921a41ff479485b58eeb97b95de90999587ec7a01217ef60df0a888bf",
+        "829e82054693729f674ffd64f08df85f4add18462a773aa6c87904bf770cdaeb",
+        "8b5267e2eff148a0a9df200b882f8ad535aa380ae053a65eaf194b57ef401134"
+      ],
+      "locations": [
+        "P39",
+        "P40",
+        "P41",
+        "P42",
+        "P43",
+        "P44",
+        "P45",
+        "P46"
+      ],
+      "status": "active",
+      "reason_code": null,
+      "persisted_model_turns": [
+        {
+          "lineage_id": "3ade30e97846dcf7932f909142038ceca00c52925202dbac26dee9be15ec3111",
+          "stage": "discovery",
+          "attempt": 1,
+          "response_status": "completed"
+        }
+      ],
+      "request_stage_counts": {
+        "verification": 1,
+        "discovery": 1
+      },
+      "request_dispatch_states": {
+        "dispatch_claimed": 1,
+        "completed": 1
+      },
+      "has_model_call_evidence": true
+    }
+  ],
+  "published_progress_at_observation": {
+    "candidate_policy": "sparse-candidates-v1",
+    "completion": "incomplete",
+    "model_calls_reserved": 2,
+    "model_calls": 1,
+    "model_calls_unresolved": 1
+  },
+  "performance_policy": {
+    "record_discovery": {
+      "version": "record-discovery-v2",
+      "max_classes_per_card": 4,
+      "endpoint_page_size": 8,
+      "candidate_cards_per_record": 2,
+      "minimum_similarity": 0.25,
+      "max_feedback_reopens": 1,
+      "attribute_calibration": "source-observations-v1",
+      "table_reading": "bounded-table-rows-v2",
+      "contextual": {
+        "version": "contextual-discovery-v2",
+        "max_section_chars": 240,
+        "max_group_chars": 1200,
+        "max_group_records": 8,
+        "max_table_rows_per_group": 4,
+        "max_attribute_candidates": 8,
+        "max_disambiguation_attempts": 2
+      },
+      "schema_region_routing": {
+        "version": "schema-region-routing-v1",
+        "max_regions_per_card": 2,
+        "minimum_similarity": 0.25,
+        "max_region_records": 32,
+        "max_group_chars": 1200,
+        "max_group_records": 8,
+        "execution_mode": "region_batch",
+        "property_field_mode": "region_batch"
+      }
+    },
+    "cmc_describes_type_scope": "drug-product-only-v1",
+    "recognition_pipeline": "record-entity-first-v1"
+  },
+  "inputs": [
+    {
+      "path": "/opt/dev/chen/ontology-agent/docs/调研/ontology-target-main-deployment-20260921/routing-scope-review.json",
+      "sha256": "6c4264c4182d7efbe2f0a3dcb8dcbfbed51e4c49b8dcf198808c75b4c553f634"
+    },
+    {
+      "path": "/tmp/ontology-target-main-20260921/source-v2.json",
+      "sha256": "864f2c4e72763fef6dd2aea3e7b5c1849a5a2794113360c58a4513a4ebca6265"
+    },
+    {
+      "path": "/tmp/ontology-target-main-20260921/routing-parser9-db-readonly.json",
+      "sha256": "79e46ac6df79d30a2ee72ace5c5616849337add57a3c32b3a1d631036ac8f894"
+    },
+    {
+      "path": "/opt/dev/chen/ontology-agent/docs/调研/ontology-target-main-deployment-20260921/parser-header-scope-proof.json",
+      "sha256": "d80b7ff0f4185d6dd70e5afd9a6a7b33f4a3b650aca28eedae5afc63931e7424"
+    }
+  ],
+  "limitations": [
+    "当前范围快照，不是结束运行，也不计算语义precision/recall或事实完整度。",
+    "首行具有正文证据资格、被路由、实际调用和识别完成是不同层次。",
+    "未路由仍是覆盖缺口而非事实阴性；T1首行恢复未自动带来选区覆盖。",
+    "新运行重新生成摘要与执行排序；非冻结全部其他变量的因果A/B，不把相似度变化单独归因于parser。",
+    "比较采用原文P/T/R位置，parser改变后record/group/evidence标识变化不当作事实增删。",
+    "模型调用由主运行产生；本只读核对没有调用模型或embedding，也没有改变运行状态。"
+  ]
+}

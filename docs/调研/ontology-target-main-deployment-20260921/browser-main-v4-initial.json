@@ -1,0 +1,96 @@
+{
+  "baseUrl": "http://sldpr-demo.infilake.com:8081",
+  "runId": "3d563507-90da-495c-998e-62cb83244521",
+  "newTabVisible": true,
+  "selected": true,
+  "graphSummary": {
+    "dashed": 12,
+    "solid": 0,
+    "subjects": 1
+  },
+  "targetSummary": {
+    "relationships": {
+      "total": 12,
+      "supported": 0,
+      "completed": 0,
+      "percent": 0
+    },
+    "properties": {
+      "total": 7,
+      "supported": 0,
+      "completed": 0,
+      "percent": 0
+    },
+    "pending_expansion_count": 12,
+    "notes": [
+      "分母是冻结本体在当前主体与范围上的识别目标，不表示每个字段在文档中必填。",
+      "完整度按完成目标数计算；候选记录覆盖不等于开放文档召回率。",
+      "未知多值成员总数保持未完成；待展开分支不计为已完成。",
+      "否定、条件、计划及备选关系保留原图标签；虚拟目标不是事实。"
+    ]
+  },
+  "completionLabels": {
+    "relationships": "关系识别完整度\n0.0%\n\n完成 0 / 12 项 · 已实证 0 项",
+    "properties": "属性识别完整度\n0.0%\n\n完成 0 / 7 项 · 已实证 0 项"
+  },
+  "targetGraphInitialStatus": 200,
+  "targetGraphRefreshStatus": 200,
+  "writes": [],
+  "errors": [],
+  "api": [
+    {
+      "path": "/api/document-analysis/runs",
+      "status": 200
+    },
+    {
+      "path": "/api/entities",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/3d563507-90da-495c-998e-62cb83244521",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/3d563507-90da-495c-998e-62cb83244521/target-graph",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/3d563507-90da-495c-998e-62cb83244521",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/3d563507-90da-495c-998e-62cb83244521/source",
+      "status": 200
+    },
+    {
+      "path": "/api/document-analysis/runs/3d563507-90da-495c-998e-62cb83244521/target-graph",
+      "status": 200
+    }
+  ],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "requestFailures": [
+    {
+      "path": "/api/entities",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "path": "/api/document-analysis/runs/3d563507-90da-495c-998e-62cb83244521",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "path": "/api/document-analysis/runs/3d563507-90da-495c-998e-62cb83244521/target-graph",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "path": "/api/document-analysis/runs",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "path": "/api/document-analysis/runs/3d563507-90da-495c-998e-62cb83244521/source",
+      "error": "net::ERR_ABORTED"
+    }
+  ],
+  "httpFailures": []
+}

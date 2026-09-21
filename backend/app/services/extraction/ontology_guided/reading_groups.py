@@ -243,3 +243,50 @@ def build_reading_groups(
         pending.append(section)
     flush()
     return tuple(groups)
+
+
+def build_section_paragraph_groups(
+    index: RecordIndex,
+    *,
+    max_group_chars: int = 1200,
+    max_records: int = 8,
+    excluded_record_ids: Iterable[str] = (),
+) -> tuple[ReadingGroup, ...]:
+    """Batch consecutive paragraphs inside one section without merging sources."""
+    if min(max_group_chars, max_records) < 1:
+        raise ValueError("section_paragraph_group_limit_invalid")
+    excluded = set(excluded_record_ids)
+    groups: list[ReadingGroup] = []
+    pending: list[IndexedRecord] = []
+
+    def flush() -> None:
+        if len(pending) > 1:
+            record_ids = tuple(record.record_id for record in pending)
+            section_id = pending[0].section_node_id
+            groups.append(ReadingGroup(
+                group_id=stable_id("section-paragraph-group", [
+                    index.ir.analysis_id, section_id, record_ids,
+                ]),
+                record_ids=record_ids,
+                section_node_ids=(section_id,),
+                binding_refs=_heading_refs(index, [section_id], 4),
+                reasons=(),
+            ))
+        pending.clear()
+
+    for record in index.records:
+        eligible = record.kind == "paragraph" and record.record_id not in excluded
+        if not eligible:
+            flush()
+            continue
+        same_section = not pending or pending[-1].section_node_id == record.section_node_id
+        fits = (
+            len(pending) + 1 <= max_records
+            and sum(len(item.text) for item in pending) + len(record.text) <= max_group_chars
+        )
+        if pending and (not same_section or not fits):
+            flush()
+        if len(record.text) <= max_group_chars:
+            pending.append(record)
+    flush()
+    return tuple(groups)

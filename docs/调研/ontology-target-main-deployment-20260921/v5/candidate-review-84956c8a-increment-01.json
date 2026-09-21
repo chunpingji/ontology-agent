@@ -1,0 +1,1986 @@
+{
+  "run_id": "84956c8a-6988-43cb-bab6-e4ad7e3d026d",
+  "reviewed_at": "2026-09-21T06:54:54.307215+00:00",
+  "review_kind": "candidate_graph_read_only_increment",
+  "model_calls_by_reviewer": 0,
+  "application_mutations_by_reviewer": 0,
+  "source_hashes": {
+    "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+    "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+    "parser_version": "9"
+  },
+  "ontology_snapshot_id": "54c748b83397a74fd7268f96c8f72826c572bc0b5a457fec8e8e18da055831f2",
+  "increments": [
+    {
+      "lineage_id": "c93af360c67383e8c8a4e8f065854755e07103d2ed8a98095ed089951ed23543",
+      "task": {
+        "kind": "record_discovery",
+        "task_id": "0d0812053488f44d5bc9ffd339b33cd8374d058a7c25b394385129e168403f48",
+        "claim_lineage_id": "c93af360c67383e8c8a4e8f065854755e07103d2ed8a98095ed089951ed23543",
+        "record_id": "b7df89f3cf3af96e25008fa7356fde69da0c49c2e80144a774fc3693bdfe0a37",
+        "schema_card_id": "72ace4a266b08a6f71b03978d34761f781997b60cd496a29dd04034e1d9831b7",
+        "analysis_scope_ref": "875105c6e91d82dbae822b9fecd36c8d15869052b39c195a1ab47ea8949c1ee5",
+        "dependency_hash": "7b020794d0a5af4b13dc73ee79e35f901fbdf9e484638f861b34683489762e9f",
+        "scope": {
+          "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "members": []
+        },
+        "source_record_ids": [
+          "b7df89f3cf3af96e25008fa7356fde69da0c49c2e80144a774fc3693bdfe0a37",
+          "f80887751fb86b87d07e2f792f7606e444214948bd2d77edab2de7cec26ef687",
+          "5de81e6f64b1601fda38679e2d6665b4dd52da2fc6f88d42cced01c79e097ada",
+          "8e180ae7f9d29d2408469a8b458b52d60b108120d69aa98664f9293b359cff78",
+          "93cc391906b88a3627544195f5c1e0c8635f81429f6456b3222eecd6ff2e067e",
+          "7a0a948e3e8eb49f32f491351874c6a397b16be6d3087e1adf8862e5b3bde8ac",
+          "1b6796ebae49a51080923d2713b1b26acd5e5ceb4e72cefa327103562014ff7c",
+          "bd1b20eb19d26bf720f145568a78145c98506ae5dda43cb4311a665e9be30196"
+        ],
+        "reading_section_ids": [
+          "section:28"
+        ]
+      },
+      "reviewed_model_turns": [
+        {
+          "immutable_result_key": "562178d1afbe76a7a0ce21ea5baf254fa2d67062e9d23eb88fdcbfd4e0ec7481",
+          "stage": "discovery",
+          "attempt": 1,
+          "stage_group_seq": null,
+          "member_task_ids": null,
+          "input_hash": "8b0a6f945d6df3fb73eb699e35b0472795a22f066d243790b4de5d44895fc692",
+          "response_id": "resp_4ag5s1HcZN54Vd0Sq4COpYUEFPdZm69r",
+          "response_status": "completed",
+          "incomplete_details": null,
+          "error": null,
+          "usage": {
+            "input_tokens": 9130,
+            "input_tokens_details": {
+              "cached_tokens": 1606
+            },
+            "output_tokens": 1529,
+            "total_tokens": 10659
+          },
+          "output_text_sha256": "dcb465bea9d98dd008370157dd59d1b38888d7c05d0eb42403ae8d4cde7b03d5",
+          "model_output": {
+            "entities": [
+              {
+                "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+                "identifier_claims": [],
+                "local_id": "e1",
+                "mentions": [
+                  {
+                    "context_text": null,
+                    "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+                    "text": "HRS-1597"
+                  }
+                ],
+                "record_components": [],
+                "representation": "mention"
+              },
+              {
+                "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+                "identifier_claims": [],
+                "local_id": "e2",
+                "mentions": [
+                  {
+                    "context_text": null,
+                    "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+                    "text": "HRXS-P-2419"
+                  }
+                ],
+                "record_components": [],
+                "representation": "mention"
+              },
+              {
+                "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+                "identifier_claims": [],
+                "local_id": "e3",
+                "mentions": [],
+                "record_components": [
+                  {
+                    "quote": {
+                      "context_text": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+                      "evidence_id": "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+                      "text": "(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide"
+                    },
+                    "role": "subject"
+                  }
+                ],
+                "representation": "record"
+              },
+              {
+                "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+                "identifier_claims": [],
+                "local_id": "e4",
+                "mentions": [],
+                "record_components": [
+                  {
+                    "quote": {
+                      "context_text": "中文：(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺",
+                      "evidence_id": "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e",
+                      "text": "(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺"
+                    },
+                    "role": "subject"
+                  }
+                ],
+                "representation": "record"
+              },
+              {
+                "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+                "identifier_claims": [],
+                "local_id": "e5",
+                "mentions": [
+                  {
+                    "context_text": null,
+                    "evidence_id": "b4dabece54e4ed1ff9eab064651ccf18f151de488ad48ef326ca52418b3dacd8",
+                    "text": "N/A"
+                  }
+                ],
+                "record_components": [],
+                "representation": "mention"
+              },
+              {
+                "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+                "identifier_claims": [],
+                "local_id": "e6",
+                "mentions": [
+                  {
+                    "context_text": null,
+                    "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+                    "text": "类白色到白色粉末"
+                  }
+                ],
+                "record_components": [],
+                "representation": "mention"
+              },
+              {
+                "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+                "identifier_claims": [],
+                "local_id": "e7",
+                "mentions": [
+                  {
+                    "context_text": null,
+                    "evidence_id": "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+                    "text": "C23H28N6O5S"
+                  }
+                ],
+                "record_components": [],
+                "representation": "mention"
+              },
+              {
+                "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+                "identifier_claims": [],
+                "local_id": "e8",
+                "mentions": [
+                  {
+                    "context_text": null,
+                    "evidence_id": "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c",
+                    "text": "500.60"
+                  }
+                ],
+                "record_components": [],
+                "representation": "mention"
+              },
+              {
+                "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+                "identifier_claims": [],
+                "local_id": "e9",
+                "mentions": [
+                  {
+                    "context_text": "制剂剂型：口服片剂",
+                    "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+                    "text": "口服片剂"
+                  }
+                ],
+                "record_components": [],
+                "representation": "mention"
+              }
+            ],
+            "external_links": [],
+            "observations": [],
+            "properties": [],
+            "reference_bindings": [],
+            "relations": []
+          },
+          "tool_calls": []
+        }
+      ],
+      "quote_checks": [
+        {
+          "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+          "quote": "HRS-1597",
+          "source_text": "项目名称：HRS-1597",
+          "paragraph_1_based": 33,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              5,
+              13
+            ]
+          ],
+          "unique_exact_quote": true,
+          "model_turn_keys": [
+            "562178d1afbe76a7a0ce21ea5baf254fa2d67062e9d23eb88fdcbfd4e0ec7481"
+          ]
+        },
+        {
+          "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+          "quote": "HRXS-P-2419",
+          "source_text": "项目代码：HRXS-P-2419",
+          "paragraph_1_based": 34,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              5,
+              16
+            ]
+          ],
+          "unique_exact_quote": true,
+          "model_turn_keys": [
+            "562178d1afbe76a7a0ce21ea5baf254fa2d67062e9d23eb88fdcbfd4e0ec7481"
+          ]
+        },
+        {
+          "evidence_id": "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+          "quote": "(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+          "source_text": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+          "paragraph_1_based": 35,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              7,
+              157
+            ]
+          ],
+          "unique_exact_quote": true,
+          "model_turn_keys": [
+            "562178d1afbe76a7a0ce21ea5baf254fa2d67062e9d23eb88fdcbfd4e0ec7481"
+          ]
+        },
+        {
+          "evidence_id": "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e",
+          "quote": "(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺",
+          "source_text": "中文：(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺",
+          "paragraph_1_based": 36,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              3,
+              90
+            ]
+          ],
+          "unique_exact_quote": true,
+          "model_turn_keys": [
+            "562178d1afbe76a7a0ce21ea5baf254fa2d67062e9d23eb88fdcbfd4e0ec7481"
+          ]
+        },
+        {
+          "evidence_id": "b4dabece54e4ed1ff9eab064651ccf18f151de488ad48ef326ca52418b3dacd8",
+          "quote": "N/A",
+          "source_text": "CAS：N/A",
+          "paragraph_1_based": 37,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              4,
+              7
+            ]
+          ],
+          "unique_exact_quote": true,
+          "model_turn_keys": [
+            "562178d1afbe76a7a0ce21ea5baf254fa2d67062e9d23eb88fdcbfd4e0ec7481"
+          ]
+        },
+        {
+          "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+          "quote": "类白色到白色粉末",
+          "source_text": "性状：类白色到白色粉末",
+          "paragraph_1_based": 38,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              3,
+              11
+            ]
+          ],
+          "unique_exact_quote": true,
+          "model_turn_keys": [
+            "562178d1afbe76a7a0ce21ea5baf254fa2d67062e9d23eb88fdcbfd4e0ec7481"
+          ]
+        },
+        {
+          "evidence_id": "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+          "quote": "C23H28N6O5S",
+          "source_text": "分子式：C23H28N6O5S",
+          "paragraph_1_based": 31,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              4,
+              15
+            ]
+          ],
+          "unique_exact_quote": true,
+          "model_turn_keys": [
+            "562178d1afbe76a7a0ce21ea5baf254fa2d67062e9d23eb88fdcbfd4e0ec7481"
+          ]
+        },
+        {
+          "evidence_id": "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c",
+          "quote": "500.60",
+          "source_text": "分子量：500.60",
+          "paragraph_1_based": 32,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              4,
+              10
+            ]
+          ],
+          "unique_exact_quote": true,
+          "model_turn_keys": [
+            "562178d1afbe76a7a0ce21ea5baf254fa2d67062e9d23eb88fdcbfd4e0ec7481"
+          ]
+        },
+        {
+          "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+          "quote": "口服片剂",
+          "source_text": "性状：类白色到白色粉末",
+          "paragraph_1_based": 38,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [],
+          "unique_exact_quote": false,
+          "model_turn_keys": [
+            "562178d1afbe76a7a0ce21ea5baf254fa2d67062e9d23eb88fdcbfd4e0ec7481"
+          ]
+        }
+      ],
+      "immutable_results": {
+        "fc9313099507061496077a702cae23d9870df8e4d11f904798be504810d39db5": "discovery"
+      },
+      "frozen_discoveries": [
+        {
+          "entities": [
+            {
+              "local_id": "e1",
+              "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+              "representation": "mention",
+              "mentions": [
+                {
+                  "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+                  "text": "HRS-1597",
+                  "context_text": null
+                }
+              ],
+              "record_components": [],
+              "identifier_claims": []
+            },
+            {
+              "local_id": "e2",
+              "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+              "representation": "mention",
+              "mentions": [
+                {
+                  "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+                  "text": "HRXS-P-2419",
+                  "context_text": null
+                }
+              ],
+              "record_components": [],
+              "identifier_claims": []
+            },
+            {
+              "local_id": "e3",
+              "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+              "representation": "record",
+              "mentions": [],
+              "record_components": [
+                {
+                  "role": "subject",
+                  "quote": {
+                    "evidence_id": "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+                    "text": "(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+                    "context_text": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide"
+                  }
+                }
+              ],
+              "identifier_claims": []
+            },
+            {
+              "local_id": "e4",
+              "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+              "representation": "record",
+              "mentions": [],
+              "record_components": [
+                {
+                  "role": "subject",
+                  "quote": {
+                    "evidence_id": "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e",
+                    "text": "(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺",
+                    "context_text": "中文：(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺"
+                  }
+                }
+              ],
+              "identifier_claims": []
+            },
+            {
+              "local_id": "e5",
+              "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+              "representation": "mention",
+              "mentions": [
+                {
+                  "evidence_id": "b4dabece54e4ed1ff9eab064651ccf18f151de488ad48ef326ca52418b3dacd8",
+                  "text": "N/A",
+                  "context_text": null
+                }
+              ],
+              "record_components": [],
+              "identifier_claims": []
+            },
+            {
+              "local_id": "e6",
+              "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+              "representation": "mention",
+              "mentions": [
+                {
+                  "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+                  "text": "类白色到白色粉末",
+                  "context_text": null
+                }
+              ],
+              "record_components": [],
+              "identifier_claims": []
+            },
+            {
+              "local_id": "e7",
+              "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+              "representation": "mention",
+              "mentions": [
+                {
+                  "evidence_id": "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+                  "text": "C23H28N6O5S",
+                  "context_text": null
+                }
+              ],
+              "record_components": [],
+              "identifier_claims": []
+            },
+            {
+              "local_id": "e8",
+              "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+              "representation": "mention",
+              "mentions": [
+                {
+                  "evidence_id": "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c",
+                  "text": "500.60",
+                  "context_text": null
+                }
+              ],
+              "record_components": [],
+              "identifier_claims": []
+            },
+            {
+              "local_id": "e9",
+              "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+              "representation": "mention",
+              "mentions": [
+                {
+                  "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+                  "text": "口服片剂",
+                  "context_text": "制剂剂型：口服片剂"
+                }
+              ],
+              "record_components": [],
+              "identifier_claims": []
+            }
+          ],
+          "properties": [],
+          "relations": [],
+          "external_links": [],
+          "observations": [
+            {
+              "subject_id": null,
+              "predicate_iri": null,
+              "quote": {
+                "evidence_id": "b4dabece54e4ed1ff9eab064651ccf18f151de488ad48ef326ca52418b3dacd8",
+                "text": "N/A",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文完整字段值或原文单元为缺失或未知标记，不能作为实体指称事实。"
+            }
+          ],
+          "reference_bindings": [],
+          "assertion_generation": 1,
+          "evidence_revision": 1,
+          "content_hash": "4fec0103077780f42164c19ba6424e62d34a8a724c693121c7b9d5d991e79d17",
+          "local_ref_map": {
+            "e1": {
+              "id": "7c8810e191482487521b6c35e859da164c7b3a59181f8956db0d4711a203e20a",
+              "revision": 1
+            },
+            "e2": {
+              "id": "f202eb67938f47b0a1a37908b03fe1536e80d3de49352682861b127db2d56a4c",
+              "revision": 1
+            },
+            "e3": {
+              "id": "15c662e432944e572fc705ad46bec4e788e629c6163c2e861bdb70bbea187df3",
+              "revision": 1
+            },
+            "e4": {
+              "id": "8f49c8c8782b9a3384203659a1b581a78f1a02a3e0f54ddcb16a998acc85f29e",
+              "revision": 1
+            },
+            "e5": {
+              "id": "88466b8d70b0bb359bac6361ee83364667b25774247a8d2ebb74323d3841f8ce",
+              "revision": 1
+            },
+            "e6": {
+              "id": "ce6b2444309342d7dd780a18d2959f889326c71d9e9d373879cf09928f1d8252",
+              "revision": 1
+            },
+            "e7": {
+              "id": "7a1ccff55c08034bf4746edb398b438ce93d4caadcdfebb44753683ec01967ef",
+              "revision": 1
+            },
+            "e8": {
+              "id": "aa130241f5dcddf085d77f2a12730038002d1ce4693d1d19eed2fda60faf5621",
+              "revision": 1
+            },
+            "e9": {
+              "id": "87dc61ff7600274111372c9e01d27a34eeb574c80007504e2d72c98262f3a1d7",
+              "revision": 1
+            }
+          },
+          "claim_issues": {
+            "e5": [
+              "entity_referent_missing"
+            ],
+            "e9": [
+              "source_excerpt_mismatch"
+            ]
+          }
+        }
+      ],
+      "stored_verifications": [],
+      "outcomes": [],
+      "independent_review": "See linked Markdown review; raw supported is not independent acceptance."
+    },
+    {
+      "lineage_id": "1154fc94444255223065a15e9a5ae51b8079a9188d0d975c449d45649b3379a4",
+      "task": {
+        "kind": "record_discovery",
+        "task_id": "61e346f88561e6577085f208169e4520f3e080c5ff64edfb039f7475ed63a87c",
+        "claim_lineage_id": "1154fc94444255223065a15e9a5ae51b8079a9188d0d975c449d45649b3379a4",
+        "record_id": "504613c49ad2718bd59a4c614418b180ddfe1962aaa751fa9e4645ab743440a7",
+        "schema_card_id": "72ace4a266b08a6f71b03978d34761f781997b60cd496a29dd04034e1d9831b7",
+        "analysis_scope_ref": "875105c6e91d82dbae822b9fecd36c8d15869052b39c195a1ab47ea8949c1ee5",
+        "dependency_hash": "531b9ac76ae71f2a3448fb2c9f199acc0255cffd783e660cb182e90ecd54c48b",
+        "scope": {
+          "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "members": []
+        },
+        "source_record_ids": [
+          "504613c49ad2718bd59a4c614418b180ddfe1962aaa751fa9e4645ab743440a7",
+          "f2624e6913d38ead3e74fcf2c93ccccb0aa5a4f5eadeccd1e806d20d1f598034",
+          "cb31973a1963b19800fa14748fd2c45aaf8c529c4ae9e9e78ca14f0b1e9315a8",
+          "9e3549601fd1890174992da0819afaf6e78ddc2459ef8e6ab1b645d263ae4656",
+          "365c6729e179e2561787e02e5e91777a051d9ceed9bd783c8a38aa784a0b7dac",
+          "c30ae18921a41ff479485b58eeb97b95de90999587ec7a01217ef60df0a888bf",
+          "829e82054693729f674ffd64f08df85f4add18462a773aa6c87904bf770cdaeb",
+          "8b5267e2eff148a0a9df200b882f8ad535aa380ae053a65eaf194b57ef401134"
+        ],
+        "reading_section_ids": [
+          "section:28"
+        ]
+      },
+      "reviewed_model_turns": [
+        {
+          "immutable_result_key": "fc2e40941a836d72f13951d41bf88ef810c54f50d00958f47820f2ba5683f3ee",
+          "stage": "discovery",
+          "attempt": 1,
+          "stage_group_seq": null,
+          "member_task_ids": null,
+          "input_hash": "d25a14db44c5328464febbebc3f12549f0cd75be61a62b9948cc5514b16b1660",
+          "response_id": "resp_KoBgXhVPIRcCVnuVvbyLvNmLYV1n87UG",
+          "response_status": "completed",
+          "incomplete_details": null,
+          "error": null,
+          "usage": {
+            "input_tokens": 9137,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 3927,
+            "total_tokens": 13064
+          },
+          "output_text_sha256": "9ae14e01ffb5601a9051f175d7bca5ba0a61eaa77e61c27ee8c27dd45dbecfa4",
+          "model_output": {
+            "entities": [
+              {
+                "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+                "identifier_claims": [],
+                "local_id": "e1",
+                "mentions": [],
+                "record_components": [
+                  {
+                    "quote": {
+                      "context_text": null,
+                      "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                      "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃"
+                    },
+                    "role": "subject"
+                  },
+                  {
+                    "quote": {
+                      "context_text": null,
+                      "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                      "text": "理化性质"
+                    },
+                    "role": "field"
+                  }
+                ],
+                "representation": "record"
+              }
+            ],
+            "external_links": [],
+            "observations": [
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/hasPrionRisk",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                  "text": "溶解性： DCM易溶，H2O、Heptane难溶"
+                },
+                "reason": "原文未提及朊病毒风险相关属性",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/inactivationMethod",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "12943408020bef0c9efc9d1f0ec34c383d7d0764a250752ee0e52bbb0e72ad95",
+                  "text": "是否需要灭活：否 "
+                },
+                "reason": "原文未提及灭活方法，仅提及不需要灭活",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isBetaLactam",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "73fd2ce08c8dda22a7eb3f5217044e5c90a8f50f075b3b0fd6ff1741bcf8732a",
+                  "text": "是否是青霉素类药物：否"
+                },
+                "reason": "原文未提及β-内酰胺类相关属性",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isCytotoxic",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "bbc77ec05164fc68500520c9b37a410c205318f87e1ac764b7b259be9fb54e35",
+                  "text": "是否细胞毒药物：否"
+                },
+                "reason": "原文未提及细胞毒药物相关属性",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isHighlyActive",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "fbf4fd8f7cfd9b9066e0a19ae8e5f0feca4677c612af8d61b4eda7b6647f4517",
+                  "text": "是否是高毒高活药物：否"
+                },
+                "reason": "原文未提及高活性药物相关属性",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isHighlySensitizing",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "0d97b1cfec2e1dd87a225a07abcd15051b595c9a15214fcc518691696dbf917b",
+                  "text": "是否是高致敏药物：否"
+                },
+                "reason": "原文未提及高致敏药物相关属性",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isHormonal",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "a6db68228eb3e4e9f6afb0c51a50528bb8bd5e051ec50d6bd5b2e4fbb70e5316",
+                  "text": "是否是激素类药物：否"
+                },
+                "reason": "原文未提及激素类药物相关属性",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isOncologyDrug",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "92a82f158e48683ef179eb2ac947fcc82d319381afcf72457c5bd1e69d8ceaa0",
+                  "text": "是否是肿瘤药物：否"
+                },
+                "reason": "原文未提及肿瘤药物相关属性",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isPenicillinType",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "73fd2ce08c8dda22a7eb3f5217044e5c90a8f50f075b3b0fd6ff1741bcf8732a",
+                  "text": "是否是青霉素类药物：否"
+                },
+                "reason": "原文未提及青霉素类药物相关属性",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/maximumDailyDose_mg",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                  "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃"
+                },
+                "reason": "原文未提及最大日剂量相关属性",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/minimumTherapeuticDose_mg",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                  "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃"
+                },
+                "reason": "原文未提及最小治疗剂量相关属性",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/molecularFormula",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                  "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃"
+                },
+                "reason": "原文未提及分子式相关属性",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/molecularWeight",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                  "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃"
+                },
+                "reason": "原文未提及分子量相关属性",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/productIdentifier",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                  "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃"
+                },
+                "reason": "原文未提及产品或原料药唯一标识相关属性",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/projectCode",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                  "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃"
+                },
+                "reason": "原文未提及项目代码相关属性",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/projectName",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                  "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃"
+                },
+                "reason": "原文未提及项目名称相关属性",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/routeOfAdministration",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                  "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃"
+                },
+                "reason": "原文未提及给药途径相关属性",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/solubility",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                  "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃"
+                },
+                "reason": "原文未提及溶解性相关属性",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/registrationCategory",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                  "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃"
+                },
+                "reason": "原文未提及注册分类相关属性",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/regulatoryStatus",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                  "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃"
+                },
+                "reason": "原文未提及申报/注册状态相关属性",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/targetIndication",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                  "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃"
+                },
+                "reason": "原文未提及目标适应症相关属性",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/appearance",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                  "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃"
+                },
+                "reason": "原文未提及性状相关属性",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/casNumber",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                  "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃"
+                },
+                "reason": "原文未提及CAS号相关属性",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/chemicalNameEn",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                  "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃"
+                },
+                "reason": "原文未提及化学名英文相关属性",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/chemicalNameZh",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                  "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃"
+                },
+                "reason": "原文未提及化学名中文相关属性",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/dosageForm",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                  "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃"
+                },
+                "reason": "原文未提及制剂剂型相关属性",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/drugSpecification",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                  "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃"
+                },
+                "reason": "原文未提及规格相关属性",
+                "subject_id": "e1"
+              }
+            ],
+            "properties": [],
+            "reference_bindings": [],
+            "relations": []
+          },
+          "tool_calls": []
+        },
+        {
+          "immutable_result_key": "707143da8150cd3c1e0cbe8b062eb6f5f0bb7c05ebda3e6e63e6ef10c62599ac",
+          "stage": "verification",
+          "attempt": 2,
+          "stage_group_seq": null,
+          "member_task_ids": null,
+          "input_hash": "7f23a6f3b762e737ad261ea65eefe0f0802c69a2d5c12355b49c358f43deb59b",
+          "response_id": "resp_9XFzds2zoZtIiiYD9K2481moCPBhJdNc",
+          "response_status": "completed",
+          "incomplete_details": null,
+          "error": null,
+          "usage": {
+            "input_tokens": 9697,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 905,
+            "total_tokens": 10602
+          },
+          "output_text_sha256": "e47223ea70b065602b17bbfd36fc8083c7e98a6af0e92b30d7941b0d90a17c3e",
+          "model_output": {
+            "verifications": [
+              {
+                "content_hash": "8decfe3290862536ddf3061c097a0f5fb7ff82f779ede76c137e3acfb5da2276",
+                "facets": [
+                  {
+                    "counterevidence_support": [],
+                    "name": "type",
+                    "reason": "实体被原文记录为'口服片剂'，符合药物产品为'finished dosage form drug product'的关键限定；'类白色到白色粉末'为制剂外观性状，进一步支持其为制剂而非原料药。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                        "text": "制剂剂型：口服片剂 "
+                      },
+                      {
+                        "context_text": null,
+                        "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                        "text": "制剂剂型：口服片剂 "
+                      },
+                      {
+                        "context_text": null,
+                        "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+                        "text": "性状：类白色到白色粉末"
+                      }
+                    ],
+                    "verdict": "supported"
+                  },
+                  {
+                    "counterevidence_support": [],
+                    "name": "referent",
+                    "reason": "该实体由明确的化学身份标识（化学名、分子式、分子量）及物理形态描述唯一指向，与原文中关于'产品的结构'部分的描述一致。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+                        "text": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide"
+                      },
+                      {
+                        "context_text": null,
+                        "evidence_id": "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e",
+                        "text": "中文：(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺"
+                      },
+                      {
+                        "context_text": null,
+                        "evidence_id": "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+                        "text": "分子式：C23H28N6O5S"
+                      },
+                      {
+                        "context_text": null,
+                        "evidence_id": "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c",
+                        "text": "分子量：500.60"
+                      }
+                    ],
+                    "verdict": "supported"
+                  },
+                  {
+                    "counterevidence_support": [],
+                    "name": "subject_role",
+                    "reason": "原文'理化性质：...'作为字段标签，其后的内容描述该实体自身的化学物理属性，实体作为这些属性的承载者（主语）。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                        "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃"
+                      }
+                    ],
+                    "verdict": "supported"
+                  }
+                ],
+                "target_id": "e8367aae812ad17ac3ab7f1c20cacfe8bc58c3460b46cc5d2ccffa4af1defbcd"
+              }
+            ]
+          },
+          "tool_calls": []
+        }
+      ],
+      "quote_checks": [
+        {
+          "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+          "quote": "制剂剂型：口服片剂 ",
+          "source_text": "制剂剂型：口服片剂 ",
+          "paragraph_1_based": 42,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              10
+            ]
+          ],
+          "unique_exact_quote": true,
+          "model_turn_keys": [
+            "707143da8150cd3c1e0cbe8b062eb6f5f0bb7c05ebda3e6e63e6ef10c62599ac"
+          ]
+        },
+        {
+          "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+          "quote": "性状：类白色到白色粉末",
+          "source_text": "性状：类白色到白色粉末",
+          "paragraph_1_based": 38,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              11
+            ]
+          ],
+          "unique_exact_quote": true,
+          "model_turn_keys": [
+            "707143da8150cd3c1e0cbe8b062eb6f5f0bb7c05ebda3e6e63e6ef10c62599ac"
+          ]
+        },
+        {
+          "evidence_id": "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+          "quote": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+          "source_text": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+          "paragraph_1_based": 35,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              157
+            ]
+          ],
+          "unique_exact_quote": true,
+          "model_turn_keys": [
+            "707143da8150cd3c1e0cbe8b062eb6f5f0bb7c05ebda3e6e63e6ef10c62599ac"
+          ]
+        },
+        {
+          "evidence_id": "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e",
+          "quote": "中文：(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺",
+          "source_text": "中文：(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺",
+          "paragraph_1_based": 36,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              90
+            ]
+          ],
+          "unique_exact_quote": true,
+          "model_turn_keys": [
+            "707143da8150cd3c1e0cbe8b062eb6f5f0bb7c05ebda3e6e63e6ef10c62599ac"
+          ]
+        },
+        {
+          "evidence_id": "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+          "quote": "分子式：C23H28N6O5S",
+          "source_text": "分子式：C23H28N6O5S",
+          "paragraph_1_based": 31,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              15
+            ]
+          ],
+          "unique_exact_quote": true,
+          "model_turn_keys": [
+            "707143da8150cd3c1e0cbe8b062eb6f5f0bb7c05ebda3e6e63e6ef10c62599ac"
+          ]
+        },
+        {
+          "evidence_id": "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c",
+          "quote": "分子量：500.60",
+          "source_text": "分子量：500.60",
+          "paragraph_1_based": 32,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              10
+            ]
+          ],
+          "unique_exact_quote": true,
+          "model_turn_keys": [
+            "707143da8150cd3c1e0cbe8b062eb6f5f0bb7c05ebda3e6e63e6ef10c62599ac"
+          ]
+        },
+        {
+          "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+          "quote": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+          "source_text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+          "paragraph_1_based": 41,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              54
+            ]
+          ],
+          "unique_exact_quote": true,
+          "model_turn_keys": [
+            "707143da8150cd3c1e0cbe8b062eb6f5f0bb7c05ebda3e6e63e6ef10c62599ac",
+            "fc2e40941a836d72f13951d41bf88ef810c54f50d00958f47820f2ba5683f3ee"
+          ]
+        },
+        {
+          "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+          "quote": "理化性质",
+          "source_text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+          "paragraph_1_based": 41,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              4
+            ]
+          ],
+          "unique_exact_quote": true,
+          "model_turn_keys": [
+            "fc2e40941a836d72f13951d41bf88ef810c54f50d00958f47820f2ba5683f3ee"
+          ]
+        },
+        {
+          "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+          "quote": "溶解性： DCM易溶，H2O、Heptane难溶",
+          "source_text": "溶解性： DCM易溶，H2O、Heptane难溶",
+          "paragraph_1_based": 39,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              24
+            ]
+          ],
+          "unique_exact_quote": true,
+          "model_turn_keys": [
+            "fc2e40941a836d72f13951d41bf88ef810c54f50d00958f47820f2ba5683f3ee"
+          ]
+        },
+        {
+          "evidence_id": "12943408020bef0c9efc9d1f0ec34c383d7d0764a250752ee0e52bbb0e72ad95",
+          "quote": "是否需要灭活：否 ",
+          "source_text": "是否需要灭活：否 ",
+          "paragraph_1_based": 49,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              9
+            ]
+          ],
+          "unique_exact_quote": true,
+          "model_turn_keys": [
+            "fc2e40941a836d72f13951d41bf88ef810c54f50d00958f47820f2ba5683f3ee"
+          ]
+        },
+        {
+          "evidence_id": "73fd2ce08c8dda22a7eb3f5217044e5c90a8f50f075b3b0fd6ff1741bcf8732a",
+          "quote": "是否是青霉素类药物：否",
+          "source_text": "是否是青霉素类药物：否",
+          "paragraph_1_based": 47,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              11
+            ]
+          ],
+          "unique_exact_quote": true,
+          "model_turn_keys": [
+            "fc2e40941a836d72f13951d41bf88ef810c54f50d00958f47820f2ba5683f3ee"
+          ]
+        },
+        {
+          "evidence_id": "bbc77ec05164fc68500520c9b37a410c205318f87e1ac764b7b259be9fb54e35",
+          "quote": "是否细胞毒药物：否",
+          "source_text": "是否细胞毒药物：否",
+          "paragraph_1_based": 44,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              9
+            ]
+          ],
+          "unique_exact_quote": true,
+          "model_turn_keys": [
+            "fc2e40941a836d72f13951d41bf88ef810c54f50d00958f47820f2ba5683f3ee"
+          ]
+        },
+        {
+          "evidence_id": "fbf4fd8f7cfd9b9066e0a19ae8e5f0feca4677c612af8d61b4eda7b6647f4517",
+          "quote": "是否是高毒高活药物：否",
+          "source_text": "是否是高毒高活药物：否",
+          "paragraph_1_based": 48,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              11
+            ]
+          ],
+          "unique_exact_quote": true,
+          "model_turn_keys": [
+            "fc2e40941a836d72f13951d41bf88ef810c54f50d00958f47820f2ba5683f3ee"
+          ]
+        },
+        {
+          "evidence_id": "0d97b1cfec2e1dd87a225a07abcd15051b595c9a15214fcc518691696dbf917b",
+          "quote": "是否是高致敏药物：否",
+          "source_text": "是否是高致敏药物：否",
+          "paragraph_1_based": 45,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              10
+            ]
+          ],
+          "unique_exact_quote": true,
+          "model_turn_keys": [
+            "fc2e40941a836d72f13951d41bf88ef810c54f50d00958f47820f2ba5683f3ee"
+          ]
+        },
+        {
+          "evidence_id": "a6db68228eb3e4e9f6afb0c51a50528bb8bd5e051ec50d6bd5b2e4fbb70e5316",
+          "quote": "是否是激素类药物：否",
+          "source_text": "是否是激素类药物：否",
+          "paragraph_1_based": 46,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              10
+            ]
+          ],
+          "unique_exact_quote": true,
+          "model_turn_keys": [
+            "fc2e40941a836d72f13951d41bf88ef810c54f50d00958f47820f2ba5683f3ee"
+          ]
+        },
+        {
+          "evidence_id": "92a82f158e48683ef179eb2ac947fcc82d319381afcf72457c5bd1e69d8ceaa0",
+          "quote": "是否是肿瘤药物：否",
+          "source_text": "是否是肿瘤药物：否",
+          "paragraph_1_based": 43,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              9
+            ]
+          ],
+          "unique_exact_quote": true,
+          "model_turn_keys": [
+            "fc2e40941a836d72f13951d41bf88ef810c54f50d00958f47820f2ba5683f3ee"
+          ]
+        }
+      ],
+      "immutable_results": {
+        "8193dcd68c39410c999fc47a30fecfd8ad77527d16fd050148d7778d54be0326": "verification",
+        "17c2bdfa8a3f6bbd0be8d265bba8075c7c2e3d821ad51f39ffc9788d6c9c25e2": "outcome",
+        "2fd6517c6ff390fce346aa79dce593729514398b3966892583ab2ab586a8dd79": "discovery"
+      },
+      "frozen_discoveries": [
+        {
+          "entities": [
+            {
+              "local_id": "e1",
+              "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+              "representation": "record",
+              "mentions": [],
+              "record_components": [
+                {
+                  "role": "subject",
+                  "quote": {
+                    "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                    "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+                    "context_text": null
+                  }
+                },
+                {
+                  "role": "field",
+                  "quote": {
+                    "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                    "text": "理化性质",
+                    "context_text": null
+                  }
+                }
+              ],
+              "identifier_claims": []
+            }
+          ],
+          "properties": [],
+          "relations": [],
+          "external_links": [],
+          "observations": [
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/hasPrionRisk",
+              "quote": {
+                "evidence_id": "8a0ccdc20a694305eed3f46a5a32390d818974334e3ce6555fc88d9b61a4a340",
+                "text": "溶解性： DCM易溶，H2O、Heptane难溶",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及朊病毒风险相关属性"
+            },
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/inactivationMethod",
+              "quote": {
+                "evidence_id": "12943408020bef0c9efc9d1f0ec34c383d7d0764a250752ee0e52bbb0e72ad95",
+                "text": "是否需要灭活：否 ",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及灭活方法，仅提及不需要灭活"
+            },
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isBetaLactam",
+              "quote": {
+                "evidence_id": "73fd2ce08c8dda22a7eb3f5217044e5c90a8f50f075b3b0fd6ff1741bcf8732a",
+                "text": "是否是青霉素类药物：否",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及β-内酰胺类相关属性"
+            },
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isCytotoxic",
+              "quote": {
+                "evidence_id": "bbc77ec05164fc68500520c9b37a410c205318f87e1ac764b7b259be9fb54e35",
+                "text": "是否细胞毒药物：否",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及细胞毒药物相关属性"
+            },
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isHighlyActive",
+              "quote": {
+                "evidence_id": "fbf4fd8f7cfd9b9066e0a19ae8e5f0feca4677c612af8d61b4eda7b6647f4517",
+                "text": "是否是高毒高活药物：否",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及高活性药物相关属性"
+            },
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isHighlySensitizing",
+              "quote": {
+                "evidence_id": "0d97b1cfec2e1dd87a225a07abcd15051b595c9a15214fcc518691696dbf917b",
+                "text": "是否是高致敏药物：否",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及高致敏药物相关属性"
+            },
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isHormonal",
+              "quote": {
+                "evidence_id": "a6db68228eb3e4e9f6afb0c51a50528bb8bd5e051ec50d6bd5b2e4fbb70e5316",
+                "text": "是否是激素类药物：否",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及激素类药物相关属性"
+            },
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isOncologyDrug",
+              "quote": {
+                "evidence_id": "92a82f158e48683ef179eb2ac947fcc82d319381afcf72457c5bd1e69d8ceaa0",
+                "text": "是否是肿瘤药物：否",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及肿瘤药物相关属性"
+            },
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/isPenicillinType",
+              "quote": {
+                "evidence_id": "73fd2ce08c8dda22a7eb3f5217044e5c90a8f50f075b3b0fd6ff1741bcf8732a",
+                "text": "是否是青霉素类药物：否",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及青霉素类药物相关属性"
+            },
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/maximumDailyDose_mg",
+              "quote": {
+                "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及最大日剂量相关属性"
+            },
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/minimumTherapeuticDose_mg",
+              "quote": {
+                "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及最小治疗剂量相关属性"
+            },
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/molecularFormula",
+              "quote": {
+                "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及分子式相关属性"
+            },
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/molecularWeight",
+              "quote": {
+                "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及分子量相关属性"
+            },
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/productIdentifier",
+              "quote": {
+                "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及产品或原料药唯一标识相关属性"
+            },
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/projectCode",
+              "quote": {
+                "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及项目代码相关属性"
+            },
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/projectName",
+              "quote": {
+                "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及项目名称相关属性"
+            },
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/routeOfAdministration",
+              "quote": {
+                "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及给药途径相关属性"
+            },
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/solubility",
+              "quote": {
+                "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及溶解性相关属性"
+            },
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/registrationCategory",
+              "quote": {
+                "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及注册分类相关属性"
+            },
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/regulatoryStatus",
+              "quote": {
+                "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及申报/注册状态相关属性"
+            },
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/targetIndication",
+              "quote": {
+                "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及目标适应症相关属性"
+            },
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/appearance",
+              "quote": {
+                "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及性状相关属性"
+            },
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/casNumber",
+              "quote": {
+                "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及CAS号相关属性"
+            },
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/chemicalNameEn",
+              "quote": {
+                "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及化学名英文相关属性"
+            },
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/chemicalNameZh",
+              "quote": {
+                "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及化学名中文相关属性"
+            },
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/dosageForm",
+              "quote": {
+                "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及制剂剂型相关属性"
+            },
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug/drugSpecification",
+              "quote": {
+                "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                "text": "理化性质：pKa（acid）=6.5，pKa(basic)=0.9，logD=-0.45，熔点203.37℃",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文未提及规格相关属性"
+            }
+          ],
+          "reference_bindings": [],
+          "assertion_generation": 1,
+          "evidence_revision": 1,
+          "content_hash": "cdd1cfe6c6c6ae264f45318c674e9e76f427834ebef07b06eea88549d42891a6",
+          "local_ref_map": {
+            "e1": {
+              "id": "ed6dfdefbaf610fd6017a4acbad927746d92ea3f6460bcfed7803bb2095a29d8",
+              "revision": 1
+            }
+          },
+          "claim_issues": {}
+        }
+      ],
+      "stored_verifications": [
+        {
+          "context_hash": "840a61c024ae99b7946eacf37cdf14de87a9d9f282477f9104601da0aea74bd6",
+          "targets": [
+            {
+              "target_id": "e8367aae812ad17ac3ab7f1c20cacfe8bc58c3460b46cc5d2ccffa4af1defbcd",
+              "content_hash": "8decfe3290862536ddf3061c097a0f5fb7ff82f779ede76c137e3acfb5da2276",
+              "missing_facets": [
+                "referent"
+              ],
+              "validation_issues": [
+                "record_composition_source_coverage_missing"
+              ],
+              "decisions": [
+                {
+                  "decision_id": "62caf87bae893833651c760e3f206d8da507d934adaff4bed2d2bba1c0351711",
+                  "check_kind": "type",
+                  "verdict": "supported",
+                  "reason": "实体被原文记录为'口服片剂'，符合药物产品为'finished dosage form drug product'的关键限定；'类白色到白色粉末'为制剂外观性状，进一步支持其为制剂而非原料药。",
+                  "support_refs": [
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                      "section_node_id": "section:28",
+                      "block_id": "paragraph:41:0",
+                      "paragraph_index": 41,
+                      "fragment_index": 0,
+                      "table_path": null,
+                      "row_index": null,
+                      "column_index": null,
+                      "span_start": 0,
+                      "span_end": 10,
+                      "physical_page_number": 3
+                    },
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                      "section_node_id": "section:28",
+                      "block_id": "paragraph:41:0",
+                      "paragraph_index": 41,
+                      "fragment_index": 0,
+                      "table_path": null,
+                      "row_index": null,
+                      "column_index": null,
+                      "span_start": 0,
+                      "span_end": 10,
+                      "physical_page_number": 3
+                    },
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+                      "section_node_id": "section:28",
+                      "block_id": "paragraph:37:0",
+                      "paragraph_index": 37,
+                      "fragment_index": 0,
+                      "table_path": null,
+                      "row_index": null,
+                      "column_index": null,
+                      "span_start": 0,
+                      "span_end": 11,
+                      "physical_page_number": 3
+                    }
+                  ],
+                  "counterevidence_refs": []
+                },
+                {
+                  "decision_id": "d8cb5674a76cbb44387ac06d1cee04ea5e1535f4bfc5e121ad99fd5e111f9f36",
+                  "check_kind": "referent",
+                  "verdict": "undetermined",
+                  "reason": "该实体由明确的化学身份标识（化学名、分子式、分子量）及物理形态描述唯一指向，与原文中关于'产品的结构'部分的描述一致。",
+                  "support_refs": [
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+                      "section_node_id": "section:28",
+                      "block_id": "paragraph:34:0",
+                      "paragraph_index": 34,
+                      "fragment_index": 0,
+                      "table_path": null,
+                      "row_index": null,
+                      "column_index": null,
+                      "span_start": 0,
+                      "span_end": 157,
+                      "physical_page_number": 3
+                    },
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e",
+                      "section_node_id": "section:28",
+                      "block_id": "paragraph:35:0",
+                      "paragraph_index": 35,
+                      "fragment_index": 0,
+                      "table_path": null,
+                      "row_index": null,
+                      "column_index": null,
+                      "span_start": 0,
+                      "span_end": 90,
+                      "physical_page_number": 3
+                    },
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+                      "section_node_id": "section:28",
+                      "block_id": "paragraph:30:0",
+                      "paragraph_index": 30,
+                      "fragment_index": 0,
+                      "table_path": null,
+                      "row_index": null,
+                      "column_index": null,
+                      "span_start": 0,
+                      "span_end": 15,
+                      "physical_page_number": 3
+                    },
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c",
+                      "section_node_id": "section:28",
+                      "block_id": "paragraph:31:0",
+                      "paragraph_index": 31,
+                      "fragment_index": 0,
+                      "table_path": null,
+                      "row_index": null,
+                      "column_index": null,
+                      "span_start": 0,
+                      "span_end": 10,
+                      "physical_page_number": 3
+                    }
+                  ],
+                  "counterevidence_refs": []
+                },
+                {
+                  "decision_id": "753fae21a6eb43784bb95dcce0671f2b49dadcb956f49873802e4c3bbdcc4a54",
+                  "check_kind": "subject_role",
+                  "verdict": "supported",
+                  "reason": "原文'理化性质：...'作为字段标签，其后的内容描述该实体自身的化学物理属性，实体作为这些属性的承载者（主语）。",
+                  "support_refs": [
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "1a4ed09da3bd056a8183118ad70b3919760d4a7cab89c87fee487f5ffbf87e40",
+                      "section_node_id": "section:28",
+                      "block_id": "paragraph:40:0",
+                      "paragraph_index": 40,
+                      "fragment_index": 0,
+                      "table_path": null,
+                      "row_index": null,
+                      "column_index": null,
+                      "span_start": 0,
+                      "span_end": 54,
+                      "physical_page_number": 3
+                    }
+                  ],
+                  "counterevidence_refs": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "semantic_outcome": "undetermined",
+          "complete": false,
+          "reason_code": "record_composition_source_coverage_missing",
+          "reason": "record_composition_source_coverage_missing；referent_not_supported",
+          "controller_checks": {
+            "binding": 0,
+            "metric": 0,
+            "shacl": 0,
+            "elapsed_seconds": 0.026646645041182637
+          },
+          "nodes": [],
+          "edges": [],
+          "relationship_groups": [],
+          "properties": [],
+          "attribute_candidates": null
+        }
+      ],
+      "independent_review": "See linked Markdown review; raw supported is not independent acceptance."
+    }
+  ],
+  "actual_protocol_task_inventory": [
+    {
+      "lineage_id": "c93af360c67383e8c8a4e8f065854755e07103d2ed8a98095ed089951ed23543",
+      "task_id": "0d0812053488f44d5bc9ffd339b33cd8374d058a7c25b394385129e168403f48",
+      "kind": "record_discovery",
+      "purpose": "entity_discovery",
+      "predicate_kind": null,
+      "predicate_iri": null,
+      "subject": null,
+      "hop": null
+    },
+    {
+      "lineage_id": "1154fc94444255223065a15e9a5ae51b8079a9188d0d975c449d45649b3379a4",
+      "task_id": "61e346f88561e6577085f208169e4520f3e080c5ff64edfb039f7475ed63a87c",
+      "kind": "record_discovery",
+      "purpose": "entity_discovery",
+      "predicate_kind": null,
+      "predicate_iri": null,
+      "subject": null,
+      "hop": null
+    }
+  ],
+  "all_confirmed_model_turn_keys": [
+    "562178d1afbe76a7a0ce21ea5baf254fa2d67062e9d23eb88fdcbfd4e0ec7481",
+    "707143da8150cd3c1e0cbe8b062eb6f5f0bb7c05ebda3e6e63e6ef10c62599ac",
+    "fc2e40941a836d72f13951d41bf88ef810c54f50d00958f47820f2ba5683f3ee"
+  ],
+  "all_tool_results": [],
+  "graph_snapshot": {
+    "run_revision": 123,
+    "event_head": 6,
+    "phase": "candidate_graph",
+    "summary": {
+      "relationships": {
+        "total": 12,
+        "supported": 0,
+        "completed": 0,
+        "percent": null
+      },
+      "properties": {
+        "total": 0,
+        "supported": 0,
+        "completed": 0,
+        "percent": null
+      },
+      "pending_expansion_count": 0,
+      "notes": [
+        "当前仅发现实体与原文关系候选；关系全部以虚线显示，尚未核验。",
+        "本体关系目标不是原文事实，未连接的实体也可选择并展开。",
+        "本阶段不识别或校验属性，也不计算关系或属性的实证完整度。",
+        "候选的否定、条件、计划及备选成员保留原文标签。"
+      ]
+    },
+    "counts": {
+      "entities": 1,
+      "properties": 0,
+      "attribute_candidates": 0,
+      "relationships": 0,
+      "relationship_groups": 0
+    },
+    "relationships": [],
+    "relationship_groups": []
+  },
+  "input_file_sha256": {
+    "review-84956c8a-results-03.json": "5ae7d333bf4063adfe621364c26c7e0fac1fadb75b9c61558bf6af1ec51c41de",
+    "review-84956c8a-target-03.json": "b3b93d3604d4b8ddd4d9320eb4bb8d7f8800dfb29d0a4c8da887d22318fdfe23",
+    "review-84956c8a-source.json": "97786d0cfc1728a50ac7023527d2c172dff19a1e7f98f8450c2ec16e1904b4ad"
+  }
+}

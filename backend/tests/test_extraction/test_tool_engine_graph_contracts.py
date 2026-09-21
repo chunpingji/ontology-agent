@@ -1,4 +1,4 @@
-"""027 graph contracts preserve frozen legacy payloads and group/scope meaning."""
+"""Graph contracts preserve current payloads and group/scope meaning."""
 
 from __future__ import annotations
 
@@ -54,7 +54,7 @@ def target_values() -> dict:
     }
 
 
-def legacy_objects() -> dict:
+def current_objects() -> dict:
     node = GraphNode(
         entity_id="subject", revision=1, class_iri="urn:Subject", class_label="主体",
         label="S", root=True, root_origin="user_specified",
@@ -83,20 +83,25 @@ def legacy_objects() -> dict:
 @pytest.mark.parametrize(("name", "frozen_hash"), [
     ("referent", "0abb952d2ccafbd072b05ea851b3fe6be9f2ba985cf4c710731e6e50801593e8"),
     ("node", "a7b5dbf660e75d8081e393c589dee86f6f13f8cf6e3640cd38fac30a554e2a31"),
-    ("property", "966f2d4e392b1025ceb9825c5a527f483af73b7f40187d502fde756dc935435c"),
-    ("edge", "35e3e0c9ae28babe64178cf0d1b09f29811bda25ba7183c6d27dc7855c58a36a"),
+    ("property", "d7ccbcca180899100ff7b3042d9d7f09759337a7ca23d456d975b21aabe52506"),
+    ("edge", "7d60790e46d24d0a91b8aa60d808cb524921ac4bb36f70654211447abc788de9"),
     ("proof", "4bd64108dfd9e5ae55a56d3643db54d7ae7b547f4afb4ae1c633eedec08a5f96"),
     ("target", "d7161a2f4a10d935ef445d4e7f2db0ca9107bd3768823e697065ddee084a360e"),
-    ("snapshot", "cf7c6721b0d8a54d9db3af8cee5b4c58addb4c5a423b1bed878d7b261c269e90"),
+    ("snapshot", "6b11d99801ffbc1fdb717db3caf43f002e621cef7d8e1b175c0a77a2b6a42f24"),
 ])
-def test_legacy_payload_and_identity_survive_cold_roundtrip(name, frozen_hash):
-    # Captured from the contracts before adding 027 fields, not recomputed expectations.
-    original = legacy_objects()[name]
+def test_current_payload_and_identity_survive_cold_roundtrip(name, frozen_hash):
+    # Current source-review fields are serialized, including diagnostic defaults.
+    original = current_objects()[name]
     serialized = original.model_dump_json()
     restored = type(original).model_validate_json(serialized)
     assert evidence_hash(original) == frozen_hash
     assert evidence_hash(restored) == frozen_hash
     assert restored.model_dump_json() == serialized
+    if name in {"property", "edge"}:
+        assert restored.model_dump()["validation_diagnostics"] == []
+    if name == "property":
+        assert restored.model_dump()["raw_unit"] is None
+        assert restored.model_dump()["normalization_available"] is False
 
 
 def test_old_target_factory_keeps_frozen_id():
@@ -135,7 +140,7 @@ def test_scope_rejects_duplicate_members_and_forged_or_stale_hash():
 
 @pytest.mark.parametrize("name", ["edge", "property"])
 def test_new_statement_fields_roundtrip_even_when_explicit_defaults(name):
-    original = legacy_objects()[name]
+    original = current_objects()[name]
     scope = TraversalScope.create([
         ScopeMember(relation_ref=ref("group"), member_ref=ref("subject")),
     ])
@@ -252,7 +257,7 @@ def test_record_referent_and_node_have_composition_without_fabricated_mentions()
 
 
 def test_root_grounding_cannot_be_attached_to_an_ordinary_node():
-    root = legacy_objects()["node"]
+    root = current_objects()["node"]
     explicit = GraphNode.model_validate({**root.model_dump(), "grounding_kind": "document_root"})
     assert explicit.root_origin == "user_specified"
     with pytest.raises(ValidationError, match="root node"):
@@ -263,13 +268,13 @@ def test_root_grounding_cannot_be_attached_to_an_ordinary_node():
 
 def test_selection_modality_proof_and_group_snapshot_survive_roundtrip():
     proof = PredicateEvidence.model_validate({
-        **legacy_objects()["proof"].model_dump(),
+        **current_objects()["proof"].model_dump(),
         "selection_support_refs": [anchor()], "modality_support_refs": [],
     })
     assert "modality_support_refs" in proof.model_dump()
     assert PredicateEvidence.model_validate_json(proof.model_dump_json()) == proof
     snapshot = GraphSnapshot.model_validate({
-        **legacy_objects()["snapshot"].model_dump(),
+        **current_objects()["snapshot"].model_dump(),
         "projection": "verified", "relationship_groups": [GraphRelationshipGroup(**group_values())],
     })
     restored = GraphSnapshot.model_validate_json(snapshot.model_dump_json())

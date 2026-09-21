@@ -1,0 +1,3705 @@
+{
+  "run_id": "20bf2d25-98f3-4efe-99f0-1e5dbbae5d05",
+  "reviewed_at": "2026-09-21T05:31:13.098258+00:00",
+  "review_kind": "independent_post_hoc_source_review",
+  "model_calls_by_reviewer": 0,
+  "application_mutations_by_reviewer": 0,
+  "increments": [
+    {
+      "group": 4,
+      "lineage_id": "1b1f54b4ba4fc9feb49025a21158f156131466347698d370f320f8ea1da3da4a",
+      "immutable_results": {
+        "discovery": "0f750d4ff9903a124310e7019d1e4fe27030c9e752b17d1851f1e0134eae2355",
+        "outcome": "48ed40e05f4317f2a3beefc4d6d24b5956397369f0becb9e82621a6b4a62f9b0"
+      },
+      "reviewed_model_turns": [
+        {
+          "immutable_result_key": "04c67c4d42b81cf818d93db3587c6215d4490ad170a9405a5fee39768e57c4ea",
+          "lineage_id": "1b1f54b4ba4fc9feb49025a21158f156131466347698d370f320f8ea1da3da4a",
+          "attempt": 1,
+          "stage": "discovery",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 12749,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 3715,
+            "total_tokens": 16464
+          }
+        },
+        {
+          "immutable_result_key": "7aaf26648dc438f8d2e6b39acd14e2212632bea53626b1ce58f158671e25d79c",
+          "lineage_id": "1b1f54b4ba4fc9feb49025a21158f156131466347698d370f320f8ea1da3da4a",
+          "attempt": 2,
+          "stage": "discovery",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 12833,
+            "input_tokens_details": {
+              "cached_tokens": 12233
+            },
+            "output_tokens": 3995,
+            "total_tokens": 16828
+          }
+        },
+        {
+          "immutable_result_key": "c0fa2a50d49d7b5b6e2765e4442215ab83818277631df2733c0d537d167e2567",
+          "lineage_id": "1b1f54b4ba4fc9feb49025a21158f156131466347698d370f320f8ea1da3da4a",
+          "attempt": 3,
+          "stage": "verification",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 15789,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 3301,
+            "total_tokens": 19090
+          }
+        }
+      ],
+      "raw_call_summaries": [
+        {
+          "attempt": 1,
+          "entity_count": 2,
+          "property_count": 10,
+          "duplicate_local_ids": {
+            "p1": 11
+          }
+        },
+        {
+          "attempt": 2,
+          "entity_count": 1,
+          "property_count": 11,
+          "duplicate_local_ids": {}
+        },
+        {
+          "attempt": 3,
+          "target_count": 4,
+          "raw_verifications": [
+            {
+              "target_id": "58e930f7377c70c4085843068cd2e29699fe0b1f934f7382a11f8123da1e6edc",
+              "facets": [
+                {
+                  "name": "type",
+                  "verdict": "supported",
+                  "reason": "实体包含活性成分标识（HRS-1597）、毒理学研究类型（大鼠14天亚急毒试验）、NOAEL值及PDE推导所需的所有调整因子（F1-F5）和职业暴露分级（OEB），符合共线评估数据的定义。",
+                  "support": [
+                    {
+                      "evidence_id": "b9395108ded6b7546ed322f7d7faaefa824d79d14ab31bd2b03632e64335adfc",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 1,
+                      "column_0_based": 0,
+                      "paragraph_1_based": 1,
+                      "source_text": "HRS-1597",
+                      "quote": "HRS-1597",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          8
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    },
+                    {
+                      "evidence_id": "75bb4be8cefd30319ad06cc5f77897f7e83333bbd2cba794cbc09a8321663afe",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 0,
+                      "column_0_based": 1,
+                      "paragraph_1_based": 1,
+                      "source_text": "试验项目",
+                      "quote": "试验项目",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          4
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    },
+                    {
+                      "evidence_id": "cb768a7db96dff03b7089f6ebf1f23c95fcf6f7e7e79dfaf6294bf202756ce75",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 1,
+                      "column_0_based": 1,
+                      "paragraph_1_based": 1,
+                      "source_text": "大鼠14天亚急毒试验（试验1）",
+                      "quote": "大鼠14天亚急毒试验（试验1）",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          15
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    },
+                    {
+                      "evidence_id": "97efab7c1187f8f9d07816e7883cdcf3a3fdf3f5320cf09998cc446fbd73ef72",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 0,
+                      "column_0_based": 2,
+                      "paragraph_1_based": 1,
+                      "source_text": "NOAEL",
+                      "quote": "NOAEL",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          5
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    },
+                    {
+                      "evidence_id": "cf93d11079147b10e7656b9c5c2e8ad092282efbd393d404affa04368646c075",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 0,
+                      "column_0_based": 3,
+                      "paragraph_1_based": 1,
+                      "source_text": "F1",
+                      "quote": "F1",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          2
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    },
+                    {
+                      "evidence_id": "8516670d5d387eab5221e09fdbfa7d74d9d940b4cd082d348d6714982551c8ad",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 0,
+                      "column_0_based": 4,
+                      "paragraph_1_based": 1,
+                      "source_text": "F2",
+                      "quote": "F2",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          2
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    },
+                    {
+                      "evidence_id": "23f3ae1c0cfe55cbf136a4c2b4c28829823d12341776ed44ccf13d6fcb38fe53",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 0,
+                      "column_0_based": 5,
+                      "paragraph_1_based": 1,
+                      "source_text": "F3",
+                      "quote": "F3",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          2
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    },
+                    {
+                      "evidence_id": "bbf7215e10f1f86e1cd66a611436847f10343d3344fcac4d6c5b11a0fc056582",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 0,
+                      "column_0_based": 6,
+                      "paragraph_1_based": 1,
+                      "source_text": "F4",
+                      "quote": "F4",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          2
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    },
+                    {
+                      "evidence_id": "8ea37f37556fe351d0ca97e30e821cc2379a1b74b79a6e7f02ab2315385f120b",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 0,
+                      "column_0_based": 7,
+                      "paragraph_1_based": 1,
+                      "source_text": "F5",
+                      "quote": "F5",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          2
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    },
+                    {
+                      "evidence_id": "08abee8dc07052d407c298bdec425df109ee1011627642d76ba2c8987a3a8e77",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 0,
+                      "column_0_based": 8,
+                      "paragraph_1_based": 1,
+                      "source_text": "PDE",
+                      "quote": "PDE",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          3
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    },
+                    {
+                      "evidence_id": "03cb80c796f9b97ffa6ec3c8272f3df0f943104f88691b5a0dcd1d74ba21de98",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 0,
+                      "column_0_based": 9,
+                      "paragraph_1_based": 1,
+                      "source_text": "来源",
+                      "quote": "来源",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          2
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    },
+                    {
+                      "evidence_id": "727a8972fb3529284c7604d2d63a1bea4195a62d319b50e3916162a83f1e574a",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 0,
+                      "column_0_based": 10,
+                      "paragraph_1_based": 1,
+                      "source_text": "OEB",
+                      "quote": "OEB",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          3
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "referent",
+                  "verdict": "supported",
+                  "reason": "实体明确指向药物HRS-1597的共线评估数据记录。",
+                  "support": [
+                    {
+                      "evidence_id": "b9395108ded6b7546ed322f7d7faaefa824d79d14ab31bd2b03632e64335adfc",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 1,
+                      "column_0_based": 0,
+                      "paragraph_1_based": 1,
+                      "source_text": "HRS-1597",
+                      "quote": "HRS-1597",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          8
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "subject_role",
+                  "verdict": "supported",
+                  "reason": "实体作为主体记录了针对HRS-1597的毒理学和剂量数据。",
+                  "support": [
+                    {
+                      "evidence_id": "b9395108ded6b7546ed322f7d7faaefa824d79d14ab31bd2b03632e64335adfc",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 1,
+                      "column_0_based": 0,
+                      "paragraph_1_based": 1,
+                      "source_text": "HRS-1597",
+                      "quote": "HRS-1597",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          8
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "target_id": "eb04aeb0331627bfc77e73052093423e768430503f6617b528bc7c57469bd2e8",
+              "facets": [
+                {
+                  "name": "subject_binding",
+                  "verdict": "supported",
+                  "reason": "声明的主体e1由原文'HRS-1597'定位。",
+                  "support": [
+                    {
+                      "evidence_id": "b9395108ded6b7546ed322f7d7faaefa824d79d14ab31bd2b03632e64335adfc",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 1,
+                      "column_0_based": 0,
+                      "paragraph_1_based": 1,
+                      "source_text": "HRS-1597",
+                      "quote": "HRS-1597",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          8
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "field_role",
+                  "verdict": "supported",
+                  "reason": "属性iri https://ontology.pharma-gmp.cn/slpra/drug-development/activeIngredient 对应表头'活性成分(API)'。",
+                  "support": [
+                    {
+                      "evidence_id": "3de6a66ff79b48cec94bc7c3c681264c5e246d76e843519063d58dd8a0e94455",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 0,
+                      "column_0_based": 0,
+                      "paragraph_1_based": 1,
+                      "source_text": "活性成分(API)",
+                      "quote": "活性成分(API)",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          9
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "predicate",
+                  "verdict": "supported",
+                  "reason": "属性定义与字段匹配。",
+                  "support": []
+                },
+                {
+                  "name": "bridge",
+                  "verdict": "supported",
+                  "reason": "表结构直接关联属性与值。",
+                  "support": [
+                    {
+                      "evidence_id": "3de6a66ff79b48cec94bc7c3c681264c5e246d76e843519063d58dd8a0e94455",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 0,
+                      "column_0_based": 0,
+                      "paragraph_1_based": 1,
+                      "source_text": "活性成分(API)",
+                      "quote": "活性成分(API)",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          9
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "value",
+                  "verdict": "supported",
+                  "reason": "值为'HRS-1597'。",
+                  "support": [
+                    {
+                      "evidence_id": "b9395108ded6b7546ed322f7d7faaefa824d79d14ab31bd2b03632e64335adfc",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 1,
+                      "column_0_based": 0,
+                      "paragraph_1_based": 1,
+                      "source_text": "HRS-1597",
+                      "quote": "HRS-1597",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          8
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "qualifiers",
+                  "verdict": "supported",
+                  "reason": "无否定、模态或条件限制，为肯定断言。",
+                  "support": [
+                    {
+                      "evidence_id": "b9395108ded6b7546ed322f7d7faaefa824d79d14ab31bd2b03632e64335adfc",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 1,
+                      "column_0_based": 0,
+                      "paragraph_1_based": 1,
+                      "source_text": "HRS-1597",
+                      "quote": "HRS-1597",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          8
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "counterevidence",
+                  "verdict": "supported",
+                  "reason": "未检出反证。",
+                  "support": [
+                    {
+                      "evidence_id": "b9395108ded6b7546ed322f7d7faaefa824d79d14ab31bd2b03632e64335adfc",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 1,
+                      "column_0_based": 0,
+                      "paragraph_1_based": 1,
+                      "source_text": "HRS-1597",
+                      "quote": "HRS-1597",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          8
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "target_id": "46ec339f61cd7144818005d91fc1c07db6345e5822415e2282e4446dafd60dcb",
+              "facets": [
+                {
+                  "name": "subject_binding",
+                  "verdict": "supported",
+                  "reason": "声明的主体e1由原文'HRS-1597'定位。",
+                  "support": [
+                    {
+                      "evidence_id": "b9395108ded6b7546ed322f7d7faaefa824d79d14ab31bd2b03632e64335adfc",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 1,
+                      "column_0_based": 0,
+                      "paragraph_1_based": 1,
+                      "source_text": "HRS-1597",
+                      "quote": "HRS-1597",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          8
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "field_role",
+                  "verdict": "supported",
+                  "reason": "属性iri https://ontology.pharma-gmp.cn/slpra/drug-development/studyType 对应表头'试验项目'。",
+                  "support": [
+                    {
+                      "evidence_id": "75bb4be8cefd30319ad06cc5f77897f7e83333bbd2cba794cbc09a8321663afe",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 0,
+                      "column_0_based": 1,
+                      "paragraph_1_based": 1,
+                      "source_text": "试验项目",
+                      "quote": "试验项目",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          4
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "predicate",
+                  "verdict": "supported",
+                  "reason": "属性定义与字段匹配。",
+                  "support": []
+                },
+                {
+                  "name": "bridge",
+                  "verdict": "supported",
+                  "reason": "表结构直接关联属性与值。",
+                  "support": [
+                    {
+                      "evidence_id": "75bb4be8cefd30319ad06cc5f77897f7e83333bbd2cba794cbc09a8321663afe",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 0,
+                      "column_0_based": 1,
+                      "paragraph_1_based": 1,
+                      "source_text": "试验项目",
+                      "quote": "试验项目",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          4
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "value",
+                  "verdict": "supported",
+                  "reason": "值为'大鼠14天亚急毒试验（试验1）'。",
+                  "support": [
+                    {
+                      "evidence_id": "cb768a7db96dff03b7089f6ebf1f23c95fcf6f7e7e79dfaf6294bf202756ce75",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 1,
+                      "column_0_based": 1,
+                      "paragraph_1_based": 1,
+                      "source_text": "大鼠14天亚急毒试验（试验1）",
+                      "quote": "大鼠14天亚急毒试验（试验1）",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          15
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "qualifiers",
+                  "verdict": "supported",
+                  "reason": "无否定、模态或条件限制，为肯定断言。",
+                  "support": [
+                    {
+                      "evidence_id": "cb768a7db96dff03b7089f6ebf1f23c95fcf6f7e7e79dfaf6294bf202756ce75",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 1,
+                      "column_0_based": 1,
+                      "paragraph_1_based": 1,
+                      "source_text": "大鼠14天亚急毒试验（试验1）",
+                      "quote": "大鼠14天亚急毒试验（试验1）",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          15
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "counterevidence",
+                  "verdict": "supported",
+                  "reason": "未检出反证。",
+                  "support": [
+                    {
+                      "evidence_id": "cb768a7db96dff03b7089f6ebf1f23c95fcf6f7e7e79dfaf6294bf202756ce75",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 1,
+                      "column_0_based": 1,
+                      "paragraph_1_based": 1,
+                      "source_text": "大鼠14天亚急毒试验（试验1）",
+                      "quote": "大鼠14天亚急毒试验（试验1）",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          15
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "target_id": "a5fdd781e1fb8dd3d56f8b48eafb7aa20e12f400b0721d980ec3a317d098ea97",
+              "facets": [
+                {
+                  "name": "subject_binding",
+                  "verdict": "supported",
+                  "reason": "声明的主体e1由原文'HRS-1597'定位。",
+                  "support": [
+                    {
+                      "evidence_id": "b9395108ded6b7546ed322f7d7faaefa824d79d14ab31bd2b03632e64335adfc",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 1,
+                      "column_0_based": 0,
+                      "paragraph_1_based": 1,
+                      "source_text": "HRS-1597",
+                      "quote": "HRS-1597",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          8
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "field_role",
+                  "verdict": "supported",
+                  "reason": "属性iri https://ontology.pharma-gmp.cn/slpra/drug-development/noael_mg_per_kg_per_day 对应表头'NOAEL'。",
+                  "support": [
+                    {
+                      "evidence_id": "97efab7c1187f8f9d07816e7883cdcf3a3fdf3f5320cf09998cc446fbd73ef72",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 0,
+                      "column_0_based": 2,
+                      "paragraph_1_based": 1,
+                      "source_text": "NOAEL",
+                      "quote": "NOAEL",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          5
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "predicate",
+                  "verdict": "supported",
+                  "reason": "属性定义与字段匹配。",
+                  "support": []
+                },
+                {
+                  "name": "bridge",
+                  "verdict": "supported",
+                  "reason": "表结构直接关联属性与值。",
+                  "support": [
+                    {
+                      "evidence_id": "97efab7c1187f8f9d07816e7883cdcf3a3fdf3f5320cf09998cc446fbd73ef72",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 0,
+                      "column_0_based": 2,
+                      "paragraph_1_based": 1,
+                      "source_text": "NOAEL",
+                      "quote": "NOAEL",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          5
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "value",
+                  "verdict": "supported",
+                  "reason": "值为'200'。",
+                  "support": [
+                    {
+                      "evidence_id": "1493883db733a99101da0b15ec00fa7c5533e1058d77fea364a89643f5a040f9",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 1,
+                      "column_0_based": 2,
+                      "paragraph_1_based": 1,
+                      "source_text": "200",
+                      "quote": "200",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          3
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "unit",
+                  "verdict": "supported",
+                  "reason": "属性定义要求单位mg/kg/day，但原文表头仅标注'NOAEL'，未明确标注单位。属性schema_card中声明canonical_unit为mg/kg/day，但此处原文仅显示数值，单位缺失或隐含。由于属性定义要求物理单位且原文未提供显式单位字符串，需检查是否算作支持。属性定义中datatype为decimal，",
+                  "support": [
+                    {
+                      "evidence_id": "97efab7c1187f8f9d07816e7883cdcf3a3fdf3f5320cf09998cc446fbd73ef72",
+                      "table_path": [
+                        "table:10"
+                      ],
+                      "row_0_based": 0,
+                      "column_0_based": 2,
+                      "paragraph_1_based": 1,
+                      "source_text": "NOAEL",
+                      "quote": "NOAEL",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          5
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "frozen_entities": [
+        {
+          "local_id": "e1",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+          "representation": "record",
+          "identifier_claims": [],
+          "mentions": [],
+          "record_components": [
+            {
+              "role": "subject",
+              "quote": {
+                "evidence_id": "b9395108ded6b7546ed322f7d7faaefa824d79d14ab31bd2b03632e64335adfc",
+                "table_path": [
+                  "table:10"
+                ],
+                "row_0_based": 1,
+                "column_0_based": 0,
+                "paragraph_1_based": 1,
+                "source_text": "HRS-1597",
+                "quote": "HRS-1597",
+                "context_text": null,
+                "exact_intervals": [
+                  [
+                    0,
+                    8
+                  ]
+                ],
+                "unique_exact_quote": true
+              }
+            },
+            {
+              "role": "field",
+              "quote": {
+                "evidence_id": "75bb4be8cefd30319ad06cc5f77897f7e83333bbd2cba794cbc09a8321663afe",
+                "table_path": [
+                  "table:10"
+                ],
+                "row_0_based": 0,
+                "column_0_based": 1,
+                "paragraph_1_based": 1,
+                "source_text": "试验项目",
+                "quote": "试验项目",
+                "context_text": null,
+                "exact_intervals": [
+                  [
+                    0,
+                    4
+                  ]
+                ],
+                "unique_exact_quote": true
+              }
+            },
+            {
+              "role": "value",
+              "quote": {
+                "evidence_id": "cb768a7db96dff03b7089f6ebf1f23c95fcf6f7e7e79dfaf6294bf202756ce75",
+                "table_path": [
+                  "table:10"
+                ],
+                "row_0_based": 1,
+                "column_0_based": 1,
+                "paragraph_1_based": 1,
+                "source_text": "大鼠14天亚急毒试验（试验1）",
+                "quote": "大鼠14天亚急毒试验（试验1）",
+                "context_text": null,
+                "exact_intervals": [
+                  [
+                    0,
+                    15
+                  ]
+                ],
+                "unique_exact_quote": true
+              }
+            },
+            {
+              "role": "field",
+              "quote": {
+                "evidence_id": "97efab7c1187f8f9d07816e7883cdcf3a3fdf3f5320cf09998cc446fbd73ef72",
+                "table_path": [
+                  "table:10"
+                ],
+                "row_0_based": 0,
+                "column_0_based": 2,
+                "paragraph_1_based": 1,
+                "source_text": "NOAEL",
+                "quote": "NOAEL",
+                "context_text": null,
+                "exact_intervals": [
+                  [
+                    0,
+                    5
+                  ]
+                ],
+                "unique_exact_quote": true
+              }
+            },
+            {
+              "role": "value",
+              "quote": {
+                "evidence_id": "1493883db733a99101da0b15ec00fa7c5533e1058d77fea364a89643f5a040f9",
+                "table_path": [
+                  "table:10"
+                ],
+                "row_0_based": 1,
+                "column_0_based": 2,
+                "paragraph_1_based": 1,
+                "source_text": "200",
+                "quote": "200",
+                "context_text": null,
+                "exact_intervals": [
+                  [
+                    0,
+                    3
+                  ]
+                ],
+                "unique_exact_quote": true
+              }
+            },
+            {
+              "role": "field",
+              "quote": {
+                "evidence_id": "cf93d11079147b10e7656b9c5c2e8ad092282efbd393d404affa04368646c075",
+                "table_path": [
+                  "table:10"
+                ],
+                "row_0_based": 0,
+                "column_0_based": 3,
+                "paragraph_1_based": 1,
+                "source_text": "F1",
+                "quote": "F1",
+                "context_text": null,
+                "exact_intervals": [
+                  [
+                    0,
+                    2
+                  ]
+                ],
+                "unique_exact_quote": true
+              }
+            },
+            {
+              "role": "value",
+              "quote": {
+                "evidence_id": "584028e6acb344354491d0ca7d5fc4e96993dad3086d733377acdffdf3538478",
+                "table_path": [
+                  "table:10"
+                ],
+                "row_0_based": 1,
+                "column_0_based": 3,
+                "paragraph_1_based": 1,
+                "source_text": "5",
+                "quote": "5",
+                "context_text": null,
+                "exact_intervals": [
+                  [
+                    0,
+                    1
+                  ]
+                ],
+                "unique_exact_quote": true
+              }
+            },
+            {
+              "role": "field",
+              "quote": {
+                "evidence_id": "8516670d5d387eab5221e09fdbfa7d74d9d940b4cd082d348d6714982551c8ad",
+                "table_path": [
+                  "table:10"
+                ],
+                "row_0_based": 0,
+                "column_0_based": 4,
+                "paragraph_1_based": 1,
+                "source_text": "F2",
+                "quote": "F2",
+                "context_text": null,
+                "exact_intervals": [
+                  [
+                    0,
+                    2
+                  ]
+                ],
+                "unique_exact_quote": true
+              }
+            },
+            {
+              "role": "value",
+              "quote": {
+                "evidence_id": "de998b1dfdc760ea4abc1a983518d9ffc44434510ddcd5251e60473009bc6fde",
+                "table_path": [
+                  "table:10"
+                ],
+                "row_0_based": 1,
+                "column_0_based": 4,
+                "paragraph_1_based": 1,
+                "source_text": "10",
+                "quote": "10",
+                "context_text": null,
+                "exact_intervals": [
+                  [
+                    0,
+                    2
+                  ]
+                ],
+                "unique_exact_quote": true
+              }
+            },
+            {
+              "role": "field",
+              "quote": {
+                "evidence_id": "23f3ae1c0cfe55cbf136a4c2b4c28829823d12341776ed44ccf13d6fcb38fe53",
+                "table_path": [
+                  "table:10"
+                ],
+                "row_0_based": 0,
+                "column_0_based": 5,
+                "paragraph_1_based": 1,
+                "source_text": "F3",
+                "quote": "F3",
+                "context_text": null,
+                "exact_intervals": [
+                  [
+                    0,
+                    2
+                  ]
+                ],
+                "unique_exact_quote": true
+              }
+            },
+            {
+              "role": "value",
+              "quote": {
+                "evidence_id": "0e8ce4b5032cc01ec99bfea127a1052a4054d921b0bf239cddddb01cf8924ccf",
+                "table_path": [
+                  "table:10"
+                ],
+                "row_0_based": 1,
+                "column_0_based": 5,
+                "paragraph_1_based": 1,
+                "source_text": "10",
+                "quote": "10",
+                "context_text": null,
+                "exact_intervals": [
+                  [
+                    0,
+                    2
+                  ]
+                ],
+                "unique_exact_quote": true
+              }
+            },
+            {
+              "role": "field",
+              "quote": {
+                "evidence_id": "bbf7215e10f1f86e1cd66a611436847f10343d3344fcac4d6c5b11a0fc056582",
+                "table_path": [
+                  "table:10"
+                ],
+                "row_0_based": 0,
+                "column_0_based": 6,
+                "paragraph_1_based": 1,
+                "source_text": "F4",
+                "quote": "F4",
+                "context_text": null,
+                "exact_intervals": [
+                  [
+                    0,
+                    2
+                  ]
+                ],
+                "unique_exact_quote": true
+              }
+            },
+            {
+              "role": "value",
+              "quote": {
+                "evidence_id": "740ab16b19fdef2bf620a5fafe935c805fd0b4b72ca723a450e0757c6dbea043",
+                "table_path": [
+                  "table:10"
+                ],
+                "row_0_based": 1,
+                "column_0_based": 6,
+                "paragraph_1_based": 1,
+                "source_text": "1",
+                "quote": "1",
+                "context_text": null,
+                "exact_intervals": [
+                  [
+                    0,
+                    1
+                  ]
+                ],
+                "unique_exact_quote": true
+              }
+            },
+            {
+              "role": "field",
+              "quote": {
+                "evidence_id": "8ea37f37556fe351d0ca97e30e821cc2379a1b74b79a6e7f02ab2315385f120b",
+                "table_path": [
+                  "table:10"
+                ],
+                "row_0_based": 0,
+                "column_0_based": 7,
+                "paragraph_1_based": 1,
+                "source_text": "F5",
+                "quote": "F5",
+                "context_text": null,
+                "exact_intervals": [
+                  [
+                    0,
+                    2
+                  ]
+                ],
+                "unique_exact_quote": true
+              }
+            },
+            {
+              "role": "value",
+              "quote": {
+                "evidence_id": "a7bf0b68cb8846498fb646311aa43a7e2112e259f04c35ff2c47976bbc7f34f9",
+                "table_path": [
+                  "table:10"
+                ],
+                "row_0_based": 1,
+                "column_0_based": 7,
+                "paragraph_1_based": 1,
+                "source_text": "1",
+                "quote": "1",
+                "context_text": null,
+                "exact_intervals": [
+                  [
+                    0,
+                    1
+                  ]
+                ],
+                "unique_exact_quote": true
+              }
+            },
+            {
+              "role": "field",
+              "quote": {
+                "evidence_id": "08abee8dc07052d407c298bdec425df109ee1011627642d76ba2c8987a3a8e77",
+                "table_path": [
+                  "table:10"
+                ],
+                "row_0_based": 0,
+                "column_0_based": 8,
+                "paragraph_1_based": 1,
+                "source_text": "PDE",
+                "quote": "PDE",
+                "context_text": null,
+                "exact_intervals": [
+                  [
+                    0,
+                    3
+                  ]
+                ],
+                "unique_exact_quote": true
+              }
+            },
+            {
+              "role": "value",
+              "quote": {
+                "evidence_id": "cf4d0ccff379805eb07cb72f4876ac915d113ac3e1272389f81519e5de6f4962",
+                "table_path": [
+                  "table:10"
+                ],
+                "row_0_based": 1,
+                "column_0_based": 8,
+                "paragraph_1_based": 1,
+                "source_text": "100",
+                "quote": "100",
+                "context_text": null,
+                "exact_intervals": [
+                  [
+                    0,
+                    3
+                  ]
+                ],
+                "unique_exact_quote": true
+              }
+            },
+            {
+              "role": "field",
+              "quote": {
+                "evidence_id": "03cb80c796f9b97ffa6ec3c8272f3df0f943104f88691b5a0dcd1d74ba21de98",
+                "table_path": [
+                  "table:10"
+                ],
+                "row_0_based": 0,
+                "column_0_based": 9,
+                "paragraph_1_based": 1,
+                "source_text": "来源",
+                "quote": "来源",
+                "context_text": null,
+                "exact_intervals": [
+                  [
+                    0,
+                    2
+                  ]
+                ],
+                "unique_exact_quote": true
+              }
+            },
+            {
+              "role": "value",
+              "quote": {
+                "evidence_id": "a89adb640edc0ca3f88ad933220f19debe902aaf881b9f2e025567d4e9b9cd26",
+                "table_path": [
+                  "table:10"
+                ],
+                "row_0_based": 1,
+                "column_0_based": 9,
+                "paragraph_1_based": 1,
+                "source_text": "19191-25030-NG",
+                "quote": "19191-25030-NG",
+                "context_text": null,
+                "exact_intervals": [
+                  [
+                    0,
+                    14
+                  ]
+                ],
+                "unique_exact_quote": true
+              }
+            },
+            {
+              "role": "field",
+              "quote": {
+                "evidence_id": "727a8972fb3529284c7604d2d63a1bea4195a62d319b50e3916162a83f1e574a",
+                "table_path": [
+                  "table:10"
+                ],
+                "row_0_based": 0,
+                "column_0_based": 10,
+                "paragraph_1_based": 1,
+                "source_text": "OEB",
+                "quote": "OEB",
+                "context_text": null,
+                "exact_intervals": [
+                  [
+                    0,
+                    3
+                  ]
+                ],
+                "unique_exact_quote": true
+              }
+            },
+            {
+              "role": "value",
+              "quote": {
+                "evidence_id": "19d1ca46aa890306ad55efd27d298ce693c7633f7bf2db4a4dafd036808b9d0b",
+                "table_path": [
+                  "table:10"
+                ],
+                "row_0_based": 1,
+                "column_0_based": 10,
+                "paragraph_1_based": 1,
+                "source_text": "1",
+                "quote": "1",
+                "context_text": null,
+                "exact_intervals": [
+                  [
+                    0,
+                    1
+                  ]
+                ],
+                "unique_exact_quote": true
+              }
+            }
+          ]
+        }
+      ],
+      "frozen_properties": [
+        {
+          "local_id": "p1",
+          "subject_id": "e1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/activeIngredient",
+          "value": {
+            "evidence_id": "b9395108ded6b7546ed322f7d7faaefa824d79d14ab31bd2b03632e64335adfc",
+            "table_path": [
+              "table:10"
+            ],
+            "row_0_based": 1,
+            "column_0_based": 0,
+            "paragraph_1_based": 1,
+            "source_text": "HRS-1597",
+            "quote": "HRS-1597",
+            "context_text": null,
+            "exact_intervals": [
+              [
+                0,
+                8
+              ]
+            ],
+            "unique_exact_quote": true
+          },
+          "fields": [
+            {
+              "evidence_id": "3de6a66ff79b48cec94bc7c3c681264c5e246d76e843519063d58dd8a0e94455",
+              "table_path": [
+                "table:10"
+              ],
+              "row_0_based": 0,
+              "column_0_based": 0,
+              "paragraph_1_based": 1,
+              "source_text": "活性成分(API)",
+              "quote": "活性成分(API)",
+              "context_text": null,
+              "exact_intervals": [
+                [
+                  0,
+                  9
+                ]
+              ],
+              "unique_exact_quote": true
+            }
+          ],
+          "units": [],
+          "qualifiers": {
+            "polarity": "affirmed",
+            "modality": "asserted",
+            "condition_support": [],
+            "scope_qualifiers": []
+          }
+        },
+        {
+          "local_id": "p2",
+          "subject_id": "e1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/studyType",
+          "value": {
+            "evidence_id": "cb768a7db96dff03b7089f6ebf1f23c95fcf6f7e7e79dfaf6294bf202756ce75",
+            "table_path": [
+              "table:10"
+            ],
+            "row_0_based": 1,
+            "column_0_based": 1,
+            "paragraph_1_based": 1,
+            "source_text": "大鼠14天亚急毒试验（试验1）",
+            "quote": "大鼠14天亚急毒试验（试验1）",
+            "context_text": null,
+            "exact_intervals": [
+              [
+                0,
+                15
+              ]
+            ],
+            "unique_exact_quote": true
+          },
+          "fields": [
+            {
+              "evidence_id": "75bb4be8cefd30319ad06cc5f77897f7e83333bbd2cba794cbc09a8321663afe",
+              "table_path": [
+                "table:10"
+              ],
+              "row_0_based": 0,
+              "column_0_based": 1,
+              "paragraph_1_based": 1,
+              "source_text": "试验项目",
+              "quote": "试验项目",
+              "context_text": null,
+              "exact_intervals": [
+                [
+                  0,
+                  4
+                ]
+              ],
+              "unique_exact_quote": true
+            }
+          ],
+          "units": [],
+          "qualifiers": {
+            "polarity": "affirmed",
+            "modality": "asserted",
+            "condition_support": [],
+            "scope_qualifiers": []
+          }
+        },
+        {
+          "local_id": "p3",
+          "subject_id": "e1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/noael_mg_per_kg_per_day",
+          "value": {
+            "evidence_id": "1493883db733a99101da0b15ec00fa7c5533e1058d77fea364a89643f5a040f9",
+            "table_path": [
+              "table:10"
+            ],
+            "row_0_based": 1,
+            "column_0_based": 2,
+            "paragraph_1_based": 1,
+            "source_text": "200",
+            "quote": "200",
+            "context_text": null,
+            "exact_intervals": [
+              [
+                0,
+                3
+              ]
+            ],
+            "unique_exact_quote": true
+          },
+          "fields": [
+            {
+              "evidence_id": "97efab7c1187f8f9d07816e7883cdcf3a3fdf3f5320cf09998cc446fbd73ef72",
+              "table_path": [
+                "table:10"
+              ],
+              "row_0_based": 0,
+              "column_0_based": 2,
+              "paragraph_1_based": 1,
+              "source_text": "NOAEL",
+              "quote": "NOAEL",
+              "context_text": null,
+              "exact_intervals": [
+                [
+                  0,
+                  5
+                ]
+              ],
+              "unique_exact_quote": true
+            }
+          ],
+          "units": [
+            {
+              "evidence_id": "97efab7c1187f8f9d07816e7883cdcf3a3fdf3f5320cf09998cc446fbd73ef72",
+              "table_path": [
+                "table:10"
+              ],
+              "row_0_based": 0,
+              "column_0_based": 2,
+              "paragraph_1_based": 1,
+              "source_text": "NOAEL",
+              "quote": "NOAEL",
+              "context_text": null,
+              "exact_intervals": [
+                [
+                  0,
+                  5
+                ]
+              ],
+              "unique_exact_quote": true
+            }
+          ],
+          "qualifiers": {
+            "polarity": "affirmed",
+            "modality": "asserted",
+            "condition_support": [],
+            "scope_qualifiers": []
+          }
+        },
+        {
+          "local_id": "p4",
+          "subject_id": "e1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f1",
+          "value": {
+            "evidence_id": "584028e6acb344354491d0ca7d5fc4e96993dad3086d733377acdffdf3538478",
+            "table_path": [
+              "table:10"
+            ],
+            "row_0_based": 1,
+            "column_0_based": 3,
+            "paragraph_1_based": 1,
+            "source_text": "5",
+            "quote": "5",
+            "context_text": null,
+            "exact_intervals": [
+              [
+                0,
+                1
+              ]
+            ],
+            "unique_exact_quote": true
+          },
+          "fields": [
+            {
+              "evidence_id": "cf93d11079147b10e7656b9c5c2e8ad092282efbd393d404affa04368646c075",
+              "table_path": [
+                "table:10"
+              ],
+              "row_0_based": 0,
+              "column_0_based": 3,
+              "paragraph_1_based": 1,
+              "source_text": "F1",
+              "quote": "F1",
+              "context_text": null,
+              "exact_intervals": [
+                [
+                  0,
+                  2
+                ]
+              ],
+              "unique_exact_quote": true
+            }
+          ],
+          "units": [],
+          "qualifiers": {
+            "polarity": "affirmed",
+            "modality": "asserted",
+            "condition_support": [],
+            "scope_qualifiers": []
+          }
+        },
+        {
+          "local_id": "p5",
+          "subject_id": "e1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f2",
+          "value": {
+            "evidence_id": "de998b1dfdc760ea4abc1a983518d9ffc44434510ddcd5251e60473009bc6fde",
+            "table_path": [
+              "table:10"
+            ],
+            "row_0_based": 1,
+            "column_0_based": 4,
+            "paragraph_1_based": 1,
+            "source_text": "10",
+            "quote": "10",
+            "context_text": null,
+            "exact_intervals": [
+              [
+                0,
+                2
+              ]
+            ],
+            "unique_exact_quote": true
+          },
+          "fields": [
+            {
+              "evidence_id": "8516670d5d387eab5221e09fdbfa7d74d9d940b4cd082d348d6714982551c8ad",
+              "table_path": [
+                "table:10"
+              ],
+              "row_0_based": 0,
+              "column_0_based": 4,
+              "paragraph_1_based": 1,
+              "source_text": "F2",
+              "quote": "F2",
+              "context_text": null,
+              "exact_intervals": [
+                [
+                  0,
+                  2
+                ]
+              ],
+              "unique_exact_quote": true
+            }
+          ],
+          "units": [],
+          "qualifiers": {
+            "polarity": "affirmed",
+            "modality": "asserted",
+            "condition_support": [],
+            "scope_qualifiers": []
+          }
+        },
+        {
+          "local_id": "p6",
+          "subject_id": "e1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f3",
+          "value": {
+            "evidence_id": "0e8ce4b5032cc01ec99bfea127a1052a4054d921b0bf239cddddb01cf8924ccf",
+            "table_path": [
+              "table:10"
+            ],
+            "row_0_based": 1,
+            "column_0_based": 5,
+            "paragraph_1_based": 1,
+            "source_text": "10",
+            "quote": "10",
+            "context_text": null,
+            "exact_intervals": [
+              [
+                0,
+                2
+              ]
+            ],
+            "unique_exact_quote": true
+          },
+          "fields": [
+            {
+              "evidence_id": "23f3ae1c0cfe55cbf136a4c2b4c28829823d12341776ed44ccf13d6fcb38fe53",
+              "table_path": [
+                "table:10"
+              ],
+              "row_0_based": 0,
+              "column_0_based": 5,
+              "paragraph_1_based": 1,
+              "source_text": "F3",
+              "quote": "F3",
+              "context_text": null,
+              "exact_intervals": [
+                [
+                  0,
+                  2
+                ]
+              ],
+              "unique_exact_quote": true
+            }
+          ],
+          "units": [],
+          "qualifiers": {
+            "polarity": "affirmed",
+            "modality": "asserted",
+            "condition_support": [],
+            "scope_qualifiers": []
+          }
+        },
+        {
+          "local_id": "p7",
+          "subject_id": "e1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f4",
+          "value": {
+            "evidence_id": "740ab16b19fdef2bf620a5fafe935c805fd0b4b72ca723a450e0757c6dbea043",
+            "table_path": [
+              "table:10"
+            ],
+            "row_0_based": 1,
+            "column_0_based": 6,
+            "paragraph_1_based": 1,
+            "source_text": "1",
+            "quote": "1",
+            "context_text": null,
+            "exact_intervals": [
+              [
+                0,
+                1
+              ]
+            ],
+            "unique_exact_quote": true
+          },
+          "fields": [
+            {
+              "evidence_id": "bbf7215e10f1f86e1cd66a611436847f10343d3344fcac4d6c5b11a0fc056582",
+              "table_path": [
+                "table:10"
+              ],
+              "row_0_based": 0,
+              "column_0_based": 6,
+              "paragraph_1_based": 1,
+              "source_text": "F4",
+              "quote": "F4",
+              "context_text": null,
+              "exact_intervals": [
+                [
+                  0,
+                  2
+                ]
+              ],
+              "unique_exact_quote": true
+            }
+          ],
+          "units": [],
+          "qualifiers": {
+            "polarity": "affirmed",
+            "modality": "asserted",
+            "condition_support": [],
+            "scope_qualifiers": []
+          }
+        },
+        {
+          "local_id": "p8",
+          "subject_id": "e1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f5",
+          "value": {
+            "evidence_id": "a7bf0b68cb8846498fb646311aa43a7e2112e259f04c35ff2c47976bbc7f34f9",
+            "table_path": [
+              "table:10"
+            ],
+            "row_0_based": 1,
+            "column_0_based": 7,
+            "paragraph_1_based": 1,
+            "source_text": "1",
+            "quote": "1",
+            "context_text": null,
+            "exact_intervals": [
+              [
+                0,
+                1
+              ]
+            ],
+            "unique_exact_quote": true
+          },
+          "fields": [
+            {
+              "evidence_id": "8ea37f37556fe351d0ca97e30e821cc2379a1b74b79a6e7f02ab2315385f120b",
+              "table_path": [
+                "table:10"
+              ],
+              "row_0_based": 0,
+              "column_0_based": 7,
+              "paragraph_1_based": 1,
+              "source_text": "F5",
+              "quote": "F5",
+              "context_text": null,
+              "exact_intervals": [
+                [
+                  0,
+                  2
+                ]
+              ],
+              "unique_exact_quote": true
+            }
+          ],
+          "units": [],
+          "qualifiers": {
+            "polarity": "affirmed",
+            "modality": "asserted",
+            "condition_support": [],
+            "scope_qualifiers": []
+          }
+        },
+        {
+          "local_id": "p9",
+          "subject_id": "e1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/pde_mg_per_day",
+          "value": {
+            "evidence_id": "cf4d0ccff379805eb07cb72f4876ac915d113ac3e1272389f81519e5de6f4962",
+            "table_path": [
+              "table:10"
+            ],
+            "row_0_based": 1,
+            "column_0_based": 8,
+            "paragraph_1_based": 1,
+            "source_text": "100",
+            "quote": "100",
+            "context_text": null,
+            "exact_intervals": [
+              [
+                0,
+                3
+              ]
+            ],
+            "unique_exact_quote": true
+          },
+          "fields": [
+            {
+              "evidence_id": "08abee8dc07052d407c298bdec425df109ee1011627642d76ba2c8987a3a8e77",
+              "table_path": [
+                "table:10"
+              ],
+              "row_0_based": 0,
+              "column_0_based": 8,
+              "paragraph_1_based": 1,
+              "source_text": "PDE",
+              "quote": "PDE",
+              "context_text": null,
+              "exact_intervals": [
+                [
+                  0,
+                  3
+                ]
+              ],
+              "unique_exact_quote": true
+            }
+          ],
+          "units": [
+            {
+              "evidence_id": "2c29fad921977423f34ddf96afe0e8cba0a4c9c31dd847c3a3915792e381252b",
+              "table_path": [
+                "table:10"
+              ],
+              "row_0_based": 0,
+              "column_0_based": 8,
+              "paragraph_1_based": 2,
+              "source_text": "(mg/天)",
+              "quote": "(mg/天)",
+              "context_text": null,
+              "exact_intervals": [
+                [
+                  0,
+                  6
+                ]
+              ],
+              "unique_exact_quote": true
+            }
+          ],
+          "qualifiers": {
+            "polarity": "affirmed",
+            "modality": "asserted",
+            "condition_support": [],
+            "scope_qualifiers": []
+          }
+        },
+        {
+          "local_id": "p10",
+          "subject_id": "e1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/sourceReference",
+          "value": {
+            "evidence_id": "a89adb640edc0ca3f88ad933220f19debe902aaf881b9f2e025567d4e9b9cd26",
+            "table_path": [
+              "table:10"
+            ],
+            "row_0_based": 1,
+            "column_0_based": 9,
+            "paragraph_1_based": 1,
+            "source_text": "19191-25030-NG",
+            "quote": "19191-25030-NG",
+            "context_text": null,
+            "exact_intervals": [
+              [
+                0,
+                14
+              ]
+            ],
+            "unique_exact_quote": true
+          },
+          "fields": [
+            {
+              "evidence_id": "03cb80c796f9b97ffa6ec3c8272f3df0f943104f88691b5a0dcd1d74ba21de98",
+              "table_path": [
+                "table:10"
+              ],
+              "row_0_based": 0,
+              "column_0_based": 9,
+              "paragraph_1_based": 1,
+              "source_text": "来源",
+              "quote": "来源",
+              "context_text": null,
+              "exact_intervals": [
+                [
+                  0,
+                  2
+                ]
+              ],
+              "unique_exact_quote": true
+            }
+          ],
+          "units": [],
+          "qualifiers": {
+            "polarity": "affirmed",
+            "modality": "asserted",
+            "condition_support": [],
+            "scope_qualifiers": []
+          }
+        },
+        {
+          "local_id": "p11",
+          "subject_id": "e1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/oebBand",
+          "value": {
+            "evidence_id": "19d1ca46aa890306ad55efd27d298ce693c7633f7bf2db4a4dafd036808b9d0b",
+            "table_path": [
+              "table:10"
+            ],
+            "row_0_based": 1,
+            "column_0_based": 10,
+            "paragraph_1_based": 1,
+            "source_text": "1",
+            "quote": "1",
+            "context_text": null,
+            "exact_intervals": [
+              [
+                0,
+                1
+              ]
+            ],
+            "unique_exact_quote": true
+          },
+          "fields": [
+            {
+              "evidence_id": "727a8972fb3529284c7604d2d63a1bea4195a62d319b50e3916162a83f1e574a",
+              "table_path": [
+                "table:10"
+              ],
+              "row_0_based": 0,
+              "column_0_based": 10,
+              "paragraph_1_based": 1,
+              "source_text": "OEB",
+              "quote": "OEB",
+              "context_text": null,
+              "exact_intervals": [
+                [
+                  0,
+                  3
+                ]
+              ],
+              "unique_exact_quote": true
+            }
+          ],
+          "units": [],
+          "qualifiers": {
+            "polarity": "affirmed",
+            "modality": "asserted",
+            "condition_support": [],
+            "scope_qualifiers": []
+          }
+        }
+      ],
+      "claim_issues": {},
+      "observations": [],
+      "outcome": {
+        "semantic_outcome": "not_checked",
+        "complete": false,
+        "reason_code": "model_parse_error",
+        "reason": "当前记录的实体和属性识别未完成。",
+        "model_calls": 3
+      },
+      "published_nodes": [],
+      "published_counts": {
+        "nodes": 0,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      },
+      "independent_conclusions": [
+        "第二次发现的11字段值/表头在table:10数据行1逐字匹配，记录型共线评估数据候选具有毒理表上下文依据。",
+        "第一次发现重复使用local_id=p1共11次（1实体、10属性），不能视为可用冻结发现。",
+        "最终核验JSON可解析且response_status=completed，但只返回4个target；其中NOAEL的facet也未完整。系统最终model_parse_error，0节点和0属性，不是已通过核验。",
+        "PDE单位原表头明确mg/天；NOAEL表头未注明单位，不能只凭本体规范单位补成已证mg/kg/day。",
+        "没有对象关系和真实多谓词批次。"
+      ]
+    },
+    {
+      "group": 5,
+      "lineage_id": "4699b75fa6d2bd5afca2d91e87660ccb102465cc47907a9c932acb9642c9ec08",
+      "immutable_results": {
+        "verification": "0a3a7ef6050c1e75a8153ad003d1b7bd7022b48533757f5a17e88b57d1242b37",
+        "outcome": "22d589eec22efbb4bc53898edccf796ec4c24df0cb72fd734b14d3c21be654b5",
+        "discovery": "c9f25469e0ddce09966fd56b967e4a99bd8f3fb1c2fa08fb4dd6df803b33e208"
+      },
+      "reviewed_model_turns": [
+        {
+          "immutable_result_key": "b634d3fcd8aeb184c2cec005f19d9ec4ee3ea917ddcba4b1b0ce46abc0d4fcf9",
+          "lineage_id": "4699b75fa6d2bd5afca2d91e87660ccb102465cc47907a9c932acb9642c9ec08",
+          "attempt": 1,
+          "stage": "discovery",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 3315,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 516,
+            "total_tokens": 3831
+          }
+        },
+        {
+          "immutable_result_key": "e21751b16e81a0f9198b191e07f03f71ecdaeed9089f886f7f8fd71f79e67dd1",
+          "lineage_id": "4699b75fa6d2bd5afca2d91e87660ccb102465cc47907a9c932acb9642c9ec08",
+          "attempt": 2,
+          "stage": "verification",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 3623,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 483,
+            "total_tokens": 4106
+          }
+        }
+      ],
+      "raw_call_summaries": [
+        {
+          "attempt": 1,
+          "entity_count": 1,
+          "property_count": 0,
+          "duplicate_local_ids": {}
+        },
+        {
+          "attempt": 2,
+          "target_count": 1,
+          "raw_verifications": [
+            {
+              "target_id": "dd79a051af82092d2be7c8a26fe9f66161450394a241ddb5de952c219d87eda9",
+              "facets": [
+                {
+                  "name": "type",
+                  "verdict": "unsupported",
+                  "reason": "原文记载为“N/A”，表示无数据或无残留，无法证实该实体具有残留物的关键限定（留存于设备、器具或表面的物质），亦不支持其为活性物质、清洁剂、微生物或颗粒残留的具体分类。",
+                  "support": [
+                    {
+                      "evidence_id": "6ff01fa7a49cf38d76b188268e5434bd828c2c297482c2e096f775ea292f27be",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 80,
+                      "source_text": "N/A",
+                      "quote": "N/A",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          3
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "referent",
+                  "verdict": "unsupported",
+                  "reason": "原文“N/A”未指称任何具体的物理残留物实体，无法建立与真实世界对象的绑定。",
+                  "support": [
+                    {
+                      "evidence_id": "6ff01fa7a49cf38d76b188268e5434bd828c2c297482c2e096f775ea292f27be",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 80,
+                      "source_text": "N/A",
+                      "quote": "N/A",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          3
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "subject_role",
+                  "verdict": "unsupported",
+                  "reason": "由于原文为“N/A”，未提供关于该实体作为主体角色的任何描述或指称。",
+                  "support": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "frozen_entities": [
+        {
+          "local_id": "e1",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/Residue",
+          "representation": "mention",
+          "identifier_claims": [],
+          "mentions": [
+            {
+              "evidence_id": "6ff01fa7a49cf38d76b188268e5434bd828c2c297482c2e096f775ea292f27be",
+              "table_path": null,
+              "row_0_based": null,
+              "column_0_based": null,
+              "paragraph_1_based": 80,
+              "source_text": "N/A",
+              "quote": "N/A",
+              "context_text": null,
+              "exact_intervals": [
+                [
+                  0,
+                  3
+                ]
+              ],
+              "unique_exact_quote": true
+            }
+          ],
+          "record_components": []
+        }
+      ],
+      "frozen_properties": [],
+      "claim_issues": {},
+      "observations": [
+        {
+          "subject_id": "e1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/residueSolubility",
+          "quote": {
+            "evidence_id": "6ff01fa7a49cf38d76b188268e5434bd828c2c297482c2e096f775ea292f27be",
+            "text": "N/A",
+            "context_text": null
+          },
+          "kind": "missing",
+          "reason": "Value is N/A, indicating missing data for solubility.",
+          "quote_check": {
+            "evidence_id": "6ff01fa7a49cf38d76b188268e5434bd828c2c297482c2e096f775ea292f27be",
+            "table_path": null,
+            "row_0_based": null,
+            "column_0_based": null,
+            "paragraph_1_based": 80,
+            "source_text": "N/A",
+            "quote": "N/A",
+            "context_text": null,
+            "exact_intervals": [
+              [
+                0,
+                3
+              ]
+            ],
+            "unique_exact_quote": true
+          }
+        },
+        {
+          "subject_id": "e1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/residueSolubilityTemperature",
+          "quote": {
+            "evidence_id": "6ff01fa7a49cf38d76b188268e5434bd828c2c297482c2e096f775ea292f27be",
+            "text": "N/A",
+            "context_text": null
+          },
+          "kind": "missing",
+          "reason": "Value is N/A, indicating missing data for temperature.",
+          "quote_check": {
+            "evidence_id": "6ff01fa7a49cf38d76b188268e5434bd828c2c297482c2e096f775ea292f27be",
+            "table_path": null,
+            "row_0_based": null,
+            "column_0_based": null,
+            "paragraph_1_based": 80,
+            "source_text": "N/A",
+            "quote": "N/A",
+            "context_text": null,
+            "exact_intervals": [
+              [
+                0,
+                3
+              ]
+            ],
+            "unique_exact_quote": true
+          }
+        },
+        {
+          "subject_id": "e1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/residueSolvent",
+          "quote": {
+            "evidence_id": "6ff01fa7a49cf38d76b188268e5434bd828c2c297482c2e096f775ea292f27be",
+            "text": "N/A",
+            "context_text": null
+          },
+          "kind": "missing",
+          "reason": "Value is N/A, indicating missing data for solvent.",
+          "quote_check": {
+            "evidence_id": "6ff01fa7a49cf38d76b188268e5434bd828c2c297482c2e096f775ea292f27be",
+            "table_path": null,
+            "row_0_based": null,
+            "column_0_based": null,
+            "paragraph_1_based": 80,
+            "source_text": "N/A",
+            "quote": "N/A",
+            "context_text": null,
+            "exact_intervals": [
+              [
+                0,
+                3
+              ]
+            ],
+            "unique_exact_quote": true
+          }
+        }
+      ],
+      "outcome": {
+        "semantic_outcome": "undetermined",
+        "complete": false,
+        "reason_code": "type_not_supported",
+        "reason": "type_not_supported；referent_not_supported；subject_role_not_supported",
+        "model_calls": 2
+      },
+      "published_nodes": [],
+      "published_counts": {
+        "nodes": 0,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      },
+      "independent_conclusions": [
+        "P79标题为设备清洗残留物基本信息，P80仅N/A。N/A不指称物理残留物，type/referent拒绝正确。",
+        "核验理由中的无数据或无残留两种解释不能等同；本段不能单独证明不存在残留物。",
+        "三条missing观察依赖未成立的Residue主体，不能评为三项已证属性缺失。"
+      ]
+    },
+    {
+      "group": 6,
+      "lineage_id": "b4cd1148fe8f1df8ba207fa9faea84d1878236d3aab102d5f3564e4adb935955",
+      "immutable_results": {
+        "discovery": "8b9b75541f32ff9841c4eb157b1be39d3b5f94eae1591cc953318e211bf73f69",
+        "outcome": "7e3ebb9dcec388df6cf01b59cc5dbfe2916eea8452b9b6d68a986b39ff8f62ca",
+        "verification": "a16e075db77126173a031306f135ac49073c7366b1c957e89a031aa34cf97d1e"
+      },
+      "reviewed_model_turns": [
+        {
+          "immutable_result_key": "997929d9152a492150b8c44460bd69bd436a598cce7277e92949f18d89864344",
+          "lineage_id": "b4cd1148fe8f1df8ba207fa9faea84d1878236d3aab102d5f3564e4adb935955",
+          "attempt": 1,
+          "stage": "discovery",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 4738,
+            "input_tokens_details": {
+              "cached_tokens": 1613
+            },
+            "output_tokens": 1613,
+            "total_tokens": 6351
+          }
+        },
+        {
+          "immutable_result_key": "cdb4bf41d7d0b71f1c462bc70c569bed651f07aba18a0b7ed58fac773df42378",
+          "lineage_id": "b4cd1148fe8f1df8ba207fa9faea84d1878236d3aab102d5f3564e4adb935955",
+          "attempt": 2,
+          "stage": "verification",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 5586,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 1131,
+            "total_tokens": 6717
+          }
+        },
+        {
+          "immutable_result_key": "bd3ba2bec5d5cc48207203fd272939f067dc962d46c528ef07efbda89c261bf5",
+          "lineage_id": "b4cd1148fe8f1df8ba207fa9faea84d1878236d3aab102d5f3564e4adb935955",
+          "attempt": 3,
+          "stage": "verification",
+          "response_status": "completed",
+          "usage": {
+            "input_tokens": 4694,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 1412,
+            "total_tokens": 6106
+          }
+        }
+      ],
+      "raw_call_summaries": [
+        {
+          "attempt": 1,
+          "entity_count": 6,
+          "property_count": 0,
+          "duplicate_local_ids": {}
+        },
+        {
+          "attempt": 2,
+          "target_count": 3,
+          "raw_verifications": [
+            {
+              "target_id": "9de001d9510d3ad23c449c2059e9790fc27aa1d3c1737e3ea6ffa1b1f22b7068",
+              "facets": [
+                {
+                  "name": "type",
+                  "verdict": "supported",
+                  "reason": "实体e4指称'碱'，原文陈述其在'碱条件下比较稳定'。根据AlkalineDegradation定义'在碱性应力条件下发生的药物降解过程'，原文明确指出了碱性条件这一关键限定，符合该类型定义。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "本品在酸、碱条件下比较稳定",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          13
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "referent",
+                  "verdict": "supported",
+                  "reason": "原文提及'碱'作为应力条件之一，与实体e4的指称一致。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "碱",
+                      "context_text": "本品在酸、碱条件下比较稳定",
+                      "exact_intervals": [
+                        [
+                          5,
+                          6
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "subject_role",
+                  "verdict": "supported",
+                  "reason": "原文主语为'本品'，'碱'是作用于本品的条件，符合降解途径中'被研究对象'的主体角色定位。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "本品在酸、碱条件下比较稳定",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          13
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "target_id": "7ffc4b4ea23f6e258138ddb86b7a79e670ab286030fd822d0cc39afc3ae9a201",
+              "facets": [
+                {
+                  "name": "type",
+                  "verdict": "supported",
+                  "reason": "实体e5指称'酸'，原文陈述其在'酸条件下比较稳定'。根据AcidDegradation定义'在酸性应力条件下发生的药物降解过程'，原文明确指出了酸性条件这一关键限定，符合该类型定义。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "本品在酸、碱条件下比较稳定",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          13
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "referent",
+                  "verdict": "supported",
+                  "reason": "原文提及'酸'作为应力条件之一，与实体e5的指称一致。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "酸",
+                      "context_text": "本品在酸、碱条件下比较稳定",
+                      "exact_intervals": [
+                        [
+                          3,
+                          4
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "subject_role",
+                  "verdict": "supported",
+                  "reason": "原文主语为'本品'，'酸'是作用于本品的条件，符合降解途径中'被研究对象'的主体角色定位。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "本品在酸、碱条件下比较稳定",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          13
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "target_id": "385498c6adbe20e06d9a3018e560fa64a56d01155b7ff6feeeeb4f44045d5977",
+              "facets": [
+                {
+                  "name": "type",
+                  "verdict": "undetermined",
+                  "reason": "实体e6指称'降解产物'。原文仅提及'降解产物'的存在及其结构和清洁方法'暂未明确'。DegradationPathway定义为'characterized forced-degradation pathway... used for cleaning validation'，隐含需要对降解途径进行表征。原文未提供关于",
+                  "support": [
+                    {
+                      "evidence_id": "3ec46b335096714334daa7af02aef7c0d56370d61508eaa47ce8cdedb376629e",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 97,
+                      "source_text": "降解产物结构及清洁方法暂未明确。",
+                      "quote": "降解产物结构及清洁方法暂未明确",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          15
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "attempt": 3,
+          "target_count": 3,
+          "raw_verifications": [
+            {
+              "target_id": "7ffc4b4ea23f6e258138ddb86b7a79e670ab286030fd822d0cc39afc3ae9a201",
+              "facets": [
+                {
+                  "name": "type",
+                  "verdict": "supported",
+                  "reason": "原文提及'酸...条件下...有降解'，符合AcidDegradation定义中'在酸性应力条件下发生的药物降解过程'的关键限定。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          27
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "referent",
+                  "verdict": "supported",
+                  "reason": "原文'酸'指代本品在酸性条件下的降解这一具体现象/过程，与本地ID e5指称一致。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          27
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "subject_role",
+                  "verdict": "supported",
+                  "reason": "该降解过程（酸降解）是'本品'（药物物质）的属性或经历的过程，符合降解途径作为受试对象的语境。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          27
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "target_id": "9de001d9510d3ad23c449c2059e9790fc27aa1d3c1737e3ea6ffa1b1f22b7068",
+              "facets": [
+                {
+                  "name": "type",
+                  "verdict": "supported",
+                  "reason": "原文提及'碱...条件下...有降解'，符合AlkalineDegradation定义中'在碱性应力条件下发生的药物降解过程'的关键限定。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          27
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "referent",
+                  "verdict": "supported",
+                  "reason": "原文'碱'指代本品在碱性条件下的降解这一具体现象/过程，与本地ID e4指称一致。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          27
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "subject_role",
+                  "verdict": "supported",
+                  "reason": "该降解过程（碱降解）是'本品'（药物物质）的属性或经历的过程，符合降解途径作为受试对象的语境。",
+                  "support": [
+                    {
+                      "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 96,
+                      "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+                      "quote": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          27
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "target_id": "385498c6adbe20e06d9a3018e560fa64a56d01155b7ff6feeeeb4f44045d5977",
+              "facets": [
+                {
+                  "name": "type",
+                  "verdict": "undetermined",
+                  "reason": "原文仅提及'降解产物'的存在及结构未知，未提供具体的降解条件（如氧化、光照、高温等应力）或具体的降解过程描述，无法确证其属于特定的Subtype（如Oxidative/Photo/Thermal Degradation），仅能支持为一般的DegradationPathway或无法确定具体类型。鉴于原文未描述具体‘途径’",
+                  "support": [
+                    {
+                      "evidence_id": "3ec46b335096714334daa7af02aef7c0d56370d61508eaa47ce8cdedb376629e",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 97,
+                      "source_text": "降解产物结构及清洁方法暂未明确。",
+                      "quote": "降解产物结构及清洁方法暂未明确",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          15
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "referent",
+                  "verdict": "supported",
+                  "reason": "原文'降解产物'明确指代该实体，与本地ID e6指称一致。",
+                  "support": [
+                    {
+                      "evidence_id": "3ec46b335096714334daa7af02aef7c0d56370d61508eaa47ce8cdedb376629e",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 97,
+                      "source_text": "降解产物结构及清洁方法暂未明确。",
+                      "quote": "降解产物结构及清洁方法暂未明确",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          15
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                },
+                {
+                  "name": "subject_role",
+                  "verdict": "supported",
+                  "reason": "在清洁验证语境下，降解产物是评估的对象，符合subject_role。",
+                  "support": [
+                    {
+                      "evidence_id": "3ec46b335096714334daa7af02aef7c0d56370d61508eaa47ce8cdedb376629e",
+                      "table_path": null,
+                      "row_0_based": null,
+                      "column_0_based": null,
+                      "paragraph_1_based": 97,
+                      "source_text": "降解产物结构及清洁方法暂未明确。",
+                      "quote": "降解产物结构及清洁方法暂未明确",
+                      "context_text": null,
+                      "exact_intervals": [
+                        [
+                          0,
+                          15
+                        ]
+                      ],
+                      "unique_exact_quote": true
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "frozen_entities": [
+        {
+          "local_id": "e1",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/OxidativeDegradation",
+          "representation": "mention",
+          "identifier_claims": [],
+          "mentions": [
+            {
+              "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+              "table_path": null,
+              "row_0_based": null,
+              "column_0_based": null,
+              "paragraph_1_based": 96,
+              "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+              "quote": "氧化",
+              "context_text": null,
+              "exact_intervals": [
+                [
+                  15,
+                  17
+                ],
+                [
+                  44,
+                  46
+                ]
+              ],
+              "unique_exact_quote": false
+            }
+          ],
+          "record_components": []
+        },
+        {
+          "local_id": "e2",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/PhotoDegradation",
+          "representation": "mention",
+          "identifier_claims": [],
+          "mentions": [
+            {
+              "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+              "table_path": null,
+              "row_0_based": null,
+              "column_0_based": null,
+              "paragraph_1_based": 96,
+              "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+              "quote": "光照",
+              "context_text": null,
+              "exact_intervals": [
+                [
+                  18,
+                  20
+                ],
+                [
+                  47,
+                  49
+                ]
+              ],
+              "unique_exact_quote": false
+            }
+          ],
+          "record_components": []
+        },
+        {
+          "local_id": "e3",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ThermalDegradation",
+          "representation": "mention",
+          "identifier_claims": [],
+          "mentions": [
+            {
+              "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+              "table_path": null,
+              "row_0_based": null,
+              "column_0_based": null,
+              "paragraph_1_based": 96,
+              "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+              "quote": "高温",
+              "context_text": null,
+              "exact_intervals": [
+                [
+                  21,
+                  23
+                ],
+                [
+                  50,
+                  52
+                ]
+              ],
+              "unique_exact_quote": false
+            }
+          ],
+          "record_components": []
+        },
+        {
+          "local_id": "e4",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/AlkalineDegradation",
+          "representation": "mention",
+          "identifier_claims": [],
+          "mentions": [
+            {
+              "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+              "table_path": null,
+              "row_0_based": null,
+              "column_0_based": null,
+              "paragraph_1_based": 96,
+              "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+              "quote": "碱",
+              "context_text": null,
+              "exact_intervals": [
+                [
+                  5,
+                  6
+                ]
+              ],
+              "unique_exact_quote": true
+            }
+          ],
+          "record_components": []
+        },
+        {
+          "local_id": "e5",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/AcidDegradation",
+          "representation": "mention",
+          "identifier_claims": [],
+          "mentions": [
+            {
+              "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+              "table_path": null,
+              "row_0_based": null,
+              "column_0_based": null,
+              "paragraph_1_based": 96,
+              "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+              "quote": "酸",
+              "context_text": null,
+              "exact_intervals": [
+                [
+                  3,
+                  4
+                ]
+              ],
+              "unique_exact_quote": true
+            }
+          ],
+          "record_components": []
+        },
+        {
+          "local_id": "e6",
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway",
+          "representation": "mention",
+          "identifier_claims": [],
+          "mentions": [
+            {
+              "evidence_id": "3ec46b335096714334daa7af02aef7c0d56370d61508eaa47ce8cdedb376629e",
+              "table_path": null,
+              "row_0_based": null,
+              "column_0_based": null,
+              "paragraph_1_based": 97,
+              "source_text": "降解产物结构及清洁方法暂未明确。",
+              "quote": "降解产物",
+              "context_text": null,
+              "exact_intervals": [
+                [
+                  0,
+                  4
+                ]
+              ],
+              "unique_exact_quote": true
+            }
+          ],
+          "record_components": []
+        }
+      ],
+      "frozen_properties": [],
+      "claim_issues": {
+        "e1": [
+          "ambiguous_source_quote"
+        ],
+        "e2": [
+          "ambiguous_source_quote"
+        ],
+        "e3": [
+          "ambiguous_source_quote"
+        ]
+      },
+      "observations": [
+        {
+          "subject_id": "e1",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/degradationCondition",
+          "quote": {
+            "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+            "text": "在氧化",
+            "context_text": null
+          },
+          "kind": "missing",
+          "reason": "原文仅提及应力类型，未提供具体试验条件如浓度、时间等",
+          "quote_check": {
+            "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+            "table_path": null,
+            "row_0_based": null,
+            "column_0_based": null,
+            "paragraph_1_based": 96,
+            "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+            "quote": "在氧化",
+            "context_text": null,
+            "exact_intervals": [
+              [
+                14,
+                17
+              ]
+            ],
+            "unique_exact_quote": true
+          }
+        },
+        {
+          "subject_id": "e2",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/degradationCondition",
+          "quote": {
+            "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+            "text": "在光照",
+            "context_text": null
+          },
+          "kind": "missing",
+          "reason": "原文仅提及应力类型，未提供具体试验条件如光源、光谱、照射量等",
+          "quote_check": {
+            "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+            "table_path": null,
+            "row_0_based": null,
+            "column_0_based": null,
+            "paragraph_1_based": 96,
+            "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+            "quote": "在光照",
+            "context_text": null,
+            "exact_intervals": [],
+            "unique_exact_quote": false
+          }
+        },
+        {
+          "subject_id": "e3",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/degradationCondition",
+          "quote": {
+            "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+            "text": "在...高温",
+            "context_text": null
+          },
+          "kind": "missing",
+          "reason": "原文仅提及应力类型，未提供具体温度值及作用时间",
+          "quote_check": {
+            "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+            "table_path": null,
+            "row_0_based": null,
+            "column_0_based": null,
+            "paragraph_1_based": 96,
+            "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+            "quote": "在...高温",
+            "context_text": null,
+            "exact_intervals": [],
+            "unique_exact_quote": false
+          }
+        },
+        {
+          "subject_id": "e4",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/degradationCondition",
+          "quote": {
+            "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+            "text": "在...碱",
+            "context_text": null
+          },
+          "kind": "missing",
+          "reason": "原文仅提及应力类型，未提供具体碱浓度、pH值、温度、时间等条件",
+          "quote_check": {
+            "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+            "table_path": null,
+            "row_0_based": null,
+            "column_0_based": null,
+            "paragraph_1_based": 96,
+            "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+            "quote": "在...碱",
+            "context_text": null,
+            "exact_intervals": [],
+            "unique_exact_quote": false
+          }
+        },
+        {
+          "subject_id": "e5",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/degradationCondition",
+          "quote": {
+            "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+            "text": "在酸",
+            "context_text": null
+          },
+          "kind": "missing",
+          "reason": "原文仅提及应力类型，未提供具体酸浓度、pH值、温度、时间等条件",
+          "quote_check": {
+            "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+            "table_path": null,
+            "row_0_based": null,
+            "column_0_based": null,
+            "paragraph_1_based": 96,
+            "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+            "quote": "在酸",
+            "context_text": null,
+            "exact_intervals": [
+              [
+                2,
+                4
+              ]
+            ],
+            "unique_exact_quote": true
+          }
+        },
+        {
+          "subject_id": "e6",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/degradationCondition",
+          "quote": {
+            "evidence_id": "3ec46b335096714334daa7af02aef7c0d56370d61508eaa47ce8cdedb376629e",
+            "text": "降解产物",
+            "context_text": null
+          },
+          "kind": "missing",
+          "reason": "原文未说明该降解产物对应的具体降解途径及条件，仅陈述结构未明确",
+          "quote_check": {
+            "evidence_id": "3ec46b335096714334daa7af02aef7c0d56370d61508eaa47ce8cdedb376629e",
+            "table_path": null,
+            "row_0_based": null,
+            "column_0_based": null,
+            "paragraph_1_based": 97,
+            "source_text": "降解产物结构及清洁方法暂未明确。",
+            "quote": "降解产物",
+            "context_text": null,
+            "exact_intervals": [
+              [
+                0,
+                4
+              ]
+            ],
+            "unique_exact_quote": true
+          }
+        },
+        {
+          "subject_id": "e6",
+          "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/majorDegradant",
+          "quote": {
+            "evidence_id": "3ec46b335096714334daa7af02aef7c0d56370d61508eaa47ce8cdedb376629e",
+            "text": "降解产物结构及清洁方法暂未明确",
+            "context_text": null
+          },
+          "kind": "unknown",
+          "reason": "原文声明降解产物结构未明确，无法确定具体杂质标识",
+          "quote_check": {
+            "evidence_id": "3ec46b335096714334daa7af02aef7c0d56370d61508eaa47ce8cdedb376629e",
+            "table_path": null,
+            "row_0_based": null,
+            "column_0_based": null,
+            "paragraph_1_based": 97,
+            "source_text": "降解产物结构及清洁方法暂未明确。",
+            "quote": "降解产物结构及清洁方法暂未明确",
+            "context_text": null,
+            "exact_intervals": [
+              [
+                0,
+                15
+              ]
+            ],
+            "unique_exact_quote": true
+          }
+        }
+      ],
+      "outcome": {
+        "semantic_outcome": "supported",
+        "complete": false,
+        "reason_code": "ambiguous_source_quote",
+        "reason": "ambiguous_source_quote；type_not_supported",
+        "model_calls": 3
+      },
+      "published_nodes": [
+        {
+          "entity_id": "3ca0c80d1363b82f9ea57375cd9880612efae91a3912558f55c9538bc3dc92b2",
+          "revision": 1,
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/AlkalineDegradation",
+          "label": "碱",
+          "identity_status": "document_local",
+          "decision_status": "supported",
+          "independent_review": "unreviewed",
+          "grounding_kind": "mention"
+        },
+        {
+          "entity_id": "a27d6e5a71f034385c565a8327c24cf313481319d35dadf5096bffc7d99837df",
+          "revision": 1,
+          "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/AcidDegradation",
+          "label": "酸",
+          "identity_status": "document_local",
+          "decision_status": "supported",
+          "independent_review": "unreviewed",
+          "grounding_kind": "mention"
+        }
+      ],
+      "published_counts": {
+        "nodes": 2,
+        "properties": 0,
+        "edges": 0,
+        "relationship_groups": 0
+      },
+      "independent_conclusions": [
+        "P96明确区分酸/碱比较稳定与氧化/光照/高温有降解；不能跨分句把后者发生谓语赋给前者。",
+        "酸与碱单字提及虽然唯一定位，但其作为AcidDegradation和AlkalineDegradation的过程类型不成立；系统实际发布两节点属于独立质量失败。",
+        "attempt2以比较稳定支持降解类型，attempt3理由改写成酸或碱条件下有降解；这是语义错配，并非原文引文不存在。",
+        "氧化、光照、高温在发生与避免环境两个位置各出现一次；未给context_text时ambiguous_source_quote拒绝正确，但真实明示的降解类型未被登记。",
+        "降解产物与降解途径不是同一实体层级；P97结构及清洁方法暂未明确，不支持已表征路径，type未决合理。",
+        "部分missing观察引用在光照、在...高温、在...碱等非原文连续文字；不能作为可定位证据。",
+        "尚无关系实线；本组新增数量不能视为质量提升。"
+      ]
+    }
+  ],
+  "frozen_ontology_definitions": {
+    "ontology_snapshot_id": "54c748b83397a74fd7268f96c8f72826c572bc0b5a457fec8e8e18da055831f2",
+    "types": [
+      {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/AcidDegradation",
+        "label": "酸降解",
+        "description": "在酸性应力条件下发生的药物降解过程，用于研究酸敏感性和相关降解产物；具体条件由试验记录限定。",
+        "parent_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway"
+        ],
+        "declared_properties": [],
+        "declared_relationships": [],
+        "source_hash": "1931f7e54ce922ed58aa2c6c794c3874aa2062cc2bb662954f35b19bab1d3da3"
+      },
+      {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/AlkalineDegradation",
+        "label": "碱降解",
+        "description": "在碱性应力条件下发生的药物降解过程，用于研究碱敏感性和相关降解产物；具体条件由试验记录限定。",
+        "parent_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway"
+        ],
+        "declared_properties": [],
+        "declared_relationships": [],
+        "source_hash": "c3c5e26db77e61d5ee77416e078203415c0f6b198412f759f54b5bda6aec9c66"
+      },
+      {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway",
+        "label": "降解途径",
+        "description": "A characterized forced-degradation pathway of the drug substance used for cleaning validation and stability assessment.",
+        "parent_iris": [],
+        "declared_properties": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/degradationCondition",
+            "label": "降解条件",
+            "description": "E.g. 0.1mol/L HCl, 60℃/4h.",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ],
+            "canonical_unit": null,
+            "identity_key": false
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/degradationPercent",
+            "label": "降解百分比（%）",
+            "description": "在所述降解试验条件下报告的降解程度，以百分数表示；计算基准和检测方法应结合相应试验说明理解。",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": null,
+            "identity_key": false
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/majorDegradant",
+            "label": "主要降解杂质",
+            "description": "E.g. Imp-A, Imp-B, Imp-C.",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ],
+            "canonical_unit": null,
+            "identity_key": false
+          }
+        ],
+        "declared_relationships": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/hasDegradationPathway",
+            "label": "含降解途径",
+            "description": "Links a CMC report or parent degradation pathway to its sub-pathways.",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "relationship",
+            "range_class_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway"
+            ],
+            "range_classes": []
+          }
+        ],
+        "source_hash": "1e0220730ada64bb6996e91504c71d7bec3f407bd7408db988f8a3a70a7c847c"
+      },
+      {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/OxidativeDegradation",
+        "label": "氧化降解",
+        "description": "在氧化剂或其他氧化应力作用下发生的药物降解过程，用于研究氧化敏感性和相关降解产物。",
+        "parent_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway"
+        ],
+        "declared_properties": [],
+        "declared_relationships": [],
+        "source_hash": "f8cc14a7548f02618e12e72f6f29b514fa8340203ea7eaef5034a0f9917145ee"
+      },
+      {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/PhotoDegradation",
+        "label": "光降解",
+        "description": "在光照应力作用下发生的药物降解过程，其评价与光源、光谱、照射量及其他试验条件有关。",
+        "parent_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway"
+        ],
+        "declared_properties": [],
+        "declared_relationships": [],
+        "source_hash": "526de57f6898aa009942c7be52d01bd014feda7e1b92947a57640ef50a1b3104"
+      },
+      {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData",
+        "label": "共线评估数据",
+        "description": "Aggregated toxicological and dosing data required for shared-line (SLPRA) production risk assessment: NOAEL, F-factor, PDE, daily dose, and degradation profiles.",
+        "parent_iris": [],
+        "declared_properties": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/activeIngredient",
+            "label": "活性成分（API）",
+            "description": "共线评估数据所针对的活性成分或原料药的名称、代号等文字标识；本字段为名称记录，不单独证明不同记录指向同一批次或实例。",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ],
+            "canonical_unit": null,
+            "identity_key": false
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/dosingRegimen",
+            "label": "给药方案",
+            "description": "E.g. QD口服, 21天为一个治疗周期.",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ],
+            "canonical_unit": null,
+            "identity_key": false
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f1",
+            "label": "F1",
+            "description": "PDE 推导中用于考虑试验物种与人之间差异的无量纲调整因子 F1，其取值依赖所采用的外推方法和证据。",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": null,
+            "identity_key": false
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f2",
+            "label": "F2",
+            "description": "PDE 推导中用于考虑人群个体间差异的无量纲调整因子 F2，其取值应有相应评价依据。",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": null,
+            "identity_key": false
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f3",
+            "label": "F3",
+            "description": "PDE 推导中用于考虑研究持续时间及其对预期长期暴露支持程度的无量纲调整因子 F3。",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": null,
+            "identity_key": false
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f4",
+            "label": "F4",
+            "description": "PDE 推导中用于考虑毒性效应性质或严重程度等特定因素的无量纲调整因子 F4，适用情形和取值由毒理评价确定。",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": null,
+            "identity_key": false
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/f5",
+            "label": "F5",
+            "description": "PDE 推导中，在未建立未观察到不良作用剂量（NOAEL）、需依据最低观察到不良作用剂量（LOAEL）等数据外推时，用于考虑起始点不确定性的无量纲调整因子 F5；具体适用范围和取值按所采用的毒理学推导方法确定。",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": null,
+            "identity_key": false
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/humanEquivalentDose_mg_per_kg",
+            "label": "人体等效剂量（mg/kg）",
+            "description": "依据适用的种属间外推方法由非临床剂量换算的人体等效剂量，以每千克体重的毫克数记录；该值不直接等同于临床推荐剂量或起始剂量。",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": "mg/kg",
+            "identity_key": false
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/noaelDuration",
+            "label": "NOAEL 试验周期",
+            "description": "E.g. 28天重复给药.",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ],
+            "canonical_unit": null,
+            "identity_key": false
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/noaelSpecies",
+            "label": "NOAEL 动物种属",
+            "description": "E.g. SD大鼠, Beagle犬.",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ],
+            "canonical_unit": null,
+            "identity_key": false
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/noael_mg_per_kg_per_day",
+            "label": "NOAEL（mg/kg/天）",
+            "description": "No Observed Adverse Effect Level from repeat-dose toxicity study.",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": "mg/kg/day",
+            "identity_key": false
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/oebBand",
+            "label": "OEB",
+            "description": "共线评估数据记录的职业暴露分级（OEB）代码或名称；分级依据和浓度界限由所采用的体系确定，不能直接作为职业暴露限值数值。",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ],
+            "canonical_unit": null,
+            "identity_key": false
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/pde_mg_per_day",
+            "label": "PDE（mg/天）",
+            "description": "共线评估数据中采用的允许每日暴露量（PDE），表示基于毒理学评价，在规定暴露途径等条件下每日终生暴露而预期不产生明显健康风险的剂量，以毫克/天记录。",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": "mg/day",
+            "identity_key": false
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/proposedMaxDose_mg",
+            "label": "拟定最高剂量（mg）",
+            "description": "共线评估资料中记录的拟定最高临床给药剂量，以毫克表示；给药频次和剂量口径由相应方案限定，不自动解释为最大日剂量。",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": "mg",
+            "identity_key": false
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/proposedStartingDose_mg",
+            "label": "拟定临床起始剂量（mg）",
+            "description": "共线评估资料中记录的拟定临床起始给药剂量，以毫克表示；给药频次、给药途径及按次或其他剂量口径由给药方案限定。",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": "mg",
+            "identity_key": false
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/safetyFactor",
+            "label": "安全系数（F值）",
+            "description": "Composite safety factor per ICH S9 (oncology) or standard PDE derivation: product of F1-F5.",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#decimal"
+            ],
+            "canonical_unit": null,
+            "identity_key": false
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/sourceReference",
+            "label": "来源",
+            "description": "共线评估数据所依据的研究报告、文献或其他资料的引用信息，用于确定数据出处及适用背景。",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ],
+            "canonical_unit": null,
+            "identity_key": false
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/studyType",
+            "label": "试验项目",
+            "description": "提供该项毒理学数据的研究或试验类型，以文字记录，例如重复给药毒性试验；具体种属、周期和途径由相关研究信息限定。",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ],
+            "canonical_unit": null,
+            "identity_key": false
+          }
+        ],
+        "declared_relationships": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/basedOnToxicityProfile",
+            "label": "基于毒性特征",
+            "description": "Cross-module link from shared-line assessment data to the drug module's toxicity profile. Distinct local name from slpra-drug:hasToxicityProfile (API → ToxicityProfile).",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug-development/SharedLineAssessmentData"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "relationship",
+            "range_class_iris": [
+              "https://ontology.pharma-gmp.cn/slpra/drug/ToxicityProfile"
+            ],
+            "range_classes": []
+          }
+        ],
+        "source_hash": "537b5617511fdd80218f2220e117c60848d683e05d72b7ba15da2769156b0998"
+      },
+      {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/ThermalDegradation",
+        "label": "热降解",
+        "description": "在热应力作用下发生的药物降解过程，其评价与温度、作用时间及试验环境有关。",
+        "parent_iris": [
+          "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway"
+        ],
+        "declared_properties": [],
+        "declared_relationships": [],
+        "source_hash": "d157628d0b29f9fbb68d1bce52ca7abf85e1700b1b2703fc9ffe749ece777aeb"
+      },
+      {
+        "iri": "https://ontology.pharma-gmp.cn/slpra/drug/Residue",
+        "label": "残留物",
+        "description": "生产、使用、处理或清洁后仍留存在设备、器具或相关环境表面的物质，可包括药物成分、清洁剂、微生物和颗粒等。",
+        "parent_iris": [],
+        "declared_properties": [
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/residueSolubility",
+            "label": "残留物溶解度",
+            "description": "Qualitative solubility descriptor: 易溶, 溶解, 微溶, 几乎不溶.",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug/Residue"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ],
+            "canonical_unit": null,
+            "identity_key": false
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/residueSolubilityTemperature",
+            "label": "溶解度测试温度",
+            "description": "评价残留物在指定介质中溶解度时采用的试验温度，以文本保留温度值、单位或定性条件。",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug/Residue"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ],
+            "canonical_unit": null,
+            "identity_key": false
+          },
+          {
+            "iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/residueSolvent",
+            "label": "残留物清洗溶剂",
+            "description": "Solvent used to dissolve the residue for cleaning, e.g. 丙酮, 乙醇+水, 丙酮+2N三氟乙酸水溶液.",
+            "declared_by": [
+              "https://ontology.pharma-gmp.cn/slpra/drug/Residue"
+            ],
+            "multiplicity": "unspecified",
+            "min_count": null,
+            "max_count": null,
+            "constraint_status": "resolved",
+            "kind": "property",
+            "datatype_iris": [
+              "http://www.w3.org/2001/XMLSchema#string"
+            ],
+            "canonical_unit": null,
+            "identity_key": false
+          }
+        ],
+        "declared_relationships": [],
+        "source_hash": "b2f98cd00466a98ef6b1dfefb57f615229b99095f0abed859d8c146cf8985d01"
+      }
+    ]
+  },
+  "graph_snapshot": {
+    "run_revision": 198,
+    "event_head": 14,
+    "summary": {
+      "relationships": {
+        "total": 12,
+        "supported": 0,
+        "completed": 0,
+        "percent": 0.0
+      },
+      "properties": {
+        "total": 202,
+        "supported": 2,
+        "completed": 0,
+        "percent": 0.0
+      },
+      "pending_expansion_count": 21,
+      "notes": [
+        "分母是冻结本体在当前主体与范围上的识别目标，不表示每个字段在文档中必填。",
+        "完整度按完成目标数计算；候选记录覆盖不等于开放文档召回率。",
+        "未知多值成员总数保持未完成；待展开分支不计为已完成。",
+        "否定、条件、计划及备选关系保留原图标签；虚拟目标不是事实。"
+      ]
+    },
+    "counts": {
+      "entities": 10,
+      "properties": 2,
+      "relationships": 0,
+      "relationship_groups": 0
+    }
+  },
+  "input_file_sha256": {
+    "review-20bf2d25-results-05.json": "e6d504854a5418544fd3e59176285aced69478cf92a29a37f5b45bb834f9c58f",
+    "review-20bf2d25-target-05.json": "0e53604c7f44a808419493a8ffc01735caf4d5312fe217ecd3d2050ed0620fee",
+    "review-20bf2d25-type-definitions-04-06.json": "1f892dea06314cb1289509f7252e2f60e1819572e30016ee39a718e6f36b039d"
+  }
+}

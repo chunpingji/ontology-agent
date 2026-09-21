@@ -27,27 +27,6 @@ from app.services.extraction.ontology_guided.ontology_lexical import (
     build_lexical_context,
 )
 
-CMC_REPORT_IRI = "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport"
-CMC_DESCRIBES_IRI = "https://ontology.pharma-gmp.cn/slpra/drug-development/describes"
-DRUG_PRODUCT_IRI = "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct"
-CMC_DESCRIBES_SCOPE_VERSION = "drug-product-only-v1"
-
-
-def scope_cmc_describes(predicate: PredicateSpec, subject: SubjectRef | str) -> PredicateSpec:
-    """Limit this task's type granularity without changing the frozen ontology."""
-    if not (
-        isinstance(predicate, EdgeSpec)
-        and (subject if isinstance(subject, str) else subject.class_iri) == CMC_REPORT_IRI
-        and predicate.iri == CMC_DESCRIBES_IRI
-        and DRUG_PRODUCT_IRI in predicate.range_class_iris
-        and predicate.constraint_status == "resolved"
-    ):
-        return predicate
-    return predicate.model_copy(update={
-        "range_class_iris": [DRUG_PRODUCT_IRI],
-        "range_classes": [c for c in predicate.range_classes if c.iri == DRUG_PRODUCT_IRI],
-    })
-
 
 def _safe_call(target: object, name: str, *args: Any, default: Any = None) -> Any:
     method = getattr(target, name, None)
@@ -483,7 +462,7 @@ def _merge_relationships(
 
 
 def compile_class_predicates(
-    ontology: OntologySnapshot, class_iri: str, *, cmc_describes_type_scope: bool = False,
+    ontology: OntologySnapshot, class_iri: str,
 ) -> tuple[list[SlotSpec], list[EdgeSpec], list[str]]:
     """Project declarations for a type without inventing an instance identity."""
     if class_iri not in ontology.classes:
@@ -502,8 +481,6 @@ def compile_class_predicates(
     relationships = _merge_relationships(
         relationship_declarations, snapshot=ontology, diagnostics=diagnostics,
     )
-    if cmc_describes_type_scope:
-        relationships = [scope_cmc_describes(edge, class_iri) for edge in relationships]
     return properties, relationships, list(dict.fromkeys(diagnostics))
 
 
@@ -512,7 +489,6 @@ def compile_local_menu(
     subject: SubjectRef,
     *,
     engine: object | None = None,
-    cmc_describes_type_scope: bool = False,
 ) -> LocalMenu:
     """Compile exactly one predicate hop for a concrete, typed subject.
 
@@ -525,7 +501,7 @@ def compile_local_menu(
     # querying a mutable engine here would invalidate the run fingerprint.
     _ = engine
     properties, relationships, diagnostics = compile_class_predicates(
-        ontology, subject.class_iri, cmc_describes_type_scope=cmc_describes_type_scope,
+        ontology, subject.class_iri,
     )
     identity = {
         "ontology_snapshot_id": ontology.snapshot_id,

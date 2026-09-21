@@ -68,6 +68,7 @@ from app.schemas.document_analysis_review import (
     PropertyReviewList,
     PropertyReviewResponse,
 )
+from app.schemas.document_target_graph import DocumentTargetGraphResponse
 from app.services.document_analysis.application import (
     DocumentAnalysisApplication,
     DocumentAnalysisError,
@@ -444,6 +445,26 @@ def get_document_analysis_graph(
             app.graph_response(run, projection=projection)
         )
         return _json_model(response, headers={"ETag": etag})
+    except DocumentAnalysisError as exc:
+        return _error(exc)
+
+
+@router.get("/runs/{recognition_run_id}/target-graph", response_model=DocumentTargetGraphResponse)
+def get_document_analysis_target_graph(
+    recognition_run_id: UUID,
+    if_none_match: str | None = Header(default=None, alias="If-None-Match"),
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    app = _application(db)
+    try:
+        run = app.get_run(recognition_run_id, identity.username)
+        app.assert_artifacts_readable(run)
+        etag = graph_etag(run, "target-graph")
+        cached = _if_not_modified(if_none_match, etag)
+        if cached is not None:
+            return cached
+        return _json_model(app.target_graph_response(run), headers={"ETag": etag})
     except DocumentAnalysisError as exc:
         return _error(exc)
 

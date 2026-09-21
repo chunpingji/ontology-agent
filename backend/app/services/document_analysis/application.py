@@ -385,7 +385,6 @@ class DocumentAnalysisApplication:
                         **({"evidence_repair": "evidence-repair-v1",
                             "layered_recognition": "dependency-ready-v1",
                             "source_object_recognition": "source-object-recognition-v1",
-                            "cmc_describes_type_scope": "drug-product-only-v1",
                             "expert_review_repair": "expert-review-repair-v1",
                             "candidate_planning": "sparse-candidates-v1",
                             "incremental_performance": "incremental-performance-v1",
@@ -393,7 +392,6 @@ class DocumentAnalysisApplication:
                                if CURRENT_STATE_STORAGE_VERSION == 4 else
                                {"state_storage_version": 3, "state_baseline_interval": 32}),
                             "semantic_expansion": "bounded-semantic-v1",
-                            "process_granularity": "whole-method-field-v1",
                             "attribute_priority": "source-field-priority-v1",
                             "heuristic_policy": "heuristic-first-v3",
                             **({"heuristic_policy": "heuristic-first-v4",
@@ -794,6 +792,26 @@ class DocumentAnalysisApplication:
                     for item in [*menu.relationships, *menu.properties]
                 ]
         return response
+
+    def target_graph_response(self, run: DocumentAnalysisRun):
+        from app.schemas.document_analysis import GraphArtifactResponse
+        from app.services.document_analysis.target_graph import project_target_graph
+
+        graph = GraphArtifactResponse.model_validate(
+            self.graph_response(run, projection="all_candidates")
+        )
+        frozen = self._artifact_payload(run, "ontology_snapshot")
+        source_id = ((run.artifact_manifest or {}).get("source") or {}).get("artifact_id")
+        source = self.db.get(DocumentAnalysisArtifact, source_id) if source_id else None
+        policy = ((source.payload or {}).get("performance_policy") or {}) if source else {}
+        return project_target_graph(
+            graph=graph, ontology=OntologySnapshot.model_validate(frozen[0]) if frozen else None,
+            document_hash=run.document_hash, root_class_iri=run.root_class_iri,
+            root_class_label=run.root_class_label, filename=run.filename,
+            phase=(policy.get("record_discovery") or {}).get(
+                "graph_phase", "evidence_verification",
+            ),
+        )
 
     def ranking_summary_response(self, run: DocumentAnalysisRun) -> dict[str, Any]:
         summary = self._artifact_payload(run, "ranking_summary")

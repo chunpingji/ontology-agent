@@ -83,7 +83,6 @@ from app.services.extraction.ontology_guided.heuristic_search import (
 )
 from app.services.extraction.ontology_guided.lazy_frontier import slot_key, subject_key
 from app.services.extraction.ontology_guided.ontology_plan import (
-    CMC_DESCRIBES_SCOPE_VERSION,
     compile_local_menu,
 )
 from app.services.extraction.ontology_guided.projection import (
@@ -106,9 +105,9 @@ from app.services.extraction.ontology_guided.record_discovery import (
     RecordDiscoveryPolicy,
     RecordDiscoveryTask,
     compile_discovery_catalog,
-    compile_record_schema_card,
+    compile_partitioned_record_schema_cards,
     reference_pages,
-    resolve_record_property,
+    resolve_record_predicate,
 )
 from app.services.extraction.ontology_guided.records import RecordIndex
 from app.services.extraction.ontology_guided.retrieval import (
@@ -118,6 +117,9 @@ from app.services.extraction.ontology_guided.retrieval import (
 )
 from app.services.extraction.ontology_guided.retrieval_query import QueryMention
 from app.services.extraction.ontology_guided.scheduler import FrontierScheduler, RecognitionTask
+from app.services.extraction.ontology_guided.schema_region_routing import (
+    compile_schema_region_routing,
+)
 from app.services.extraction.ontology_guided.semantic_reranker import (
     RankingPaused,
     RankingPolicy,
@@ -144,6 +146,32 @@ class ModelCallPauseRequested(RuntimeError):
 
 class ExpertRepairBudgetExhausted(RuntimeError):
     """A bounded repair has no authority to reserve another model request."""
+
+
+def semantic_retrieval_plan_key(
+    plan: RetrievalPlan, *, dependency_refs: list[VersionedRef], generation: int,
+) -> str:
+    """Identify plans that would perform the same authorized semantic search.
+
+    Traversal scope IDs are intentionally absent. Their material effect is the
+    exact endpoint/proof dependency set below; a different condition, incoming
+    assertion or proof revision therefore remains a distinct plan.
+    """
+    record_hash = (
+        plan.search_scope_ref["record_hash"]
+        if plan.search_scope_ref is not None else plan.frozen_record_hash
+    )
+    dependencies = sorted({(ref.id, ref.revision) for ref in dependency_refs})
+    return evidence_hash({
+        "subject_ref": {
+            "id": plan.subject.entity_id, "revision": plan.subject.revision,
+        },
+        "predicate_iri": plan.predicate_iri,
+        "record_hash": record_hash,
+        "endpoint_refs": [(plan.subject.entity_id, plan.subject.revision)],
+        "dependency_refs": dependencies,
+        "proof_generation": generation,
+    })
 
 
 class TaskOutcome(EvidenceModel):
@@ -262,7 +290,6 @@ class OntologyGuidedExecutor:
         candidate_policy: str | None = None,
         layered_recognition: bool = False,
         source_object_recognition: bool = False,
-        cmc_describes_type_scope: bool = False,
         current_state: bool = False,
         record_focus_paths=(),
     ):
@@ -271,6 +298,13 @@ class OntologyGuidedExecutor:
         self.record_pipeline = self.recognition_pipeline == RECORD_PIPELINE
         self.record_policy = (getattr(adapter, "record_discovery", None)
                               or RecordDiscoveryPolicy()) if self.record_pipeline else None
+        self.candidate_graph = bool(
+            self.record_policy and self.record_policy.graph_phase == "candidate_graph"
+        )
+        self.evidence_review = bool(
+            self.record_policy and self.record_policy.graph_phase == "evidence_review"
+        )
+        self.independent_entity_traversal = self.candidate_graph or self.evidence_review
         self.record_focus_paths = tuple(tuple(path) for path in record_focus_paths)
         if self.recognition_pipeline not in {None, RECORD_PIPELINE}:
             raise ValueError("unknown_recognition_pipeline")
@@ -295,8 +329,7 @@ class OntologyGuidedExecutor:
         self.phase_interleaving = phase_interleaving
         if max_model_calls_per_record < 1:
             raise ValueError("per-record model budget must be positive")
-        self.max_model_calls_per_record = (min(max_model_calls_per_record, 4)
-                                           if self.tool_protocol else max_model_calls_per_record)
+        self.max_model_calls_per_record = max_model_calls_per_record
         self.priority_paths = list(dict.fromkeys(tuple(path) for path in priority_paths or []))
         self.lazy_frontier = lazy_frontier
         self.template_interleaving = template_interleaving
@@ -307,9 +340,6 @@ class OntologyGuidedExecutor:
         self.adaptive_policy = adaptive_policy
         self.layered_recognition = layered_recognition
         self.source_object_recognition = source_object_recognition
-        self.cmc_describes_type_scope = cmc_describes_type_scope
-        if cmc_describes_type_scope and not source_object_recognition:
-            raise ValueError("CMC describes type scope requires source object recognition")
         if source_object_recognition and not (
             layered_recognition and evidence_repair and incremental_performance
             and candidate_policy and heuristic_policy
@@ -348,8 +378,6 @@ class OntologyGuidedExecutor:
         if layered_recognition:
             self.version += "+" + (DEPENDENCY_READY_VERSION if source_object_recognition
                                    else LAYERED_RECOGNITION_VERSION)
-        if cmc_describes_type_scope:
-            self.version += "+cmc-describes-" + CMC_DESCRIBES_SCOPE_VERSION
         if self.tool_protocol:
             self.version += "+" + TOOL_PROTOCOL_VERSION
         if self.record_pipeline:
@@ -409,7 +437,10 @@ class OntologyGuidedExecutor:
         has_protocol = self.evidence_repair or self.tool_protocol
         call_state_version = 3 if self.batch_policy is not None else (2 if has_protocol else 1)
         active_unit_ref = None
-        discovery_turn = True
+        # A fresh record run first registers the leading root relationship as
+        # waiting for endpoints.  Its exact range can then prioritize the first
+        # entity discovery instead of spending a call on an unrelated region.
+        discovery_turn = not self.record_pipeline
         root_scope = TraversalScope.create() if self.tool_protocol else None
         if self.adaptive_policy is not None:
             self.adaptive_policy.validate_ontology_context(self.ontology)
@@ -491,6 +522,12 @@ class OntologyGuidedExecutor:
 
                 return member_protocol_view(json_value(protocols[owner]), task.task_id)
             return protocols.get(task.claim_lineage_id, {})
+
+        def review_waiting(task):
+            if not self.evidence_review or isinstance(task, RecordDiscoveryTask):
+                return False
+            protocol = task_protocol(task)
+            return bool(protocol.get("discovery_ref") and not protocol.get("verification_ref"))
 
         def task_result_owner(task):
             owner = member_owners.get(task.task_id)
@@ -574,6 +611,7 @@ class OntologyGuidedExecutor:
         applied_epochs = WorkSet() if self.current_state else set()
         unapplied_epochs = {}
         ranking_paused = False
+        review_paused = False
         pending_ranking: RankingPreparation | None = None
         pending_ranking_key: tuple | None = None
         pending_service_state: dict | None = None
@@ -599,53 +637,68 @@ class OntologyGuidedExecutor:
             is_document_root=True,
         )
         frozen_frontier = (resume_state or {}).get("frontier") or {}
-        frozen_type_scope = frozen_frontier.get("cmc_describes_type_scope")
-        if frozen_type_scope not in {None, CMC_DESCRIBES_SCOPE_VERSION}:
-            raise ValueError("unsupported CMC describes type scope")
-        cmc_describes_type_scope = (
-            self.cmc_describes_type_scope if resume_state is None else bool(frozen_type_scope)
-        )
         root_menu = compile_local_menu(
             self.ontology, root_subject, engine=self.engine,
-            cmc_describes_type_scope=cmc_describes_type_scope,
         )
         discovery_catalog = None
         discovery_cards = {}
+        routing_plan = None
         if self.record_pipeline:
             discovery_catalog = compile_discovery_catalog(
                 self.ontology, root_class_iri, max_hops=self.max_hops,
-                cmc_describes_type_scope=cmc_describes_type_scope,
                 focus_paths=self.record_focus_paths,
             )
-            classes = sorted(discovery_catalog.class_depths)
-            group = []
-            for iri in classes:
-                trial = compile_record_schema_card(
-                    self.ontology, class_iris=[*group, iri],
+            route_scopes = []
+            if self.record_policy.schema_region_routing is not None:
+                routing_plan = compile_schema_region_routing(
+                    self.ontology,
+                    root_class_iri,
+                    analysis_scope_ref=discovery_catalog.analysis_scope_ref,
+                    max_hops=self.max_hops,
+                    focus_paths=self.record_focus_paths,
+                )
+                route_scopes = [
+                    # Independent exploration includes descendant classes; each
+                    # registered entity later receives its own frozen menu.
+                    (card.routing_card_id,
+                     card.class_iris if self.independent_entity_traversal
+                     else card.range_class_iris)
+                    for card in routing_plan.routing_cards
+                ]
+            else:
+                route_scopes = [(None, sorted(discovery_catalog.class_depths))]
+
+            execution_ids_by_route = {}
+            for route_id, classes in route_scopes:
+                route_card_ids = []
+                for card in compile_partitioned_record_schema_cards(
+                    self.ontology,
+                    class_iris=classes,
                     analysis_scope_ref=discovery_catalog.analysis_scope_ref,
                     profile=self.adapter.profile,
-                )
-                # Freeze groups before any request. A single oversize class stays
-                # intact and gets an explicit capacity result when attempted.
-                if group and (len(group) >= self.record_policy.max_classes_per_card
-                              or self.adapter.token_counter(trial.model_dump_json())
-                              > self.adapter.max_input_tokens // 3):
-                    card = compile_record_schema_card(
-                        self.ontology, class_iris=group,
-                        analysis_scope_ref=discovery_catalog.analysis_scope_ref,
-                        profile=self.adapter.profile,
-                    )
+                    max_classes_per_card=self.record_policy.max_classes_per_card,
+                    max_card_tokens=self.adapter.max_input_tokens // 3,
+                    token_counter=self.adapter.token_counter,
+                ):
                     discovery_cards[card.schema_card_id] = card
-                    group = []
-                group.append(iri)
-            if group:
-                card = compile_record_schema_card(
-                    self.ontology, class_iris=group,
-                    analysis_scope_ref=discovery_catalog.analysis_scope_ref,
-                    profile=self.adapter.profile,
-                )
-                discovery_cards[card.schema_card_id] = card
+                    route_card_ids.append(card.schema_card_id)
+                if route_id is not None:
+                    execution_ids_by_route[route_id] = sorted(set(route_card_ids))
+            if routing_plan is not None:
+                routing_plan = routing_plan.model_copy(update={
+                    "routing_cards": [
+                        card.model_copy(update={
+                            "execution_card_ids": execution_ids_by_route[card.routing_card_id],
+                        })
+                        for card in routing_plan.routing_cards
+                    ],
+                })
         contextual = self.record_policy.contextual if self.record_policy else None
+        region_property_fields = bool(
+            self.record_policy
+            and self.record_policy.schema_region_routing
+            and self.record_policy.schema_region_routing.property_field_mode == "region_batch"
+        )
         ordinary_cards = list(discovery_cards)
         discovery_slots = []
         attribute_fields = {}
@@ -654,7 +707,7 @@ class OntologyGuidedExecutor:
         reading_sections = {}
         if contextual is not None:
             from .attribute_disambiguation import compile_attribute_card, extract_attribute_fields
-            from .reading_groups import build_reading_groups
+            from .reading_groups import build_reading_groups, build_section_paragraph_groups
             from .table_reading import table_reading_groups
 
             ordinary_cards = list(discovery_cards)
@@ -665,6 +718,28 @@ class OntologyGuidedExecutor:
                 max_records=contextual.max_group_records,
             )
             for group in groups:
+                for identity in group.record_ids:
+                    reading_sources[identity] = list(group.record_ids)
+                    reading_sections[identity] = list(group.section_node_ids)
+            reserved = {
+                identity for group in groups for identity in group.record_ids
+            } | {
+                identity for identities in index.table_lead_ins.values()
+                for identity in identities
+            }
+            section_groups = build_section_paragraph_groups(
+                index,
+                max_group_chars=min(
+                    contextual.max_group_chars,
+                    self.record_policy.schema_region_routing.max_group_chars,
+                ) if self.record_policy.schema_region_routing else contextual.max_group_chars,
+                max_records=min(
+                    contextual.max_group_records,
+                    self.record_policy.schema_region_routing.max_group_records,
+                ) if self.record_policy.schema_region_routing else contextual.max_group_records,
+                excluded_record_ids=reserved,
+            )
+            for group in section_groups:
                 for identity in group.record_ids:
                     reading_sources[identity] = list(group.record_ids)
                     reading_sections[identity] = list(group.section_node_ids)
@@ -680,9 +755,9 @@ class OntologyGuidedExecutor:
                     reading_sections[identity] = []
             for record in index.records:
                 reading_sources.setdefault(record.record_id, [record.record_id])
-            for field in extract_attribute_fields(
+            for field in ([] if self.independent_entity_traversal else extract_attribute_fields(
                 index, property_labels=labels, reading_groups=groups,
-            ):
+            )):
                 attribute_fields[field.field_id] = field
                 # A merged table cell may belong to multiple logical rows. All
                 # those views must defer the same physical value, not just its
@@ -696,10 +771,13 @@ class OntologyGuidedExecutor:
                     )
                 for identity in sorted(field_records):
                     deferred_fields.setdefault(identity, []).append(field)
-            exclusive = {field.record_id for field in attribute_fields.values()
-                         if field.exclusive_record}
-            # A physical field is admitted once, outside the record × class-card product.
+            exclusive = ({field.record_id for field in attribute_fields.values()
+                          if field.exclusive_record} if not region_property_fields else set())
+            # Legacy frozen runs schedule a physical field separately. New
+            # region-batch runs attach its exact field card to the owning source
+            # group so entity discovery and property ownership share one call.
             field_slots_by_group = {}
+            field_cards_by_group = {}
             for field in attribute_fields.values():
                 card = compile_attribute_card(
                     field, self.ontology, class_iris=list(discovery_catalog.class_depths),
@@ -708,10 +786,13 @@ class OntologyGuidedExecutor:
                 )
                 discovery_cards[card.schema_card_id] = card
                 group_key = tuple(reading_sources[field.record_id])
-                slot = (
-                    [field.record_id], [card.schema_card_id], field.field_id,
-                )
-                field_slots_by_group.setdefault(group_key, []).append(slot)
+                if region_property_fields:
+                    field_cards_by_group.setdefault(group_key, []).append(card.schema_card_id)
+                else:
+                    slot = (
+                        [field.record_id], [card.schema_card_id], field.field_id,
+                    )
+                    field_slots_by_group.setdefault(group_key, []).append(slot)
             # Only source groups and unique fields exist before retrieval; the
             # ordinary groups contain no preallocated class-card combinations.
             admitted = set()
@@ -723,15 +804,22 @@ class OntologyGuidedExecutor:
                 admitted.add(group_key)
                 sources = [identity for identity in group_key if identity not in exclusive]
                 if sources:
-                    discovery_slots.append((sources, [], None))
-                    discovery_slots.extend(pending_field_slots)
-                    pending_field_slots = []
-                    discovery_slots.extend(field_slots_by_group.pop(group_key, []))
+                    discovery_slots.append((
+                        sources,
+                        sorted(set(field_cards_by_group.pop(group_key, []))),
+                        None,
+                    ))
+                    if not region_property_fields:
+                        discovery_slots.extend(pending_field_slots)
+                        pending_field_slots = []
+                        discovery_slots.extend(field_slots_by_group.pop(group_key, []))
                 else:
-                    pending_field_slots.extend(field_slots_by_group.pop(group_key, []))
-            discovery_slots.extend(pending_field_slots)
-            for slots in field_slots_by_group.values():
-                discovery_slots.extend(slots)
+                    if not region_property_fields:
+                        pending_field_slots.extend(field_slots_by_group.pop(group_key, []))
+            if not region_property_fields:
+                discovery_slots.extend(pending_field_slots)
+                for slots in field_slots_by_group.values():
+                    discovery_slots.extend(slots)
         discovery_search = None
         if self.record_pipeline:
             from .record_search import RecordSearch
@@ -741,6 +829,8 @@ class OntologyGuidedExecutor:
             discovery_search = RecordSearch(
                 discovery_slots, cards=discovery_cards, ordinary_cards=ordinary_cards,
                 ontology=self.ontology, index=index, policy=self.record_policy,
+                routing_cards=routing_plan.routing_cards if routing_plan is not None else (),
+                metadata=metadata if routing_plan is not None else None,
             )
         frozen_layered = frozen_frontier.get("layered_recognition")
         if frozen_layered and frozen_layered.get("version") not in {
@@ -749,6 +839,9 @@ class OntologyGuidedExecutor:
             raise ValueError("unsupported layered recognition policy")
         layered_recognition = (self.layered_recognition if resume_state is None
                                else frozen_layered is not None)
+        if self.independent_entity_traversal:
+            # Candidate exploration does not depend on proving an ancestor edge.
+            layered_recognition = False
         dependency_ready = (self.source_object_recognition if resume_state is None else
                             (frozen_layered or {}).get("version") == DEPENDENCY_READY_VERSION)
         recognition_order = (DEPENDENCY_READY_VERSION if dependency_ready
@@ -815,6 +908,7 @@ class OntologyGuidedExecutor:
                if self.adaptive_policy else {}),
         }) if self.current_state else {}
         search_tasks = work_map()
+        semantic_plan_keys: dict[str, tuple] = {}
         active_hop = 0
         layer_phase = "ready" if dependency_ready else "property"
         registered_subjects = work_map({
@@ -872,6 +966,17 @@ class OntologyGuidedExecutor:
             if dependency_ready or not layered_recognition or key in expert_reopened_slots:
                 return True
             registration = registered_subjects.get(key[:-1])
+            if (
+                self.record_pipeline
+                and registration
+                and registration["binding_refs"]
+                and predicates[key].kind == "property"
+            ):
+                # Entity-only region discovery intentionally omits attributes.
+                # Once an exact incoming relation proves the entity's graph
+                # membership, its still-missing local properties may run
+                # without waiting for every unrelated root relation to finish.
+                return subject_is_active(plans[key].subject, registration.get("scope"))
             return bool(registration and registration["hop"] == active_hop
                         and predicates[key].kind == layer_phase)
 
@@ -1057,8 +1162,45 @@ class OntologyGuidedExecutor:
                         rid: sources for rid in source_records
                         if (sources := explicit_attribute_sources(index, rid, slot, owner_refs))
                     }
+            subject_ref = VersionedRef(id=subject.entity_id, revision=subject.revision)
+
+            def pending_calibration(predicate_iri: str) -> bool:
+                """Leave source observations to their existing calibration lineage."""
+                expected = subject_ref.model_dump(mode="json")
+                return any(
+                    candidate.get("status") in {"pending", "rejected_mapping"}
+                    and any(
+                        option.get("subject_ref") == expected
+                        and option.get("predicate_iri") == predicate_iri
+                        for option in candidate.get("options", [])
+                    )
+                    for row in record_discovery.values()
+                    for candidate in row.get("attribute_candidates", [])
+                )
+
+            missing_properties = [
+                predicate for predicate in menu.properties
+                if not any(
+                    candidate.subject_ref == subject_ref
+                    and candidate.predicate_iri == predicate.iri
+                    and candidate.decision_status == "supported"
+                    and effective_proof_gate(candidate)
+                    and dependency_index.is_valid(versioned_key(
+                        candidate.candidate_id, candidate.revision,
+                    ))
+                    for candidate in properties.values()
+                )
+                and not pending_calibration(predicate.iri)
+            ]
             ordered_menu = sorted([
-                *menu.relationships, *([] if self.record_pipeline else menu.properties),
+                *menu.relationships,
+                *(
+                    missing_properties
+                    if not self.candidate_graph
+                    and (self.evidence_review or not self.record_pipeline
+                         or binding_edge is not None)
+                    else []
+                ),
             ],
                                   key=lambda item: (
                                       not bool(attribute_sources.get(
@@ -1068,12 +1210,18 @@ class OntologyGuidedExecutor:
             # Preferences only determine the first opportunity in each rotation;
             # the full menu, both phases and source exploration remain scheduled.
             for predicate in ordered_menu:
-                if self.record_pipeline and not any(
+                if self.record_pipeline and predicate.kind == "relationship" and not any(
                     source == subject.class_iri and iri == predicate.iri
                     for source, iri, _target, _depth in discovery_catalog.relation_routes
                 ):
                     continue
-                if layered_recognition and not dependency_ready and predicate.kind != layer_phase:
+                bound_record_property = (
+                    self.record_pipeline
+                    and binding_edge is not None
+                    and predicate.kind == "property"
+                )
+                if (layered_recognition and not dependency_ready
+                        and predicate.kind != layer_phase and not bound_record_property):
                     continue
                 if self.predicate_filter is not None and not self.predicate_filter(
                     subject, predicate, hop
@@ -1107,6 +1255,41 @@ class OntologyGuidedExecutor:
                 validate_record_universe(plan, index)
                 if self.current_state:
                     plan = enable_plan_parts(plan)
+                plan_dependencies = (
+                    [
+                        VersionedRef(
+                            id=binding_edge.candidate_id, revision=binding_edge.revision,
+                        ),
+                        binding_edge.subject_ref,
+                        *(
+                            binding_edge.object_refs
+                            if isinstance(binding_edge, GraphRelationshipGroup)
+                            else [binding_edge.object_ref]
+                        ),
+                        *([binding_edge.proof_ref] if binding_edge.proof_ref else []),
+                        *binding_edge.decision_refs,
+                        *binding_edge.dependency_refs,
+                    ]
+                    if binding_edge else []
+                )
+                if self.tool_protocol:
+                    plan_dependencies.extend(
+                        ref for step in scope.members
+                        for ref in (step.relation_ref, step.member_ref)
+                    )
+                semantic_key = semantic_retrieval_plan_key(
+                    plan, dependency_refs=plan_dependencies, generation=generation,
+                )
+                equivalent = semantic_plan_keys.get(semantic_key)
+                if equivalent is not None and equivalent != key:
+                    events.append(("retrieval_plan_deduplicated", {
+                        "plan_id": plan.plan_id,
+                        "canonical_slot": list(equivalent),
+                        "duplicate_slot": list(key),
+                        "semantic_plan_key": semantic_key,
+                    }))
+                    continue
+                semantic_plan_keys[semantic_key] = key
                 plans[key] = plan
                 # Physical mentions keep their original immutable observation.
                 # Admission through a complete exact incoming assertion supplies
@@ -1125,21 +1308,8 @@ class OntologyGuidedExecutor:
                             if binding_edge or self.record_pipeline else []
                         )
                     ],
-                    "dependency_refs": (
-                        [
-                            VersionedRef(
-                                id=binding_edge.candidate_id, revision=binding_edge.revision
-                            ),
-                            *([binding_edge.proof_ref] if binding_edge.proof_ref else []),
-                        ]
-                        if binding_edge else []
-                    ),
+                    "dependency_refs": list(plan_dependencies),
                 }
-                if self.tool_protocol:
-                    ranking_contexts[plan.plan_id]["dependency_refs"].extend(
-                        ref for step in scope.members
-                        for ref in (step.relation_ref, step.member_ref)
-                    )
                 predicates[key] = predicate
                 events.append(("retrieval_plan_created", plan.model_dump(mode="json")))
                 dependency_hash = evidence_hash([
@@ -1262,8 +1432,6 @@ class OntologyGuidedExecutor:
 
         def current_frontier():
             state = scheduler.snapshot()
-            if cmc_describes_type_scope:
-                state["cmc_describes_type_scope"] = CMC_DESCRIBES_SCOPE_VERSION
             if layered_recognition:
                 state["layered_recognition"] = {
                     "version": recognition_order,
@@ -2114,12 +2282,11 @@ class OntologyGuidedExecutor:
                 semantic = [value for entry in ledger_entries for value in entry.semantic_outcomes]
                 semantic_count = semantic.count
             if self.record_pipeline:
-                records_planned += len(record_discovery) + discovery_search.pending
-                examined += sum(row["status"] == "examined" for row in record_discovery.values())
-                incomplete += sum(row["status"] in {"active", "incomplete"}
-                                  for row in record_discovery.values())
-                unattempted += discovery_search.pending
-                incomplete += sum(row["status"] == "pending" for row in record_discovery.values())
+                discovery_coverage = discovery_search.coverage_counts(record_discovery.values())
+                records_planned += discovery_coverage["planned"]
+                examined += discovery_coverage["examined"]
+                incomplete += discovery_coverage["incomplete"]
+                unattempted += discovery_coverage["unattempted"]
             pending_frontiers = sum(
                 item.get("logical_records", 1) for item in scheduler.unexplored_frontier
             )
@@ -2246,6 +2413,7 @@ class OntologyGuidedExecutor:
                     if ranking_paused
                     else "model_calls_unresolved"
                     if self.tool_protocol and unresolved_calls
+                    else "evidence_review_pending" if review_paused
                     else "layered_policy_complete" if complete and self.candidate_policy
                     and layered_recognition and not dependency_ready
                     else "candidate_search_exhausted" if complete and self.candidate_policy
@@ -2385,7 +2553,8 @@ class OntologyGuidedExecutor:
                 coverage=coverage,
                 progress=progress,
                 dependency_index=dependency_index,
-                projection="verified" if self.tool_protocol else "all",
+                projection=("verified" if self.tool_protocol
+                            and not self.independent_entity_traversal else "all"),
                 **({"relationship_groups": list(relationship_groups.values()),
                     "extraction_protocol": TOOL_PROTOCOL_VERSION} if self.tool_protocol else {}),
                 artifact_status="ready" if complete else "partial",
@@ -2740,9 +2909,10 @@ class OntologyGuidedExecutor:
             previous_nodes = {n.entity_id: nodes.get(n.entity_id) for n in outcome.nodes}
             if is_record:
                 card = discovery_cards[task.schema_card_id]
-                if outcome.edges or outcome.relationship_groups:
+                if not self.evidence_review and (outcome.edges or outcome.relationship_groups):
                     raise ValueError("record_discovery_cannot_publish_relations")
-                if outcome.nodes or outcome.properties:
+                if (outcome.nodes or outcome.properties or outcome.edges
+                        or outcome.relationship_groups):
                     state = task_protocol(task)
                     if not state.get("outcome_ref") or outcome.model_dump(
                         mode="json",
@@ -2912,12 +3082,20 @@ class OntologyGuidedExecutor:
                         continue
                     if is_record:
                         try:
-                            resolve_record_property(
+                            record_predicate = resolve_record_predicate(
                                 card, nodes[candidate.subject_ref.id].class_iri,
                                 candidate.predicate_iri,
                             )
+                            if isinstance(candidate, GraphProperty):
+                                if not isinstance(record_predicate, SlotSpec):
+                                    raise ValueError("record_predicate_kind_mismatch")
+                            elif (not isinstance(record_predicate, EdgeSpec)
+                                  or any(nodes[ref.id].class_iri
+                                         not in record_predicate.range_class_iris
+                                         for ref in references[1:])):
+                                raise ValueError("record_relation_range_mismatch")
                         except ValueError:
-                            diagnostics.append("adapter_property_target_mismatch")
+                            diagnostics.append(f"adapter_{kind}_target_mismatch")
                             continue
                     elif (
                         candidate.subject_ref
@@ -3017,7 +3195,10 @@ class OntologyGuidedExecutor:
                                              in merge_candidates(
                                                  prior.get("attribute_candidates", []), outcome,
                                              )],
-                    **({"attribute_status": "resolved" if outcome.properties else "unresolved",
+                    **({"attribute_status": "resolved" if any(
+                        prop.decision_status == "supported" and effective_proof_gate(prop)
+                        for prop in outcome.properties
+                    ) else "unresolved",
                         "disambiguation_attempts": prior.get("disambiguation_attempts", 0)
                         + int(task_protocol(task).get("request_attempt", 0)
                               > prior.get("attribute_request_attempt", 0)),
@@ -3077,7 +3258,9 @@ class OntologyGuidedExecutor:
                 task_outcomes.append(payload)
             events.append(("task_outcome", payload))
             register_dependencies(task, outcome)
-            paused = not outcome.complete and outcome.reason_code == "execution_pause_requested"
+            paused = not outcome.complete and (
+                outcome.reason_code == "execution_pause_requested" or review_waiting(task)
+            )
             if paused:
                 pause_counts[task.claim_lineage_id] = pause_counts.get(task.claim_lineage_id, 0) + 1
             if (not is_record and not batch_member
@@ -3186,7 +3369,6 @@ class OntologyGuidedExecutor:
                         try:
                             menu = compile_local_menu(
                                 self.ontology, subject, engine=self.engine,
-                                cmc_describes_type_scope=cmc_describes_type_scope,
                             )
                         except ValueError:
                             diagnostics.append(
@@ -3241,7 +3423,9 @@ class OntologyGuidedExecutor:
             row = record_discovery.get(task.claim_lineage_id)
             state = task_protocol(task)
             if (row is None or row["status"] == "active" or not row.get("outcome_ref")
-                    or state.get("pending_request") is not None):
+                    or state.get("pending_request") is not None
+                    or row.get("feedback_reopens", 0)
+                    >= self.record_policy.max_feedback_reopens):
                 return False
             units = {unit.evidence_id for record_id in (task.source_record_ids or [task.record_id])
                      for unit in index.by_id[record_id].source_units}
@@ -3260,6 +3444,7 @@ class OntologyGuidedExecutor:
                 "feedback_reason": reason,
                 "feedback_refs": json_value(entity_refs),
                 "feedback_source_refs": json_value(source_refs),
+                "feedback_reopens": row.get("feedback_reopens", 0) + 1,
             }
             return True
 
@@ -3277,6 +3462,10 @@ class OntologyGuidedExecutor:
             ))
             observations = [item for item in frozen.observations
                             if item.kind in {"missing", "unbound", "ambiguous", "unknown"}]
+            if self.independent_entity_traversal and isinstance(task, RecordDiscoveryTask):
+                # Keep late-owner/entity reference discovery, without reopening
+                # the source for attribute completeness in the candidate phase.
+                observations = [item for item in observations if item.kind == "unbound"]
             # Semantic ordering can visit an anaphoric paragraph before its
             # antecedent. Retain that explicit source hint for the existing
             # bounded late-owner feedback; it is not an identity decision.
@@ -3312,23 +3501,25 @@ class OntologyGuidedExecutor:
             predicate = predicates[task_key(task)]
             if not isinstance(predicate, EdgeSpec):
                 return
-            attempted_cards = {row["task"]["schema_card_id"] for row in record_discovery.values()
-                               if task.record_id in (row["task"].get("source_record_ids")
-                                                     or [row["task"]["record_id"]])}
+            attempted_cards = attempted_discovery_cards(task.record_id)
             if anchors:
                 discovery_search.admit_feedback(
                     task.record_id, set(predicate.range_class_iris), attempted_cards,
                 )
-            for row in list(record_discovery.values()):
-                candidate = RecordDiscoveryTask.model_validate(row["task"])
-                card = discovery_cards[candidate.schema_card_id]
-                if (task.record_id not in (candidate.source_record_ids or [candidate.record_id])
-                        or not set(card.class_iris).intersection(predicate.range_class_iris)):
-                    continue
-                inputs = tool_dependencies(candidate, ignore_pinned=True, include_bindings=False)
-                refs = [VersionedRef.model_validate(entity["entity_ref"])
-                        for entity in inputs["entity_dependencies"]]
-                discovery_feedback(candidate, anchors, refs, "missing_relation_endpoint")
+            # Relation tasks run only after a registered range endpoint exists.
+            # Their observations may prioritize a different unattempted card,
+            # but cannot reopen an already paid entity-discovery lineage.  A
+            # replay sees the same fact scope and produces duplicate entities;
+            # bridge/predicate proof gaps belong to the relation outcome.
+
+        def attempted_discovery_cards(record_id):
+            return {
+                row["task"]["schema_card_id"]
+                for row in record_discovery.values()
+                if record_id in (
+                    row["task"].get("source_record_ids") or [row["task"]["record_id"]]
+                )
+            }
 
         def register_entity_subject(reference):
             node = nodes[reference.id]
@@ -3359,9 +3550,20 @@ class OntologyGuidedExecutor:
                 versioned_key(reference.id, reference.revision),
                 *(versioned_key(ref.id, ref.revision) for ref in refs),
             ])
-            menu = compile_local_menu(self.ontology, subject, engine=self.engine)
-            menus[node.entity_id] = menu
-            add_subject(subject, menu, hop=registered_subjects[key]["hop"], scope=root_scope)
+            # Keep the frozen local menu available for an explicit property
+            # review/repair on this proved entity.  Merely compiling the menu
+            # does not admit any traversal work.
+            menus[node.entity_id] = compile_local_menu(
+                self.ontology, subject, engine=self.engine,
+            )
+            if self.independent_entity_traversal:
+                add_subject(
+                    subject, menus[node.entity_id],
+                    hop=registered_subjects[key]["hop"], scope=root_scope,
+                )
+            # Independent entity exploration needs no incoming relationship
+            # proof. The legacy verification policy still admits traversal via
+            # expand_tool_relations after an incoming proof is available.
 
         def relation_input_signature(task):
             from .reference_context import select_reference_entities
@@ -3423,23 +3625,11 @@ class OntologyGuidedExecutor:
             classes = set(predicate.range_class_iris)
             if discovery_search.prioritize(task.record_id, classes):
                 return
-            # Only an existing source-located discovery gap can reopen examined
-            # work. An absent endpoint alone is not new evidence for another call.
-            for row in list(record_discovery.values()):
-                candidate = RecordDiscoveryTask.model_validate(row["task"])
-                if (not row.get("gap_refs") or candidate.purpose != "entity_discovery"
-                        or task.record_id not in (candidate.source_record_ids
-                                                  or [candidate.record_id])
-                        or not classes.intersection(
-                            discovery_cards[candidate.schema_card_id].class_iris,
-                        )):
-                    continue
-                inputs = tool_dependencies(candidate, ignore_pinned=True, include_bindings=False)
-                refs = [VersionedRef.model_validate(entity["entity_ref"])
-                        for entity in inputs["entity_dependencies"]]
-                anchors = [EvidenceAnchor.model_validate(ref) for ref in row["gap_refs"]]
-                discovery_feedback(candidate, anchors, refs,
-                                   "missing_relation_endpoint:" + ",".join(sorted(classes)))
+            # Every selected region has already had its entity pass.  A missing
+            # endpoint leaves this relation blocked; replaying the same entity
+            # request does not add source authority and repeatedly rereads the
+            # same paragraph.  A distinct unattempted card may still be moved
+            # forward by prioritize() above.
 
         def defer_unready_relation(excluded_slots):
             if not self.record_pipeline or active_unit_ref is not None or expert_pending:
@@ -3521,6 +3711,38 @@ class OntologyGuidedExecutor:
             refresh = relation_input_signature(task) != row["dependency_hash"]
             queue_relation_page(task, refresh=refresh)
 
+        def prioritize_waiting_endpoint_discovery():
+            """Close one planned relation dependency before unrelated discovery."""
+            if any(
+                relation.subject_ref.id == root.entity_id
+                and relation.subject_ref.revision == root.revision
+                and relation.decision_status == "supported"
+                and relation.polarity == "affirmed"
+                and not relation.conditions
+                and not relation.applicability
+                and effective_proof_gate(relation)
+                and dependency_index.is_valid(versioned_key(
+                    relation.candidate_id, relation.revision,
+                ))
+                for relation in [*edges.values(), *relationship_groups.values()]
+            ):
+                return None
+            for row in record_relation_inputs.values():
+                if row.get("status") != "waiting_endpoints":
+                    continue
+                task = RecognitionTask.model_validate(row["task"])
+                if relation_pages(task):
+                    queue_relation_page(task, refresh=True)
+                    return "relation_ready"
+                predicate = predicates[task_key(task)]
+                if discovery_search.admit_dependency(
+                    task.record_id,
+                    set(predicate.range_class_iris),
+                    attempted_discovery_cards(task.record_id),
+                ):
+                    return "discovery_ready"
+            return None
+
         def apply_candidate_changes(changes):
             references = [*changes.created_entity_refs, *changes.changed_entity_refs]
             for reference in references:
@@ -3560,6 +3782,10 @@ class OntologyGuidedExecutor:
                 events.append(("candidate_changes", changes.model_dump(mode="json")))
 
         def expand_tool_relations(task, outcome):
+            if self.independent_entity_traversal:
+                # Registered entities already own their legal candidate menus.
+                # An unverified edge grants no proof or inherited fact scope.
+                return
             for relation in [*outcome.edges, *outcome.relationship_groups]:
                 members = (relation.object_refs if isinstance(relation, GraphRelationshipGroup)
                            else [relation.object_ref])
@@ -3750,6 +3976,7 @@ class OntologyGuidedExecutor:
                             ):
                                 selected_nodes[identity] = nodes[identity]
             views = []
+            endpoint_attributes = []
             for node in selected_nodes.values():
                 reference = VersionedRef(id=node.entity_id, revision=node.revision)
                 proposal = None
@@ -3787,6 +4014,20 @@ class OntologyGuidedExecutor:
                     if len(matches) != 1:
                         raise ValueError("entity_dependency_origin_mismatch")
                     proposal = matches[0]
+                    if self.evidence_review:
+                        # Read the original, immutable discovery observations.
+                        # Current property verdicts never become a prerequisite
+                        # for exploring this entity's relationships.
+                        endpoint_attributes.extend({
+                            "subject_ref": reference.model_dump(mode="json"),
+                            "predicate_iri": prop.predicate_iri,
+                            "value_quote": prop.value_quote.model_dump(mode="json"),
+                            "field_support": [q.model_dump(mode="json")
+                                              for q in prop.field_support],
+                            "unit_support": [q.model_dump(mode="json") for q in prop.unit_support],
+                            "qualifiers": prop.qualifiers.model_dump(mode="json"),
+                        } for prop in frozen.properties if prop.subject_id == proposal.local_id
+                            and prop.local_id not in frozen.claim_issues)
                 payload = {
                     "entity_ref": reference.model_dump(mode="json"),
                     "class_iri": node.class_iri, "grounding_kind": node.grounding_kind,
@@ -3863,6 +4104,7 @@ class OntologyGuidedExecutor:
                 }
             return {
                 **binding_inputs,
+                "endpoint_attributes": endpoint_attributes,
                 "entity_dependencies": [view.model_dump(mode="json") for view in views],
                 "entity_nodes": [node.model_dump(mode="json") for node in selected_nodes.values()],
                 "bridge_dependencies": [],
@@ -3891,6 +4133,9 @@ class OntologyGuidedExecutor:
             for field in ("discovery", "verification", "outcome"):
                 if state.get(field + "_ref"):
                     references[state[field + "_ref"]] = field
+            for batch in (state.get("verification_batches") or {}).get("batches", []):
+                if batch.get("result_ref"):
+                    references[batch["result_ref"]] = "verification"
             context.protocol_results = {
                 reference: {"lineage_id": task.claim_lineage_id, "field": field,
                             "value": load_result(task.claim_lineage_id, reference, field)}
@@ -4011,7 +4256,6 @@ class OntologyGuidedExecutor:
                 )
             context.incremental_performance = self.incremental_performance
             context.compact_recognition = dependency_ready
-            context.cmc_describes_type_scope = cmc_describes_type_scope
             if has_protocol:
                 context.protocol_state = (thaw_json if self.incremental_performance
                                           else deepcopy)(
@@ -4019,7 +4263,9 @@ class OntologyGuidedExecutor:
             if self.tool_protocol:
                 context.tool_inputs = {
                     **tool_inputs, "target_seed": target_seed,
-                    **({"recognition_pipeline": RECORD_PIPELINE} if self.record_pipeline else {}),
+                    **({"recognition_pipeline": RECORD_PIPELINE,
+                        "graph_phase": self.record_policy.graph_phase}
+                       if self.record_pipeline else {}),
                     "run_fingerprint": run_fingerprint,
                     "subject_node": nodes[task.subject.entity_id].model_dump(
                         mode="json",
@@ -4089,7 +4335,6 @@ class OntologyGuidedExecutor:
                 try:
                     menu = compile_local_menu(
                         self.ontology, subject, engine=self.engine,
-                        cmc_describes_type_scope=cmc_describes_type_scope,
                     )
                 except ValueError:
                     diagnostics.append(f"object_class_outside_frozen_snapshot:{subject.class_iri}")
@@ -4346,8 +4591,6 @@ class OntologyGuidedExecutor:
                     "frontier_policy": {
                         "schema_version": 2 if lazy_frontier else 1,
                         "template_interleaving": template_interleaving,
-                        **({"cmc_describes_type_scope": CMC_DESCRIBES_SCOPE_VERSION}
-                           if cmc_describes_type_scope else {}),
                         **(
                             {"candidate_planning": {"policy": self.candidate_policy}}
                             if self.candidate_policy
@@ -4368,12 +4611,15 @@ class OntologyGuidedExecutor:
             active_unit_ref = control.get("active_unit_ref")
             if self.record_pipeline:
                 saved_discovery = control.get("record_discovery", {})
+                # Region execution cards are deterministic unions recorded in
+                # the search rows. Rebuild them before validating the frozen
+                # card set so a cold resume does not repeat ranking or paid work.
+                discovery_search.restore(direct.get("record_searches", {}))
                 if (saved_discovery.get("catalog_hash") != discovery_catalog.analysis_scope_ref
-                        or saved_discovery.get("card_ids") != list(discovery_cards)
+                        or set(saved_discovery.get("card_ids", [])) != set(discovery_cards)
                         or saved_discovery.get("search_scope_hash") != discovery_search.scope_hash):
                     raise ValueError("record_discovery_scope_changed")
                 discovery_turn = saved_discovery["turn"]
-                discovery_search.restore(direct.get("record_searches", {}))
             if active_unit_ref is not None and (
                 not self.batch_policy or active_unit_ref not in protocols
             ):
@@ -4448,6 +4694,19 @@ class OntologyGuidedExecutor:
                 },
                 encode=lambda v: json_value({k: x for k, x in v.items() if k != "ontology"}),
             )
+            for restored_key, restored_plan in plans.items():
+                dependencies = ranking_contexts.get(restored_plan.plan_id, {}).get(
+                    "dependency_refs", [],
+                )
+                identity = semantic_retrieval_plan_key(
+                    restored_plan,
+                    dependency_refs=dependencies,
+                    generation=proof_generations.get(restored_plan.subject.entity_id, 0),
+                )
+                previous = semantic_plan_keys.get(identity)
+                if previous is not None and previous != restored_key:
+                    raise ValueError("duplicate semantic retrieval plan in current state")
+                semantic_plan_keys[identity] = restored_key
             search_tasks = loaded("search_tasks", lambda v: {
                 **v, **({"scope": TraversalScope.model_validate(v["scope"])}
                         if self.tool_protocol else {}),
@@ -4620,6 +4879,9 @@ class OntologyGuidedExecutor:
             discovery_search.prepare(
                 ranking, persist_ranking_boundary if ranking_hook is not None else lambda: None,
             )
+            dependency_state = prioritize_waiting_endpoint_discovery()
+            if dependency_state == "relation_ready":
+                return None
             selected = discovery_search.take()
             if selected is None:
                 return None
@@ -4656,6 +4918,8 @@ class OntologyGuidedExecutor:
             )
 
         def schedule_attribute_calibration():
+            if self.independent_entity_traversal:
+                return False
             """Coalesce relevant changes after discovery; retain the original paid lineage."""
             if not self.record_pipeline or scheduler.dispatched >= scheduler.max_tasks:
                 return False
@@ -4785,10 +5049,14 @@ class OntologyGuidedExecutor:
             elif contextual:
                 from .attribute_disambiguation import field_payload
 
-                inputs["deferred_property_fields"] = [
-                    field_payload(field) for record_id in task.source_record_ids
+                fields = {
+                    field.field_id: field
+                    for record_id in task.source_record_ids
                     for field in deferred_fields.get(record_id, [])
-                ]
+                }
+                inputs[
+                    "property_fields" if region_property_fields else "deferred_property_fields"
+                ] = [field_payload(fields[identity]) for identity in sorted(fields)]
             context = assemble_record_discovery_context(
                 task, card, index,
                 document_context=DocumentContext(
@@ -4814,6 +5082,7 @@ class OntologyGuidedExecutor:
                 **inputs, "schema_card": card.model_dump(mode="json"),
                 "target_seed": context.target.model_dump(mode="json"),
                 "run_fingerprint": run_fingerprint, "recognition_pipeline": RECORD_PIPELINE,
+                "graph_phase": self.record_policy.graph_phase,
                 **({"record_feedback_hash": feedback_hash, "record_feedback": {
                     "hash": feedback_hash, "refs": row["feedback_refs"],
                     "source_refs": row["feedback_source_refs"],
@@ -5011,7 +5280,7 @@ class OntologyGuidedExecutor:
             return unit, context
 
         def execute_work_unit(unit, context, excluded_slots):
-            nonlocal active_unit_ref
+            nonlocal active_unit_ref, review_paused
             errors = {}
             try:
                 call = RecognitionCall(
@@ -5089,15 +5358,40 @@ class OntologyGuidedExecutor:
                 existing = protocol["outcome_refs"].get(task.task_id)
                 version = member_result_version(protocol, task.task_id)
                 applied = applied_model_results.get(task.claim_lineage_id, {})
-                if (existing is not None and task.task_id not in errors
-                        and version == context.protocol_results[existing]["result_version"]
+                existing_is_current = (
+                    existing is not None
+                    and version == context.protocol_results[existing]["result_version"]
+                )
+                if (existing_is_current
                         and applied.get("work_unit_id") == unit.work_unit_id
                         and applied.get("outcome_ref") == existing
                         and applied.get("result_version") == context.protocol_results[
                             existing]["result_version"]):
+                    if task.task_id in errors:
+                        # A requested recovery can become impossible after the member has
+                        # exhausted its model-call allowance.  No paid request participated,
+                        # so keep the last owned outcome and only close the recovery state.
+                        saved = deepcopy(protocol)
+                        state = saved["member_states"][task.task_id]
+                        if state["recovery_used"] and state["recovery_kind"] != "none":
+                            state["recovery_kind"] = "none"
+                            context.save_protocol(saved)
                     continue
-                if (task.task_id in protocol["verification_refs"]
-                        and task.task_id not in errors):
+                pending_review = (
+                    self.evidence_review and task.task_id in protocol["discovery_refs"]
+                    and task.task_id not in protocol["verification_refs"]
+                )
+                if pending_review:
+                    member = next(item for item in context.members if item.task_id == task.task_id)
+                    member.context.tool_inputs["review_failure_reason"] = errors.get(
+                        task.task_id, "review_pending",
+                    )
+                if (pending_review or (
+                    (task.task_id in protocol["verification_refs"]
+                     or (self.candidate_graph and task.predicate_kind == "relationship"
+                         and task.task_id in protocol["discovery_refs"]))
+                    and task.task_id not in errors
+                )):
                     resolutions = [r for r in reference_resolutions.values()
                                    if dependency_index.is_valid_references([
                                        VersionedRef.model_validate(ref)
@@ -5161,7 +5455,8 @@ class OntologyGuidedExecutor:
             for task in unit.members:
                 if task.task_id in accepted_outcomes:
                     expand_tool_relations(task, accepted_outcomes[task.task_id])
-            if not self.adapter.work_unit_pending_recovery(context):
+            review_paused = any(review_waiting(task) for task in unit.members)
+            if not review_paused and not self.adapter.work_unit_pending_recovery(context):
                 active_unit_ref = None
             if outcomes and batch_hook is not None:
                 batch_hook(ExecutionBatch(
@@ -5190,7 +5485,7 @@ class OntologyGuidedExecutor:
             if self.progress_hook is not None and not self.progress_hook("after_model"):
                 diagnostics.append("execution_pause_requested")
                 return True
-            return False
+            return review_paused
 
         def publish_review_boundary():
             if batch_hook is None or not review_replay.events:
@@ -5467,6 +5762,9 @@ class OntologyGuidedExecutor:
                     is_expert_task = task.claim_lineage_id in expert_lineages
                     outcome_started = time.perf_counter()
                     apply_outcome(task, outcome, excluded_slots)
+                    if not outcome.complete and review_waiting(task):
+                        review_paused = True
+                        stop_after_batch = True
                     if self.evidence_repair:
                         if replaying:
                             evidence_work.restore(thaw_json(saved["evidence_work"]))

@@ -1,0 +1,2959 @@
+{
+  "run_id": "84956c8a-6988-43cb-bab6-e4ad7e3d026d",
+  "reviewed_at": "2026-09-21T06:56:41.860659+00:00",
+  "review_kind": "candidate_graph_read_only_increment",
+  "model_calls_by_reviewer": 0,
+  "application_mutations_by_reviewer": 0,
+  "source_hashes": {
+    "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+    "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+    "parser_version": "9"
+  },
+  "ontology_snapshot_id": "54c748b83397a74fd7268f96c8f72826c572bc0b5a457fec8e8e18da055831f2",
+  "increments": [
+    {
+      "lineage_id": "a50d6a7d21ad0694dc0e9ff85a1a6803986076a7f37d49f1c2dbe227df5f602a",
+      "task": {
+        "kind": "record_discovery",
+        "task_id": "fe4b0178b6101648cbf5f6cb69095b530efdc50456b4c8d3bda800cbee65cb16",
+        "claim_lineage_id": "a50d6a7d21ad0694dc0e9ff85a1a6803986076a7f37d49f1c2dbe227df5f602a",
+        "record_id": "62c0dccee4a6db98d9eaf66031a442249f8ac3e14200816676324c4b1a304b70",
+        "schema_card_id": "f80c91325d46bbf13cfd0521e3b912708c83fdf282531dbe3a8a2b868e0ac42f",
+        "analysis_scope_ref": "875105c6e91d82dbae822b9fecd36c8d15869052b39c195a1ab47ea8949c1ee5",
+        "dependency_hash": "416157100e61a2947cafacbbf64b7f4ac871de1ae8c2bb40fb33df2577210720",
+        "scope": {
+          "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "members": []
+        },
+        "source_record_ids": [
+          "62c0dccee4a6db98d9eaf66031a442249f8ac3e14200816676324c4b1a304b70"
+        ]
+      },
+      "reviewed_model_turns": [
+        {
+          "immutable_result_key": "c933ef5a6c12481ab79614a4f177ddb8ddc152763faecff73fb20c34a3547f26",
+          "stage": "discovery",
+          "attempt": 1,
+          "stage_group_seq": null,
+          "member_task_ids": null,
+          "input_hash": "3fb7a54dc05ef650ad415dcaed1262b13588fce2df2af15abff3c59e150f9fde",
+          "response_id": "resp_yUmBFQIieIojkTaVHbwoKWoMMhmi3Y8a",
+          "response_status": "completed",
+          "incomplete_details": null,
+          "error": null,
+          "usage": {
+            "input_tokens": 3305,
+            "input_tokens_details": {
+              "cached_tokens": 1606
+            },
+            "output_tokens": 284,
+            "total_tokens": 3589
+          },
+          "output_text_sha256": "c03b907ba4bcfcc87ff8fd6a3c7cb9b340b3498133e46642bc2adb034be3aa88",
+          "model_output": {
+            "entities": [
+              {
+                "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/Residue",
+                "identifier_claims": [],
+                "local_id": "e1",
+                "mentions": [
+                  {
+                    "context_text": null,
+                    "evidence_id": "6ff01fa7a49cf38d76b188268e5434bd828c2c297482c2e096f775ea292f27be",
+                    "text": "N/A"
+                  }
+                ],
+                "record_components": [],
+                "representation": "mention"
+              }
+            ],
+            "external_links": [],
+            "observations": [
+              {
+                "kind": "missing",
+                "predicate_iri": "http://www.w3.org/2000/01/rdf-schema#label",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "a9e1cff8c7ae08627f5c153a19bd337c29fb29f8c0fed2b2b6ba1816a85dc9bf",
+                  "text": "工艺"
+                },
+                "reason": "Entity represents 'N/A' status, actual residue details are not available.",
+                "subject_id": "e1"
+              }
+            ],
+            "properties": [],
+            "reference_bindings": [],
+            "relations": []
+          },
+          "tool_calls": []
+        }
+      ],
+      "quote_checks": [
+        {
+          "evidence_id": "6ff01fa7a49cf38d76b188268e5434bd828c2c297482c2e096f775ea292f27be",
+          "quote": "N/A",
+          "source_text": "N/A",
+          "paragraph_1_based": 80,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              3
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "c933ef5a6c12481ab79614a4f177ddb8ddc152763faecff73fb20c34a3547f26"
+          ]
+        },
+        {
+          "evidence_id": "a9e1cff8c7ae08627f5c153a19bd337c29fb29f8c0fed2b2b6ba1816a85dc9bf",
+          "quote": "工艺",
+          "source_text": "工艺",
+          "paragraph_1_based": 51,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              2
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "c933ef5a6c12481ab79614a4f177ddb8ddc152763faecff73fb20c34a3547f26"
+          ]
+        }
+      ],
+      "immutable_results": {
+        "7fe8d4241acfa297e6af369eae3cf842a562e9d3826fd5297f28c3d10884f600": "discovery",
+        "43fd1527dad56f643ef5ee7cb59668fbfbad0169ec1e672e68049295b7e07f7c": "verification",
+        "58be223ac441f33a97492b39a9c59c8b06248047fe944b98d9fb6b4899cba478": "outcome"
+      },
+      "frozen_discoveries": [
+        {
+          "entities": [
+            {
+              "local_id": "e1",
+              "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/Residue",
+              "representation": "mention",
+              "mentions": [
+                {
+                  "evidence_id": "6ff01fa7a49cf38d76b188268e5434bd828c2c297482c2e096f775ea292f27be",
+                  "text": "N/A",
+                  "context_text": null
+                }
+              ],
+              "record_components": [],
+              "identifier_claims": []
+            }
+          ],
+          "properties": [],
+          "relations": [],
+          "external_links": [],
+          "observations": [
+            {
+              "subject_id": "e1",
+              "predicate_iri": "http://www.w3.org/2000/01/rdf-schema#label",
+              "quote": {
+                "evidence_id": "a9e1cff8c7ae08627f5c153a19bd337c29fb29f8c0fed2b2b6ba1816a85dc9bf",
+                "text": "工艺",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "Entity represents 'N/A' status, actual residue details are not available."
+            },
+            {
+              "subject_id": null,
+              "predicate_iri": null,
+              "quote": {
+                "evidence_id": "6ff01fa7a49cf38d76b188268e5434bd828c2c297482c2e096f775ea292f27be",
+                "text": "N/A",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文完整字段值或原文单元为缺失或未知标记，不能作为实体指称事实。"
+            }
+          ],
+          "reference_bindings": [],
+          "assertion_generation": 1,
+          "evidence_revision": 1,
+          "content_hash": "1f76e80da0f84cfb3134300173cb067c88b9cba3efaa6afd465b9f2a6bd59331",
+          "local_ref_map": {
+            "e1": {
+              "id": "4ecbbb3ea15bdb1fe48f37da21bae3d7e97907b2dffbacb3c92d25dc7cd6f165",
+              "revision": 1
+            }
+          },
+          "claim_issues": {
+            "e1": [
+              "entity_referent_missing"
+            ]
+          }
+        }
+      ],
+      "stored_verifications": [
+        {
+          "context_hash": "7e14254c6adb3af1411d4ecbd1cdc04c8c5ef9e76c0d4b8814cc2e95e1565565",
+          "targets": []
+        }
+      ],
+      "outcomes": [
+        {
+          "semantic_outcome": "undetermined",
+          "complete": false,
+          "reason_code": "entity_referent_missing",
+          "reason": "entity_referent_missing",
+          "controller_checks": {
+            "binding": 0,
+            "metric": 0,
+            "shacl": 0,
+            "elapsed_seconds": 0.001123432070016861
+          },
+          "nodes": [],
+          "edges": [],
+          "relationship_groups": [],
+          "properties": [],
+          "attribute_candidates": null
+        }
+      ],
+      "independent_review": "See linked Markdown review; raw supported is not independent acceptance."
+    },
+    {
+      "lineage_id": "c93af360c67383e8c8a4e8f065854755e07103d2ed8a98095ed089951ed23543",
+      "task": {
+        "kind": "record_discovery",
+        "task_id": "0d0812053488f44d5bc9ffd339b33cd8374d058a7c25b394385129e168403f48",
+        "claim_lineage_id": "c93af360c67383e8c8a4e8f065854755e07103d2ed8a98095ed089951ed23543",
+        "record_id": "b7df89f3cf3af96e25008fa7356fde69da0c49c2e80144a774fc3693bdfe0a37",
+        "schema_card_id": "72ace4a266b08a6f71b03978d34761f781997b60cd496a29dd04034e1d9831b7",
+        "analysis_scope_ref": "875105c6e91d82dbae822b9fecd36c8d15869052b39c195a1ab47ea8949c1ee5",
+        "dependency_hash": "7b020794d0a5af4b13dc73ee79e35f901fbdf9e484638f861b34683489762e9f",
+        "scope": {
+          "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "members": []
+        },
+        "source_record_ids": [
+          "b7df89f3cf3af96e25008fa7356fde69da0c49c2e80144a774fc3693bdfe0a37",
+          "f80887751fb86b87d07e2f792f7606e444214948bd2d77edab2de7cec26ef687",
+          "5de81e6f64b1601fda38679e2d6665b4dd52da2fc6f88d42cced01c79e097ada",
+          "8e180ae7f9d29d2408469a8b458b52d60b108120d69aa98664f9293b359cff78",
+          "93cc391906b88a3627544195f5c1e0c8635f81429f6456b3222eecd6ff2e067e",
+          "7a0a948e3e8eb49f32f491351874c6a397b16be6d3087e1adf8862e5b3bde8ac",
+          "1b6796ebae49a51080923d2713b1b26acd5e5ceb4e72cefa327103562014ff7c",
+          "bd1b20eb19d26bf720f145568a78145c98506ae5dda43cb4311a665e9be30196"
+        ],
+        "reading_section_ids": [
+          "section:28"
+        ]
+      },
+      "reviewed_model_turns": [
+        {
+          "immutable_result_key": "02b85c2e6cba456581fdce4366104b8aebeca0311e951982ca7193344d093acd",
+          "stage": "verification",
+          "attempt": 2,
+          "stage_group_seq": null,
+          "member_task_ids": null,
+          "input_hash": "8876699e67211046f231069b43f47e011aa6c3077c84a1be9d85599c4d2957ac",
+          "response_id": "resp_eqqsFTE1IDG03LeH1QRkNUPvyR3eVCEf",
+          "response_status": "completed",
+          "incomplete_details": null,
+          "error": null,
+          "usage": {
+            "input_tokens": 11224,
+            "input_tokens_details": {
+              "cached_tokens": 1897
+            },
+            "output_tokens": 2786,
+            "total_tokens": 14010
+          },
+          "output_text_sha256": "03f7ef5b6c25614029a12c563db90572534bced89dc104ebed68d4ed2521995f",
+          "model_output": {
+            "verifications": [
+              {
+                "content_hash": "91a0ce33c176c09f64dc9c04b3fc9eab73cd0ff00ee1bd8dbb93c9396f3e34ab",
+                "facets": [
+                  {
+                    "counterevidence_support": [],
+                    "name": "type",
+                    "reason": "原文记录制剂剂型为口服片剂，满足药物产品关键限定（finished dosage form）。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                        "text": "制剂剂型：口服片剂"
+                      }
+                    ],
+                    "verdict": "supported"
+                  },
+                  {
+                    "counterevidence_support": [],
+                    "name": "referent",
+                    "reason": "同一原文单元中并列记录化学名、分子式等理化性质，证明HRS-1597指代该具体药物实例。",
+                    "support": [
+                      {
+                        "context_text": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+                        "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+                        "text": "项目名称：HRS-1597"
+                      }
+                    ],
+                    "verdict": "supported"
+                  },
+                  {
+                    "counterevidence_support": [],
+                    "name": "subject_role",
+                    "reason": "作为实体标识出现在记录中。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+                        "text": "项目名称：HRS-1597"
+                      }
+                    ],
+                    "verdict": "supported"
+                  }
+                ],
+                "target_id": "bdbad521d667b20fbfd7e89e665f89674751ad654e5f870a651c1927cc3bd8cd"
+              },
+              {
+                "content_hash": "dea1de02eca9f973cf0727d8cc142ae125dc0965a598d7a71d88211f9a2c8983",
+                "facets": [
+                  {
+                    "counterevidence_support": [],
+                    "name": "type",
+                    "reason": "原文记录制剂剂型为口服片剂，满足药物产品关键限定。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                        "text": "制剂剂型：口服片剂"
+                      }
+                    ],
+                    "verdict": "supported"
+                  },
+                  {
+                    "counterevidence_support": [],
+                    "name": "referent",
+                    "reason": "同一原文单元中并列记录化学名、分子式等理化性质，证明HRXS-P-2419指代该具体药物实例。",
+                    "support": [
+                      {
+                        "context_text": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+                        "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+                        "text": "项目代码：HRXS-P-2419"
+                      }
+                    ],
+                    "verdict": "supported"
+                  },
+                  {
+                    "counterevidence_support": [],
+                    "name": "subject_role",
+                    "reason": "作为实体标识出现在记录中。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+                        "text": "项目代码：HRXS-P-2419"
+                      }
+                    ],
+                    "verdict": "supported"
+                  }
+                ],
+                "target_id": "ae62db44277ca45f33517da0b090e2a3165d5e2c371fbc9e1264bc5ed4b6ec79"
+              },
+              {
+                "content_hash": "dcba5fb37c5bbd9430d66086194155ed44c8b28207569cced58029d323040b3d",
+                "facets": [
+                  {
+                    "counterevidence_support": [],
+                    "name": "type",
+                    "reason": "原文记录制剂剂型为口服片剂，满足药物产品关键限定。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                        "text": "制剂剂型：口服片剂"
+                      }
+                    ],
+                    "verdict": "supported"
+                  },
+                  {
+                    "counterevidence_support": [],
+                    "name": "referent",
+                    "reason": "原文以明确化学名及分子式标识具体化学实体，指代清晰。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+                        "text": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide"
+                      },
+                      {
+                        "context_text": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+                        "evidence_id": "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+                        "text": "分子式：C23H28N6O5S"
+                      }
+                    ],
+                    "verdict": "supported"
+                  },
+                  {
+                    "counterevidence_support": [],
+                    "name": "subject_role",
+                    "reason": "作为实体标识出现在记录中。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+                        "text": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide"
+                      }
+                    ],
+                    "verdict": "supported"
+                  }
+                ],
+                "target_id": "f84acfbb430aaf5ebadb3f3420de1dfc7bbc0921109c0c73c4bc378349a83d45"
+              },
+              {
+                "content_hash": "4a5670a2f4e564388f1aab9a9ea6c673c1249e3f4fef2d3f620fa510550d39a5",
+                "facets": [
+                  {
+                    "counterevidence_support": [],
+                    "name": "type",
+                    "reason": "原文记录制剂剂型为口服片剂，满足药物产品关键限定。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                        "text": "制剂剂型：口服片剂"
+                      }
+                    ],
+                    "verdict": "supported"
+                  },
+                  {
+                    "counterevidence_support": [],
+                    "name": "referent",
+                    "reason": "原文以明确化学名及分子式标识具体化学实体，指代清晰。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e",
+                        "text": "中文：(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺"
+                      },
+                      {
+                        "context_text": "中文：(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺",
+                        "evidence_id": "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+                        "text": "分子式：C23H28N6O5S"
+                      }
+                    ],
+                    "verdict": "supported"
+                  },
+                  {
+                    "counterevidence_support": [],
+                    "name": "subject_role",
+                    "reason": "作为实体标识出现在记录中。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e",
+                        "text": "中文：(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺"
+                      }
+                    ],
+                    "verdict": "supported"
+                  }
+                ],
+                "target_id": "2d107f6d81495db1bbcebbe3d3a919c82e3a68deeab622e3545a87b9d245283c"
+              },
+              {
+                "content_hash": "ed4549ac1ea1f353c79037e8e27e6365268bfe88a00b11f4f3849e6fb956b3b7",
+                "facets": [
+                  {
+                    "counterevidence_support": [],
+                    "name": "type",
+                    "reason": "原文记录制剂剂型为口服片剂，满足药物产品关键限定。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                        "text": "制剂剂型：口服片剂"
+                      }
+                    ],
+                    "verdict": "supported"
+                  },
+                  {
+                    "counterevidence_support": [],
+                    "name": "referent",
+                    "reason": "同一原文单元中并列记录化学名、分子式等理化性质，证明该性状指代该具体药物实例。",
+                    "support": [
+                      {
+                        "context_text": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+                        "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+                        "text": "性状：类白色到白色粉末"
+                      }
+                    ],
+                    "verdict": "supported"
+                  },
+                  {
+                    "counterevidence_support": [],
+                    "name": "subject_role",
+                    "reason": "作为实体标识出现在记录中。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+                        "text": "性状：类白色到白色粉末"
+                      }
+                    ],
+                    "verdict": "supported"
+                  }
+                ],
+                "target_id": "473deaa7e5e2053062c357520fd4b1ffa2cb324f813456a716c02febd01db38a"
+              },
+              {
+                "content_hash": "535b4ea4027583531cc4ad637018e1dd651e1258a1e0d40f4e30aaf5eef9cfc0",
+                "facets": [
+                  {
+                    "counterevidence_support": [],
+                    "name": "type",
+                    "reason": "原文记录制剂剂型为口服片剂，满足药物产品关键限定。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                        "text": "制剂剂型：口服片剂"
+                      }
+                    ],
+                    "verdict": "supported"
+                  },
+                  {
+                    "counterevidence_support": [],
+                    "name": "referent",
+                    "reason": "同一原文单元中并列记录化学名、分子量等理化性质，证明该分子式指代该具体药物实例。",
+                    "support": [
+                      {
+                        "context_text": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+                        "evidence_id": "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+                        "text": "分子式：C23H28N6O5S"
+                      }
+                    ],
+                    "verdict": "supported"
+                  },
+                  {
+                    "counterevidence_support": [],
+                    "name": "subject_role",
+                    "reason": "作为实体标识出现在记录中。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+                        "text": "分子式：C23H28N6O5S"
+                      }
+                    ],
+                    "verdict": "supported"
+                  }
+                ],
+                "target_id": "d3af93426839765d77019d71a56a4cc610fab63cc63df271b3fb398b7931ebd1"
+              },
+              {
+                "content_hash": "bcf9f537ab76943e5644a994ce27d76e19a8e3f4feed5817162b733d92ff6e0d",
+                "facets": [
+                  {
+                    "counterevidence_support": [],
+                    "name": "type",
+                    "reason": "原文记录制剂剂型为口服片剂，满足药物产品关键限定。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                        "text": "制剂剂型：口服片剂"
+                      }
+                    ],
+                    "verdict": "supported"
+                  },
+                  {
+                    "counterevidence_support": [],
+                    "name": "referent",
+                    "reason": "同一原文单元中并列记录化学名、分子式等理化性质，证明该分子量指代该具体药物实例。",
+                    "support": [
+                      {
+                        "context_text": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+                        "evidence_id": "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c",
+                        "text": "分子量：500.60"
+                      }
+                    ],
+                    "verdict": "supported"
+                  },
+                  {
+                    "counterevidence_support": [],
+                    "name": "subject_role",
+                    "reason": "作为实体标识出现在记录中。",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c",
+                        "text": "分子量：500.60"
+                      }
+                    ],
+                    "verdict": "supported"
+                  }
+                ],
+                "target_id": "23af0bd1b7074e381959d7c0f1b8be89edbe31f860fd2852ec7118d06fba262d"
+              }
+            ]
+          },
+          "tool_calls": []
+        }
+      ],
+      "quote_checks": [
+        {
+          "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+          "quote": "制剂剂型：口服片剂",
+          "source_text": "制剂剂型：口服片剂 ",
+          "paragraph_1_based": 42,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              9
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "02b85c2e6cba456581fdce4366104b8aebeca0311e951982ca7193344d093acd"
+          ]
+        },
+        {
+          "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+          "quote": "项目名称：HRS-1597",
+          "source_text": "项目名称：HRS-1597",
+          "paragraph_1_based": 33,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              13
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+          "context_text_in_source": false,
+          "quote_in_context_text": false,
+          "model_turn_keys": [
+            "02b85c2e6cba456581fdce4366104b8aebeca0311e951982ca7193344d093acd"
+          ]
+        },
+        {
+          "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+          "quote": "项目名称：HRS-1597",
+          "source_text": "项目名称：HRS-1597",
+          "paragraph_1_based": 33,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              13
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "02b85c2e6cba456581fdce4366104b8aebeca0311e951982ca7193344d093acd"
+          ]
+        },
+        {
+          "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+          "quote": "项目代码：HRXS-P-2419",
+          "source_text": "项目代码：HRXS-P-2419",
+          "paragraph_1_based": 34,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              16
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+          "context_text_in_source": false,
+          "quote_in_context_text": false,
+          "model_turn_keys": [
+            "02b85c2e6cba456581fdce4366104b8aebeca0311e951982ca7193344d093acd"
+          ]
+        },
+        {
+          "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+          "quote": "项目代码：HRXS-P-2419",
+          "source_text": "项目代码：HRXS-P-2419",
+          "paragraph_1_based": 34,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              16
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "02b85c2e6cba456581fdce4366104b8aebeca0311e951982ca7193344d093acd"
+          ]
+        },
+        {
+          "evidence_id": "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+          "quote": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+          "source_text": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+          "paragraph_1_based": 35,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              157
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "02b85c2e6cba456581fdce4366104b8aebeca0311e951982ca7193344d093acd"
+          ]
+        },
+        {
+          "evidence_id": "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+          "quote": "分子式：C23H28N6O5S",
+          "source_text": "分子式：C23H28N6O5S",
+          "paragraph_1_based": 31,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              15
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+          "context_text_in_source": false,
+          "quote_in_context_text": false,
+          "model_turn_keys": [
+            "02b85c2e6cba456581fdce4366104b8aebeca0311e951982ca7193344d093acd"
+          ]
+        },
+        {
+          "evidence_id": "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e",
+          "quote": "中文：(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺",
+          "source_text": "中文：(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺",
+          "paragraph_1_based": 36,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              90
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "02b85c2e6cba456581fdce4366104b8aebeca0311e951982ca7193344d093acd"
+          ]
+        },
+        {
+          "evidence_id": "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+          "quote": "分子式：C23H28N6O5S",
+          "source_text": "分子式：C23H28N6O5S",
+          "paragraph_1_based": 31,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              15
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": "中文：(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺",
+          "context_text_in_source": false,
+          "quote_in_context_text": false,
+          "model_turn_keys": [
+            "02b85c2e6cba456581fdce4366104b8aebeca0311e951982ca7193344d093acd"
+          ]
+        },
+        {
+          "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+          "quote": "性状：类白色到白色粉末",
+          "source_text": "性状：类白色到白色粉末",
+          "paragraph_1_based": 38,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              11
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+          "context_text_in_source": false,
+          "quote_in_context_text": false,
+          "model_turn_keys": [
+            "02b85c2e6cba456581fdce4366104b8aebeca0311e951982ca7193344d093acd"
+          ]
+        },
+        {
+          "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+          "quote": "性状：类白色到白色粉末",
+          "source_text": "性状：类白色到白色粉末",
+          "paragraph_1_based": 38,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              11
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "02b85c2e6cba456581fdce4366104b8aebeca0311e951982ca7193344d093acd"
+          ]
+        },
+        {
+          "evidence_id": "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+          "quote": "分子式：C23H28N6O5S",
+          "source_text": "分子式：C23H28N6O5S",
+          "paragraph_1_based": 31,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              15
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "02b85c2e6cba456581fdce4366104b8aebeca0311e951982ca7193344d093acd"
+          ]
+        },
+        {
+          "evidence_id": "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c",
+          "quote": "分子量：500.60",
+          "source_text": "分子量：500.60",
+          "paragraph_1_based": 32,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              10
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+          "context_text_in_source": false,
+          "quote_in_context_text": false,
+          "model_turn_keys": [
+            "02b85c2e6cba456581fdce4366104b8aebeca0311e951982ca7193344d093acd"
+          ]
+        },
+        {
+          "evidence_id": "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c",
+          "quote": "分子量：500.60",
+          "source_text": "分子量：500.60",
+          "paragraph_1_based": 32,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              10
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "02b85c2e6cba456581fdce4366104b8aebeca0311e951982ca7193344d093acd"
+          ]
+        }
+      ],
+      "immutable_results": {
+        "fc9313099507061496077a702cae23d9870df8e4d11f904798be504810d39db5": "discovery",
+        "74f1486e5a13fc86be17b7c385e5689a200d554b94440f952babcef39118801c": "outcome",
+        "a310fa8aa7657872756ec73ffa2d28c8d77682431aae82792379fbc7972b4842": "verification"
+      },
+      "frozen_discoveries": [
+        {
+          "entities": [
+            {
+              "local_id": "e1",
+              "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+              "representation": "mention",
+              "mentions": [
+                {
+                  "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+                  "text": "HRS-1597",
+                  "context_text": null
+                }
+              ],
+              "record_components": [],
+              "identifier_claims": []
+            },
+            {
+              "local_id": "e2",
+              "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+              "representation": "mention",
+              "mentions": [
+                {
+                  "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+                  "text": "HRXS-P-2419",
+                  "context_text": null
+                }
+              ],
+              "record_components": [],
+              "identifier_claims": []
+            },
+            {
+              "local_id": "e3",
+              "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+              "representation": "record",
+              "mentions": [],
+              "record_components": [
+                {
+                  "role": "subject",
+                  "quote": {
+                    "evidence_id": "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+                    "text": "(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide",
+                    "context_text": "化学名：英文：(2S,3R)-N-((Z)-5-(cyclopropanecarbonyl)-4-(2,6-dimethoxyphenyl)-2,4-dihydro-3H-1,2,4-triazol-3-ylidene)-3-(5-methylpyrimidin-2-yl)butane-2-sulfonamide"
+                  }
+                }
+              ],
+              "identifier_claims": []
+            },
+            {
+              "local_id": "e4",
+              "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+              "representation": "record",
+              "mentions": [],
+              "record_components": [
+                {
+                  "role": "subject",
+                  "quote": {
+                    "evidence_id": "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e",
+                    "text": "(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺",
+                    "context_text": "中文：(2S,3R)-N-((Z)-5-(环丙甲酰基)-4-(2,6-二甲氧基苯基)-2,4-二氢-3H-1,2,4-三唑-3-亚基)-3-(5-甲基嘧啶-2-基)丁烷-2-磺酰胺"
+                  }
+                }
+              ],
+              "identifier_claims": []
+            },
+            {
+              "local_id": "e5",
+              "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+              "representation": "mention",
+              "mentions": [
+                {
+                  "evidence_id": "b4dabece54e4ed1ff9eab064651ccf18f151de488ad48ef326ca52418b3dacd8",
+                  "text": "N/A",
+                  "context_text": null
+                }
+              ],
+              "record_components": [],
+              "identifier_claims": []
+            },
+            {
+              "local_id": "e6",
+              "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+              "representation": "mention",
+              "mentions": [
+                {
+                  "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+                  "text": "类白色到白色粉末",
+                  "context_text": null
+                }
+              ],
+              "record_components": [],
+              "identifier_claims": []
+            },
+            {
+              "local_id": "e7",
+              "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+              "representation": "mention",
+              "mentions": [
+                {
+                  "evidence_id": "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+                  "text": "C23H28N6O5S",
+                  "context_text": null
+                }
+              ],
+              "record_components": [],
+              "identifier_claims": []
+            },
+            {
+              "local_id": "e8",
+              "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+              "representation": "mention",
+              "mentions": [
+                {
+                  "evidence_id": "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c",
+                  "text": "500.60",
+                  "context_text": null
+                }
+              ],
+              "record_components": [],
+              "identifier_claims": []
+            },
+            {
+              "local_id": "e9",
+              "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug/DrugProduct",
+              "representation": "mention",
+              "mentions": [
+                {
+                  "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+                  "text": "口服片剂",
+                  "context_text": "制剂剂型：口服片剂"
+                }
+              ],
+              "record_components": [],
+              "identifier_claims": []
+            }
+          ],
+          "properties": [],
+          "relations": [],
+          "external_links": [],
+          "observations": [
+            {
+              "subject_id": null,
+              "predicate_iri": null,
+              "quote": {
+                "evidence_id": "b4dabece54e4ed1ff9eab064651ccf18f151de488ad48ef326ca52418b3dacd8",
+                "text": "N/A",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文完整字段值或原文单元为缺失或未知标记，不能作为实体指称事实。"
+            }
+          ],
+          "reference_bindings": [],
+          "assertion_generation": 1,
+          "evidence_revision": 1,
+          "content_hash": "4fec0103077780f42164c19ba6424e62d34a8a724c693121c7b9d5d991e79d17",
+          "local_ref_map": {
+            "e1": {
+              "id": "7c8810e191482487521b6c35e859da164c7b3a59181f8956db0d4711a203e20a",
+              "revision": 1
+            },
+            "e2": {
+              "id": "f202eb67938f47b0a1a37908b03fe1536e80d3de49352682861b127db2d56a4c",
+              "revision": 1
+            },
+            "e3": {
+              "id": "15c662e432944e572fc705ad46bec4e788e629c6163c2e861bdb70bbea187df3",
+              "revision": 1
+            },
+            "e4": {
+              "id": "8f49c8c8782b9a3384203659a1b581a78f1a02a3e0f54ddcb16a998acc85f29e",
+              "revision": 1
+            },
+            "e5": {
+              "id": "88466b8d70b0bb359bac6361ee83364667b25774247a8d2ebb74323d3841f8ce",
+              "revision": 1
+            },
+            "e6": {
+              "id": "ce6b2444309342d7dd780a18d2959f889326c71d9e9d373879cf09928f1d8252",
+              "revision": 1
+            },
+            "e7": {
+              "id": "7a1ccff55c08034bf4746edb398b438ce93d4caadcdfebb44753683ec01967ef",
+              "revision": 1
+            },
+            "e8": {
+              "id": "aa130241f5dcddf085d77f2a12730038002d1ce4693d1d19eed2fda60faf5621",
+              "revision": 1
+            },
+            "e9": {
+              "id": "87dc61ff7600274111372c9e01d27a34eeb574c80007504e2d72c98262f3a1d7",
+              "revision": 1
+            }
+          },
+          "claim_issues": {
+            "e5": [
+              "entity_referent_missing"
+            ],
+            "e9": [
+              "source_excerpt_mismatch"
+            ]
+          }
+        }
+      ],
+      "stored_verifications": [
+        {
+          "context_hash": "8e7730dfb42c79a638ffb70aaff61865c2e64d2274e6e4f2e21e6a3ed5bef982",
+          "targets": [
+            {
+              "target_id": "bdbad521d667b20fbfd7e89e665f89674751ad654e5f870a651c1927cc3bd8cd",
+              "content_hash": "91a0ce33c176c09f64dc9c04b3fc9eab73cd0ff00ee1bd8dbb93c9396f3e34ab",
+              "missing_facets": [
+                "referent"
+              ],
+              "validation_issues": [
+                "referent:source_excerpt_mismatch",
+                "referent:support_missing"
+              ],
+              "decisions": [
+                {
+                  "decision_id": "adfb80760981b671ca68a37e360e1422481675acc2e2dfef68ba41c74d546bee",
+                  "check_kind": "type",
+                  "verdict": "supported",
+                  "reason": "原文记录制剂剂型为口服片剂，满足药物产品关键限定（finished dosage form）。",
+                  "support_refs": [
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                      "section_node_id": "section:28",
+                      "block_id": "paragraph:41:0",
+                      "paragraph_index": 41,
+                      "fragment_index": 0,
+                      "table_path": null,
+                      "row_index": null,
+                      "column_index": null,
+                      "span_start": 0,
+                      "span_end": 9,
+                      "physical_page_number": 3
+                    }
+                  ],
+                  "counterevidence_refs": []
+                },
+                {
+                  "decision_id": "cefb921bde74916d5e34cdd479eb61970c3bbb07a760027f06ac39020ddf1f5b",
+                  "check_kind": "referent",
+                  "verdict": "undetermined",
+                  "reason": "同一原文单元中并列记录化学名、分子式等理化性质，证明HRS-1597指代该具体药物实例。",
+                  "support_refs": [],
+                  "counterevidence_refs": []
+                },
+                {
+                  "decision_id": "fd2845830f28b8a6d6e8a2ccc47983b1e6ba4b350974f3a7a84df11b75494b91",
+                  "check_kind": "subject_role",
+                  "verdict": "supported",
+                  "reason": "作为实体标识出现在记录中。",
+                  "support_refs": [
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "3f362e0f9fbb77d33309c3175d6af7968f793606cccc28e1285c70d4cd0102c3",
+                      "section_node_id": "section:28",
+                      "block_id": "paragraph:32:0",
+                      "paragraph_index": 32,
+                      "fragment_index": 0,
+                      "table_path": null,
+                      "row_index": null,
+                      "column_index": null,
+                      "span_start": 0,
+                      "span_end": 13,
+                      "physical_page_number": 3
+                    }
+                  ],
+                  "counterevidence_refs": []
+                }
+              ]
+            },
+            {
+              "target_id": "ae62db44277ca45f33517da0b090e2a3165d5e2c371fbc9e1264bc5ed4b6ec79",
+              "content_hash": "dea1de02eca9f973cf0727d8cc142ae125dc0965a598d7a71d88211f9a2c8983",
+              "missing_facets": [
+                "referent"
+              ],
+              "validation_issues": [
+                "referent:source_excerpt_mismatch",
+                "referent:support_missing"
+              ],
+              "decisions": [
+                {
+                  "decision_id": "2cf4919bf734068453e40fea51aa67332aa331b0dc79fcceb1c1066f1e2f882e",
+                  "check_kind": "type",
+                  "verdict": "supported",
+                  "reason": "原文记录制剂剂型为口服片剂，满足药物产品关键限定。",
+                  "support_refs": [
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                      "section_node_id": "section:28",
+                      "block_id": "paragraph:41:0",
+                      "paragraph_index": 41,
+                      "fragment_index": 0,
+                      "table_path": null,
+                      "row_index": null,
+                      "column_index": null,
+                      "span_start": 0,
+                      "span_end": 9,
+                      "physical_page_number": 3
+                    }
+                  ],
+                  "counterevidence_refs": []
+                },
+                {
+                  "decision_id": "3ee0682a5100d8fcca5c25db3bf62a9d1cb27c8eb89cbe51ade63af160819dc7",
+                  "check_kind": "referent",
+                  "verdict": "undetermined",
+                  "reason": "同一原文单元中并列记录化学名、分子式等理化性质，证明HRXS-P-2419指代该具体药物实例。",
+                  "support_refs": [],
+                  "counterevidence_refs": []
+                },
+                {
+                  "decision_id": "0e553cf69d4bf4b4d7e78cf9c0d4392c459c2b6656e9237df2b8b71393f84010",
+                  "check_kind": "subject_role",
+                  "verdict": "supported",
+                  "reason": "作为实体标识出现在记录中。",
+                  "support_refs": [
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "ea1da52e45399db39356f1c643852f358cfc812cf5afac731b05eb10b5f7ae7f",
+                      "section_node_id": "section:28",
+                      "block_id": "paragraph:33:0",
+                      "paragraph_index": 33,
+                      "fragment_index": 0,
+                      "table_path": null,
+                      "row_index": null,
+                      "column_index": null,
+                      "span_start": 0,
+                      "span_end": 16,
+                      "physical_page_number": 3
+                    }
+                  ],
+                  "counterevidence_refs": []
+                }
+              ]
+            },
+            {
+              "target_id": "f84acfbb430aaf5ebadb3f3420de1dfc7bbc0921109c0c73c4bc378349a83d45",
+              "content_hash": "dcba5fb37c5bbd9430d66086194155ed44c8b28207569cced58029d323040b3d",
+              "missing_facets": [
+                "referent"
+              ],
+              "validation_issues": [
+                "referent:source_excerpt_mismatch"
+              ],
+              "decisions": [
+                {
+                  "decision_id": "b55861e28db25f6c759f5a87e0f140bc57ed84ce1cd8436df77a8afea291e8ca",
+                  "check_kind": "type",
+                  "verdict": "supported",
+                  "reason": "原文记录制剂剂型为口服片剂，满足药物产品关键限定。",
+                  "support_refs": [
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                      "section_node_id": "section:28",
+                      "block_id": "paragraph:41:0",
+                      "paragraph_index": 41,
+                      "fragment_index": 0,
+                      "table_path": null,
+                      "row_index": null,
+                      "column_index": null,
+                      "span_start": 0,
+                      "span_end": 9,
+                      "physical_page_number": 3
+                    }
+                  ],
+                  "counterevidence_refs": []
+                },
+                {
+                  "decision_id": "e6a236fafa9769269436b8c1e7f5df77afbc8e12216a8202f15097928216c2c3",
+                  "check_kind": "referent",
+                  "verdict": "undetermined",
+                  "reason": "原文以明确化学名及分子式标识具体化学实体，指代清晰。",
+                  "support_refs": [
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+                      "section_node_id": "section:28",
+                      "block_id": "paragraph:34:0",
+                      "paragraph_index": 34,
+                      "fragment_index": 0,
+                      "table_path": null,
+                      "row_index": null,
+                      "column_index": null,
+                      "span_start": 0,
+                      "span_end": 157,
+                      "physical_page_number": 3
+                    }
+                  ],
+                  "counterevidence_refs": []
+                },
+                {
+                  "decision_id": "634ab4ec8b55ac96e5740e0209a61c07a7e5d49578c9397c3c6b01986f29142d",
+                  "check_kind": "subject_role",
+                  "verdict": "supported",
+                  "reason": "作为实体标识出现在记录中。",
+                  "support_refs": [
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "77d5673253a766130dd27073587ca96a53ae8f60d391991a13d82884d65dc756",
+                      "section_node_id": "section:28",
+                      "block_id": "paragraph:34:0",
+                      "paragraph_index": 34,
+                      "fragment_index": 0,
+                      "table_path": null,
+                      "row_index": null,
+                      "column_index": null,
+                      "span_start": 0,
+                      "span_end": 157,
+                      "physical_page_number": 3
+                    }
+                  ],
+                  "counterevidence_refs": []
+                }
+              ]
+            },
+            {
+              "target_id": "2d107f6d81495db1bbcebbe3d3a919c82e3a68deeab622e3545a87b9d245283c",
+              "content_hash": "4a5670a2f4e564388f1aab9a9ea6c673c1249e3f4fef2d3f620fa510550d39a5",
+              "missing_facets": [
+                "referent"
+              ],
+              "validation_issues": [
+                "referent:source_excerpt_mismatch"
+              ],
+              "decisions": [
+                {
+                  "decision_id": "ff86af6b3c3a375684b97701c9d3cf97038ee73cd62d4bb68ef00f6c1a187c52",
+                  "check_kind": "type",
+                  "verdict": "supported",
+                  "reason": "原文记录制剂剂型为口服片剂，满足药物产品关键限定。",
+                  "support_refs": [
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                      "section_node_id": "section:28",
+                      "block_id": "paragraph:41:0",
+                      "paragraph_index": 41,
+                      "fragment_index": 0,
+                      "table_path": null,
+                      "row_index": null,
+                      "column_index": null,
+                      "span_start": 0,
+                      "span_end": 9,
+                      "physical_page_number": 3
+                    }
+                  ],
+                  "counterevidence_refs": []
+                },
+                {
+                  "decision_id": "945c36cf63fd9594202689bc03b7c4d055c4e19896e2565c7c7e62c738eccb00",
+                  "check_kind": "referent",
+                  "verdict": "undetermined",
+                  "reason": "原文以明确化学名及分子式标识具体化学实体，指代清晰。",
+                  "support_refs": [
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e",
+                      "section_node_id": "section:28",
+                      "block_id": "paragraph:35:0",
+                      "paragraph_index": 35,
+                      "fragment_index": 0,
+                      "table_path": null,
+                      "row_index": null,
+                      "column_index": null,
+                      "span_start": 0,
+                      "span_end": 90,
+                      "physical_page_number": 3
+                    }
+                  ],
+                  "counterevidence_refs": []
+                },
+                {
+                  "decision_id": "5e1c2f829a50ed64d5759b71a540a1442c947ce737ca6c6e1d58a5c35aac3790",
+                  "check_kind": "subject_role",
+                  "verdict": "supported",
+                  "reason": "作为实体标识出现在记录中。",
+                  "support_refs": [
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "f7eb09b301902373602ec8a79e1346e26c419571ed8745dc0e35d0fcedee374e",
+                      "section_node_id": "section:28",
+                      "block_id": "paragraph:35:0",
+                      "paragraph_index": 35,
+                      "fragment_index": 0,
+                      "table_path": null,
+                      "row_index": null,
+                      "column_index": null,
+                      "span_start": 0,
+                      "span_end": 90,
+                      "physical_page_number": 3
+                    }
+                  ],
+                  "counterevidence_refs": []
+                }
+              ]
+            },
+            {
+              "target_id": "473deaa7e5e2053062c357520fd4b1ffa2cb324f813456a716c02febd01db38a",
+              "content_hash": "ed4549ac1ea1f353c79037e8e27e6365268bfe88a00b11f4f3849e6fb956b3b7",
+              "missing_facets": [
+                "referent"
+              ],
+              "validation_issues": [
+                "referent:source_excerpt_mismatch",
+                "referent:support_missing"
+              ],
+              "decisions": [
+                {
+                  "decision_id": "4cdc369c644059d7ef19b6a0e8db02d82f8d7ccf29d562ba9ec4175b8a803591",
+                  "check_kind": "type",
+                  "verdict": "supported",
+                  "reason": "原文记录制剂剂型为口服片剂，满足药物产品关键限定。",
+                  "support_refs": [
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                      "section_node_id": "section:28",
+                      "block_id": "paragraph:41:0",
+                      "paragraph_index": 41,
+                      "fragment_index": 0,
+                      "table_path": null,
+                      "row_index": null,
+                      "column_index": null,
+                      "span_start": 0,
+                      "span_end": 9,
+                      "physical_page_number": 3
+                    }
+                  ],
+                  "counterevidence_refs": []
+                },
+                {
+                  "decision_id": "5afab4e686eab9779fc1487738a19fffd0c156e2049166c6f49051d25460c609",
+                  "check_kind": "referent",
+                  "verdict": "undetermined",
+                  "reason": "同一原文单元中并列记录化学名、分子式等理化性质，证明该性状指代该具体药物实例。",
+                  "support_refs": [],
+                  "counterevidence_refs": []
+                },
+                {
+                  "decision_id": "450d85b2ae49dfa5db5b260cf101c985bd82c3f389039c3caf20664b8f11f9ba",
+                  "check_kind": "subject_role",
+                  "verdict": "supported",
+                  "reason": "作为实体标识出现在记录中。",
+                  "support_refs": [
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "964a26c0b687cba86992524c4eff4a2596bb6780c9dd9e868e6edfc69aa5da44",
+                      "section_node_id": "section:28",
+                      "block_id": "paragraph:37:0",
+                      "paragraph_index": 37,
+                      "fragment_index": 0,
+                      "table_path": null,
+                      "row_index": null,
+                      "column_index": null,
+                      "span_start": 0,
+                      "span_end": 11,
+                      "physical_page_number": 3
+                    }
+                  ],
+                  "counterevidence_refs": []
+                }
+              ]
+            },
+            {
+              "target_id": "d3af93426839765d77019d71a56a4cc610fab63cc63df271b3fb398b7931ebd1",
+              "content_hash": "535b4ea4027583531cc4ad637018e1dd651e1258a1e0d40f4e30aaf5eef9cfc0",
+              "missing_facets": [
+                "referent"
+              ],
+              "validation_issues": [
+                "referent:source_excerpt_mismatch",
+                "referent:support_missing"
+              ],
+              "decisions": [
+                {
+                  "decision_id": "985ed8371c01be2efa61863696d0370e1f72693390fad1cd7932a222bcf330b6",
+                  "check_kind": "type",
+                  "verdict": "supported",
+                  "reason": "原文记录制剂剂型为口服片剂，满足药物产品关键限定。",
+                  "support_refs": [
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                      "section_node_id": "section:28",
+                      "block_id": "paragraph:41:0",
+                      "paragraph_index": 41,
+                      "fragment_index": 0,
+                      "table_path": null,
+                      "row_index": null,
+                      "column_index": null,
+                      "span_start": 0,
+                      "span_end": 9,
+                      "physical_page_number": 3
+                    }
+                  ],
+                  "counterevidence_refs": []
+                },
+                {
+                  "decision_id": "e33fb93bef32abd5f6ebab9da3c6a3d8596d0f916aef103756b109ad2fc939b1",
+                  "check_kind": "referent",
+                  "verdict": "undetermined",
+                  "reason": "同一原文单元中并列记录化学名、分子量等理化性质，证明该分子式指代该具体药物实例。",
+                  "support_refs": [],
+                  "counterevidence_refs": []
+                },
+                {
+                  "decision_id": "c03875c8d4e181fb290f05436190c296be1822bf253e4c5e11c3d9dfb2e8b650",
+                  "check_kind": "subject_role",
+                  "verdict": "supported",
+                  "reason": "作为实体标识出现在记录中。",
+                  "support_refs": [
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "389773f0aa0379042a20b1065c9101535f97fac5717f999d4795a95e47c99d4e",
+                      "section_node_id": "section:28",
+                      "block_id": "paragraph:30:0",
+                      "paragraph_index": 30,
+                      "fragment_index": 0,
+                      "table_path": null,
+                      "row_index": null,
+                      "column_index": null,
+                      "span_start": 0,
+                      "span_end": 15,
+                      "physical_page_number": 3
+                    }
+                  ],
+                  "counterevidence_refs": []
+                }
+              ]
+            },
+            {
+              "target_id": "23af0bd1b7074e381959d7c0f1b8be89edbe31f860fd2852ec7118d06fba262d",
+              "content_hash": "bcf9f537ab76943e5644a994ce27d76e19a8e3f4feed5817162b733d92ff6e0d",
+              "missing_facets": [
+                "referent"
+              ],
+              "validation_issues": [
+                "referent:source_excerpt_mismatch",
+                "referent:support_missing"
+              ],
+              "decisions": [
+                {
+                  "decision_id": "10d8f483cb9800fd4d661589380a138e71bf2accd91ac25af282b5d430fa804c",
+                  "check_kind": "type",
+                  "verdict": "supported",
+                  "reason": "原文记录制剂剂型为口服片剂，满足药物产品关键限定。",
+                  "support_refs": [
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "95bf85821199e2641462f4f941f4c6a6360c7d56d7ba75cb34ef9be5a2aca633",
+                      "section_node_id": "section:28",
+                      "block_id": "paragraph:41:0",
+                      "paragraph_index": 41,
+                      "fragment_index": 0,
+                      "table_path": null,
+                      "row_index": null,
+                      "column_index": null,
+                      "span_start": 0,
+                      "span_end": 9,
+                      "physical_page_number": 3
+                    }
+                  ],
+                  "counterevidence_refs": []
+                },
+                {
+                  "decision_id": "c0e46794a7b8208b6b061f9c4beb48ff34213a87c4c24792c430baf56b8f7db2",
+                  "check_kind": "referent",
+                  "verdict": "undetermined",
+                  "reason": "同一原文单元中并列记录化学名、分子式等理化性质，证明该分子量指代该具体药物实例。",
+                  "support_refs": [],
+                  "counterevidence_refs": []
+                },
+                {
+                  "decision_id": "d52b8ea8196db590c5006ddaa3d57fd39dffd82fb60b22cd96e277b99d4ebb34",
+                  "check_kind": "subject_role",
+                  "verdict": "supported",
+                  "reason": "作为实体标识出现在记录中。",
+                  "support_refs": [
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "199db36bb326302c4f53ea738f5170e990938dd955500f7c324bf6294980ca8c",
+                      "section_node_id": "section:28",
+                      "block_id": "paragraph:31:0",
+                      "paragraph_index": 31,
+                      "fragment_index": 0,
+                      "table_path": null,
+                      "row_index": null,
+                      "column_index": null,
+                      "span_start": 0,
+                      "span_end": 10,
+                      "physical_page_number": 3
+                    }
+                  ],
+                  "counterevidence_refs": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "semantic_outcome": "undetermined",
+          "complete": false,
+          "reason_code": "entity_referent_missing",
+          "reason": "entity_referent_missing；source_excerpt_mismatch；referent:source_excerpt_mismatch；referent:support_missing；referent_not_supported",
+          "controller_checks": {
+            "binding": 0,
+            "metric": 0,
+            "shacl": 0,
+            "elapsed_seconds": 0.10383302695117891
+          },
+          "nodes": [],
+          "edges": [],
+          "relationship_groups": [],
+          "properties": [],
+          "attribute_candidates": null
+        }
+      ],
+      "independent_review": "See linked Markdown review; raw supported is not independent acceptance."
+    },
+    {
+      "lineage_id": "5a41a66a4c1c88abbae9287737859da98a32f8c2aa6cb0d53e018e66bb91dce8",
+      "task": {
+        "kind": "record_discovery",
+        "task_id": "cb209141cf09589e3da611cc4ac91a2b13b97bbf3c86ecc468b933778256d3b8",
+        "claim_lineage_id": "5a41a66a4c1c88abbae9287737859da98a32f8c2aa6cb0d53e018e66bb91dce8",
+        "record_id": "7151b6e397038cd147f790b740f0b89ab6876bf34306a75b0a1b7fc4fe423dc8",
+        "schema_card_id": "9817bd6f3f109d8478f656bfc505c45419093a9f77494891bee0f8b3f9e5a13e",
+        "analysis_scope_ref": "875105c6e91d82dbae822b9fecd36c8d15869052b39c195a1ab47ea8949c1ee5",
+        "dependency_hash": "1c35f617ec34976d755662a21b9f2a0091cadc583af3729169a1e54d6b4d8c75",
+        "scope": {
+          "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "members": []
+        },
+        "source_record_ids": [
+          "7151b6e397038cd147f790b740f0b89ab6876bf34306a75b0a1b7fc4fe423dc8"
+        ]
+      },
+      "reviewed_model_turns": [
+        {
+          "immutable_result_key": "29106c2170e8fd855b0155274b028409a157d09c8777aaef50c9e418166a6c5c",
+          "stage": "discovery",
+          "attempt": 1,
+          "stage_group_seq": null,
+          "member_task_ids": null,
+          "input_hash": "6b1e65f3b1fa73c8ae642f7a1c0ed2df805ce527e1bd898dc444120019ddb1d9",
+          "response_id": "resp_Txwxx00Ny28DiC1KnDU3RVZY8OPEJJqK",
+          "response_status": "completed",
+          "incomplete_details": null,
+          "error": null,
+          "usage": {
+            "input_tokens": 4379,
+            "input_tokens_details": {
+              "cached_tokens": 1606
+            },
+            "output_tokens": 639,
+            "total_tokens": 5018
+          },
+          "output_text_sha256": "04fd0f6b230a3ea26bdc12c4083de59ea2ffa366e1587574893cca80f3d66e62",
+          "model_output": {
+            "entities": [
+              {
+                "class_iri": "https://ontology.pharma-gmp.cn/slpra/cleaning/HeatInactivation",
+                "identifier_claims": [],
+                "local_id": "e1",
+                "mentions": [
+                  {
+                    "context_text": null,
+                    "evidence_id": "cbd145dfbfc047b7e2a6805e2306ea7b5c1408b5ad566ddd8f712f3dd8a2325b",
+                    "text": "HRS-1597成品"
+                  }
+                ],
+                "record_components": [],
+                "representation": "mention"
+              },
+              {
+                "class_iri": "https://ontology.pharma-gmp.cn/slpra/cleaning/InactivationProcess",
+                "identifier_claims": [],
+                "local_id": "e2",
+                "mentions": [],
+                "record_components": [
+                  {
+                    "quote": {
+                      "context_text": null,
+                      "evidence_id": "758e52bd053252210d40b2fb2588a161754666a34f29e92115b8b63ead60991d",
+                      "text": "500L反应釜（RE64613）以及穿墙管道"
+                    },
+                    "role": "subject"
+                  },
+                  {
+                    "quote": {
+                      "context_text": null,
+                      "evidence_id": "1816c47e0763bc1d35352de13ba3aeaf6c3c3274f3486caa91fdd559cde81ebb",
+                      "text": "①\t用纯化水冲洗穿墙管道以及反应釜内壁5~10分钟"
+                    },
+                    "role": "subject"
+                  },
+                  {
+                    "quote": {
+                      "context_text": null,
+                      "evidence_id": "dab6e7e4277e438bfed9f21373227d91b96cfc0eac7344aecd467d5ddea69c8e",
+                      "text": "②\t通过穿墙管道向反应釜内加160kg丙酮，回流55~65℃洗涤10~20分钟"
+                    },
+                    "role": "subject"
+                  },
+                  {
+                    "quote": {
+                      "context_text": null,
+                      "evidence_id": "9c204a3218cdcb55c0f8041860b93b0cdf5e455072cb2880013cd53623fb48ee",
+                      "text": "③\t通过穿墙管道加纯化水200L，回流95~105℃洗涤10~20分钟"
+                    },
+                    "role": "subject"
+                  },
+                  {
+                    "quote": {
+                      "context_text": null,
+                      "evidence_id": "da0b2be02bcf65896380801e3de686d9acefb83ee68ea3270873de8dc86924fa",
+                      "text": "④\t加纯化水400L搅拌洗涤10~20分钟"
+                    },
+                    "role": "subject"
+                  }
+                ],
+                "representation": "record"
+              }
+            ],
+            "external_links": [],
+            "observations": [],
+            "properties": [],
+            "reference_bindings": [],
+            "relations": []
+          },
+          "tool_calls": []
+        },
+        {
+          "immutable_result_key": "07ec6a61a66fb05c08d9fe210ef817319c9917ac31f180411d2847d642446761",
+          "stage": "verification",
+          "attempt": 2,
+          "stage_group_seq": null,
+          "member_task_ids": null,
+          "input_hash": "2bbc5323f443398f3decef9f7925d916d19a0ece003d9bb9e3885a9ffe0247dd",
+          "response_id": "resp_nfpPXnhkWudeQbAAROJ2VFmuGV4GdhX1",
+          "response_status": "completed",
+          "incomplete_details": null,
+          "error": null,
+          "usage": {
+            "input_tokens": 4802,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 1095,
+            "total_tokens": 5897
+          },
+          "output_text_sha256": "443212777a838965721cc09e2890c73c2e06e8033bf865368244bd6ac910737a",
+          "model_output": {
+            "verifications": [
+              {
+                "content_hash": "1c48bb3a95a27364eb2abc667c62d0c9192e5d083e44905eb65fe3823a23f66d",
+                "facets": [
+                  {
+                    "counterevidence_support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "1816c47e0763bc1d35352de13ba3aeaf6c3c3274f3486caa91fdd559cde81ebb",
+                        "text": "① 用纯化水冲洗穿墙管道以及反应釜内壁5~10分钟，清洗水通过放料口排出，排放过程对反应釜底阀进行“全开~关闭~全开~关闭~全开”的操作，对阀门进行清洗，下同；"
+                      },
+                      {
+                        "context_text": null,
+                        "evidence_id": "dab6e7e4277e438bfed9f21373227d91b96cfc0eac7344aecd467d5ddea69c8e",
+                        "text": "② 通过穿墙管道向反应釜内加160kg丙酮，回流55~65℃洗涤10~20分钟，通过管道排出；"
+                      },
+                      {
+                        "context_text": null,
+                        "evidence_id": "9c204a3218cdcb55c0f8041860b93b0cdf5e455072cb2880013cd53623fb48ee",
+                        "text": "③ 通过穿墙管道加纯化水200L，回流95~105℃洗涤10~20分钟，通过管道排出；"
+                      },
+                      {
+                        "context_text": null,
+                        "evidence_id": "da0b2be02bcf65896380801e3de686d9acefb83ee68ea3270873de8dc86924fa",
+                        "text": "④ 加纯化水400L搅拌洗涤10~20分钟，通过管道排出；"
+                      },
+                      {
+                        "context_text": null,
+                        "evidence_id": "edf7eb8b4550441ac1c45b1a98c7fbcf45658a2908f60f8ba57e8bb7b8d81f80",
+                        "text": "⑤ 氮气吹干反应釜内壁和管道并挂清洁标志牌。"
+                      }
+                    ],
+                    "name": "type",
+                    "reason": "原文描述的“冲洗”、“洗涤”、“吹干”过程属于物质去除或清洗操作，并非以热作用降低或消除生物活性物质活性的灭活过程（HeatInactivation的关键限定）。虽然涉及回流温度，但目的是洗涤而非灭菌/灭活，且步骤①为常温冲洗，③为纯化水回流洗涤，④为常温搅拌，⑤为氮气吹干，均不符合HeatInactivation定义",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "758e52bd053252210d40b2fb2588a161754666a34f29e92115b8b63ead60991d",
+                        "text": "500L反应釜"
+                      },
+                      {
+                        "context_text": null,
+                        "evidence_id": "0d92e9fa3a0ab6eb36b37ae58b2c3d8a13dbfc106941fe8e59f4774e28ceca9f",
+                        "text": "（RE64613）以及穿墙管道串联清洗"
+                      }
+                    ],
+                    "verdict": "unsupported"
+                  },
+                  {
+                    "counterevidence_support": [],
+                    "name": "referent",
+                    "reason": "原文明确提及“HRS-1597成品”以及“500L反应釜（RE64613）以及穿墙管道串联清洗”，指向具体的物理实体",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "cbd145dfbfc047b7e2a6805e2306ea7b5c1408b5ad566ddd8f712f3dd8a2325b",
+                        "text": "HRS-1597成品"
+                      },
+                      {
+                        "context_text": null,
+                        "evidence_id": "758e52bd053252210d40b2fb2588a161754666a34f29e92115b8b63ead60991d",
+                        "text": "500L反应釜"
+                      },
+                      {
+                        "context_text": null,
+                        "evidence_id": "0d92e9fa3a0ab6eb36b37ae58b2c3d8a13dbfc106941fe8e59f4774e28ceca9f",
+                        "text": "（RE64613）以及穿墙管道串联清洗"
+                      }
+                    ],
+                    "verdict": "supported"
+                  },
+                  {
+                    "counterevidence_support": [],
+                    "name": "subject_role",
+                    "reason": "表头明确标识该列为“设备名称及编号”，对应“设备清洗方法”，表明该实体为清洗过程的操作对象（主体）",
+                    "support": [
+                      {
+                        "context_text": null,
+                        "evidence_id": "a9e1cff8c7ae08627f5c153a19bd337c29fb29f8c0fed2b2b6ba1816a85dc9bf",
+                        "text": "工艺"
+                      },
+                      {
+                        "context_text": null,
+                        "evidence_id": "a7afc7cb8964c2d34e440827adae1cb470c0250ea0569ea3e1c6adbaddf06814",
+                        "text": "设备清洗方法"
+                      }
+                    ],
+                    "verdict": "supported"
+                  }
+                ],
+                "target_id": "da485987772cc5672bd0d66560f536bba6c5d1db6676fc4350288c042f72a023"
+              }
+            ]
+          },
+          "tool_calls": []
+        }
+      ],
+      "quote_checks": [
+        {
+          "evidence_id": "cbd145dfbfc047b7e2a6805e2306ea7b5c1408b5ad566ddd8f712f3dd8a2325b",
+          "quote": "HRS-1597成品",
+          "source_text": "HRS-1597成品",
+          "paragraph_1_based": 1,
+          "table_path": [
+            "table:5"
+          ],
+          "row_index": 1,
+          "column_index": 0,
+          "matching_intervals": [
+            [
+              0,
+              10
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "29106c2170e8fd855b0155274b028409a157d09c8777aaef50c9e418166a6c5c",
+            "07ec6a61a66fb05c08d9fe210ef817319c9917ac31f180411d2847d642446761"
+          ]
+        },
+        {
+          "evidence_id": "758e52bd053252210d40b2fb2588a161754666a34f29e92115b8b63ead60991d",
+          "quote": "500L反应釜（RE64613）以及穿墙管道",
+          "source_text": "500L反应釜",
+          "paragraph_1_based": 1,
+          "table_path": [
+            "table:5"
+          ],
+          "row_index": 2,
+          "column_index": 1,
+          "matching_intervals": [],
+          "unique_exact_quote": false,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "29106c2170e8fd855b0155274b028409a157d09c8777aaef50c9e418166a6c5c"
+          ]
+        },
+        {
+          "evidence_id": "1816c47e0763bc1d35352de13ba3aeaf6c3c3274f3486caa91fdd559cde81ebb",
+          "quote": "①\t用纯化水冲洗穿墙管道以及反应釜内壁5~10分钟",
+          "source_text": "①\t用纯化水冲洗穿墙管道以及反应釜内壁5~10分钟，清洗水通过放料口排出，排放过程对反应釜底阀进行“全开~关闭~全开~关闭~全开”的操作，对阀门进行清洗，下同；",
+          "paragraph_1_based": 1,
+          "table_path": [
+            "table:5"
+          ],
+          "row_index": 2,
+          "column_index": 2,
+          "matching_intervals": [
+            [
+              0,
+              25
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "29106c2170e8fd855b0155274b028409a157d09c8777aaef50c9e418166a6c5c"
+          ]
+        },
+        {
+          "evidence_id": "dab6e7e4277e438bfed9f21373227d91b96cfc0eac7344aecd467d5ddea69c8e",
+          "quote": "②\t通过穿墙管道向反应釜内加160kg丙酮，回流55~65℃洗涤10~20分钟",
+          "source_text": "②\t通过穿墙管道向反应釜内加160kg丙酮，回流55~65℃洗涤10~20分钟，通过管道排出；",
+          "paragraph_1_based": 2,
+          "table_path": [
+            "table:5"
+          ],
+          "row_index": 2,
+          "column_index": 2,
+          "matching_intervals": [
+            [
+              0,
+              39
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "29106c2170e8fd855b0155274b028409a157d09c8777aaef50c9e418166a6c5c"
+          ]
+        },
+        {
+          "evidence_id": "9c204a3218cdcb55c0f8041860b93b0cdf5e455072cb2880013cd53623fb48ee",
+          "quote": "③\t通过穿墙管道加纯化水200L，回流95~105℃洗涤10~20分钟",
+          "source_text": "③\t通过穿墙管道加纯化水200L，回流95~105℃洗涤10~20分钟，通过管道排出；",
+          "paragraph_1_based": 3,
+          "table_path": [
+            "table:5"
+          ],
+          "row_index": 2,
+          "column_index": 2,
+          "matching_intervals": [
+            [
+              0,
+              35
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "29106c2170e8fd855b0155274b028409a157d09c8777aaef50c9e418166a6c5c"
+          ]
+        },
+        {
+          "evidence_id": "da0b2be02bcf65896380801e3de686d9acefb83ee68ea3270873de8dc86924fa",
+          "quote": "④\t加纯化水400L搅拌洗涤10~20分钟",
+          "source_text": "④\t加纯化水400L搅拌洗涤10~20分钟，通过管道排出；",
+          "paragraph_1_based": 4,
+          "table_path": [
+            "table:5"
+          ],
+          "row_index": 2,
+          "column_index": 2,
+          "matching_intervals": [
+            [
+              0,
+              21
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "29106c2170e8fd855b0155274b028409a157d09c8777aaef50c9e418166a6c5c"
+          ]
+        },
+        {
+          "evidence_id": "1816c47e0763bc1d35352de13ba3aeaf6c3c3274f3486caa91fdd559cde81ebb",
+          "quote": "① 用纯化水冲洗穿墙管道以及反应釜内壁5~10分钟，清洗水通过放料口排出，排放过程对反应釜底阀进行“全开~关闭~全开~关闭~全开”的操作，对阀门进行清洗，下同；",
+          "source_text": "①\t用纯化水冲洗穿墙管道以及反应釜内壁5~10分钟，清洗水通过放料口排出，排放过程对反应釜底阀进行“全开~关闭~全开~关闭~全开”的操作，对阀门进行清洗，下同；",
+          "paragraph_1_based": 1,
+          "table_path": [
+            "table:5"
+          ],
+          "row_index": 2,
+          "column_index": 2,
+          "matching_intervals": [],
+          "unique_exact_quote": false,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "07ec6a61a66fb05c08d9fe210ef817319c9917ac31f180411d2847d642446761"
+          ]
+        },
+        {
+          "evidence_id": "dab6e7e4277e438bfed9f21373227d91b96cfc0eac7344aecd467d5ddea69c8e",
+          "quote": "② 通过穿墙管道向反应釜内加160kg丙酮，回流55~65℃洗涤10~20分钟，通过管道排出；",
+          "source_text": "②\t通过穿墙管道向反应釜内加160kg丙酮，回流55~65℃洗涤10~20分钟，通过管道排出；",
+          "paragraph_1_based": 2,
+          "table_path": [
+            "table:5"
+          ],
+          "row_index": 2,
+          "column_index": 2,
+          "matching_intervals": [],
+          "unique_exact_quote": false,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "07ec6a61a66fb05c08d9fe210ef817319c9917ac31f180411d2847d642446761"
+          ]
+        },
+        {
+          "evidence_id": "9c204a3218cdcb55c0f8041860b93b0cdf5e455072cb2880013cd53623fb48ee",
+          "quote": "③ 通过穿墙管道加纯化水200L，回流95~105℃洗涤10~20分钟，通过管道排出；",
+          "source_text": "③\t通过穿墙管道加纯化水200L，回流95~105℃洗涤10~20分钟，通过管道排出；",
+          "paragraph_1_based": 3,
+          "table_path": [
+            "table:5"
+          ],
+          "row_index": 2,
+          "column_index": 2,
+          "matching_intervals": [],
+          "unique_exact_quote": false,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "07ec6a61a66fb05c08d9fe210ef817319c9917ac31f180411d2847d642446761"
+          ]
+        },
+        {
+          "evidence_id": "da0b2be02bcf65896380801e3de686d9acefb83ee68ea3270873de8dc86924fa",
+          "quote": "④ 加纯化水400L搅拌洗涤10~20分钟，通过管道排出；",
+          "source_text": "④\t加纯化水400L搅拌洗涤10~20分钟，通过管道排出；",
+          "paragraph_1_based": 4,
+          "table_path": [
+            "table:5"
+          ],
+          "row_index": 2,
+          "column_index": 2,
+          "matching_intervals": [],
+          "unique_exact_quote": false,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "07ec6a61a66fb05c08d9fe210ef817319c9917ac31f180411d2847d642446761"
+          ]
+        },
+        {
+          "evidence_id": "edf7eb8b4550441ac1c45b1a98c7fbcf45658a2908f60f8ba57e8bb7b8d81f80",
+          "quote": "⑤ 氮气吹干反应釜内壁和管道并挂清洁标志牌。",
+          "source_text": "⑤\t氮气吹干反应釜内壁和管道并挂清洁标志牌。",
+          "paragraph_1_based": 5,
+          "table_path": [
+            "table:5"
+          ],
+          "row_index": 2,
+          "column_index": 2,
+          "matching_intervals": [],
+          "unique_exact_quote": false,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "07ec6a61a66fb05c08d9fe210ef817319c9917ac31f180411d2847d642446761"
+          ]
+        },
+        {
+          "evidence_id": "758e52bd053252210d40b2fb2588a161754666a34f29e92115b8b63ead60991d",
+          "quote": "500L反应釜",
+          "source_text": "500L反应釜",
+          "paragraph_1_based": 1,
+          "table_path": [
+            "table:5"
+          ],
+          "row_index": 2,
+          "column_index": 1,
+          "matching_intervals": [
+            [
+              0,
+              7
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "07ec6a61a66fb05c08d9fe210ef817319c9917ac31f180411d2847d642446761"
+          ]
+        },
+        {
+          "evidence_id": "0d92e9fa3a0ab6eb36b37ae58b2c3d8a13dbfc106941fe8e59f4774e28ceca9f",
+          "quote": "（RE64613）以及穿墙管道串联清洗",
+          "source_text": "（RE64613）以及穿墙管道串联清洗",
+          "paragraph_1_based": 2,
+          "table_path": [
+            "table:5"
+          ],
+          "row_index": 2,
+          "column_index": 1,
+          "matching_intervals": [
+            [
+              0,
+              19
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "07ec6a61a66fb05c08d9fe210ef817319c9917ac31f180411d2847d642446761"
+          ]
+        },
+        {
+          "evidence_id": "a9e1cff8c7ae08627f5c153a19bd337c29fb29f8c0fed2b2b6ba1816a85dc9bf",
+          "quote": "工艺",
+          "source_text": "工艺",
+          "paragraph_1_based": 51,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              2
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "07ec6a61a66fb05c08d9fe210ef817319c9917ac31f180411d2847d642446761"
+          ]
+        },
+        {
+          "evidence_id": "a7afc7cb8964c2d34e440827adae1cb470c0250ea0569ea3e1c6adbaddf06814",
+          "quote": "设备清洗方法",
+          "source_text": "设备清洗方法",
+          "paragraph_1_based": 81,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              6
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "07ec6a61a66fb05c08d9fe210ef817319c9917ac31f180411d2847d642446761"
+          ]
+        }
+      ],
+      "immutable_results": {
+        "eff8624dfbe2b0fb058655f876d548473dbee07105dd8a17cf65c2abe63c010f": "verification",
+        "6de4587fb8e16e55c4285db006a16c1194979ed2824e884e20f18de21fc9e17a": "outcome",
+        "d69164904f1bd3868646903afe9a7cecbb4cf490960f8efe955294b604870ae2": "discovery"
+      },
+      "frozen_discoveries": [
+        {
+          "entities": [
+            {
+              "local_id": "e1",
+              "class_iri": "https://ontology.pharma-gmp.cn/slpra/cleaning/HeatInactivation",
+              "representation": "mention",
+              "mentions": [
+                {
+                  "evidence_id": "cbd145dfbfc047b7e2a6805e2306ea7b5c1408b5ad566ddd8f712f3dd8a2325b",
+                  "text": "HRS-1597成品",
+                  "context_text": null
+                }
+              ],
+              "record_components": [],
+              "identifier_claims": []
+            },
+            {
+              "local_id": "e2",
+              "class_iri": "https://ontology.pharma-gmp.cn/slpra/cleaning/InactivationProcess",
+              "representation": "record",
+              "mentions": [],
+              "record_components": [
+                {
+                  "role": "subject",
+                  "quote": {
+                    "evidence_id": "758e52bd053252210d40b2fb2588a161754666a34f29e92115b8b63ead60991d",
+                    "text": "500L反应釜（RE64613）以及穿墙管道",
+                    "context_text": null
+                  }
+                },
+                {
+                  "role": "subject",
+                  "quote": {
+                    "evidence_id": "1816c47e0763bc1d35352de13ba3aeaf6c3c3274f3486caa91fdd559cde81ebb",
+                    "text": "①\t用纯化水冲洗穿墙管道以及反应釜内壁5~10分钟",
+                    "context_text": null
+                  }
+                },
+                {
+                  "role": "subject",
+                  "quote": {
+                    "evidence_id": "dab6e7e4277e438bfed9f21373227d91b96cfc0eac7344aecd467d5ddea69c8e",
+                    "text": "②\t通过穿墙管道向反应釜内加160kg丙酮，回流55~65℃洗涤10~20分钟",
+                    "context_text": null
+                  }
+                },
+                {
+                  "role": "subject",
+                  "quote": {
+                    "evidence_id": "9c204a3218cdcb55c0f8041860b93b0cdf5e455072cb2880013cd53623fb48ee",
+                    "text": "③\t通过穿墙管道加纯化水200L，回流95~105℃洗涤10~20分钟",
+                    "context_text": null
+                  }
+                },
+                {
+                  "role": "subject",
+                  "quote": {
+                    "evidence_id": "da0b2be02bcf65896380801e3de686d9acefb83ee68ea3270873de8dc86924fa",
+                    "text": "④\t加纯化水400L搅拌洗涤10~20分钟",
+                    "context_text": null
+                  }
+                }
+              ],
+              "identifier_claims": []
+            }
+          ],
+          "properties": [],
+          "relations": [],
+          "external_links": [],
+          "observations": [],
+          "reference_bindings": [],
+          "assertion_generation": 1,
+          "evidence_revision": 1,
+          "content_hash": "7f62346a0a04ffde82200f25b472c3c922a0c8472fa99e2451ff61f8ae1564d7",
+          "local_ref_map": {
+            "e1": {
+              "id": "56fe069f9fa33b96c0d593777765bc57ff6bdf1d24620a25c9d07594c83ca766",
+              "revision": 1
+            },
+            "e2": {
+              "id": "1c89d4b5e6aee2e5b3c34fde3db278ff085425dea67c1e196f0e0f8349ebd120",
+              "revision": 1
+            }
+          },
+          "claim_issues": {
+            "e2": [
+              "source_excerpt_mismatch",
+              "record_composition_source_invalid"
+            ]
+          }
+        }
+      ],
+      "stored_verifications": [
+        {
+          "context_hash": "5e0aa4292484a018df081f46e2bee8706fe8a1f370af2cf7f4b9286a4d14e837",
+          "targets": [
+            {
+              "target_id": "da485987772cc5672bd0d66560f536bba6c5d1db6676fc4350288c042f72a023",
+              "content_hash": "1c48bb3a95a27364eb2abc667c62d0c9192e5d083e44905eb65fe3823a23f66d",
+              "missing_facets": [
+                "type"
+              ],
+              "validation_issues": [
+                "type:source_excerpt_mismatch"
+              ],
+              "decisions": [
+                {
+                  "decision_id": "1af19ddd6af69c2f7579363c6757fe9b86192dd601f7f1f99559287477f46587",
+                  "check_kind": "type",
+                  "verdict": "undetermined",
+                  "reason": "原文描述的“冲洗”、“洗涤”、“吹干”过程属于物质去除或清洗操作，并非以热作用降低或消除生物活性物质活性的灭活过程（HeatInactivation的关键限定）。虽然涉及回流温度，但目的是洗涤而非灭菌/灭活，且步骤①为常温冲洗，③为纯化水回流洗涤，④为常温搅拌，⑤为氮气吹干，均不符合HeatInactivation定义",
+                  "support_refs": [
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "758e52bd053252210d40b2fb2588a161754666a34f29e92115b8b63ead60991d",
+                      "section_node_id": "section:80",
+                      "block_id": "table:5",
+                      "paragraph_index": 0,
+                      "fragment_index": 0,
+                      "table_path": [
+                        "table:5"
+                      ],
+                      "row_index": 2,
+                      "column_index": 1,
+                      "span_start": 0,
+                      "span_end": 7,
+                      "physical_page_number": 5
+                    },
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "0d92e9fa3a0ab6eb36b37ae58b2c3d8a13dbfc106941fe8e59f4774e28ceca9f",
+                      "section_node_id": "section:80",
+                      "block_id": "table:5",
+                      "paragraph_index": 1,
+                      "fragment_index": 0,
+                      "table_path": [
+                        "table:5"
+                      ],
+                      "row_index": 2,
+                      "column_index": 1,
+                      "span_start": 0,
+                      "span_end": 19,
+                      "physical_page_number": 5
+                    }
+                  ],
+                  "counterevidence_refs": []
+                },
+                {
+                  "decision_id": "ff76867cd7950c80b58576d3675e9b77c41b95768d5a2007dbf844590caada72",
+                  "check_kind": "referent",
+                  "verdict": "supported",
+                  "reason": "原文明确提及“HRS-1597成品”以及“500L反应釜（RE64613）以及穿墙管道串联清洗”，指向具体的物理实体",
+                  "support_refs": [
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "cbd145dfbfc047b7e2a6805e2306ea7b5c1408b5ad566ddd8f712f3dd8a2325b",
+                      "section_node_id": "section:80",
+                      "block_id": "table:5",
+                      "paragraph_index": 0,
+                      "fragment_index": 0,
+                      "table_path": [
+                        "table:5"
+                      ],
+                      "row_index": 1,
+                      "column_index": 0,
+                      "span_start": 0,
+                      "span_end": 10,
+                      "physical_page_number": 5
+                    },
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "758e52bd053252210d40b2fb2588a161754666a34f29e92115b8b63ead60991d",
+                      "section_node_id": "section:80",
+                      "block_id": "table:5",
+                      "paragraph_index": 0,
+                      "fragment_index": 0,
+                      "table_path": [
+                        "table:5"
+                      ],
+                      "row_index": 2,
+                      "column_index": 1,
+                      "span_start": 0,
+                      "span_end": 7,
+                      "physical_page_number": 5
+                    },
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "0d92e9fa3a0ab6eb36b37ae58b2c3d8a13dbfc106941fe8e59f4774e28ceca9f",
+                      "section_node_id": "section:80",
+                      "block_id": "table:5",
+                      "paragraph_index": 1,
+                      "fragment_index": 0,
+                      "table_path": [
+                        "table:5"
+                      ],
+                      "row_index": 2,
+                      "column_index": 1,
+                      "span_start": 0,
+                      "span_end": 19,
+                      "physical_page_number": 5
+                    }
+                  ],
+                  "counterevidence_refs": []
+                },
+                {
+                  "decision_id": "2b5c5a8e8abec3ea28b864a6347b1b0d4f40457ca004a1c42e167b751b18f8df",
+                  "check_kind": "subject_role",
+                  "verdict": "supported",
+                  "reason": "表头明确标识该列为“设备名称及编号”，对应“设备清洗方法”，表明该实体为清洗过程的操作对象（主体）",
+                  "support_refs": [
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "a9e1cff8c7ae08627f5c153a19bd337c29fb29f8c0fed2b2b6ba1816a85dc9bf",
+                      "section_node_id": "section:50",
+                      "block_id": "paragraph:50:0",
+                      "paragraph_index": 50,
+                      "fragment_index": 0,
+                      "table_path": null,
+                      "row_index": null,
+                      "column_index": null,
+                      "span_start": 0,
+                      "span_end": 2,
+                      "physical_page_number": 4
+                    },
+                    {
+                      "document_hash": "1156ca7b694c5af10afa393a5df4158ad4f9528901eab560ae2cf96e55b6d44b",
+                      "parser_version": "9",
+                      "structure_hash": "c5c3d60bf5347931486fa3127c909194b4fac44362754574e1ba21d508e94bb5",
+                      "evidence_id": "a7afc7cb8964c2d34e440827adae1cb470c0250ea0569ea3e1c6adbaddf06814",
+                      "section_node_id": "section:80",
+                      "block_id": "paragraph:80:0",
+                      "paragraph_index": 80,
+                      "fragment_index": 0,
+                      "table_path": null,
+                      "row_index": null,
+                      "column_index": null,
+                      "span_start": 0,
+                      "span_end": 6,
+                      "physical_page_number": 5
+                    }
+                  ],
+                  "counterevidence_refs": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "semantic_outcome": "undetermined",
+          "complete": false,
+          "reason_code": "source_excerpt_mismatch",
+          "reason": "source_excerpt_mismatch；record_composition_source_invalid；type:source_excerpt_mismatch；type_not_supported",
+          "controller_checks": {
+            "binding": 0,
+            "metric": 0,
+            "shacl": 0,
+            "elapsed_seconds": 0.012570354854688048
+          },
+          "nodes": [],
+          "edges": [],
+          "relationship_groups": [],
+          "properties": [],
+          "attribute_candidates": null
+        }
+      ],
+      "independent_review": "See linked Markdown review; raw supported is not independent acceptance."
+    },
+    {
+      "lineage_id": "5f9ec57f72c51f2a5a97281a12f42e4ecc9219dbbb2f60c1c21813d7dd1e8756",
+      "task": {
+        "kind": "record_discovery",
+        "task_id": "f62211007021af3053da42fecc8657553db7d0152f88826b5e5c862eabbd20a3",
+        "claim_lineage_id": "5f9ec57f72c51f2a5a97281a12f42e4ecc9219dbbb2f60c1c21813d7dd1e8756",
+        "record_id": "5d10148e2bb8f002c900138f92b003a4f5f3d43d3f2dc7002ba93ef3f1aad060",
+        "schema_card_id": "cf6cb40009bccf09fa790900aa841b167d3327553bfbedaeac16c8bcb8d68aa1",
+        "analysis_scope_ref": "875105c6e91d82dbae822b9fecd36c8d15869052b39c195a1ab47ea8949c1ee5",
+        "dependency_hash": "8f7cf2a939ad0a7709235a4b33b5746fd118b51843f6a8070c021f9c57a75107",
+        "scope": {
+          "scope_id": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "members": []
+        },
+        "source_record_ids": [
+          "5d10148e2bb8f002c900138f92b003a4f5f3d43d3f2dc7002ba93ef3f1aad060",
+          "edf55e35963b43c1850afa5219fa5329536e3561febe42a473aee9a733ad1029"
+        ],
+        "reading_section_ids": [
+          "section:94"
+        ]
+      },
+      "reviewed_model_turns": [
+        {
+          "immutable_result_key": "dee71b9c17c2d1c336307f8f0b9a1f14c0fd5f27987ba76b079a573e0d6b69bf",
+          "stage": "discovery",
+          "attempt": 1,
+          "stage_group_seq": null,
+          "member_task_ids": null,
+          "input_hash": "fd9131576719741ab0755ade49ee742b4e0af1d692f7c94c58f1604d16d74ea0",
+          "response_id": "resp_JkUk7s4BSaCCtjDRj1vzCy7SCuQbTb1L",
+          "response_status": "completed",
+          "incomplete_details": null,
+          "error": null,
+          "usage": {
+            "input_tokens": 4734,
+            "input_tokens_details": {
+              "cached_tokens": 1606
+            },
+            "output_tokens": 654,
+            "total_tokens": 5388
+          },
+          "output_text_sha256": "3c9349a6bf4e694fc1147c4ea3e89a234f2198914b72f7f6249cad17092922cc",
+          "model_output": {
+            "entities": [
+              {
+                "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway",
+                "identifier_claims": [],
+                "local_id": "e1",
+                "mentions": [
+                  {
+                    "context_text": null,
+                    "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                    "text": "本品"
+                  }
+                ],
+                "record_components": [],
+                "representation": "mention"
+              },
+              {
+                "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway",
+                "identifier_claims": [],
+                "local_id": "e2",
+                "mentions": [
+                  {
+                    "context_text": null,
+                    "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                    "text": "降解产物"
+                  }
+                ],
+                "record_components": [],
+                "representation": "mention"
+              }
+            ],
+            "external_links": [],
+            "observations": [
+              {
+                "kind": "ambiguous",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                  "text": "在酸、碱条件下比较稳定，在氧化、光照、高温均有降解"
+                },
+                "reason": "原文提及本品在酸、碱、氧化、光照、高温下的降解/稳定状态，对应多个具体的降解途径类型（酸降解、碱降解、氧化降解、光降解、热降解），但原文未将这些状态明确绑定为独立的单一实体记录，而是作为本品整体性质的描述。根据当前候选图阶段只识别实体、properties为空的要求，仅提取明确指称'本品'和'降解产物'的提及。具体的降解途径实体类型存在歧义或需进一步结构化记录，故不在此轮生成具体的子类型实体。",
+                "subject_id": "e1"
+              },
+              {
+                "kind": "missing",
+                "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/DeletionOrModification",
+                "quote": {
+                  "context_text": null,
+                  "evidence_id": "3ec46b335096714334daa7af02aef7c0d56370d61508eaa47ce8cdedb376629e",
+                  "text": "降解产物结构及清洁方法暂未明确"
+                },
+                "reason": "原文指出降解产物的结构暂未明确，因此无法确定其具体的化学结构或属性，仅能记录其存在提及。",
+                "subject_id": "e2"
+              }
+            ],
+            "properties": [],
+            "reference_bindings": [],
+            "relations": []
+          },
+          "tool_calls": []
+        }
+      ],
+      "quote_checks": [
+        {
+          "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+          "quote": "本品",
+          "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+          "paragraph_1_based": 96,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              2
+            ],
+            [
+              30,
+              32
+            ]
+          ],
+          "unique_exact_quote": false,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "dee71b9c17c2d1c336307f8f0b9a1f14c0fd5f27987ba76b079a573e0d6b69bf"
+          ]
+        },
+        {
+          "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+          "quote": "降解产物",
+          "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+          "paragraph_1_based": 96,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [],
+          "unique_exact_quote": false,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "dee71b9c17c2d1c336307f8f0b9a1f14c0fd5f27987ba76b079a573e0d6b69bf"
+          ]
+        },
+        {
+          "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+          "quote": "在酸、碱条件下比较稳定，在氧化、光照、高温均有降解",
+          "source_text": "本品在酸、碱条件下比较稳定，在氧化、光照、高温均有降解，说明本品在生产和贮运过程中应避免氧化、光照、高温环境。",
+          "paragraph_1_based": 96,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              2,
+              27
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "dee71b9c17c2d1c336307f8f0b9a1f14c0fd5f27987ba76b079a573e0d6b69bf"
+          ]
+        },
+        {
+          "evidence_id": "3ec46b335096714334daa7af02aef7c0d56370d61508eaa47ce8cdedb376629e",
+          "quote": "降解产物结构及清洁方法暂未明确",
+          "source_text": "降解产物结构及清洁方法暂未明确。",
+          "paragraph_1_based": 97,
+          "table_path": null,
+          "row_index": null,
+          "column_index": null,
+          "matching_intervals": [
+            [
+              0,
+              15
+            ]
+          ],
+          "unique_exact_quote": true,
+          "context_text": null,
+          "context_text_in_source": null,
+          "quote_in_context_text": null,
+          "model_turn_keys": [
+            "dee71b9c17c2d1c336307f8f0b9a1f14c0fd5f27987ba76b079a573e0d6b69bf"
+          ]
+        }
+      ],
+      "immutable_results": {
+        "faae74fac9f5c5038bb91154262148e1e03c690eccad68017484b0a1f8298a3d": "verification",
+        "adc6b0ebff407c5703af53e3715b6c21183824dd679e2ed9a4911cd7ed8901de": "discovery",
+        "864df43bfbd97d3d04b5a18cae8bfc7c261536a5639950bfe3c511b200f35037": "outcome"
+      },
+      "frozen_discoveries": [
+        {
+          "entities": [
+            {
+              "local_id": "e1",
+              "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway",
+              "representation": "mention",
+              "mentions": [
+                {
+                  "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                  "text": "本品",
+                  "context_text": null
+                }
+              ],
+              "record_components": [],
+              "identifier_claims": []
+            },
+            {
+              "local_id": "e2",
+              "class_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway",
+              "representation": "mention",
+              "mentions": [
+                {
+                  "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                  "text": "降解产物",
+                  "context_text": null
+                }
+              ],
+              "record_components": [],
+              "identifier_claims": []
+            }
+          ],
+          "properties": [],
+          "relations": [],
+          "external_links": [],
+          "observations": [
+            {
+              "subject_id": "e1",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/DegradationPathway",
+              "quote": {
+                "evidence_id": "16a629fd1fd237f782c8d75ac4b2bcbbad7365edf9b0e9de68350e2f4cbc5f44",
+                "text": "在酸、碱条件下比较稳定，在氧化、光照、高温均有降解",
+                "context_text": null
+              },
+              "kind": "ambiguous",
+              "reason": "原文提及本品在酸、碱、氧化、光照、高温下的降解/稳定状态，对应多个具体的降解途径类型（酸降解、碱降解、氧化降解、光降解、热降解），但原文未将这些状态明确绑定为独立的单一实体记录，而是作为本品整体性质的描述。根据当前候选图阶段只识别实体、properties为空的要求，仅提取明确指称'本品'和'降解产物'的提及。具体的降解途径实体类型存在歧义或需进一步结构化记录，故不在此轮生成具体的子类型实体。"
+            },
+            {
+              "subject_id": "e2",
+              "predicate_iri": "https://ontology.pharma-gmp.cn/slpra/drug-development/DeletionOrModification",
+              "quote": {
+                "evidence_id": "3ec46b335096714334daa7af02aef7c0d56370d61508eaa47ce8cdedb376629e",
+                "text": "降解产物结构及清洁方法暂未明确",
+                "context_text": null
+              },
+              "kind": "missing",
+              "reason": "原文指出降解产物的结构暂未明确，因此无法确定其具体的化学结构或属性，仅能记录其存在提及。"
+            }
+          ],
+          "reference_bindings": [],
+          "assertion_generation": 1,
+          "evidence_revision": 1,
+          "content_hash": "114dc9d7d9b171022eebd38de18659f2bfe8ff52e428e79df206f76f738e9ee8",
+          "local_ref_map": {
+            "e1": {
+              "id": "d29c761f11f85f6797d6be8379d3f1c52a251491002f4dd46e4c3bf95a7985cd",
+              "revision": 1
+            },
+            "e2": {
+              "id": "0fc2e003bad1ecb9066596681fef26d2daaeb356ed4d4b648cf467e2f7962d5b",
+              "revision": 1
+            }
+          },
+          "claim_issues": {
+            "e1": [
+              "ambiguous_source_quote"
+            ],
+            "e2": [
+              "source_excerpt_mismatch"
+            ]
+          }
+        }
+      ],
+      "stored_verifications": [
+        {
+          "context_hash": "9dbafa75a0e8f65255d7c4c72c68371c2932d3a2afb98659479c4390fef029fd",
+          "targets": []
+        }
+      ],
+      "outcomes": [
+        {
+          "semantic_outcome": "undetermined",
+          "complete": false,
+          "reason_code": "ambiguous_source_quote",
+          "reason": "ambiguous_source_quote；source_excerpt_mismatch",
+          "controller_checks": {
+            "binding": 0,
+            "metric": 0,
+            "shacl": 0,
+            "elapsed_seconds": 0.001096304040402174
+          },
+          "nodes": [],
+          "edges": [],
+          "relationship_groups": [],
+          "properties": [],
+          "attribute_candidates": null
+        }
+      ],
+      "independent_review": "See linked Markdown review; raw supported is not independent acceptance."
+    }
+  ],
+  "actual_protocol_task_inventory": [
+    {
+      "lineage_id": "5f9ec57f72c51f2a5a97281a12f42e4ecc9219dbbb2f60c1c21813d7dd1e8756",
+      "task_id": "f62211007021af3053da42fecc8657553db7d0152f88826b5e5c862eabbd20a3",
+      "kind": "record_discovery",
+      "purpose": "entity_discovery",
+      "predicate_kind": null,
+      "predicate_iri": null,
+      "subject": null,
+      "hop": null
+    },
+    {
+      "lineage_id": "1154fc94444255223065a15e9a5ae51b8079a9188d0d975c449d45649b3379a4",
+      "task_id": "61e346f88561e6577085f208169e4520f3e080c5ff64edfb039f7475ed63a87c",
+      "kind": "record_discovery",
+      "purpose": "entity_discovery",
+      "predicate_kind": null,
+      "predicate_iri": null,
+      "subject": null,
+      "hop": null
+    },
+    {
+      "lineage_id": "a50d6a7d21ad0694dc0e9ff85a1a6803986076a7f37d49f1c2dbe227df5f602a",
+      "task_id": "fe4b0178b6101648cbf5f6cb69095b530efdc50456b4c8d3bda800cbee65cb16",
+      "kind": "record_discovery",
+      "purpose": "entity_discovery",
+      "predicate_kind": null,
+      "predicate_iri": null,
+      "subject": null,
+      "hop": null
+    },
+    {
+      "lineage_id": "c93af360c67383e8c8a4e8f065854755e07103d2ed8a98095ed089951ed23543",
+      "task_id": "0d0812053488f44d5bc9ffd339b33cd8374d058a7c25b394385129e168403f48",
+      "kind": "record_discovery",
+      "purpose": "entity_discovery",
+      "predicate_kind": null,
+      "predicate_iri": null,
+      "subject": null,
+      "hop": null
+    },
+    {
+      "lineage_id": "5a41a66a4c1c88abbae9287737859da98a32f8c2aa6cb0d53e018e66bb91dce8",
+      "task_id": "cb209141cf09589e3da611cc4ac91a2b13b97bbf3c86ecc468b933778256d3b8",
+      "kind": "record_discovery",
+      "purpose": "entity_discovery",
+      "predicate_kind": null,
+      "predicate_iri": null,
+      "subject": null,
+      "hop": null
+    },
+    {
+      "lineage_id": "105de741241b58c8fc80ba6169f49d59decd06423b4127bb36661a6a8f22346b",
+      "task_id": "b906ece44657c4af1bac0a4c4c6cbb3d58140f9795f5384283a73b27f70a4b09",
+      "kind": "record_discovery",
+      "purpose": "entity_discovery",
+      "predicate_kind": null,
+      "predicate_iri": null,
+      "subject": null,
+      "hop": null
+    }
+  ],
+  "all_confirmed_model_turn_keys": [
+    "c933ef5a6c12481ab79614a4f177ddb8ddc152763faecff73fb20c34a3547f26",
+    "02b85c2e6cba456581fdce4366104b8aebeca0311e951982ca7193344d093acd",
+    "29106c2170e8fd855b0155274b028409a157d09c8777aaef50c9e418166a6c5c",
+    "562178d1afbe76a7a0ce21ea5baf254fa2d67062e9d23eb88fdcbfd4e0ec7481",
+    "707143da8150cd3c1e0cbe8b062eb6f5f0bb7c05ebda3e6e63e6ef10c62599ac",
+    "dee71b9c17c2d1c336307f8f0b9a1f14c0fd5f27987ba76b079a573e0d6b69bf",
+    "fc2e40941a836d72f13951d41bf88ef810c54f50d00958f47820f2ba5683f3ee",
+    "07ec6a61a66fb05c08d9fe210ef817319c9917ac31f180411d2847d642446761"
+  ],
+  "all_tool_results": [],
+  "graph_snapshot": {
+    "run_revision": 170,
+    "event_head": 10,
+    "phase": "candidate_graph",
+    "summary": {
+      "relationships": {
+        "total": 12,
+        "supported": 0,
+        "completed": 0,
+        "percent": null
+      },
+      "properties": {
+        "total": 0,
+        "supported": 0,
+        "completed": 0,
+        "percent": null
+      },
+      "pending_expansion_count": 0,
+      "notes": [
+        "当前仅发现实体与原文关系候选；关系全部以虚线显示，尚未核验。",
+        "本体关系目标不是原文事实，未连接的实体也可选择并展开。",
+        "本阶段不识别或校验属性，也不计算关系或属性的实证完整度。",
+        "候选的否定、条件、计划及备选成员保留原文标签。"
+      ]
+    },
+    "counts": {
+      "entities": 1,
+      "properties": 0,
+      "attribute_candidates": 0,
+      "relationships": 0,
+      "relationship_groups": 0
+    },
+    "relationships": [],
+    "relationship_groups": []
+  },
+  "input_file_sha256": {
+    "review-84956c8a-results-04.json": "e35f8f603dd2cbe8a6730c411b280e0a1fef3aa01ffe60d032fa18dec7493778",
+    "review-84956c8a-target-04.json": "1af981233e891d019c157d6e3d24678bdc574a7241ccda11e6a309169c869bc1",
+    "review-84956c8a-source.json": "97786d0cfc1728a50ac7023527d2c172dff19a1e7f98f8450c2ec16e1904b4ad"
+  }
+}

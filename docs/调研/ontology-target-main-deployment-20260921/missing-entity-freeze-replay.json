@@ -1,0 +1,46 @@
+{
+  "run_id": "20bf2d25-98f3-4efe-99f0-1e5dbbae5d05",
+  "lineage_id": "4699b75fa6d2bd5afca2d91e87660ccb102465cc47907a9c932acb9642c9ec08",
+  "new_model_calls": 0,
+  "new_embedding_calls": 0,
+  "database_transaction": "REPEATABLE READ, READ ONLY (export only)",
+  "saved_results_modified": false,
+  "schema_card_id": "f80c91325d46bbf13cfd0521e3b912708c83fdf282531dbe3a8a2b868e0ac42f",
+  "context_hash_matches": true,
+  "evidence_hash_matches": true,
+  "base_target_matches": true,
+  "original_entity_count": 1,
+  "original_property_count": 0,
+  "original_relation_count": 0,
+  "before_verification_targets": [
+    "e1"
+  ],
+  "after_verification_targets": [],
+  "claim_issues": {
+    "e1": [
+      "entity_referent_missing"
+    ]
+  },
+  "new_missing_observations": [
+    {
+      "subject_id": null,
+      "predicate_iri": null,
+      "quote": {
+        "evidence_id": "6ff01fa7a49cf38d76b188268e5434bd828c2c297482c2e096f775ea292f27be",
+        "text": "N/A",
+        "context_text": null
+      },
+      "kind": "missing",
+      "reason": "原文完整字段值或原文单元为缺失或未知标记，不能作为实体指称事实。"
+    }
+  ],
+  "preserved_original_model_observations": 3,
+  "preserved_original_entity_proposal": true,
+  "source_unit_text": "N/A",
+  "inputs_sha256": {
+    "missing-entity-freeze-input.json": "035012904f0219ffa34595008d4786b5e83e3e0d2bef11c27168b757d12a53e0",
+    "review-20bf2d25-results-05.json": "e6d504854a5418544fd3e59176285aced69478cf92a29a37f5b45bb834f9c58f",
+    "review-20bf2d25-source.json": "89bdffa8677a7eab1ee1b3ba0b5844ce7257f2635383d3091c92d636fbff5651"
+  },
+  "production_code_sha256": "ca2fd464e40a53f2be249670c76bf1566d79c5ca926e5b713dc7d9ec020ee25b"
+}

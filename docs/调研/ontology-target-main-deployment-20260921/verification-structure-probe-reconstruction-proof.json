@@ -1,0 +1,12 @@
+{
+  "source_run_id": "20bf2d25-98f3-4efe-99f0-1e5dbbae5d05",
+  "source_lineage_id": "07b11ded29ac54db00f87e1e01961fc903e69e5338588079f984206bf7048029",
+  "saved_request_hash": "0acd99d5f1a2c77c67ace567263942af498ffbe405e96644871728da4968620e",
+  "rebuilt_request_hash": "0acd99d5f1a2c77c67ace567263942af498ffbe405e96644871728da4968620e",
+  "request_hash_matches": true,
+  "card_id_matches": true,
+  "context_hash_matches": true,
+  "evidence_hash_matches": true,
+  "verification_input_hash_matches": true,
+  "new_model_calls": 0
+}

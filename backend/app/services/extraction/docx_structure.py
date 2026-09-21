@@ -25,7 +25,7 @@ from app.services.extraction.text_scanner import (
 
 _PT = 12700  # one point in EMU
 _PROSE_ENDINGS = "。；;，,！？!?"
-PARSER_VERSION = 8
+PARSER_VERSION = 9
 _TOC_PAGE_SUFFIX = re.compile(
     r"(?:\t+|[.．…·]{2,}| {2,})\s*(?:\d+|[ivxlcdmIVXLCDM]+)\s*$"
 )
@@ -527,13 +527,71 @@ def _row_has_horizontal_merge(row) -> bool:
     return False
 
 
-def _detect_header_rows(table) -> int:
-    if not table.rows:
+def _table_starts_with_data(table, cells: list[list[str]]) -> bool:
+    """Recognize only strong, repeated data-row shapes without domain labels.
+
+    Merged, omitted and nested cells need richer interpretation; leave those
+    tables to the conservative header fallback instead of flattening their roles.
+    """
+    if len(cells) < 2:
+        return False
+    width = len(cells[0])
+    if width < 2 or any(len(row) != width for row in cells):
+        return False
+    for row in table.rows:
+        if row.grid_cols_before or row.grid_cols_after or len(row._tr.tc_lst) != width:
+            return False
+        if any(tc.grid_span != 1 or tc.vMerge is not None or tc.xpath("./w:tbl")
+               for tc in row._tr.tc_lst):
+            return False
+    values = [[normalize_space(text) for text in row] for row in cells]
+    if any(not text for row in values for text in row):
+        return False
+
+    # A complete ordinal column plus a consistently textual column distinguishes
+    # numbered records from a numeric header/matrix. Two rows alone are ambiguous.
+    if len(values) >= 3 and [row[0] for row in values] == [
+        str(index) for index in range(1, len(values) + 1)
+    ] and any(all(any(char.isalpha() for char in row[column]) for row in values)
+              for column in range(1, width)):
+        return True
+
+    # Every row, including the first, must pair a short label with substantial
+    # sentence-like prose. A short column title in row zero cannot satisfy this.
+    return width == 2 and all(
+        0 < len(label) <= 24
+        and not any(mark in label for mark in _PROSE_ENDINGS)
+        and len(text) >= 60
+        and any(mark in text for mark in "。；;.!！？?")
+        for label, text in values
+    )
+
+
+def _detect_header_rows(table, cells: list[list[str]]) -> int:
+    from docx.oxml.ns import qn
+
+    rows = table.rows
+    if not rows:
         return 0
-    if not _row_has_horizontal_merge(table.rows[0]):
+    header_values = []
+    for row in rows:
+        header = row._tr.find("w:trPr/w:tblHeader", row._tr.nsmap)
+        header_values.append(header.get(qn("w:val"), "true") if header is not None else None)
+    explicit_count = 0
+    for value in header_values:
+        if value not in {"true", "1", "on"}:
+            break
+        explicit_count += 1
+    if explicit_count:
+        return explicit_count
+    if all(value in {None, "false", "0", "off"} for value in header_values) and (
+        _table_starts_with_data(table, cells)
+    ):
+        return 0
+    if not _row_has_horizontal_merge(rows[0]):
         return 1
     count = 1
-    for row in table.rows[1:]:
+    for row in rows[1:]:
         count += 1
         if not _row_has_horizontal_merge(row):
             break
@@ -583,7 +641,7 @@ def _table_to_struct(
         [text_by_cell.get(cell_id, "") for cell_id in row] + [""] * (width - len(row))
         for row in grid
     ]
-    header_count = _detect_header_rows(table)
+    header_count = _detect_header_rows(table, cells)
     headers = _canonical_headers(cells, header_count)
     rows: list[dict[str, str]] = []
     row_indices: list[int] = []

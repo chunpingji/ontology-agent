@@ -35,6 +35,29 @@ class RecordDiscoveryDiagnostics(EvidenceModel):
     admitted_pairs: int = Field(ge=0)
     unselected_pairs: int = Field(ge=0)
     unselected_groups: int = Field(ge=0)
+    routing_cards: int | None = Field(default=None, ge=0)
+    metadata_nodes: int | None = Field(default=None, ge=0)
+    routed_groups: int | None = Field(default=None, ge=0)
+    unrouted_groups: int | None = Field(default=None, ge=0)
+    selected_regions: int | None = Field(default=None, ge=0)
+    execution_mode: Literal["per_card", "region_batch"] | None = None
+    property_field_mode: Literal["separate", "region_batch"] | None = None
+
+    @model_serializer(mode="wrap")
+    def preserve_non_routing_shape(self, handler):
+        result = handler(self)
+        for name in (
+            "routing_cards",
+            "metadata_nodes",
+            "routed_groups",
+            "unrouted_groups",
+            "selected_regions",
+            "execution_mode",
+            "property_field_mode",
+        ):
+            if result[name] is None:
+                result.pop(name)
+        return result
 
 
 class RetrievalDiagnosticCarrier(EvidenceModel):
