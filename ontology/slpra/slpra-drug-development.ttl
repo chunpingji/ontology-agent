@@ -1100,7 +1100,10 @@ slpra-dev:usesEquipment a owl:ObjectProperty ;
     rdfs:comment "Links a synthesis step or CMC report to the equipment required."@en .
 
 slpra-dev:usesMaterial a owl:ObjectProperty ;
-    rdfs:comment "连接工艺步骤或其他工艺描述主体与其明确使用的工艺物料，表示投入或使用关系，不表示该物料是产出物。"@zh ;
+    rdfs:comment "连接 CMC 报告与其描述的所需工艺物料，或合成步骤与其明确投入或使用的工艺物料；不表示产出关系，报告级物料记录不自动归属到某个步骤。"@zh ;
+    rdfs:domain [ a owl:Class ; owl:unionOf (
+        slpra-dev:CMCReport slpra-dev:SynthesisStep
+    ) ] ;
     rdfs:range slpra-dev:ProcessMaterial ;
     rdfs:label "uses material"@en ;
     rdfs:label "使用物料"@zh .
