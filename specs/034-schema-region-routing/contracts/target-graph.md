@@ -36,3 +36,15 @@
 前端在 `/analysis?tab=graph-analysis` 提供入口。读取、刷新、切换 tab 均不触发模型；
 新建、暂停与继续使用已有显式运行操作。实线可点击原文证据；虚线表示待查目标，
 不等于文档中确有该关系，不得据此自动重复发现。
+
+## 已保存候选增量（2026-09-21）
+
+响应增加 `discovery`，包含已完成模型回答计数、已保存候选计数及 `items`。
+每项包含稳定 id、kind（entity/property/relation/observation/failure）、label、
+class_iri/predicate_iri（可空）、主体/对象候选标识、state（pending/rejected/accepted/
+observation/failed）、reasons 及 sources（原文及经核对可用的 selection_ref）。
+缺少真实引用的项仍可查看错误，但不得生成可用 source selection。
+计数来自本运行已有保存结果，不是全文质量指标。发现候选与 graph 分离；只有已有
+登记/采信结果可以计为事实。列表允许折叠；不以隐藏或尚未核验减少事实目标分母。
+候选来源选择器在首个事实图/来源缓存发布之前也必须可读，使用当前已解析文档的身份字段
+和经核对的候选锚点；不得要求模型先产生采信事实才允许查看已保存候选原文。

@@ -1,6 +1,5 @@
 import type {
   DocumentAnalysisStatus, DocumentGraphRanking, DocumentRecordDiscoveryDiagnostics,
-  DocumentRetrievalDiagnostics,
 } from "@/lib/api";
 
 export const DOCUMENT_ANALYSIS_STATUS_LABELS: Record<DocumentAnalysisStatus, string> = {
@@ -21,10 +20,6 @@ type CandidateCoverage = {
   record_discovery?: DocumentRecordDiscoveryDiagnostics;
 };
 
-export function documentCoverageLabel(coverage: CandidateCoverage): string {
-  return coverage.candidate_policy === "sparse-candidates-v1" ? "候选任务" : "记录";
-}
-
 export function documentCoverageScope(coverage: CandidateCoverage): string {
   if (coverage.record_discovery) {
     return "计数包含入选的实体发现、字段消歧和关系任务；同一原文可对应多个任务。未入选组合未经识别，本轮结束不表示全文事实已穷尽。";
@@ -32,16 +27,6 @@ export function documentCoverageScope(coverage: CandidateCoverage): string {
   return coverage.candidate_policy === "sparse-candidates-v1"
     ? "计数仅包含本轮实际入选的主体—谓词候选任务；同一原文可对应多个任务。未入选原文未核验，本轮结束不表示全文事实已穷尽。"
     : "计数沿用该运行冻结的记录覆盖范围；处理完成不构成全文无关系的证明。";
-}
-
-export function documentRetrievalSummary(
-  coverage: CandidateCoverage & { retrieval_diagnostics?: DocumentRetrievalDiagnostics },
-): string {
-  const diagnostics = coverage.retrieval_diagnostics;
-  if (!diagnostics) return "该运行未采集剪枝诊断。";
-  const scope = coverage.candidate_policy === "sparse-candidates-v1"
-    ? "搜索范围中" : "未尝试范围中";
-  return `${scope} ${diagnostics.records_soft_pruned} 项因检索相关性暂缓，尚未核验；${diagnostics.records_reactivatable} 项可继续检索。${diagnostics.pruning_quality === "unvalidated" ? "剪枝试运行，待专家校准。" : ""}`;
 }
 
 export function formatDocumentAnalysisDate(value: string | null): string {

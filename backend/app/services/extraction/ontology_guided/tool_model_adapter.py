@@ -959,7 +959,7 @@ class ToolModelRecognitionAdapter:
 
     def _stage_request(self, task, ctx, card, protocol, items, verification_input, turn, available):
         """Build the exact request used by dispatch and record-correction preflight."""
-        from .claim_protocol import compile_stage_schema
+        from .claim_protocol import compile_stage_schema, facet_requires_quote
         from .source_assertions import relation_bridge_options
 
         context = ctx.context
@@ -1009,6 +1009,11 @@ class ToolModelRecognitionAdapter:
                         f.anchor.evidence_id for f in context.fragments if f.fact_eligible
                     )),
                     targets=verification_input.targets if verification_input else [],
+                    quote_requirements={
+                        target.target_id: {name for name in target.required_facets
+                                           if facet_requires_quote(target, name, context)}
+                        for target in verification_input.targets
+                    } if verification_input else None,
                     reference_resolution=ctx.reference_resolution,
                     relation_bridges=relation_bridge_options(
                         card.subject_ref, context.target.document_context.root_ref,
@@ -1061,6 +1066,17 @@ class ToolModelRecognitionAdapter:
                     sorted({option["subject_ref"]["id"] for option in options})
                 )
         from .model_schema_projection import compact_answer_schema
+
+        if ctx.stage == "discovery" and self.record_discovery is not None:
+            from .candidate_construction import (
+                bound_discovery_schema,
+                discovery_budget_instructions,
+            )
+
+            request["text"]["format"]["schema"] = bound_discovery_schema(
+                request["text"]["format"]["schema"], request["max_output_tokens"],
+            )
+            request["instructions"] += discovery_budget_instructions(request["max_output_tokens"])
 
         request["text"]["format"]["schema"] = compact_answer_schema(
             request["text"]["format"]["schema"],
@@ -2085,6 +2101,10 @@ class ToolModelRecognitionAdapter:
                         continue
                 outcome.model_calls = protocol["request_attempt"] - initial_attempt
                 outcome.controller_checks = local_counts
+                from .candidate_construction import mark_candidate_budget
+
+                if self.record_discovery is not None:
+                    mark_candidate_budget(outcome, frozen, self.output_limit("discovery"))
                 value = outcome.model_dump(mode="json")
                 protocol["outcome_ref"] = protocol_result_ref(
                     task.claim_lineage_id, "outcome", value,

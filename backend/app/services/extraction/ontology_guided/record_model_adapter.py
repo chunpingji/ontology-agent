@@ -65,6 +65,9 @@ RECORD_DISCOVERY_INSTRUCTIONS = (
     "实体表示严格二选一：representation=mention时只填写mentions并将record_components置空；"
     "representation=record时只填写record_components并将mentions置空。record实体须包含明确subject，"
     "或至少由field与value等两个组成项共同定位；不得把单个属性值另建为实体。"
+    "record不是把任意字段包装为实体的退路；先核对原文是否确实是一份具体对象的记录。"
+    "单个字段的‘是/否’或是否适用回答不足以独立定位对象，更不证明对象属于该字段询问"
+    "的类别；必须读取肯否定与类型限定。一个对象的多个字段共同引用其指称。"
     "有明确名称提及时优先用mention及逐字定位；record_components只保留定义该记录指称"
     "所必需的最少组成，不把所有可抽取属性复制为实体组成；属性单独提出核验。"
     "每项属性的subject_id须引用本轮实体或已登记实体；原文必须证明其实际归属。"
@@ -85,6 +88,8 @@ RECORD_DISCOVERY_INSTRUCTIONS = (
     "target_id为已登记候选，support须证明两端同一指称及样品、批次、阶段、条件范围。"
     "不得将正文实体绑定为document_root，根节点不代表正文提及。"
     "保留否定、模态、条件及scope，不补造缺失值。"
+    "observations仅针对原文实际出现的未匹配、歧义或缺失字段；禁止按Schema菜单逐项"
+    "罗列原文未出现的属性，禁止借无关字段引文声称另一属性缺失。"
     "关系subject_id/object_ids可引用本轮实体或已登记实体；external_links必须为空。"
     "结合两端属性候选的字段名、原值、原文及谓词标签、定义、方向和范围发现关系，"
     "属性候选不要求规范化或SHACL通过，也不能当作已采信事实；须重读原文核对归属。"
@@ -160,7 +165,17 @@ def record_instructions(stage, *, purpose="entity_discovery"):
             text = ATTRIBUTE_DISCOVERY_INSTRUCTIONS
         else:
             text += (
-                "property_fields是服务端确定性定位的字段标签、原值和逐字引用；在当前区域内"
+                "field_reading_groups按物理记录组织原字段标签、原值和逐字引用；分组不是实体，"
+                "shared_subject_established=false表示服务端没有推定共同主体。先通读记录，"
+                "定位其中真正被描述的对象（名称提及或最小记录指称），再把各字段归到它；"
+                "同一指称只定义一次local_id，各属性复用subject_id。不得每个字段各造实体，"
+                "字段标题、布尔回答、理化描述等属性内容不是对象名称；无明确名称时用record"
+                "且核对记录是否确实表示卡中类型的对象，不能靠类属性菜单反推类型。"
+                "逐字段对比原标签含义与当前主体卡片的属性label/description；先排除语义不符"
+                "的IRI，再选择匹配项，不按值的字形或菜单次序选属性。无匹配IRI用observation，"
+                "不能选最近似IRI凑数。名称可作普通属性，但不是唯一身份；identifier_claims"
+                "须有卡片标识声明和原文字段角色共同支持。不同角色同名对象不能合并。"
+                "在当前区域内"
                 "同时判断其真实主体和合法属性，只在原文足以证明唯一归属时输出properties，"
                 "值解析仍由服务端完成。deferred_property_fields属于旧冻结任务，将另行消歧；"
                 "不要重复输出其properties，也不得用其值填充identifier_claims或身份合并键。"
@@ -233,7 +248,12 @@ def build_record_model_context(
         verification_input=verification_input, tool_observations=confirmed_results,
         feedback=rendered_feedback, turn=turn,
     )
-    for name in ("attribute_disambiguation", "property_fields", "deferred_property_fields"):
+    from .candidate_construction import field_reading_groups
+
+    fields = (context.tool_inputs or {}).get("property_fields", [])
+    if fields:
+        value["field_reading_groups"] = field_reading_groups(fields)
+    for name in ("attribute_disambiguation", "deferred_property_fields"):
         if (context.tool_inputs or {}).get(name):
             value[name] = context.tool_inputs[name]
     return value
@@ -482,18 +502,38 @@ class RecordDiscoveryRun:
                                 or anchor.model_dump(mode="json") not in attribute["value_refs"]):
                             raise StructuredModelError("attribute_answer_outside_scope")
                 protocol = deepcopy(context.protocol_state)
+                from .candidate_construction import retain_unbound_fields
+
+                prepared = retain_unbound_fields(answer, context)
                 frozen = freeze_record_proposal(
-                    answer, task=task, context=context, card=card, index=adapter.index,
+                    prepared, task=task, context=context, card=card, index=adapter.index,
                     generation=protocol["assertion_generation"], entity_dependencies=entities,
                     reference_resolution=True,
                 )
+                corrections = {
+                    "bridge_reference_missing": "本阶段没有登记桥接，bridge_ref_ids填空数组。",
+                    "bridge_kind_mismatch": "按原文选择非resolved_reference_chain的bridge_kind。",
+                    "entity_field_as_name": "该mentions引用是属性字段，不是对象名称。若原文确实"
+                    "描述一个具体对象，选择真实名称提及；没有名称时使用representation=record，"
+                    "以最少field/value组成定位该对象。一个对象的字段共同引用一个local_id，"
+                    "不要每字段造实体。缺乏实际对象或类型依据则保留观察，不补造指称。",
+                    "duplicate_physical_referent": "同类型的同一物理指称重复定义；复用首次local_id"
+                    "及其引用，不按名称合并其他物理提及或不同角色。",
+                    "ambiguous_source_quote": "引文在原单元重复。重读原字段的"
+                    "label_refs/value_refs，"
+                    "context_text填写同一单元中包含字段标签及该原值的唯一逐字上下文，"
+                    "保留原值、否定及单位，不改写引用。",
+                    "source_excerpt_mismatch": "引文不在指定evidence_id的原单元内。重读授权"
+                    "evidence_units及原字段引用，修正来源定位；不能把实体名称或属性值替换为"
+                    "错误单元里的其他内容来凑引文。找不到真实来源则保留观察。",
+                    "identity_field_role_mismatch": "名称字段不能改作唯一标识。按原字段含义"
+                    "选择当前合法普通属性；无匹配项保留观察，不创建标识或合并实体。",
+                }
                 issues = [{
                     "field_path": local_id, "reason_code": code,
-                    "message": "bridge_ref_ids只能引用已登记桥接ID；本记录阶段没有登记桥接，"
-                               "填写空数组、按原文选择非resolved_reference_chain的bridge_kind，"
-                               "并保留原文支持的声明和字段引文。",
+                    "message": corrections[code] + "保留其他有原文支持的声明与字段引文。",
                 } for local_id, codes in frozen.claim_issues.items() for code in codes
-                    if code in {"bridge_reference_missing", "bridge_kind_mismatch"}]
+                    if code in corrections]
                 if self.correct_answer(
                     answer, issues, ctx,
                     max(0, remaining - (protocol["request_attempt"] - initial_attempt)),
@@ -684,6 +724,9 @@ class RecordDiscoveryRun:
                 )},
             )
             outcome.model_calls = protocol["request_attempt"] - initial_attempt
+            from .candidate_construction import mark_candidate_budget
+
+            mark_candidate_budget(outcome, frozen, adapter.output_limit("discovery"))
             if attribute and not any(prop.decision_status == "supported" and prop.policy_eligible
                                      for prop in outcome.properties):
                 outcome.complete = False

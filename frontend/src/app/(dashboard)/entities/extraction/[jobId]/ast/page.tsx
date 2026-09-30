@@ -369,7 +369,7 @@ export default function ASTPage() {
 
   const missingSlots = coverage ? getMissingSlots(coverage) : [];
 
-  // 覆盖率派生量（completed = 已填充 + 已推断，与 CoverageSummaryCard 口径一致）。
+  // 覆盖率派生量（completed = 已填充 + 已推断）。
   const completed = coverage ? coverage.filled + coverage.inferred : 0;
   const totalSlots = coverage?.total_slots ?? 0;
   const missing = coverage?.missing_required ?? 0;

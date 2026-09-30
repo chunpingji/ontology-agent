@@ -1,0 +1,58 @@
+[
+  {
+    "class_iri": "https://ontology.pharma-gmp.cn/slpra/facility/ProductionArea",
+    "mapping_type": "mock_dataset",
+    "source_system": "builtin_mock",
+    "target": "production_areas",
+    "query_config": {
+      "label_path": "col:label",
+      "entity_iri_path": "col:iri",
+      "class_path": null,
+      "identifier_namespace": "urn:mock:production_areas",
+      "lookup_key_groups": [
+        {
+          "property_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/facility/areaIdentifier"
+          ],
+          "scope_property_iris": []
+        }
+      ]
+    },
+    "property_bindings": [
+      {
+        "property_iri": "https://ontology.pharma-gmp.cn/slpra/facility/areaIdentifier",
+        "property_kind": "data",
+        "source_path": "col:code",
+        "transform_type": "none"
+      }
+    ]
+  },
+  {
+    "class_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/Equipment",
+    "mapping_type": "mock_dataset",
+    "source_system": "builtin_mock",
+    "target": "equipment",
+    "query_config": {
+      "label_path": "col:label",
+      "entity_iri_path": "col:iri",
+      "class_path": "col:equipment_class_iri",
+      "identifier_namespace": "urn:mock:equipment",
+      "lookup_key_groups": [
+        {
+          "property_iris": [
+            "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentID"
+          ],
+          "scope_property_iris": []
+        }
+      ]
+    },
+    "property_bindings": [
+      {
+        "property_iri": "https://ontology.pharma-gmp.cn/slpra/equipment/equipmentID",
+        "property_kind": "data",
+        "source_path": "col:equipment_id",
+        "transform_type": "none"
+      }
+    ]
+  }
+]

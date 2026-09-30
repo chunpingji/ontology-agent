@@ -13,12 +13,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-interface DataProperty {
-  iri: string | null;
-  label: string;
-  value: string;
-}
-
 interface EditDialogProps<T> {
   trigger: ReactNode;
   title: string;
@@ -35,7 +29,7 @@ interface EditDialogProps<T> {
   onClose?: () => void;
 }
 
-export function EditDialog<T extends Record<string, any>>({
+export function EditDialog<T extends object>({
   trigger,
   title,
   description,

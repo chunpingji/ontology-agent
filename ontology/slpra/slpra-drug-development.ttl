@@ -1066,10 +1066,13 @@ slpra-dev:ClinicalSampleProductionPlan a owl:Class ;
 
 slpra-dev:describes a owl:ObjectProperty ;
     rdfs:domain slpra-dev:CMCReport ;
-    rdfs:range slpra-drug:DrugProduct ;
+    rdfs:range [ a owl:Class ; owl:unionOf (
+        slpra-drug:DrugProduct slpra-drug:ActivePharmaceuticalIngredient
+    ) ] ;
     rdfs:label "describes"@en ;
     rdfs:label "描述"@zh ;
-    rdfs:comment "Links a CMC report to the drug product / drug substance it documents."@en .
+    rdfs:comment "Links a CMC report to the drug product / drug substance it documents."@en ;
+    rdfs:comment "连接 CMC 报告与其描述的药物制剂或原料药（活性药物成分）；同一报告可分别描述两类对象，该关系不表示二者为同一实体。"@zh .
 
 slpra-dev:hasSynthesisRoute a owl:ObjectProperty ;
     rdfs:comment "连接 CMC 报告与该报告描述的具体合成路线，表示文档内容归属。"@zh ;

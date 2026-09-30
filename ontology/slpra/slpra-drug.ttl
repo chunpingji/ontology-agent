@@ -2,6 +2,7 @@
 @prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix owl:   <http://www.w3.org/2002/07/owl#> .
 @prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
 @prefix obo:   <http://purl.obolibrary.org/obo/> .
 @prefix slpra-drug: <https://ontology.pharma-gmp.cn/slpra/drug/> .
 
@@ -21,6 +22,8 @@ slpra-drug:DrugProduct a owl:Class ;
     rdfs:subClassOf obo:BFO_0000040 ;
     rdfs:label "Drug Product"@en ;
     rdfs:label "药物产品"@zh ;
+    skos:altLabel "药物制剂"@zh , "制剂"@zh ;
+    rdfs:comment "具有最终给药剂型、承担临床用药角色的药物制剂产品，区别于用于制剂制造的原料药（活性药物成分）；本类型本身不表示已获上市许可。"@zh ;
     rdfs:comment "A finished dosage form drug product that bears a clinical drug role."@en .
 
 slpra-drug:ClinicalTrialDrug a owl:Class ;
@@ -90,10 +93,11 @@ slpra-drug:SterileDrugProduct a owl:Class ;
     rdfs:label "无菌药品"@zh .
 
 slpra-drug:ActivePharmaceuticalIngredient a owl:Class ;
-    rdfs:comment "用于药品制造，并在药品中提供药理作用或其他直接诊断、治疗、预防作用的物质或物质混合物，区别于最终制剂和主要承担制剂辅助功能的辅料。"@zh ;
+    rdfs:comment "用于药品制造，并在药品中提供药理作用或其他直接诊断、治疗、预防作用的物质或物质混合物；本体在 CMC/GMP 语境中将其称为原料药（Drug Substance / API），区别于最终制剂和主要承担制剂辅助功能的辅料。"@zh ;
     rdfs:subClassOf obo:BFO_0000040 ;
     rdfs:label "Active Pharmaceutical Ingredient"@en ;
-    rdfs:label "活性药物成分"@zh .
+    rdfs:label "活性药物成分"@zh ;
+    skos:altLabel "原料药"@zh , "Drug Substance"@en , "API"@en .
 
 slpra-drug:HighPotencyAPI a owl:Class ;
     rdfs:comment "在较低剂量或暴露水平下即可产生显著药理作用的活性药物成分，其高活性程度需结合具体药理特征及评价依据理解。"@zh ;
@@ -423,22 +427,28 @@ slpra-drug:dosageForm a owl:DatatypeProperty ;
     rdfs:label "制剂剂型"@zh .
 
 slpra-drug:appearance a owl:DatatypeProperty ;
-    rdfs:comment "记录药物产品外观及可描述物理性状的文本，如颜色、形态和状态。"@zh ;
-    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:comment "以文本记录原料药或药物制剂自身的外观和物理性状，如颜色、形态和状态；归属以原文指称对象为准，原料药的粉末性状不自动成为其制剂的性状。"@zh ;
+    rdfs:domain [ a owl:Class ; owl:unionOf (
+        slpra-drug:ActivePharmaceuticalIngredient slpra-drug:DrugProduct
+    ) ] ;
     rdfs:range xsd:string ;
     rdfs:label "appearance"@en ;
     rdfs:label "性状"@zh .
 
 slpra-drug:solubility a owl:DatatypeProperty ;
-    rdfs:comment "以文本记录药物产品在指定溶剂及条件下的溶解性，可包含定性描述或带单位的溶解度说明。"@zh ;
-    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:comment "以文本记录原料药或药物制剂在指定溶剂及条件下的溶解性，可包含定性等级或带单位的溶解度说明；保留原文对象、溶剂、温度、pH 等已给出的条件，不在原料药与制剂之间自动转移。"@zh ;
+    rdfs:domain [ a owl:Class ; owl:unionOf (
+        slpra-drug:ActivePharmaceuticalIngredient slpra-drug:DrugProduct
+    ) ] ;
     rdfs:range xsd:string ;
     rdfs:label "solubility"@en ;
     rdfs:label "溶解性"@zh .
 
 slpra-drug:isOncologyDrug a owl:DatatypeProperty ;
-    rdfs:comment "以布尔值记录药物产品是否用于肿瘤治疗；该用途分类本身不限定其为细胞毒、靶向或其他作用机制。"@zh ;
-    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:comment "以布尔值记录原文是否将原料药或药物制剂用于肿瘤治疗，原料药包括用于该用途的制剂制造；保留原文用途语境，该判断不表示已获适应症批准，也不直接判定细胞毒性或作用机制；缺失或未知不等于否。"@zh ;
+    rdfs:domain [ a owl:Class ; owl:unionOf (
+        slpra-drug:ActivePharmaceuticalIngredient slpra-drug:DrugProduct
+    ) ] ;
     rdfs:range xsd:boolean ;
     rdfs:label "is oncology drug"@en ;
     rdfs:label "是否肿瘤药物"@zh .
@@ -465,22 +475,28 @@ slpra-drug:routeOfAdministration a owl:DatatypeProperty ;
     rdfs:label "给药途径"@zh .
 
 slpra-drug:isCytotoxic a owl:DatatypeProperty ;
-    rdfs:comment "以布尔值记录药物产品是否属于以细胞杀伤或细胞增殖抑制作用为主要药理特征的细胞毒药物类别。"@zh ;
-    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:comment "以布尔值记录原料药或药物制剂是否被原文归为以细胞杀伤或细胞增殖抑制作用为主要药理特征的细胞毒类别；判断归属于原文对象，不在原料药与制剂之间自动转移，也不由肿瘤治疗用途单独推导；缺失或未知不等于否。"@zh ;
+    rdfs:domain [ a owl:Class ; owl:unionOf (
+        slpra-drug:ActivePharmaceuticalIngredient slpra-drug:DrugProduct
+    ) ] ;
     rdfs:range xsd:boolean ;
     rdfs:label "is cytotoxic"@en ;
     rdfs:label "是否细胞毒药物"@zh .
 
 slpra-drug:isHormonal a owl:DatatypeProperty ;
-    rdfs:comment "以布尔值记录药物产品是否属于以天然激素、合成激素或具有相应激素活性的衍生物为活性成分的激素类药物。"@zh ;
-    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:comment "以布尔值记录原料药是否属于天然激素、合成激素或具有相应激素活性的衍生物，或药物制剂是否以此类物质为活性成分而被归为激素类药物；保留原文对象及分类依据，不在原料药与制剂之间自动转移；缺失或未知不等于否。"@zh ;
+    rdfs:domain [ a owl:Class ; owl:unionOf (
+        slpra-drug:ActivePharmaceuticalIngredient slpra-drug:DrugProduct
+    ) ] ;
     rdfs:range xsd:boolean ;
     rdfs:label "is hormonal"@en ;
     rdfs:label "是否激素类药物"@zh .
 
 slpra-drug:isPenicillinType a owl:DatatypeProperty ;
-    rdfs:comment "以布尔值记录药物产品是否属于以青霉素类抗菌成分为活性成分的药物类别。"@zh ;
-    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:comment "以布尔值记录原料药是否属于青霉素类抗菌成分，或药物制剂是否以此类成分为活性成分而被归为青霉素类药物；保留原文对象及分类依据，不在原料药与制剂之间自动转移；缺失或未知不等于否。"@zh ;
+    rdfs:domain [ a owl:Class ; owl:unionOf (
+        slpra-drug:ActivePharmaceuticalIngredient slpra-drug:DrugProduct
+    ) ] ;
     rdfs:range xsd:boolean ;
     rdfs:label "is penicillin type"@en ;
     rdfs:label "是否青霉素类药物"@zh .
@@ -493,15 +509,19 @@ slpra-drug:isBetaLactam a owl:DatatypeProperty ;
     rdfs:label "是否β-内酰胺类药物"@zh .
 
 slpra-drug:isHighlySensitizing a owl:DatatypeProperty ;
-    rdfs:comment "以布尔值记录药物产品是否按适用评价依据归为具有较强免疫致敏能力的高致敏药物。"@zh ;
-    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:comment "以布尔值记录原料药或药物制剂是否按原文所采用的评价依据归为具有较强免疫致敏能力的高致敏类别；保留评价语境，不在原料药与制剂之间自动转移；缺失或未知不等于否。"@zh ;
+    rdfs:domain [ a owl:Class ; owl:unionOf (
+        slpra-drug:ActivePharmaceuticalIngredient slpra-drug:DrugProduct
+    ) ] ;
     rdfs:range xsd:boolean ;
     rdfs:label "is highly sensitizing"@en ;
     rdfs:label "是否高致敏药物"@zh .
 
 slpra-drug:isHighlyActive a owl:DatatypeProperty ;
-    rdfs:comment "以布尔值记录药物产品是否按适用评价依据归为低剂量或低暴露水平即可产生显著药理作用的高活性药物。"@zh ;
-    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:comment "以布尔值记录原料药或药物制剂是否按原文所采用的评价依据归为低剂量或低暴露水平即可产生显著药理作用的高活性类别；高活性不等于高毒性，含义未明确的高毒高活组合字段不单独确定本属性；缺失或未知不等于否。"@zh ;
+    rdfs:domain [ a owl:Class ; owl:unionOf (
+        slpra-drug:ActivePharmaceuticalIngredient slpra-drug:DrugProduct
+    ) ] ;
     rdfs:range xsd:boolean ;
     rdfs:label "is highly active"@en ;
     rdfs:label "是否高活性药物"@zh .
@@ -514,53 +534,82 @@ slpra-drug:hasPrionRisk a owl:DatatypeProperty ;
     rdfs:label "是否有朊病毒风险"@zh .
 
 slpra-drug:molecularFormula a owl:DatatypeProperty ;
-    rdfs:comment "以文本记录药物产品所对应明确化学实体的分子式，表示该实体中元素的种类和原子数；复方制剂整体不具有单一分子式。"@zh ;
-    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:comment "以文本记录原料药所对应明确化学物质的分子式，表示元素种类和原子数；须对应具体盐型、水合物等化学形式，物质混合物不一定具有单一分子式，活性成分的分子式不表示整个制剂的分子式。"@zh ;
+    rdfs:domain slpra-drug:ActivePharmaceuticalIngredient ;
     rdfs:range xsd:string ;
     rdfs:label "molecular formula"@en ;
     rdfs:label "分子式"@zh .
 
 slpra-drug:molecularWeight a owl:DatatypeProperty ;
-    rdfs:comment "记录药物产品所对应明确化学实体的分子量十进制数值，通常表示相对分子质量；具体化学形式和数值口径由该化学实体的定义确定。"@zh ;
-    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:comment "记录原料药所对应明确化学物质的分子量十进制数值，通常表示相对分子质量；须保留具体盐型、水合物等化学形式及原文数值口径，不将活性成分的分子量视为整个制剂的性质。"@zh ;
+    rdfs:domain slpra-drug:ActivePharmaceuticalIngredient ;
     rdfs:range xsd:decimal ;
     rdfs:label "molecular weight"@en ;
     rdfs:label "分子量"@zh .
 
 slpra-drug:projectName a owl:DatatypeProperty ;
-    rdfs:comment "记录药物产品所属研发或生产项目的名称，以文本表示其项目归属。"@zh ;
-    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:comment "以文本记录原文明确关联到该原料药或药物制剂的研发或生产项目名称；该值表示项目归属，不是化学名称，也不单独证明实体的全局唯一身份；仅有报告级项目信息时不自动归属到每个物料或制剂。"@zh ;
+    rdfs:domain [ a owl:Class ; owl:unionOf (
+        slpra-drug:ActivePharmaceuticalIngredient slpra-drug:DrugProduct
+    ) ] ;
     rdfs:range xsd:string ;
     rdfs:label "project name"@en ;
     rdfs:label "项目名称"@zh .
 
 slpra-drug:projectCode a owl:DatatypeProperty ;
-    rdfs:comment "记录药物产品所属研发或生产项目的代码字符串，用于项目语境中的识别，区别于化学物质登记号或药品批准文号。"@zh ;
-    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:comment "以字符串记录原文明确关联到该原料药或药物制剂的研发或生产项目代码；该值用于项目语境，不等同化学物质登记号、物料批号或药品批准文号，不单独证明实体的全局唯一身份。"@zh ;
+    rdfs:domain [ a owl:Class ; owl:unionOf (
+        slpra-drug:ActivePharmaceuticalIngredient slpra-drug:DrugProduct
+    ) ] ;
     rdfs:range xsd:string ;
     rdfs:label "project code"@en ;
     rdfs:label "项目代码"@zh .
 
 slpra-drug:chemicalNameEn a owl:DatatypeProperty ;
-    rdfs:comment "记录药物产品所对应明确化学实体的英文化学名称，以文本表达其化学身份。"@zh ;
-    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:comment "记录原料药所对应明确化学物质的英文化学名称，以文本保留其具体化学形式；名称本身不证明不同物料或批次为同一实体。"@zh ;
+    rdfs:domain slpra-drug:ActivePharmaceuticalIngredient ;
     rdfs:range xsd:string ;
     rdfs:label "chemical name (English)"@en ;
     rdfs:label "化学名英文"@zh .
 
 slpra-drug:chemicalNameZh a owl:DatatypeProperty ;
-    rdfs:comment "记录药物产品所对应明确化学实体的中文化学名称，以文本表达其化学身份。"@zh ;
-    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:comment "记录原料药所对应明确化学物质的中文化学名称，以文本保留其具体化学形式；名称本身不证明不同物料或批次为同一实体。"@zh ;
+    rdfs:domain slpra-drug:ActivePharmaceuticalIngredient ;
     rdfs:range xsd:string ;
     rdfs:label "chemical name (Chinese)"@en ;
     rdfs:label "化学名中文"@zh .
 
 slpra-drug:casNumber a owl:DatatypeProperty ;
-    rdfs:comment "记录药物产品所对应的明确化学物质的CAS登记号字符串，该号码用于标识化学物质，区别于药品批准文号或研发项目代码。"@zh ;
-    rdfs:domain slpra-drug:DrugProduct ;
+    rdfs:comment "记录原料药所对应明确化学物质的 CAS 登记号字符串；登记号用于标识化学物质，不表示物料或批次身份，也不等同项目代码或药品批准文号；N/A 等缺失标记不作为登记号实值。"@zh ;
+    rdfs:domain slpra-drug:ActivePharmaceuticalIngredient ;
     rdfs:range xsd:string ;
     rdfs:label "CAS number"@en ;
     rdfs:label "CAS号"@zh .
+
+slpra-drug:structuralFeatures a owl:DatatypeProperty ;
+    rdfs:comment "以原文文本记录原料药所对应明确化学物质的结构类别、官能团或其他结构特点；本描述不单独证明药理分类，不表示制剂的剂型或配方组成。"@zh ;
+    rdfs:domain slpra-drug:ActivePharmaceuticalIngredient ;
+    rdfs:range xsd:string ;
+    rdfs:label "structural features"@en ;
+    rdfs:label "结构特点"@zh .
+
+slpra-drug:physicochemicalProperties a owl:DatatypeProperty ;
+    rdfs:comment "以原文文本记录原料药或药物制剂的理化性质描述，可包含 pKa、logD、熔点等；保留原文对象、数值、单位和已给出的测定条件，条件未知时不补造，活性成分的性质不自动归属到整个制剂。"@zh ;
+    rdfs:domain [ a owl:Class ; owl:unionOf (
+        slpra-drug:ActivePharmaceuticalIngredient slpra-drug:DrugProduct
+    ) ] ;
+    rdfs:range xsd:string ;
+    rdfs:label "physicochemical properties"@en ;
+    rdfs:label "理化性质"@zh .
+
+slpra-drug:requiresInactivation a owl:DatatypeProperty ;
+    rdfs:comment "以布尔值记录原文在所述生产、清洁或风险评估场景下是否要求对该原料药或药物制剂的目标活性进行灭活处理；判断仅适用于原文场景，不表示物质能否被灭活，也不表示采用何种灭活方法；否表示该场景不要求灭活，缺失或未知不等于否。"@zh ;
+    rdfs:domain [ a owl:Class ; owl:unionOf (
+        slpra-drug:ActivePharmaceuticalIngredient slpra-drug:DrugProduct
+    ) ] ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "requires inactivation"@en ;
+    rdfs:label "是否需要灭活"@zh .
 
 slpra-drug:sensitizationLevel a owl:DatatypeProperty ;
     rdfs:comment "以整数记录致敏潜力对应的致敏级别，本体标签采用1至5级；各级含义及数值方向由采用的致敏评价方案规定。"@zh ;

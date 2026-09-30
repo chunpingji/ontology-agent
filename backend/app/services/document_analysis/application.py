@@ -66,6 +66,7 @@ PUBLIC_STAGE = {
     "metadata": "preparing_metadata",
     "recognition": "extracting",
     "finalize": "complete",
+    "complete": "complete",
 }
 ARTIFACT_KINDS = ("source", "structure", "metadata", "graph")
 EVENT_TYPES = {"run_state", "progress", "artifact", "warning", "error", "tombstone"}
@@ -91,13 +92,13 @@ class DocumentAnalysisError(RuntimeError):
         self.current_revision = current_revision
 
 
-def _links(run_id: UUID | str) -> dict[str, str]:
+def _links(run_id: UUID | str, *, independent_harness: bool = False) -> dict[str, str | None]:
     base = f"/api/document-analysis/runs/{run_id}"
     return {
         "self": base,
-        "metadata": f"{base}/metadata",
-        "graph": f"{base}/graph",
-        "source": f"{base}/source",
+        "metadata": None if independent_harness else f"{base}/metadata",
+        "graph": f"{base}/harness-graph" if independent_harness else f"{base}/graph",
+        "source": f"{base}/source?format=original" if independent_harness else f"{base}/source",
         "events": f"{base}/events",
     }
 
@@ -161,7 +162,8 @@ def _available_actions(run: DocumentAnalysisRun, role: str | None) -> list[str]:
         return ["pause", "cancel", "delete"]
     if status in {"paused", "retryable_failure"}:
         actions = ["resume", "cancel", "delete"]
-        if run.expires_at is None or _aware(run.expires_at) > datetime.now(UTC):
+        if ((run.progress or {}).get("engine") != "document-harness-v1"
+                and (run.expires_at is None or _aware(run.expires_at) > datetime.now(UTC))):
             actions.append(
                 "ranking_budget_disable" if run.ranking_budget_enabled else "ranking_budget_enable"
             )
@@ -251,6 +253,19 @@ class DocumentAnalysisApplication:
         metadata_mode: str,
         origin: dict | None = None,
     ) -> tuple[DocumentAnalysisRun, bool]:
+        if not (origin or {}).get("template_id"):
+            from app.services.document_harness.application import HarnessError, create_run
+
+            try:
+                return await create_run(
+                    self.db, self.engine, owner_id=owner_id, file=file,
+                    root_class_iri=root_class_iri, request_key=request_key,
+                    metadata_mode=metadata_mode, origin=origin,
+                )
+            except HarnessError as exc:
+                raise DocumentAnalysisError(
+                    exc.code, exc.message, status_code=exc.status_code, retryable=exc.retryable,
+                ) from exc
         if not request_key or len(request_key) > 200:
             raise DocumentAnalysisError(
                 "INVALID_REQUEST", "request_key 长度必须为 1—200 字符", status_code=400
@@ -473,6 +488,8 @@ class DocumentAnalysisApplication:
     def create_response(
         self, run: DocumentAnalysisRun, *, idempotent_replay: bool
     ) -> dict[str, Any]:
+        from app.services.document_harness.application import is_harness_run
+
         return {
             "contract_version": CONTRACT_VERSION,
             "recognition_run_id": run.recognition_run_id,
@@ -490,11 +507,21 @@ class DocumentAnalysisApplication:
             },
             "created_at": _aware(run.created_at),
             "expires_at": _aware(run.expires_at),
-            "links": _links(run.recognition_run_id),
+            "links": _links(
+                run.recognition_run_id, independent_harness=is_harness_run(self.db, run),
+            ),
         }
 
     def status_response(self, run: DocumentAnalysisRun, *, role: str | None) -> dict[str, Any]:
-        from app.services.document_analysis.reviews import reviewed_snapshot_id
+        from app.services.document_harness.application import is_harness_run
+
+        harness = is_harness_run(self.db, run)
+        if harness:
+            snapshot_id = None
+        else:
+            from app.services.document_analysis.reviews import reviewed_snapshot_id
+
+            snapshot_id = reviewed_snapshot_id(self.db, run)
 
         manifest = dict(run.artifact_manifest or {})
         ontology_entry = manifest.get("ontology_snapshot") or {}
@@ -520,7 +547,7 @@ class DocumentAnalysisApplication:
                 "analysis_id": run.analysis_id,
                 "ontology_snapshot_id": ontology_entry.get("artifact_id"),
                 "metadata_snapshot_id": run.metadata_snapshot_id,
-                "graph_snapshot_id": reviewed_snapshot_id(self.db, run),
+                "graph_snapshot_id": snapshot_id,
                 "structure_snapshot_id": (manifest.get("source_header") or {}).get("artifact_id")
                 or (manifest.get("structure") or {}).get("artifact_id"),
                 "ranking_summary_id": (manifest.get("ranking_summary") or {}).get("artifact_id"),
@@ -532,7 +559,7 @@ class DocumentAnalysisApplication:
             },
             "progress": _progress(run),
             "error": _run_error(run),
-            "available_actions": _available_actions(run, role),
+            "available_actions": self.available_actions_response(run, role),
             "created_at": _aware(run.created_at),
             "started_at": _aware(run.started_at),
             "paused_at": _aware(run.paused_at),
@@ -543,9 +570,19 @@ class DocumentAnalysisApplication:
     def _extraction_protocol(self, run: DocumentAnalysisRun) -> str | None:
         source_id = ((run.artifact_manifest or {}).get("source") or {}).get("artifact_id")
         source = self.db.get(DocumentAnalysisArtifact, source_id) if source_id else None
+        if source and (source.payload or {}).get("engine") == "document-harness-v1":
+            return "document-harness-v1"
         return ((source.payload or {}).get("performance_policy") or {}).get(
             "extraction_protocol"
         ) if source else None
+
+    def available_actions_response(self, run, role):
+        from app.services.document_harness.application import is_harness_run, is_template_run
+
+        actions = _available_actions(run, role)
+        if not is_harness_run(self.db, run) and not is_template_run(self.db, run):
+            return [action for action in actions if action in {"cancel", "delete"}]
+        return actions
 
     def _artifact_payload(
         self, run: DocumentAnalysisRun, kind: str
@@ -592,6 +629,7 @@ class DocumentAnalysisApplication:
             raise DocumentAnalysisError("RUN_DELETED", "运行正在删除或已删除", status_code=410)
 
     def metadata_response(self, run: DocumentAnalysisRun) -> dict[str, Any]:
+        self._require_legacy_display(run)
         committed = self._artifact_payload(run, "metadata")
         if committed is None:
             committed = self._artifact_payload(run, "structure")
@@ -659,6 +697,7 @@ class DocumentAnalysisApplication:
         }
 
     def graph_response(self, run: DocumentAnalysisRun, *, projection: str) -> dict[str, Any]:
+        self._require_legacy_display(run)
         if projection not in PUBLIC_TO_INTERNAL_PROJECTION:
             raise DocumentAnalysisError("INVALID_REQUEST", "未知 graph projection", status_code=400)
         protocol = self._extraction_protocol(run)
@@ -794,6 +833,7 @@ class DocumentAnalysisApplication:
         return response
 
     def target_graph_response(self, run: DocumentAnalysisRun):
+        self._require_legacy_display(run)
         from app.schemas.document_analysis import GraphArtifactResponse
         from app.services.document_analysis.target_graph import project_target_graph
 
@@ -804,7 +844,7 @@ class DocumentAnalysisApplication:
         source_id = ((run.artifact_manifest or {}).get("source") or {}).get("artifact_id")
         source = self.db.get(DocumentAnalysisArtifact, source_id) if source_id else None
         policy = ((source.payload or {}).get("performance_policy") or {}) if source else {}
-        return project_target_graph(
+        result = project_target_graph(
             graph=graph, ontology=OntologySnapshot.model_validate(frozen[0]) if frozen else None,
             document_hash=run.document_hash, root_class_iri=run.root_class_iri,
             root_class_label=run.root_class_label, filename=run.filename,
@@ -812,8 +852,41 @@ class DocumentAnalysisApplication:
                 "graph_phase", "evidence_verification",
             ),
         )
+        result.discovery, _ = self.saved_discovery_response(
+            run, graph=graph, accepted_assertions={
+                (ref.id, ref.revision) for target in result.targets
+                for ref in target.supported_assertion_refs
+            },
+        )
+        return result
+
+    def saved_discovery_response(self, run, *, graph=None, accepted_assertions=()):
+        from app.models.document_analysis import DocumentRunRequest, DocumentRunResult
+        from app.schemas.document_analysis import GraphArtifactResponse
+        from app.services.document_analysis.current_state import read_rows
+        from app.services.document_analysis.discovery_projection import project_saved_discovery
+        from app.services.extraction.document_ir import DocumentIR
+        from app.services.extraction.ontology_guided.records import RecordIndex
+
+        self.assert_artifacts_readable(run)
+        results = read_rows(self.store, run, DocumentRunResult, prefix="calls:results")
+        requests = read_rows(self.store, run, DocumentRunRequest, prefix="calls:requests")
+        metadata = ((self._artifact_payload(run, "metadata")
+                     or self._artifact_payload(run, "structure")) if results else None)
+        index = (RecordIndex(DocumentIR.model_validate(metadata[0]["analysis"]))
+                 if metadata else None)
+        if graph is None:
+            graph = GraphArtifactResponse.model_validate(
+                self.graph_response(run, projection="all_candidates"),
+            )
+        return project_saved_discovery(
+            run_id=str(run.recognition_run_id), results=results.get("calls:results", {}),
+            requests=requests.get("calls:requests", {}), index=index, graph=graph,
+            accepted_assertions=accepted_assertions,
+        )
 
     def ranking_summary_response(self, run: DocumentAnalysisRun) -> dict[str, Any]:
+        self._require_legacy_display(run)
         summary = self._artifact_payload(run, "ranking_summary")
         if summary:
             result = summary[0]
@@ -825,16 +898,28 @@ class DocumentAnalysisApplication:
     def source_selection_response(
         self, run: DocumentAnalysisRun, *, selection_ref: str
     ) -> dict[str, Any]:
+        self._require_legacy_display(run)
         compact = self._artifact_payload(run, "source_selections")
-        if not compact:
-            legacy = self.source_response(run, selection_ref=selection_ref)
-            return {
-                key: value for key, value in legacy.items() if key not in {"filename", "content"}
-            }
-        payload = compact[0]
-        registered = payload["selection_registry"].get(selection_ref)
+        payload = compact[0] if compact else None
+        registered = payload["selection_registry"].get(selection_ref) if payload else None
         if registered is None:
+            _, candidates = self.saved_discovery_response(run)
+            registered = candidates.get(selection_ref)
+        if registered is None:
+            if not compact:
+                legacy = self.source_response(run, selection_ref=selection_ref)
+                return {
+                    key: value for key, value in legacy.items()
+                    if key not in {"filename", "content"}
+                }
             raise DocumentAnalysisError("RUN_NOT_FOUND", "来源定位不存在", status_code=404)
+        if payload is None:
+            # Discovery is saved before the first graph/source cache publication.
+            # Its validated anchors already belong to the current parsed document.
+            metadata = self._artifact_payload(run, "metadata") or self._artifact_payload(
+                run, "structure",
+            )
+            payload = metadata[0]["analysis"]
         return {
             "contract_version": CONTRACT_VERSION,
             "recognition_run_id": run.recognition_run_id,
@@ -846,6 +931,7 @@ class DocumentAnalysisApplication:
     def source_response(
         self, run: DocumentAnalysisRun, *, selection_ref: str | None
     ) -> dict[str, Any]:
+        self._require_legacy_display(run)
         committed = self._artifact_payload(run, "metadata") or self._artifact_payload(
             run, "structure"
         )
@@ -878,6 +964,14 @@ class DocumentAnalysisApplication:
             "selection": selection,
             "anchors": anchors,
         }
+
+    def _require_legacy_display(self, run):
+        from app.services.document_harness.application import is_harness_run
+
+        if is_harness_run(self.db, run):
+            raise DocumentAnalysisError(
+                "ENGINE_NOT_APPLICABLE", "该运行使用独立 Harness 图谱和来源接口", status_code=409,
+            )
 
     def events_response(
         self, run: DocumentAnalysisRun, *, after_sequence: int
@@ -1067,6 +1161,18 @@ class DocumentAnalysisApplication:
     ) -> tuple[DocumentAnalysisRun, bool]:
         if role not in WRITE_ROLES:
             raise DocumentAnalysisError("ROLE_FORBIDDEN", "当前角色无运行写权限", status_code=403)
+        from app.services.document_harness.application import is_harness_run, is_template_run
+
+        harness = is_harness_run(self.db, run)
+        if (action not in {"cancel", "delete"}
+                and not harness and not is_template_run(self.db, run)):
+            raise DocumentAnalysisError(
+                "ENGINE_RETIRED", "旧文档引擎已隔离，请新建独立 Harness 运行", status_code=409,
+            )
+        if harness and action in {"ranking_budget_enable", "ranking_budget_disable"}:
+            raise DocumentAnalysisError(
+                "ENGINE_NOT_APPLICABLE", "独立 Harness 不使用旧排序预算协议", status_code=409,
+            )
         previous_ranking_budget_enabled = run.ranking_budget_enabled
         try:
             outcome = self.store.request_control(
@@ -1088,7 +1194,7 @@ class DocumentAnalysisApplication:
                 raise InvalidRunState("idempotent control operation has no receipt")
             if not replay:
                 cancelled_repairs = []
-                if action in {"cancel", "delete"}:
+                if action in {"cancel", "delete"} and not harness:
                     from app.services.document_analysis.reviews import (
                         cancel_pending_repair_operations,
                     )
@@ -1177,7 +1283,7 @@ class DocumentAnalysisApplication:
             "operation": action,
             "ranking_budget_enabled": run.ranking_budget_enabled,
             "operation_status": "accepted",
-            "available_actions": _available_actions(run, role),
+            "available_actions": self.available_actions_response(run, role),
         }
 
     @staticmethod

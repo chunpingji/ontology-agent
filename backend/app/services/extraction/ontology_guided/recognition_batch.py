@@ -17,6 +17,7 @@ from app.services.extraction.ontology_guided.claim_protocol import (
     VerificationEnvelope,
     VerificationTargetSpec,
     compile_stage_schema,
+    facet_requires_quote,
 )
 from app.services.extraction.ontology_guided.context import TaskContext
 from app.services.extraction.ontology_guided.scheduler import RecognitionTask
@@ -260,6 +261,12 @@ def compile_batch_stage_schema(
         targets=[target for member in members
                  for target in (targets_by_member or {}).get(member.task_id, [])],
         reference_resolution=reference_resolution, relation_bridges=bridges,
+        quote_requirements={
+            target.target_id: {name for name in target.required_facets
+                              if facet_requires_quote(target, name, member.context)}
+            for member in members
+            for target in (targets_by_member or {}).get(member.task_id, [])
+        },
     )
     definitions = schema.pop("$defs")
     if stage == "verification":

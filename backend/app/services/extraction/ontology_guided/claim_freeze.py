@@ -248,7 +248,15 @@ def _freeze_proposal(
             issue(identity, "identity_field_role_mismatch")
 
     allowed_classes = allowed_entity_classes(card)
+    from app.services.extraction.ontology_guided.candidate_construction import (
+        physical_entity_issues,
+    )
     from app.services.extraction.ontology_guided.claim_identity import duplicate_mentions
+
+    if record_discovery:
+        for local_id, codes in physical_entity_issues(proposal, context).items():
+            for code in codes:
+                issue(local_id, code)
 
     if not reference_resolution:
         if proposal.reference_bindings:

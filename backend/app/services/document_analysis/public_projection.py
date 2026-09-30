@@ -142,8 +142,9 @@ def build_selection_registry(
     *,
     recognition_run_id: str,
     analysis_id: str,
-    graph: GraphSnapshot,
+    graph: GraphSnapshot | None,
     index: RecordIndex,
+    extra_anchors: Iterable[EvidenceAnchor] = (),
 ) -> dict[str, dict[str, Any]]:
     """Register every graph citation as an opaque, run-owned source selection."""
 
@@ -192,25 +193,28 @@ def build_selection_registry(
         }
         return selection_ref
 
-    for node in graph.nodes:
+    for anchor in extra_anchors:
+        index.ir.resolve(anchor)
+        add(anchor, "predicate_bridge")
+    for node in graph.nodes if graph else []:
         for anchor in node.evidence_refs:
             add(anchor, "entity")
-    for candidate in graph.attribute_candidates:
+    for candidate in graph.attribute_candidates if graph else []:
         for anchor in candidate.label_refs:
             add(anchor, "predicate_bridge")
         for anchor in candidate.value_refs:
             add(anchor, "value")
-    for item in graph.properties:
+    for item in graph.properties if graph else []:
         role_anchors = _property_role_anchors(item)
         for role, anchors in role_anchors.items():
             for anchor in anchors:
                 add(anchor, role)
-    for item in [*graph.edges, *graph.relationship_groups]:
+    for item in [*graph.edges, *graph.relationship_groups] if graph else []:
         role_anchors = _edge_role_anchors(item)
         for role, anchors in role_anchors.items():
             for anchor in anchors:
                 add(anchor, role)
-    for item in [*graph.properties, *graph.edges, *graph.relationship_groups]:
+    for item in [*graph.properties, *graph.edges, *graph.relationship_groups] if graph else []:
         if "scope" not in item.model_fields_set:
             continue
         for qualifier in item.applicability.get("qualifiers", []):

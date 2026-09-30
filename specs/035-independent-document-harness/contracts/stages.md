@@ -1,0 +1,162 @@
+# 独立阶段协议
+
+协议标识 `document-harness-v1`。本标识只属于新流程，不是旧协议的版本转换。
+
+## 物理输入
+
+阅读单元包含短来源 ID、原文、位置、原字段 ID/标签/值/精确引用。
+发现实体输出局部 ID、必填指称定位 anchor、可选名称引用、角色和归属字段 ID。
+anchor 为 `{source_id,text?,occurrence?}`：source_id 必须选择本窗口给出的来源 ID；
+整来源定位仅需 source_id，程序读取其原文、区间及 DocumentIR 物理位置。
+表格来源对应物理单元格内的段落，行列从 0 起，表格路径及合并单元格归属由解析器
+确定，模型不重新计算坐标。同一单元格多段文字由各自来源 ID 区分；需要定位来源内
+某个对象时才补充 text 和必要的 occurrence。整行只作为上下文，不自动构成单一实体。
+证据 `evidence` 只选择本次输入的短来源 ID，例如 `["S1","S2"]`，由程序保存
+这些单元的完整真实原文与字符区间。名称和补充原字段的标签/值使用
+`{source_id,text,occurrence}` 精确定位；重复文本的 occurrence 从 0 起，无歧义为 null。
+所有引用均须来自本次输入；不让模型输出文档/实体哈希或旧 facet/proof 信息。
+
+## 模型阶段
+
+发现前的卡片选择使用 `harness-card-ranking-v1` 内部结果；输入为冻结本体和当前阅读
+范围，输出候选分数、父类支持来源、覆盖增益、选择次序及未装入预算的卡 IRI。
+语义分数只表示相关性，不能解释成真实来源 supported 或类型成立概率。
+`discover.schema_guidance.classes` 包含选中的类型阅读卡（IRI、别名、定义、合法
+属性标签和关系）。阅读卡没有原文引用权限；发现仍按原文输出相同的提及/字段协议。
+发现窗口保存 `guidance_class_iris`，类型对齐以此形成优先联合比较菜单；未入选的
+可达类型仍按原有预算分批比较，不能把检索未入选当作否定。
+
+1. `discover`：批量原文提及、字段归属及原文关系标签线索；不输出本体谓词。
+   `entities`、`document_field_ids`、`document_source_fields`、`unowned_fields`、
+   `relation_hints` 五个数组均必填，
+   没有相应结果须显式返回 `[]`；每个提及的 `field_ids` 和 `source_fields` 同样必填。
+   `source_fields` 就近保存该对象的叙述字段，避免只生成提及而遗漏其数量、范围等；
+   无法确定候选主体的原字段放入 `unowned_fields`。每个对象最多补充 8 个字段，
+   文档根通过 `document_source_fields` 保存其新增字段，同样最多 8 个；根卡的合法
+   属性标签和定义在发现输入中固定提供，不依赖子对象的召回名额。
+   每轮合计 16 个；达到容量后保留已有观察并标记范围未完成，继续按现有窗口规则拆分。
+   空数组表达本批没有提出结果，省略任务不能被当成已检查且无结果。
+   关系线索只保存观察，直到合法 IRI 对齐才能成为图中关系。
+2. `type_alignment`：对提及候选给出当前合法类型或未定、置信度、原文依据与理由。
+   `entities` 是以本次实体 ID 为固定键的对象，每个键恰好一个判断，禁止额外键。
+   类型目录分片没有合适类型时返回 null，不能改变原指称去迎合分片中的类别。
+   分片只召回类型提议，不将不同调用的自报置信度直接排序选型。同一提及有多个
+   不同且来源有效的类型提议时，在同一 `type_alignment` 请求中联合比较这些类型，
+   使用原指称、字段与类型定义，允许返回 null，不将先前分片理由作为原文证明。
+   联合比较按提及组织，候选类型菜单不可再次拆散；单提及仍超输入预算时明确失败，
+   不回退为最高置信度胜出。单一有效提议沿原路径保留为候选。
+   非 null 类型分支在生成 Schema 中即要求非空来源 ID；null 分支允许没有类型证据。
+   类型提议不是确认；不删除原文提及，不合并同名实体。
+   不同实体或不同提及可以选择同一个类型；类型没有唯一占用名额，不得因另一
+   候选已经选择某类型而排除当前候选。竞争解释逐项核对，不在类型分片中暗中消除。
+   全部目录分片均未给出有效类型的指称，如果与其他指称的原文 anchor 实际重叠，
+   可将后者提出的合法类型作为菜单再做一次独立消歧。重叠只提供检索线索，
+   不共享类型结论、证据或身份；无重叠不触发，独立判断仍允许 null。
+   随后 `entity_review` 使用同样的逐项 Judgment 契约确认实体指称和类型；对象通过
+   anchor 定位，name=null 只表示未单独提供名称引用，名称仍可能位于 anchor 中，
+   不等于对象不存在或原文没有名称。字段观察已在此前保存。
+   原文指称重叠的实体分入不同核验批次，防止一个候选的拒绝理由传染到另一个候选；
+   非重叠实体继续按现有预算合批，引用、置信度和类型核验标准不变。
+3. `assertion_alignment`：基于主体当前卡、原字段集合和原文关系线索，批量提出
+   属性/关系合法 IRI、依据及理由。`properties` 顶层必填，以本批
+   `property_field_ids` 的每个字段 ID 为固定键，禁止漏键、额外键和数组响应；
+   每个值为 `{mappings:[{predicate_iri,value_component,confidence}],reason}`；
+   `value_component` 只允许 whole/lower/upper，允许同一范围字段映射两个合法属性。
+   同一原字段的不同组件不能同时映射同一个谓词；否则不创建这些派生属性，保留
+   完整原值、候选主体和冲突理由，防止上下限退化为同一泛化属性的两个独立值。
+   当前合法属性菜单无匹配时，仍返回该字段键及 `mappings=[]`、非空理由，
+   原值与引用由程序保留；无待对齐字段须显式返回 `{}`。
+   主体类型卡没有合法属性时，程序直接保留各非缺失字段的原文观察与理由，无需调用模型。
+   `relations` 也是必填数组，支持同一批输入的多谓词关系候选，没有候选须显式返回 `[]`。
+4. `evidence_review`：逐项给出 accepted/unresolved/rejected、依据与理由。
+   `judgments` 以本次候选 ID 为固定键，禁止漏项、额外项和重复 JSON 对象键。
+   一个声明一个结论，不采用旧逐 facet 证明协议。关系结合端点原文属性、方向、
+   角色、否定及条件核对；属性不以 SHACL 作为识别依据。
+   本阶段不从菜单选择最接近的类型；即使没有替代类型，也可拒绝全部候选。
+   实体存在与候选类型成立分别判断，不能将描述实体的文档误作实体自身。
+
+发现中的 `anchor` 必填且非空，不能用 name、role 或 evidence 替代；name 可以为 null。
+定位必须来自当前可读来源；整来源引用不能扩展到窗口外的段落、同格其他段落或同行。
+有效位置仅证明原文可定位，实体指称、类型及字段归属仍须分别核验。
+指称登记失败保留已解析证据、字段观察及原因，该窗口不能因模型 complete=true 而
+被视为完成；沿现有有界拆分继续处理，无法完成时明确保留未完成状态。
+实体的 source_fields 包含段落内非冒号字段；非空的 label/value 须逐字定位。
+原文没有显式字段名时 label=null，value 仍须精确定位，展示为“独立原文”。
+属性名称由随后合法 IRI 对齐产生，不作为原文标签写回；也不能因为 label 为空而跳过。
+先存原字段再处理候选归属，即使该实体的指称引用无效也保留有效字段观察并记录原因。
+范围拆分由程序解析完整原值，保留 source_value/source_unit/value_component；未确认
+主体、模糊或非法范围不派生边界。独立属性核对包含完整原字段、组件及谓词定义，
+核对上下限含义、单位和归属；SHACL 不作识别依据。不要求入边或出边已采信。
+
+每阶段输入包含允许的局部 ID，Schema 与本地检查共同限制范围。
+模型可读输入显式包含 `{input, schema}`，其中 schema 与解码约束完全一致；
+不能假设服务端的 JSON Schema 解码语法会自动把字段含义放入模型上下文。
+输入预算同时包含原文、阶段指令和该 Schema，不截断来源换取协议空间。
+accepted 必须有真实非空证据；服务器检查决定性来源与合法性，
+模型置信度不能覆盖确定性失败。结构失败显式保存，不无限自我纠正。
+三个固定键阶段没有旧数组响应的兼容转换；模型原答独立保存供本次问题定位。
+
+发现每批最多 12 个提及、16 个关系线索、16 个补充原字段；值复用已提供的字段。
+输出上限固定 16384 token。输入以包含指令和 Schema 的 UTF-8 字节保守上界检查，
+不是实测 tokenizer 数。发现请求过大时先拆阅读单元再调用；类型目录、合法谓词
+和核对候选按输入预算分批。容量命中或 complete=false 时继续有界拆分，
+达到拆分下限仍未读完则明确标记范围未完成，不以空输出表示全文穷尽。
+属性固定键响应每批最多 32 个字段，更多字段在调用前分批，关系任务仅随首个字段批处理。
+完整回答全部 32 个指定字段不表示容量截断，不因此将该窗口标成未读完。
+
+新提及可与历史提及探索合法关系，两端都不要求先采信；补齐双方的实际原文，
+不按名称合并。文档自身属性可单独对齐，不依赖正文实体存在。非法 IRI 提议
+保存为有原因的观察，不进入正式属性或关系；已有采信项不因重复发现降为候选。
+
+## 展示与控制
+
+新只读 `harness-graph` 响应包含 entities/properties/relations/observations/targets，
+条目状态 candidate/accepted/rejected/unresolved，原文引用与 reason。
+progress 分别提供 completed_calls/candidate_count/fact_count、阅读范围和阶段成本。
+`harness-source/{source_id}` 从所属运行 DocumentIR 返回原文和物理位置。
+新运行不使用旧 target-graph/proof/source-selection 契约。
+字段观察额外提供 field_id/value/candidate_subject_ids；它们不受类型拒绝过滤。
+派生属性提供 source_value/value_component/source_unit，不丢失原范围引用。
+
+观察展示补充 kind、object_id、discovery_cards 和 alignments。发现卡包含 iri/label/role，
+role 区分 reading 与 document_properties；卡仅表示实际提供的阅读指引。
+alignments 按 subject_id/card 分组，关联 property_ids；attempts 保留本主体、类型卡
+和实际谓词菜单的当前 state/reason/predicates，state 为 mapped/unmatched/invalid。
+没有尝试记录时不得据当前类型或泛化原因推断已执行对齐。
+属性响应额外提供 field_id/card/predicate；关系提供 card/predicate。card 为实际对齐
+类型的 iri/label，predicate 为 iri/label/namespace/domain_text。domain_text 保留冻结
+定义域的并集与交集，不把适用类展开集合误当作声明定义域。字段属性结果由 ID 关联，
+不复制采信结论；原因与采信状态以当前属性为准。失败调用使用 kind=failure 单列展示。
+
+## 属性值与核验职责补充（2026-09-22）
+
+PropertyMapping 必须回答 value_quote：span 时为当前来源的精确 Quote，其他组件为 null。
+whole 复用完整观察；span 选择该字段 value_evidence 内的连续区间；lower/upper 仍由
+程序从完整范围派生。不得使用其他字段或同名对象的值。属性增加 value_evidence，
+保存实际取值对应原文区间；source_value 和 evidence 继续保留完整观察与上下文。
+
+实体输入 type_basis 为 user_selected（根类型任务前提）、model_review（已核验主体）
+或 unconfirmed。entity_review 仅接收实体候选；evidence_review 仅接收属性/关系候选，
+不再次提供主体类型定义作为待证明任务。端点确认状态仍由程序核对。
+evidence_review 另必填 type_concerns 数组，无疑点为 []；每项包含本批 endpoint 的
+entity_id、非空原文 evidence 和 reason。类型疑点保存为关联主体的观察，不修改主体
+类型或自动改写本项 verdict；缺证不能当成类型冲突，需明确矛盾原文。
+
+## 文档内共指阶段（2026-09-23）
+
+全文原文窗口结束后默认进入 `coreference_review`。实体候选代表物理提及；发现与实体
+核验不得因简称、回指或已存在对应对象而合并/拒绝重复提及。共指阶段与采信事实分开，
+精确的两端来源、别名绑定解码约束、组内冲突规则和公开投影见 [共指契约](coreference.md)。
+
+## 本体身份指引（2026-09-23）
+
+reading_card 增加 identity_properties、identity_key_groups、身份解释规则及相关注解契约。
+属性保留 IRI、标签、别名、定义、domain/range、数据类型（数据属性）、声明状态及注解。
+键组不拆成独立唯一键；包含对象属性时一并交付定义，缺失成员显式列出，不静默删除。
+上述结构复用于实体独立核验的候选类型卡；本体值只引导解释，不作为原文证明。
+
+移除 name_parts 输出字段及其专门定位/显示拼接；实体使用已有 name/anchor，编号按
+source_fields 或 field_ids 归属。没有原文字段标签可为 null，不从本体伪造 label 引文。
+编号值不隐式转换、补齐或切割；多实体、单对象多标识和复合键组成由原文和本体语义判断。
+实体核验检查指称数量及类型；属性核验检查具体编号值、谓词语义及归属；共指独立核对
+作用域与同一/不同。模型可以共享整句证据，但每个并列成员必须有自己的精确 anchor。

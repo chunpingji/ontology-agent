@@ -284,6 +284,13 @@ class OntologyEngine:
             self._ontologies.clear()
             self.is_loaded = False
 
+    def entity_query_graph(self) -> rdflib.Graph:
+        """Caller-owned current ontology graph; no extraction protocol dependency."""
+        with self.lexical_read_scope():
+            graph = rdflib.Graph()
+            graph += self._world.as_rdflib_graph()
+            return graph
+
     def semantic_schema_snapshot(self):
         """A caller-owned projection, rebuilt after every T-Box mutation/load."""
         from app.services.extraction.extraction_tasks import _build_semantic_schema

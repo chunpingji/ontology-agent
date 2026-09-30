@@ -6,7 +6,6 @@ import {
   Ban,
   CheckCircle2,
   FileText,
-  PenLine,
 } from "lucide-react";
 
 import type { ApprovalTask } from "@/lib/api";

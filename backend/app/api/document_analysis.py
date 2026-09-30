@@ -68,6 +68,12 @@ from app.schemas.document_analysis_review import (
     PropertyReviewList,
     PropertyReviewResponse,
 )
+from app.schemas.document_harness import (
+    HarnessGraph,
+    HarnessSource,
+    InterpretationTask,
+    SubmitInterpretationAnswer,
+)
 from app.schemas.document_target_graph import DocumentTargetGraphResponse
 from app.services.document_analysis.application import (
     DocumentAnalysisApplication,
@@ -75,7 +81,7 @@ from app.services.document_analysis.application import (
     graph_etag,
     weak_etag,
 )
-from app.services.document_analysis.execution import (
+from app.services.document_analysis.dispatcher import (
     dispatch_run,
     notify_document_analysis_dispatcher,
 )
@@ -469,6 +475,86 @@ def get_document_analysis_target_graph(
         return _error(exc)
 
 
+@router.get("/runs/{recognition_run_id}/harness-graph", response_model=HarnessGraph)
+def get_independent_harness_graph(
+    recognition_run_id: UUID,
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.services.document_harness.application import HarnessError
+    from app.services.document_harness.projection import graph_response
+
+    app = _application(db)
+    try:
+        run = app.get_run(recognition_run_id, identity.username)
+        app.assert_artifacts_readable(run)
+        return _json_model(
+            HarnessGraph.model_validate(graph_response(db, run)),
+            headers={"Cache-Control": "no-store"},
+        )
+    except HarnessError as exc:
+        return _error(DocumentAnalysisError(
+            exc.code, exc.message, status_code=exc.status_code, retryable=exc.retryable,
+        ))
+    except DocumentAnalysisError as exc:
+        return _error(exc)
+
+
+@router.get("/runs/{recognition_run_id}/harness-source/{source_id}", response_model=HarnessSource)
+def get_independent_harness_source(
+    recognition_run_id: UUID,
+    source_id: str,
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.services.document_harness.application import HarnessError
+    from app.services.document_harness.projection import source_response
+
+    app = _application(db)
+    try:
+        run = app.get_run(recognition_run_id, identity.username)
+        app.assert_artifacts_readable(run)
+        return _json_model(
+            HarnessSource.model_validate(source_response(db, run, source_id)),
+            headers={"Cache-Control": "private, no-store"},
+        )
+    except HarnessError as exc:
+        return _error(DocumentAnalysisError(
+            exc.code, exc.message, status_code=exc.status_code, retryable=exc.retryable,
+        ))
+    except DocumentAnalysisError as exc:
+        return _error(exc)
+
+
+@router.post(
+    "/runs/{recognition_run_id}/interpretation-tasks/{task_id}/answer",
+    response_model=InterpretationTask,
+)
+def answer_harness_interpretation(
+    recognition_run_id: UUID,
+    task_id: str,
+    request: SubmitInterpretationAnswer,
+    identity: Identity = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.services.document_harness.application import HarnessError
+    from app.services.document_harness.interpretations import submit_answer
+
+    app = _application(db)
+    try:
+        run = app.get_run(recognition_run_id, identity.username)
+        app.assert_artifacts_readable(run)
+        return _json_model(InterpretationTask.model_validate(
+            submit_answer(db, run, identity, task_id, request),
+        ), headers={"Cache-Control": "no-store"})
+    except HarnessError as exc:
+        return _error(DocumentAnalysisError(
+            exc.code, exc.message, status_code=exc.status_code, retryable=exc.retryable,
+        ))
+    except DocumentAnalysisError as exc:
+        return _error(exc)
+
+
 @router.get("/runs/{recognition_run_id}/ranking-summary", response_model=GraphRanking)
 def get_document_analysis_ranking_summary(
     recognition_run_id: UUID,
@@ -589,11 +675,12 @@ def get_document_harness(
     identity: Identity = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    from app.services.document_analysis.harness import read_harness
-
     app = _application(db)
     try:
         run = app.get_run(recognition_run_id, identity.username)
+        app._require_legacy_display(run)
+        from app.services.document_analysis.harness import read_harness
+
         return _json_model(HarnessResponse.model_validate(read_harness(app.store, run)),
                             headers={"Cache-Control": "private, no-store"})
     except DocumentAnalysisError as exc:
@@ -607,11 +694,12 @@ def get_document_harness_context(
     identity: Identity = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    from app.services.document_analysis.current_state import get_row
-
     app = _application(db)
     try:
         run = app.get_run(recognition_run_id, identity.username)
+        app._require_legacy_display(run)
+        from app.services.document_analysis.current_state import get_row
+
         context = get_row(app.store, run, "display:harness_context")
         if not context or context["call_id"] != call_id:
             raise DocumentAnalysisError("CONTEXT_CHANGED", "当前调用已变化，请查看最新上下文",
@@ -624,11 +712,15 @@ def get_document_harness_context(
 
 
 def _read_harness_frame(bind, run_id, owner_id):
-    from app.services.document_analysis.current_state import get_row
-
     with Session(bind) as db:
         app = _application(db)
         run = app.get_run(run_id, owner_id)
+        from app.services.document_harness.application import is_harness_run
+
+        if is_harness_run(db, run):
+            return None
+        from app.services.document_analysis.current_state import get_row
+
         return get_row(app.store, run, "display:harness")
 
 
@@ -718,7 +810,13 @@ def list_property_reviews(
     identity: Identity = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    from app.services.document_harness.application import is_template_run
+
+    app = _application(db)
+    run = app.get_run(recognition_run_id, identity.username)
+    app._require_legacy_display(run)
     result = DocumentPropertyReviewService(db, identity).listing(recognition_run_id)
+    result["can_repair"] = result["can_repair"] and is_template_run(db, run)
     return _json_model(PropertyReviewList.model_validate(result),
                        headers={"Cache-Control": "private, no-store"})
 
@@ -730,6 +828,8 @@ def create_property_review(
     identity: Identity = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    app = _application(db)
+    app._require_legacy_display(app.get_run(recognition_run_id, identity.username))
     result, replay = DocumentPropertyReviewService(db, identity).create_review(
         recognition_run_id, request,
     )
@@ -744,7 +844,13 @@ def list_property_repairs(
     identity: Identity = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    from app.services.document_harness.application import is_template_run
+
+    app = _application(db)
+    run = app.get_run(recognition_run_id, identity.username)
+    app._require_legacy_display(run)
     result = DocumentPropertyReviewService(db, identity).repairs(recognition_run_id)
+    result["can_repair"] = result["can_repair"] and is_template_run(db, run)
     return _json_model(PropertyRepairList.model_validate(result),
                        headers={"Cache-Control": "private, no-store"})
 
@@ -758,6 +864,15 @@ def create_property_repair(
     identity: Identity = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    from app.services.document_harness.application import is_template_run
+
+    app = _application(db)
+    run = app.get_run(recognition_run_id, identity.username)
+    app._require_legacy_display(run)
+    if not is_template_run(db, run):
+        raise DocumentAnalysisError(
+            "ENGINE_RETIRED", "旧文档引擎已隔离，不能启动旧属性修复，请新建运行", status_code=409,
+        )
     result, replay = DocumentPropertyReviewService(db, identity).create_repair(
         recognition_run_id, request,
     )

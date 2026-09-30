@@ -470,6 +470,12 @@ class BatchRecognitionRun:
                 schema = candidate_relation_schema(schema)
         from .model_schema_projection import compact_answer_schema
 
+        if stage == "discovery" and self.adapter.record_discovery is not None:
+            from .candidate_construction import bound_discovery_schema
+
+            schema = bound_discovery_schema(
+                schema, self.adapter.output_limit(stage) // len(self.unit.members), batch=True,
+            )
         return compact_answer_schema(schema)
 
     def request(self, ids, stage, items, available):
@@ -484,6 +490,12 @@ class BatchRecognitionRun:
                                   "strict": self.adapter.strict_answers,
                                   "schema": schema}},
         }
+        if stage == "discovery" and self.adapter.record_discovery is not None:
+            from .candidate_construction import discovery_budget_instructions
+
+            request["instructions"] += "各成员分别遵守以下额度：" + discovery_budget_instructions(
+                self.adapter.output_limit(stage) // len(self.unit.members),
+            )
         if available:
             request.update(tools=available, tool_choice="auto")
         if self.adapter.include is not None:
@@ -1236,6 +1248,12 @@ class BatchRecognitionRun:
                for kind in ("binding", "metric", "shacl")},
             "elapsed_seconds": perf_counter() - started,
         }
+        from .candidate_construction import mark_candidate_budget
+
+        if self.adapter.record_discovery is not None:
+            mark_candidate_budget(
+                outcome, frozen, self.adapter.output_limit("discovery") // len(self.unit.members),
+            )
         self.store_member(task_id, "outcome", outcome.model_dump(mode="json"))
         state = self.context.protocol_state["member_states"][task_id]
         record_relation = (

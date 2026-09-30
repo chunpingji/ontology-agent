@@ -17,10 +17,12 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
 
@@ -44,6 +46,7 @@ PROPERTY_KINDS = ("object", "data")
 MAPPING_TYPES = (
     "slpra_iri", "bfo", "source_field",  # legacy T-Box mappings
     "db_table", "api_endpoint", "doc_pattern",  # source-entity bindings (014)
+    "mock_dataset",  # read-only entity queries; never an extraction binding
 )
 # Source-entity types drive extraction and carry the (class, source) uniqueness
 # constraint + property-binding layer (E6b); legacy types do not.
@@ -233,6 +236,14 @@ class OntologyClassMapping(VersionMixin, TimestampMixin, Base):
     target: Mapped[str] = mapped_column(String(500), nullable=False)
     source_system: Mapped[str | None] = mapped_column(String(50))
     health: Mapped[str] = mapped_column(String(20), default="ok")
+
+    query_config: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+
+    __table_args__ = (Index(
+        "uq_mock_class_source_dataset", "class_id", "source_system", "target", unique=True,
+        postgresql_where=text("mapping_type = 'mock_dataset'"),
+        sqlite_where=text("mapping_type = 'mock_dataset'"),
+    ),)
 
     # E6b property bindings owned by this class binding (source-entity types).
     property_bindings: Mapped[list["OntologyPropertyBinding"]] = relationship(

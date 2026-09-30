@@ -69,7 +69,9 @@ def claims():
 def answer(targets, verdict="unsupported"):
     return {"verifications": [{
         "target_id": target.target_id, "content_hash": target.content_hash,
-        "facets": [{"name": name, "verdict": verdict, "support": [],
+        "facets": [{"name": name, "verdict": verdict, "support": ([{
+                    "evidence_id": "ev-1", "text": "原文", "context_text": None,
+                }] if verdict == "supported" else []),
                     "counterevidence_support": [], "reason": "独立核验"}
                    for name in target.required_facets],
     } for target in targets]}
@@ -77,6 +79,31 @@ def answer(targets, verdict="unsupported"):
 
 def compile_single(card, targets):
     return compile_stage_schema("verification", card=card, evidence_ids=["ev-1"], targets=targets)
+
+
+def test_supported_source_facets_require_quotes_but_scope_absence_is_explicit(claims, validator):
+    from app.services.extraction.ontology_guided.claim_protocol import facet_requires_quote
+
+    card, targets = claims
+    context = SimpleNamespace(tool_inputs={"graph_phase": "evidence_review"}, fragments=[1],
+                              counterevidence_refs=[])
+    schema = compile_stage_schema(
+        "verification", card=card, evidence_ids=["ev-1"], targets=targets,
+        quote_requirements={t.target_id: {name for name in t.required_facets
+                                         if facet_requires_quote(t, name, context)}
+                            for t in targets},
+    )
+    supported = answer(targets, "supported")
+    validator(schema).validate(supported)
+    for i, target in enumerate(targets):
+        for j, name in enumerate(target.required_facets):
+            altered = deepcopy(supported)
+            altered["verifications"][i]["facets"][j]["support"] = []
+            assert validator(schema).is_valid(altered) is not facet_requires_quote(
+                target, name, context,
+            )
+    validator(schema).validate(answer(targets, "unsupported"))
+    validator(schema).validate(answer(targets, "undetermined"))
 
 
 @pytest.mark.parametrize("verdict", ["supported", "unsupported", "undetermined"])

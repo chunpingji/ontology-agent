@@ -3,12 +3,26 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import pytest
 from docx import Document
 
 from app.api import document_analysis
 from app.config import settings
+from app.services.document_harness import ontology
+from app.services.document_harness.ontology import ClassCard, SchemaCatalog
 
 ROOT_IRI = "https://ontology.pharma-gmp.cn/slpra/drug-development/CMCReport"
+
+
+@pytest.fixture(autouse=True)
+def independent_event_inputs(monkeypatch):
+    monkeypatch.setattr(settings, "local_llm_max_tokens", 16384)
+    catalog = SchemaCatalog(
+        snapshot_id="events-schema", ontology_hash="b" * 64, root_class_iri=ROOT_IRI,
+        classes={ROOT_IRI: ClassCard(iri=ROOT_IRI, label="CMC 报告", description="报告类型")},
+        reachable_class_iris=(ROOT_IRI,),
+    )
+    monkeypatch.setattr(ontology, "freeze_catalog", lambda _engine, _root: catalog)
 
 
 def _document(path: Path) -> bytes:

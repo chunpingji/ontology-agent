@@ -509,6 +509,7 @@ def compile_stage_schema(
     reference_resolution: bool = False,
     relation_bridges: list[AllowedBridge] | None = None,
     fact_evidence_ids: list[str] | None = None,
+    quote_requirements: dict[str, set[str]] | None = None,
 ) -> dict:
     """Generate then narrow model schemas; local semantic validation remains mandatory."""
     from .record_discovery import RecordDiscoverySchemaCard
@@ -573,10 +574,24 @@ def compile_stage_schema(
                     }
                 facets = []
                 for name in target.required_facets:
-                    definition = f"VerificationFacet_{name}"
+                    needs_quote = (quote_requirements is None
+                                   or name in quote_requirements.get(target.target_id, set()))
+                    definition = f"VerificationFacet_{name}_{'source' if needs_quote else 'scope'}"
                     if definition not in definitions:
                         facet = deepcopy(definitions["FacetVerification"])
                         facet["properties"]["name"] = {"type": "string", "const": name}
+                        supported = deepcopy(facet)
+                        supported["properties"]["verdict"] = {
+                            "type": "string", "const": "supported",
+                        }
+                        if needs_quote:
+                            supported["properties"]["support"]["minItems"] = 1
+                        else:
+                            supported["properties"]["reason"]["minLength"] = 1
+                        facet["properties"]["verdict"]["enum"] = [
+                            "unsupported", "undetermined",
+                        ]
+                        facet = {"anyOf": [supported, facet]}
                         definitions[definition] = facet
                     facets.append({"$ref": f"#/$defs/{definition}"})
                 answer["properties"]["facets"] = {
@@ -1120,7 +1135,7 @@ class FrozenClaimSet(DiscoveryEnvelope):
 
 def facet_requires_quote(target, name, context) -> bool:
     """Absence checks cite the inspected scope, never an invented absent quotation."""
-    if (context.tool_inputs.get("graph_phase") != "evidence_review"
+    if (getattr(context, "tool_inputs", {}).get("graph_phase") != "evidence_review"
             or target.target_kind not in {"relation", "property"}
             or not context.fragments):
         return True

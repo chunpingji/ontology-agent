@@ -904,7 +904,7 @@ def freeze_tool_engine_policy() -> dict:
             "max_output_tokens": settings.evidence_max_output_tokens,
             "max_context_tokens": settings.evidence_max_context_tokens,
             "stage_output_tokens": {
-                "discovery": min(8192, settings.evidence_max_output_tokens),
+                "discovery": min(16384, settings.evidence_max_output_tokens),
                 "verification": min(16384, settings.evidence_max_output_tokens),
             },
         },
@@ -2573,6 +2573,14 @@ def _execute_dispatched_run(
     token: str,
 ) -> None:
     """Execute a claimed generation with lease renewal and fenced failures."""
+
+    from app.services.document_harness.application import is_harness_run, is_template_run
+
+    if is_harness_run(db, run) or not is_template_run(db, run):
+        from app.services.document_analysis.dispatcher import _execute
+
+        _execute(db, store, run, token)
+        return
 
     recognition_run_id = run.recognition_run_id
     keeper = _LeaseKeeper(

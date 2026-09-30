@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { FileSearch, Loader2, Pause, Play, RefreshCw } from "lucide-react";
+import { ArrowLeft, ListTodo, Loader2, Pause, Play, RefreshCw } from "lucide-react";
 
 import { DocumentAnalysisHistory } from "@/components/analysis/document-analysis-history";
+import { SourceHarnessPanel } from "@/components/analysis/source-harness-panel";
 import { TargetGraphCanvas } from "@/components/analysis/target-graph-canvas";
 import { WordViewer } from "@/components/extraction/word-viewer";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +17,7 @@ import {
   controlDocumentAnalysisRun, createReportDocumentRun, getDocumentAnalysisRun,
   getDocumentAnalysisSource, getDocumentAnalysisSourceSelection, getDocumentAnalysisTargetGraph,
   getReportDocumentRun, listDocuments, mergeDocumentAnalysisControlReceipt, formatDocumentGraphQuantity,
+  DOCUMENT_HARNESS_PROTOCOL,
   type DocumentAnalysisRun, type DocumentAnalysisSourceArtifact, type DocumentAnalysisTarget,
   type DocumentAnalysisTargetGraph, type DocumentGraphEntity, type DocumentGraphProperty, type EntityShadow, type EvidenceAnchor,
 } from "@/lib/api";
@@ -40,11 +43,30 @@ export function GraphAnalysisPanel() {
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
   const [reload, setReload] = useState(0);
+  const [harnessTaskCount, setHarnessTaskCount] = useState<{ runId: string; count: number | null } | null>(null);
+  const [openTaskDrawerRunId, setOpenTaskDrawerRunId] = useState<string | null>(null);
   const creationController = useRef<AbortController | null>(null);
   const activeRunId = explicitRunId ?? (latest?.iri === documentIri ? latest.run?.recognition_run_id : null) ?? null;
+  const currentTaskCount = harnessTaskCount?.runId === activeRunId ? harnessTaskCount.count : null;
+  const taskDrawerOpen = activeRunId !== null && openTaskDrawerRunId === activeRunId;
+  const onTaskDrawerOpenChange = useCallback((open: boolean) => {
+    setOpenTaskDrawerRunId(open ? activeRunId : null);
+  }, [activeRunId]);
+  const onTaskCountChange = useCallback((count: number | null) => {
+    if (!activeRunId) return;
+    setHarnessTaskCount((current) => current?.runId === activeRunId && current.count === count
+      ? current : { runId: activeRunId, count });
+  }, [activeRunId]);
   const searching = Boolean(documentIri && !explicitRunId && latest?.iri !== documentIri && lookupError?.iri !== documentIri);
+  const documentParams = new URLSearchParams(params.toString());
+  documentParams.set("tab", "document");
+  if (activeRunId) documentParams.set("documentRun", activeRunId);
+  documentParams.delete("run");
+  documentParams.delete("job_id");
+  documentParams.delete("node_id");
 
   useEffect(() => {
+    if (activeRunId) return;
     const controller = new AbortController();
     void listDocuments(undefined, 500, controller.signal).then((result) => {
       if (controller.signal.aborted) return;
@@ -52,7 +74,7 @@ export function GraphAnalysisPanel() {
       setDocumentError(null);
     }).catch((error: unknown) => { if (!controller.signal.aborted) setDocumentError(message(error)); });
     return () => controller.abort();
-  }, [reload]);
+  }, [reload, activeRunId]);
 
   useEffect(() => {
     if (!documentIri || explicitRunId) return;
@@ -68,6 +90,8 @@ export function GraphAnalysisPanel() {
   useEffect(() => () => creationController.current?.abort(), [documentIri]);
 
   const select = (iri: string, runId: string | null) => {
+    setHarnessTaskCount(null);
+    setOpenTaskDrawerRunId(null);
     const next = new URLSearchParams(params.toString());
     next.set("tab", "graph-analysis");
     if (iri) next.set("documentIri", iri); else next.delete("documentIri");
@@ -94,11 +118,21 @@ export function GraphAnalysisPanel() {
   };
 
   return <div className="space-y-5">
-    <Card>
-      <CardHeader className="pb-3"><CardTitle className="flex items-center gap-2 text-lg"><FileSearch className="size-5 text-primary" />本体指引图谱分析</CardTitle>
-        <p className="text-sm text-muted-foreground">以本体指引发现文档中的实体和关系候选，关联原文。选择报告或历史运行查看对应阶段的图谱。</p>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <header className="flex flex-wrap items-start justify-between gap-4" data-testid="graph-analysis-header">
+      <div className="space-y-2"><h1 className="text-xl font-semibold tracking-tight">图谱分析</h1>
+        <p className="text-xs text-muted-foreground">沿文档根逐层查看实体、属性与原文依据。</p>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button asChild size="sm" variant="outline"><Link href={`${pathname}?${documentParams}`} prefetch={false}><ArrowLeft className="size-3.5" />返回文档分析</Link></Button>
+        <Button size="sm" variant="outline" onClick={() => setReload((value) => value + 1)}><RefreshCw className="size-3.5" />刷新结果</Button>
+        {activeRunId && currentTaskCount !== null && <Button variant="outline" size="icon" className="relative" aria-label={`人工确认任务，待处理 ${currentTaskCount} 项`} title="人工确认任务" onClick={() => onTaskDrawerOpenChange(true)}>
+          <ListTodo className="size-4" />
+          {currentTaskCount > 0 && <span aria-hidden="true" className="absolute -right-2 -top-2 flex min-w-5 items-center justify-center rounded-full bg-amber-600 px-1 text-[10px] font-semibold leading-5 text-white">{currentTaskCount > 99 ? "99+" : currentTaskCount}</span>}
+        </Button>}
+      </div>
+    </header>
+    {!activeRunId && <Card>
+      <CardContent className="space-y-3 p-4">
         <div className="flex flex-wrap items-end gap-3">
           <label className="min-w-60 flex-1 space-y-1.5 text-sm"><span>报告文档</span>
             <select value={documentIri} disabled={starting} onChange={(event) => select(event.target.value, null)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
@@ -114,8 +148,8 @@ export function GraphAnalysisPanel() {
         {[documentError, lookupError?.iri === documentIri ? lookupError.message : null, startError].filter(Boolean).map((error, index) => <p key={index} role="alert" className="break-words text-sm text-destructive">{error}</p>)}
         {!activeRunId && !searching && <p className="text-sm text-muted-foreground">点击“开始分析”启动识别；切换报告、查看历史和刷新页面只读取结果。</p>}
       </CardContent>
-    </Card>
-    {activeRunId && <GraphAnalysisRunView key={activeRunId} runId={activeRunId} />}
+    </Card>}
+    {activeRunId && <GraphAnalysisRunView key={activeRunId} runId={activeRunId} refreshRevision={reload} taskDrawerOpen={taskDrawerOpen} onTaskDrawerOpenChange={onTaskDrawerOpenChange} onTaskCountChange={onTaskCountChange} />}
     <details className="rounded-xl border bg-card p-4" open={!activeRunId}>
       <summary className="cursor-pointer text-sm font-medium">分析历史</summary>
       <div className="mt-3"><DocumentAnalysisHistory activeRunId={activeRunId} currentRun={null} onSelect={(runId) => select("", runId)} /></div>
@@ -123,7 +157,40 @@ export function GraphAnalysisPanel() {
   </div>;
 }
 
-function GraphAnalysisRunView({ runId }: { runId: string }) {
+function GraphAnalysisRunView({ runId, refreshRevision, taskDrawerOpen, onTaskDrawerOpenChange, onTaskCountChange }: {
+  runId: string; refreshRevision: number; taskDrawerOpen: boolean;
+  onTaskDrawerOpenChange: (open: boolean) => void;
+  onTaskCountChange: (count: number | null) => void;
+}) {
+  const [run, setRun] = useState<DocumentAnalysisRun | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void getDocumentAnalysisRun(runId, controller.signal).then((value) => {
+      if (controller.signal.aborted) return;
+      if (value.recognition_run_id !== runId) throw new Error("读取的运行与当前选择不一致。");
+      setRun(value);
+      setError(null);
+    }).catch((failure: unknown) => {
+      if (!controller.signal.aborted) setError(message(failure));
+    });
+    return () => controller.abort();
+  }, [runId, retry, refreshRevision]);
+
+  useEffect(() => {
+    if (run && run.extraction_protocol !== DOCUMENT_HARNESS_PROTOCOL) onTaskCountChange(null);
+  }, [run, onTaskCountChange]);
+
+  if (error) return <div className="space-y-2"><p role="alert" className="text-sm text-destructive">{error}</p><Button variant="outline" onClick={() => setRetry((value) => value + 1)}>重新读取运行</Button></div>;
+  if (!run) return <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />正在读取运行…</p>;
+  return run.extraction_protocol === DOCUMENT_HARNESS_PROTOCOL
+    ? <SourceHarnessPanel key={runId} initialRun={run} refreshRevision={refreshRevision} taskDrawerOpen={taskDrawerOpen} onTaskDrawerOpenChange={onTaskDrawerOpenChange} onTaskCountChange={onTaskCountChange} />
+    : <LegacyGraphAnalysisRunView key={runId} runId={runId} refreshRevision={refreshRevision} />;
+}
+
+function LegacyGraphAnalysisRunView({ runId, refreshRevision }: { runId: string; refreshRevision: number }) {
   const [run, setRun] = useState<DocumentAnalysisRun | null>(null);
   const [artifact, setArtifact] = useState<DocumentAnalysisTargetGraph | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -157,7 +224,7 @@ function GraphAnalysisRunView({ runId }: { runId: string }) {
     };
     void refresh();
     return () => { controller.abort(); if (timer) clearTimeout(timer); };
-  }, [runId, nonce]);
+  }, [runId, nonce, refreshRevision]);
 
   const sourceAvailable = run?.artifacts.source === "ready" || run?.artifacts.source === "partial";
   useEffect(() => {
@@ -223,6 +290,7 @@ function GraphAnalysisRunView({ runId }: { runId: string }) {
     {run?.error && <p role="alert" className="text-sm text-destructive">{run.error.safe_detail}</p>}
     {!artifact && !error && <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />正在加载本体识别目标…</p>}
     {artifact && <>
+      <SavedDiscoveryPanel artifact={artifact} onEvidence={setSelectionRef} />
       {candidatePhase ? <CandidateGraphSummary artifact={artifact} /> : reviewPhase ? <EvidenceReviewSummary artifact={artifact} /> : <>
         <div className="grid gap-3 md:grid-cols-2">
         {(["relationships", "properties"] as const).map((kind) => {
@@ -260,6 +328,46 @@ function GraphAnalysisRunView({ runId }: { runId: string }) {
       </div>
     </>}
   </div>;
+}
+
+export function SavedDiscoveryPanel({ artifact, onEvidence }: {
+  artifact: DocumentAnalysisTargetGraph; onEvidence: (ref: string) => void;
+}) {
+  const discovery = artifact.discovery;
+  const kinds = { entity: "实体", property: "属性", relation: "关系", observation: "观察", failure: "调用失败" };
+  const states = { pending: "待对齐 / 待核验", rejected: "未采信", accepted: "已采信", observation: "待对齐观察", failed: "未完成" };
+  const accepted = targetReviewCounts(artifact).accepted;
+  const entities = artifact.graph.entities.filter((item) => entityRefKey(item) !== entityRefKey(artifact.root)).length;
+  return <Card>
+    <CardHeader className="pb-3"><CardTitle className="text-base">发现进展与已保存候选</CardTitle></CardHeader>
+    <CardContent className="space-y-3">
+      <div className="grid gap-3 text-sm md:grid-cols-3">
+        <div><span className="text-muted-foreground">调用有进展</span><p>已返回 {discovery.completed_calls} 次 · 在途 {discovery.inflight_calls} 次</p></div>
+        <div><span className="text-muted-foreground">候选有产出</span><p>已保存 {discovery.candidate_count} 项 · 观察 {discovery.items.filter((item) => item.kind === "observation").length} 项</p></div>
+        <div><span className="text-muted-foreground">事实已采信</span><p>实体已登记 {entities} 个 · 关系及属性 {accepted} 条</p></div>
+      </div>
+      <p className="text-xs text-muted-foreground">调用返回及候选保存不代表事实成立。以下内容尚未全部采信，不计为全文完整度。</p>
+      <details open={discovery.items.length > 0}>
+        <summary className="cursor-pointer text-sm">查看候选、观察及失败原因（{discovery.items.length} 项）</summary>
+        <div className="mt-3 max-h-96 space-y-2 overflow-auto">
+          {discovery.items.length === 0 && <p className="text-xs text-muted-foreground">尚无已保存候选。</p>}
+          {discovery.items.map((item) => <details key={item.id} className="rounded-md border p-3 text-sm">
+            <summary className="cursor-pointer space-y-1 break-words"><div className="flex flex-wrap items-center gap-2"><Badge variant="outline">{kinds[item.kind]}</Badge><Badge variant="secondary">{states[item.state]}</Badge><span>{item.label}</span></div>
+              {item.reasons[0] && <p className="text-xs text-muted-foreground">{item.reasons[0]}</p>}
+            </summary>
+            <div className="mt-2 space-y-2 break-words text-xs">
+              {(item.class_iri || item.predicate_iri) && <p>{item.class_iri ? "类型" : "谓词"}：{item.class_iri || item.predicate_iri}</p>}
+              {item.subject_id && <p>主体候选：{item.subject_id}{item.object_ids.length ? ` → 对象候选：${item.object_ids.join("、")}` : ""}</p>}
+              {item.reasons.map((reason, index) => <p key={index} className="text-muted-foreground">{reason}</p>)}
+              {item.sources.map((source, index) => <div key={index} className="rounded bg-muted/50 p-2"><p className="whitespace-pre-wrap">{source.text}</p>
+                {source.selection_ref ? <Button size="sm" variant="link" className="h-auto p-0 text-xs" onClick={() => onEvidence(source.selection_ref!)}>定位候选原文 {index + 1}</Button> : <span className="text-muted-foreground">引用未通过定位，不能用作证据</span>}
+              </div>)}
+            </div>
+          </details>)}
+        </div>
+      </details>
+    </CardContent>
+  </Card>;
 }
 
 export function CandidateGraphSummary({ artifact }: { artifact: DocumentAnalysisTargetGraph }) {

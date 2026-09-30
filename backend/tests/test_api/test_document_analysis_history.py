@@ -11,12 +11,21 @@ from app.dependencies import get_ontology_engine
 from app.main import app
 from app.models.document_analysis import DocumentAnalysisRun, DocumentRecognitionEvent
 from app.services.document_analysis.run_store import DocumentAnalysisRunStore
+from app.services.document_harness import ontology
+from app.services.document_harness.ontology import ClassCard, SchemaCatalog
 from tests.test_api.test_document_analysis import ROOT_IRI, _create, _word_bytes
 
 
 @pytest.fixture(autouse=True)
 def history_storage(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "document_analysis_storage_dir", tmp_path / "history")
+    monkeypatch.setattr(settings, "local_llm_max_tokens", 16384)
+    catalog = SchemaCatalog(
+        snapshot_id="history-schema", ontology_hash="a" * 64, root_class_iri=ROOT_IRI,
+        classes={ROOT_IRI: ClassCard(iri=ROOT_IRI, label="CMC 报告", description="报告类型")},
+        reachable_class_iris=(ROOT_IRI,),
+    )
+    monkeypatch.setattr(ontology, "freeze_catalog", lambda _engine, _root: catalog)
 
 
 def seed_run(db, number, *, owner="analyst", **changes):

@@ -1,0 +1,151 @@
+"""One grounded lookup feedback turn before registering any discovery candidates."""
+
+from copy import deepcopy
+
+from .model import request_size
+from .protocols import Discovery, discovery_model, stage_schema
+from .source import references_cover
+
+STRING = "http://www.w3.org/2001/XMLSchema#string"
+def prepare_queries(engine, window, draft, capabilities):
+    allowed = {c["id"]: c for c in capabilities}
+    queries, records = [], []
+    for index, proposed in enumerate(draft.lookup_requests):
+        query_id = f"Q{index + 1}"
+        record = {"query_id": query_id, "hypothesis": proposed.model_dump(mode="json")}
+        try:
+            c = allowed[proposed.capability_id]
+            anchor = window.resolve(engine.ir, proposed.anchor)
+            properties = {p["property_iri"] for p in c["properties"]}
+
+            def value(quote):
+                ref = window.resolve(engine.ir, quote)
+                if not references_cover(ref, [anchor]):
+                    raise ValueError("lookup_value_outside_hypothesis")
+                return ref["text"]
+
+            filters = []
+            for f in proposed.properties:
+                if f.property_iri not in properties:
+                    raise ValueError("lookup_property_outside_capability")
+                filters.append({"property_iri": f.property_iri,
+                                "value": value(f.value), "datatype_iri": STRING})
+            if len({f["property_iri"] for f in filters}) != len(filters):
+                raise ValueError("lookup_duplicate_property")
+            name = {"value": value(proposed.name), "match": "exact"} if proposed.name else None
+            if not name and not filters:
+                raise ValueError("lookup_requires_source_condition")
+            queries.append({
+                "query_id": query_id, "class_iri": c["class_iri"],
+                "mapping_ids": [c["mapping_id"]], "name": name,
+                "property_filters": filters, "limit": 5,
+            })
+            record["status"] = "ready"
+        except (ValueError, KeyError) as exc:
+            record.update(status="invalid", issues=[str(exc) if isinstance(exc, ValueError)
+                                                    else "lookup_unknown_capability"])
+        records.append(record)
+    return queries, records
+
+
+def feedback_result(response, requests, queries, capabilities):
+    """Keep all returned competitors and status, but omit unrelated display properties."""
+    filters = {q["query_id"]: {f["property_iri"] for f in q["property_filters"]}
+               for q in queries}
+    key_properties = {c["mapping_id"]: {
+        iri for group in c["lookup_key_groups"]
+        for iri in [*group["property_iris"], *group["scope_property_iris"]]
+    } for c in capabilities}
+    feedback = {"requests": requests, "results": [], "issues": response.get("issues", [])}
+    for result in response.get("results", []):
+        row = deepcopy(result)
+        for index, c in enumerate(row["candidates"]):
+            c["candidate_id"] = f"{row['query_id']}C{index + 1}"
+            c["query_complete"] = row["complete"]
+            c["query_truncated"] = row["truncated"]
+            c["properties"] = [p for p in c["properties"]
+                               if p["property_iri"] in (filters[row["query_id"]]
+                                                        | key_properties[c["mapping_id"]])]
+        feedback["results"].append(row)
+    return feedback
+
+
+def base_discovery(answer):
+    return Discovery.model_validate(answer.model_dump(include=set(Discovery.model_fields)))
+
+
+def run_discovery(engine, window, payload=None, capabilities=None):
+    info = engine.state["windows"][window.id]
+    work = deepcopy(info.get("lookup_work"))
+
+    def save():
+        current = engine.state["windows"][window.id]
+        engine.commit({"windows": {window.id: {**current, "lookup_work": deepcopy(work)}}})
+
+    if work is None:
+        payload = {**payload, "lookup_mode": "draft", "lookup_capabilities": capabilities}
+        schema = stage_schema(
+            "discover", discovery_mode="draft", lookup_capabilities=capabilities,
+            source_ids=[s["source_id"] for s in window.sources],
+            field_ids=[f["alias"] for f in window.fields],
+        )
+        if (engine.max_input_tokens is not None
+                and request_size("discover", payload, schema) > engine.max_input_tokens):
+            return None, {"issues": ["lookup_draft_budget_exceeded"]}
+        work = {"payload": payload, "schema": schema}
+        save()
+    if "draft" not in work:
+        work["draft"] = engine.call("discover", work["payload"], work["schema"]).model_dump(
+            mode="json",
+        )
+        save()
+    draft = discovery_model("draft").model_validate(work["draft"])
+    metadata = {"issues": [], "suggestions": [], "candidates": {}, "retained_fields": []}
+    if not draft.lookup_requests:
+        metadata["status"] = "not_requested"
+        return base_discovery(draft), metadata
+    if "feedback" not in work:
+        queries, records = prepare_queries(
+            engine, window, draft, work["payload"]["lookup_capabilities"],
+        )
+        response = engine.lookup("query", engine.catalog, {
+            "capabilities": work["payload"]["lookup_capabilities"], "queries": queries,
+        }) if queries else {"results": [], "issues": ["no_valid_lookup_requests"]}
+        work["feedback"] = feedback_result(
+            response, records, queries, work["payload"]["lookup_capabilities"],
+        )
+        save()
+    feedback = work["feedback"]
+    candidates = {c["candidate_id"]: c for r in feedback["results"] for c in r["candidates"]}
+    payload = {**work["payload"], "lookup_mode": "refine",
+               "draft": work["draft"], "lookup_feedback": feedback}
+    schema = stage_schema(
+        "discover", discovery_mode="refine", lookup_candidates=list(candidates),
+        source_ids=[s["source_id"] for s in window.sources],
+        field_ids=[f["alias"] for f in window.fields],
+    )
+    if (engine.max_input_tokens is not None
+            and request_size("discover", payload, schema) > engine.max_input_tokens):
+        metadata.update(status="not_completed", issues=["lookup_feedback_budget_exceeded"])
+        return base_discovery(draft), metadata
+    refined = engine.call("discover", payload, schema)
+    metadata.update(status="feedback_applied", candidates=candidates,
+                    issues=[*feedback["issues"], *(issue for request in feedback["requests"]
+                                                  for issue in request.get("issues", []))],
+                    queries=len(draft.lookup_requests),
+                    results=[{k: r.get(k) for k in ("query_id", "outcome", "complete", "truncated")}
+                             for r in feedback["results"]])
+    local_ids = {e.local_id for e in refined.entities}
+    for suggestion in refined.source_suggestions:
+        if suggestion.local_id not in local_ids or any(
+            key not in candidates for key in suggestion.candidate_ids
+        ):
+            metadata["issues"].append("lookup_invalid_source_suggestion")
+        else:
+            metadata["suggestions"].append(suggestion.model_dump(mode="json"))
+    def fields(result):
+        return [*result.document_source_fields, *result.unowned_fields,
+                *(f for e in result.entities for f in e.source_fields)]
+    seen = {f.model_dump_json() for f in fields(refined)}
+    metadata["retained_fields"] = [f for f in fields(draft) if f.model_dump_json() not in seen]
+    return base_discovery(refined), metadata

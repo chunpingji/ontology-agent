@@ -818,8 +818,9 @@ def test_schema_card_merge_rejects_conflicting_property_definitions():
         merge_record_schema_cards([left, right])
 
 
+@pytest.mark.parametrize("phase", ["evidence_verification", "evidence_review"])
 def test_real_region_batch_folds_property_fields_into_the_discovery_request(
-    tmp_path, monkeypatch, current_run,
+    tmp_path, monkeypatch, current_run, phase,
 ):
     args, factory, requests, hooks = setup_contextual(
         tmp_path, monkeypatch, current_run,
@@ -827,6 +828,7 @@ def test_real_region_batch_folds_property_fields_into_the_discovery_request(
     )
     adapter = factory().adapter
     adapter.record_discovery = adapter.record_discovery.model_copy(update={
+        "graph_phase": phase,
         "schema_region_routing": SchemaRegionRoutingPolicy(
             max_regions_per_card=1,
             minimum_similarity=0.25,
@@ -847,8 +849,16 @@ def test_real_region_batch_folds_property_fields_into_the_discovery_request(
     result = factory().run(**args, **hooks)
     discovery = [view for view in requests if view.get("stage") == "discovery"
                  and "members" not in view]
-    assert len(discovery) == 1
-    assert discovery[0]["property_fields"][0]["value"] == "A-001"
+    if phase == "evidence_verification":
+        assert len(discovery) == 1
+    # Evidence review may also explore newly registered downstream entities;
+    # the field remains a reading aid on its owning source region.
+    field_reads = [view for view in discovery if view.get("field_reading_groups")]
+    assert field_reads
+    assert all(view["field_reading_groups"][0]["fields"][0]["value"] == "A-001"
+               for view in field_reads)
+    assert all(not group["shared_subject_established"] for view in field_reads
+               for group in view["field_reading_groups"])
     assert not any(view.get("attribute_disambiguation") for view in requests)
     assert result.graph.progress.record_discovery.execution_mode == "region_batch"
     assert result.graph.progress.record_discovery.property_field_mode == "region_batch"

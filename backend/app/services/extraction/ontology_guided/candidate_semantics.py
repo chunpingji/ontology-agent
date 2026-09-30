@@ -45,14 +45,17 @@ def missing_field_value_kind(*, quote, anchor, context, index) -> str | None:
 def identity_field_role_mismatch(*, value_anchor, predicate, properties, context, index) -> bool:
     """An explicit non-identity field cannot silently become a unique identity.
 
-    Only deterministic source field labels and exact frozen property labels are
-    compared. Unknown or ambiguous labels remain for semantic verification.
+    Explicit name fields remain names even when the ontology has no matching
+    ordinary name property. A declared identity property with that exact label
+    still requires semantic verification; this check never establishes identity.
     """
     if value_anchor is None or not predicate.identity_key:
         return False
 
     def label(value):
-        return re.sub(r"\s+", " ", unicodedata.normalize("NFKC", value)).strip(" :：\t\n")
+        return re.sub(r"\s+", " ", unicodedata.normalize("NFKC", value)).strip(
+            " :：\t\n",
+        ).casefold()
 
     bindings = context.field_bindings or field_bindings(index, context.record_id)
     source_labels = {
@@ -62,6 +65,11 @@ def identity_field_role_mismatch(*, value_anchor, predicate, properties, context
         for ref in binding.label_refs
     }
     matching = [item for item in properties if label(item.label) in source_labels]
+    if not matching and any(
+        value.endswith("名称") or re.search(r"(?:^|[\s_])name$", value)
+        for value in source_labels
+    ):
+        return True
     # More than one matching definition is ambiguous, not a deterministic rejection.
     return (len(matching) == 1 and matching[0].iri != predicate.iri
             and not matching[0].identity_key)

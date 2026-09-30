@@ -5,6 +5,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
+from app.schemas.entity_query import MockQueryConfig
+
 
 class ModuleResponse(BaseModel):
     key: str
@@ -80,6 +82,7 @@ class MappingCreate(BaseModel):
     mapping_type: str
     target: str
     source_system: str | None = None
+    query_config: MockQueryConfig | None = None
 
 
 class MappingUpdate(MappingCreate, VersionedMixin):
@@ -92,6 +95,7 @@ class Mapping(BaseModel):
     mapping_type: str
     target: str
     source_system: str | None = None
+    query_config: MockQueryConfig | None = None
     health: str = "ok"
     version: int
     status: str

@@ -68,13 +68,15 @@ try {
   const historyCard = cards.getByRole("button", { name: new RegExp(`^查看分析 ${first.filename}`) });
   await historyCard.click();
   await expect(drawer).toBeVisible();
-  assert.ok(Math.abs((await drawer.boundingBox()).width - 1600 * 2 / 3) < 2, "Drawer must occupy 2/3 of the desktop viewport");
+  assert.ok(Math.abs((await drawer.boundingBox()).width - 1600 * 0.8) < 2, "Drawer must occupy 4/5 of the desktop viewport");
   await drawer.getByRole("button", { name: "关闭", exact: true }).click();
   await expect(drawer).toHaveCount(0);
   await expect(historyCard).toBeFocused();
   await expect(page).not.toHaveURL(/documentRun=/);
   await historyCard.click();
   await expect(statusCard).toContainText(first.filename, { timeout: 60_000 });
+  await expect(graphTab()).toHaveAttribute("aria-selected", "true");
+  await metadataTab().click();
   await expect(metadataTab()).toHaveAttribute("aria-selected", "true");
   await expect(chapterTree).toBeVisible();
   await expect(preview.locator(".tiptap")).toBeVisible();

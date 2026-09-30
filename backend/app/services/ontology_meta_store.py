@@ -22,6 +22,7 @@ from pathlib import Path
 from fastapi import HTTPException
 from rdflib import OWL, RDF, RDFS, Graph, URIRef
 from sqlalchemy import update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -276,6 +277,7 @@ class OntologyMetaStore:
             "mapping_type": m.mapping_type,
             "target": m.target,
             "source_system": m.source_system,
+            "query_config": m.query_config,
             "health": m.health,
             "version": m.version,
             "status": m.status,
@@ -1253,6 +1255,30 @@ class OntologyMetaStore:
         Only applies to the source-entity mapping types (db_table/api_endpoint/
         doc_pattern); legacy T-Box mappings are unaffected.
         """
+        if payload.mapping_type == "mock_dataset":
+            from app.services.entity_query_mapping import mapping_issues
+            from app.services.entity_query_schema import EntityQuerySchema
+
+            schema = EntityQuerySchema(self.db, self.engine)
+            bindings = self.db.query(OntologyPropertyBinding).filter_by(
+                class_mapping_id=exclude_id,
+            ).all() if exclude_id else []
+            errors = [e for e in mapping_issues(
+                schema, self._iri_of_class(class_id), payload, bindings,
+            ) if not e["code"].startswith("draft_")]
+            if errors:
+                raise HTTPException(422, detail={"errors": errors})
+            dup = self.db.query(OntologyClassMapping).filter_by(
+                class_id=class_id, mapping_type="mock_dataset",
+                source_system=payload.source_system, target=payload.target,
+            )
+            if exclude_id:
+                dup = dup.filter(OntologyClassMapping.id != exclude_id)
+            if dup.first():
+                raise HTTPException(409, detail="该类已存在相同 Mock 数据集映射")
+            return
+        if getattr(payload, "query_config", None) is not None:
+            raise HTTPException(422, detail="query_config 仅用于 Mock 查询映射")
         if payload.mapping_type not in SOURCE_ENTITY_MAPPING_TYPES:
             return
         if payload.mapping_type == "doc_pattern":
@@ -1309,12 +1335,19 @@ class OntologyMetaStore:
             mapping_type=payload.mapping_type,
             target=payload.target,
             source_system=payload.source_system,
+            query_config=payload.query_config.model_dump() if payload.query_config else None,
             health="ok",
             created_by=self._user_id(actor),
             updated_by=self._user_id(actor),
         )
         self.db.add(m)
-        self.db.commit()
+        try:
+            self.db.commit()
+        except IntegrityError:
+            self.db.rollback()
+            if payload.mapping_type == "mock_dataset":
+                raise HTTPException(409, detail="该类已存在相同 Mock 数据集映射") from None
+            raise
         self.db.refresh(m)
         self.audit("mapping.create", class_iri, actor, details={"type": payload.mapping_type})
         return self._mapping_dto(m)
@@ -1332,9 +1365,16 @@ class OntologyMetaStore:
             "mapping_type": payload.mapping_type,
             "target": payload.target,
             "source_system": payload.source_system,
+            "query_config": payload.query_config.model_dump() if payload.query_config else None,
             "updated_by": self._user_id(actor),
         }
-        m = self._cas_update(OntologyClassMapping, m.id, payload.expected_version, changes)
+        try:
+            m = self._cas_update(OntologyClassMapping, m.id, payload.expected_version, changes)
+        except IntegrityError:
+            self.db.rollback()
+            if payload.mapping_type == "mock_dataset":
+                raise HTTPException(409, detail="该类已存在相同 Mock 数据集映射") from None
+            raise
         self.audit("mapping.update", self._iri_of_class(m.class_id), actor)
         return self._mapping_dto(m)
 
@@ -1420,6 +1460,23 @@ class OntologyMetaStore:
         class_mapping_id: uuid.UUID,
     ) -> tuple[list[dict], list[dict]]:
         """FR-005 validation rules V1–V5. Returns (errors, warnings)."""
+        mapping = self.db.get(OntologyClassMapping, class_mapping_id)
+        if mapping and mapping.mapping_type == "mock_dataset":
+            from app.services.entity_query_mapping import binding_issues, issue
+            from app.services.entity_query_schema import EntityQuerySchema
+
+            schema = EntityQuerySchema(self.db, self.engine)
+            errors = binding_issues(schema, class_iri, mapping.target, payload)
+            if not schema.class_valid(class_iri):
+                errors.append(issue("illegal_class", "本体类不存在或已停用"))
+            duplicate = self.db.query(OntologyPropertyBinding).filter_by(
+                class_mapping_id=class_mapping_id, property_iri=payload.property_iri,
+            )
+            if exclude_id:
+                duplicate = duplicate.filter(OntologyPropertyBinding.id != exclude_id)
+            if duplicate.first():
+                errors.append(issue("duplicate_property", "同一本体属性只能绑定一个来源字段"))
+            return errors, []
         errors: list[dict] = []
         warnings: list[dict] = []
         piri = payload.property_iri
@@ -1526,6 +1583,8 @@ class OntologyMetaStore:
 
     def create_property_binding(self, mid: str, payload, actor: str) -> dict:
         m = self._require_class_binding(mid)
+        if m.mapping_type == "mock_dataset":
+            self.db.query(OntologyClassMapping).filter_by(id=m.id).with_for_update().one()
         class_iri = self._iri_of_class(m.class_id)
         errors, warnings = self._validate_property_binding(
             class_iri, payload, exclude_id=None, class_mapping_id=m.id
@@ -1563,9 +1622,10 @@ class OntologyMetaStore:
 
     def update_property_binding(self, pid: str, payload, actor: str) -> dict:
         pb = self._require_property_binding(pid)
-        class_iri = self._iri_of_class(
-            self.db.get(OntologyClassMapping, pb.class_mapping_id).class_id
-        )
+        m = self.db.get(OntologyClassMapping, pb.class_mapping_id)
+        if m.mapping_type == "mock_dataset":
+            self.db.query(OntologyClassMapping).filter_by(id=m.id).with_for_update().one()
+        class_iri = self._iri_of_class(m.class_id)
         errors, warnings = self._validate_property_binding(
             class_iri, payload, exclude_id=pb.id, class_mapping_id=pb.class_mapping_id
         )
@@ -1622,6 +1682,15 @@ class OntologyMetaStore:
         errors: list[dict] = []
         warnings: list[dict] = []
         bindings = self.db.query(OntologyPropertyBinding).filter_by(class_mapping_id=m.id).all()
+        if m.mapping_type == "mock_dataset":
+            from app.services.entity_query_mapping import mapping_issues
+            from app.services.entity_query_schema import EntityQuerySchema
+
+            issues = mapping_issues(EntityQuerySchema(self.db, self.engine), class_iri, m, bindings)
+            errors = [i for i in issues if not i["code"].startswith("draft_")]
+            warnings = [i for i in issues if i["code"].startswith("draft_")]
+            return {"health": "drift" if errors else "unmapped" if warnings else "ok",
+                    "errors": errors, "warnings": warnings}
         for pb in bindings:
             e, w = self._validate_property_binding(
                 class_iri, pb, exclude_id=pb.id, class_mapping_id=m.id

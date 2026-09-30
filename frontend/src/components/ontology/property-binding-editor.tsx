@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import {
   createPropertyBinding,
+  updatePropertyBinding,
+  type MappedEntitySource,
   deletePropertyBinding,
   getPropertyBindings,
   validateBinding,
@@ -52,10 +54,14 @@ const EMPTY: PropertyBindingInput = {
 export function PropertyBindingEditor({
   mapping,
   onChanged,
+  source,
 }: {
   mapping: TBoxMapping;
+  source?: MappedEntitySource;
   onChanged?: () => void;
 }) {
+  const [editing, setEditing] = useState<PropertyBinding | null>(null);
+  const isMock = mapping.mapping_type === "mock_dataset";
   const [bindings, setBindings] = useState<PropertyBinding[]>([]);
   const [form, setForm] = useState<PropertyBindingInput>(EMPTY);
   const [configText, setConfigText] = useState("");
@@ -85,7 +91,7 @@ export function PropertyBindingEditor({
     const payload: PropertyBindingInput = {
       property_iri: form.property_iri.trim(),
       property_kind: form.property_kind,
-      source_path: form.source_path.trim(),
+      source_path: isMock ? form.source_path : form.source_path.trim(),
       transform_type: form.transform_type,
       transform_config,
       is_identifier: form.is_identifier,
@@ -97,7 +103,9 @@ export function PropertyBindingEditor({
       payload.target_id_path = form.target_id_path?.trim() || null;
     }
     try {
-      await createPropertyBinding(mapping.id, payload);
+      if (editing) await updatePropertyBinding(editing.id, { ...payload, expected_version: editing.version });
+      else await createPropertyBinding(mapping.id, payload);
+      setEditing(null);
       setForm(EMPTY);
       setConfigText("");
       refresh();
@@ -159,6 +167,9 @@ export function PropertyBindingEditor({
                 <Badge className="ml-1" variant="outline">{b.object_resolution}</Badge>
               )}
             </span>
+            <Button variant="link" className="h-auto p-0 text-xs" onClick={() => {
+              setEditing(b); setForm(b); setConfigText(b.transform_config ? JSON.stringify(b.transform_config) : "");
+            }}>编辑</Button>
             <Button
               variant="link"
               onClick={() => remove(b)}
@@ -197,13 +208,14 @@ export function PropertyBindingEditor({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="data">data</SelectItem>
-                <SelectItem value="object">object</SelectItem>
+                {!isMock && <SelectItem value="object">object</SelectItem>}
               </SelectContent>
             </Select>
           </Field>
-          <Field label="源字段 source_path" hint="表列名 / JSON 路径" className="w-2/3">
+          <Field label="源字段 source_path" hint={isMock ? "选择字段，或填写精确的 attr-iri:/attr-label: 定位" : "表列名 / JSON 路径"} className="w-2/3">
             <Input
-              placeholder="approval_no"
+              list={isMock ? `source-fields-${mapping.id}` : undefined}
+              placeholder={isMock ? "col:字段名" : "approval_no"}
               value={form.source_path}
               onChange={(e) => setForm({ ...form, source_path: e.target.value })}
               className="h-auto w-full px-2 py-1 text-sm"
@@ -211,9 +223,16 @@ export function PropertyBindingEditor({
           </Field>
         </div>
 
+        {isMock && <>
+          <datalist id={`source-fields-${mapping.id}`}>{source?.fields.map(f =>
+            <option key={f.source_path} value={f.source_path}>{f.label}{f.multiple ? "（多值）" : ""}</option>)}</datalist>
+          <datalist id={`ontology-properties-${mapping.id}`}>{source?.mappings.find(m => m.id === mapping.id)?.properties.map(p =>
+            <option key={p.property_iri} value={p.property_iri}>{p.label}</option>)}</datalist>
+        </>}
         <Field label="属性 IRI property_iri" hint="目标本体属性（受定义域校验）">
           <Input
             placeholder="https://…/approvalNumber"
+            list={isMock ? `ontology-properties-${mapping.id}` : undefined}
             value={form.property_iri}
             onChange={(e) => setForm({ ...form, property_iri: e.target.value })}
             className="h-auto w-full px-2 py-1 text-sm"
@@ -239,7 +258,7 @@ export function PropertyBindingEditor({
           {form.transform_type !== "none" && (
             <Field
               label="transform_config (JSON)"
-              hint={TRANSFORM_HINT[form.transform_type ?? ""]}
+              hint={isMock && form.transform_type === "controlled_vocab" ? '仅显式映射，如 {"map":{"源值":"目标值"}}' : TRANSFORM_HINT[form.transform_type ?? ""]}
               className="w-2/3"
             >
               <Input
@@ -295,7 +314,7 @@ export function PropertyBindingEditor({
               checked={form.is_identifier}
               onChange={(e) => setForm({ ...form, is_identifier: e.target.checked })}
             />
-            标识符 is_identifier
+            {isMock ? "旧抽取标识提示（不作为查询键）" : "标识符 is_identifier"}
           </label>
           <label className="flex items-center gap-1">
             <input
@@ -308,7 +327,8 @@ export function PropertyBindingEditor({
         </div>
 
         <div className="flex gap-2">
-          <Button onClick={add} size="sm" className="text-sm">添加绑定</Button>
+          <Button onClick={add} size="sm" className="text-sm">{editing ? "保存绑定" : "添加绑定"}</Button>
+          {editing && <Button size="sm" variant="ghost" onClick={() => { setEditing(null); setForm(EMPTY); setConfigText(""); }}>取消编辑</Button>}
           <Button
             onClick={() => validateBinding(mapping.id).then(setReport).catch(() => {})}
             size="sm"

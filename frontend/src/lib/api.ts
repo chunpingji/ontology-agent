@@ -155,38 +155,17 @@ export async function fetchAPI<T>(path: string, options?: RequestInit): Promise<
 const jsonBody = (data: unknown): RequestInit => ({ body: JSON.stringify(data) });
 
 // Ontology
-export const getModules = () => fetchAPI<Module[]>("/api/ontology/modules");
+export const getModules = (signal?: AbortSignal) => fetchAPI<Module[]>("/api/ontology/modules", { signal });
 export const getClassHierarchy = (module: string) =>
   fetchAPI<TreeNode[]>(`/api/ontology/${module}/classes`);
-export const getClassDetail = (iri: string) =>
-  fetchAPI<ClassDetail>(`/api/ontology/classes/${encodeURIComponent(iri)}`);
-
-// Relation schema (T-Box multi-hop BFS)
-export interface RelationSchemaEdge {
-  hop: number;
-  predicate_iri: string;
-  predicate_label: string;
-  domain_class_iri: string;
-  domain_class_label: string;
-  range_class_iri: string;
-  range_class_label: string;
-  range_subclasses: { iri: string; label: string }[];
-  range_data_properties: { iri: string; label: string }[];
-}
-export const getRelationSchema = (classIri: string, maxHops = 4) =>
-  fetchAPI<RelationSchemaEdge[]>(
-    `/api/ontology/classes/${encodeURIComponent(classIri)}/relation-schema?max_hops=${maxHops}`,
-  );
 
 // Entities
 export const searchEntities = (params: Record<string, string>, signal?: AbortSignal) => {
   const qs = new URLSearchParams(params).toString();
   return fetchAPI<EntitySearchResult>(`/api/entities?${qs}`, { signal });
 };
-export const getEntity = (iri: string) =>
-  fetchAPI<Individual>(`/api/entities/${encodeURIComponent(iri)}`);
-export const createEntity = (data: CreateEntityRequest) =>
-  fetchAPI<Individual>("/api/entities", { method: "POST", body: JSON.stringify(data) });
+export const getEntity = (iri: string, signal?: AbortSignal) =>
+  fetchAPI<Individual>(`/api/entities/${encodeURIComponent(iri)}`, { signal });
 
 // Reasoning
 export const runAssessment = (data: AssessmentRequest) =>
@@ -201,22 +180,13 @@ export const calculateMACO = (data: MACORequest) =>
   fetchAPI<MACOResult>("/api/reasoning/calculate/maco", {
     method: "POST", body: JSON.stringify(data),
   });
-export const getRules = () => fetchAPI<RuleInfo[]>("/api/reasoning/rules");
 
 // Knowledge Graph
 export const getKGStats = () => fetchAPI<KGStats>("/api/kg/stats");
-export const getKGGraph = (params?: Record<string, string>) => {
-  const qs = params ? `?${new URLSearchParams(params)}` : "";
-  return fetchAPI<GraphData>(`/api/kg/graph${qs}`);
-};
 export const runSPARQL = (query: string) =>
   fetchAPI<Record<string, unknown>[]>("/api/kg/sparql", {
     method: "POST", body: JSON.stringify({ query }),
   });
-
-// Integration
-export const getIntegrationSpecs = () =>
-  fetchAPI<IntegrationSpec[]>("/api/integration/specs");
 
 // --- Integration realtime (能力三) -----------------------------------------
 export interface Connector {
@@ -278,11 +248,6 @@ export const syncConnector = (id: string) =>
     `/api/integration/connectors/${id}/sync`, { method: "POST" });
 export const listConnectorRuns = (id: string) =>
   fetchAPI<{ runs: MaterializationRun[] }>(`/api/integration/connectors/${id}/runs`);
-/** 向**既有**连接器增量推送已归一化变更骨架（webhook 追加 inline_changes 并即时同步）。 */
-export const webhookConnector = (id: string, changes: Array<Record<string, unknown>>) =>
-  fetchAPI<{ accepted: boolean }>(`/api/integration/connectors/${id}/webhook`, {
-    method: "POST", body: JSON.stringify({ changes }),
-  });
 export const getDashboard = () =>
   fetchAPI<DashboardData>("/api/integration/dashboard");
 const MOCK_TRACES: Record<string, RuleTrace> = {
@@ -638,18 +603,6 @@ export async function submitUpload(prepared: PreparedUpload[]): Promise<void> {
   await syncConnector(connector.id);
 }
 
-/** 仅列出 doc_repo 连接器（客户端过滤；复用 listConnectors）。 */
-export const listDocRepoConnectors = () =>
-  listConnectors().then((cs) =>
-    cs.filter((c) => (c.system_type || "").toLowerCase() === "doc_repo"),
-  );
-
-/** 连接器的接入模式（connection_config.access_mode；未知回退 inline）。 */
-export const docRepoMode = (c: Connector): DocRepoAccessMode => {
-  const m = String(c.connection_config?.access_mode ?? "inline");
-  return m === "upload" || m === "http" ? m : "inline";
-};
-
 // --- 通用 REST/JSON 源连接器 rest_api（014 US2）----------------------------
 // 声明驱动抽取的 api_endpoint 源经此连接器分页拉取；凭据**仅以环境变量名引用**入库
 // （FR-006），base_url 须为内网地址（FR-022，后端 422 兜底校验）。
@@ -703,12 +656,6 @@ export const createRestApiConnector = (input: RestApiConnectorInput) =>
     connection_config: buildRestApiConfig(input),
   });
 
-/** 仅列出 rest_api 连接器（客户端过滤；复用 listConnectors）。 */
-export const listRestApiConnectors = () =>
-  listConnectors().then((cs) =>
-    cs.filter((c) => (c.system_type || "").toLowerCase() === "rest_api"),
-  );
-
 // --- 数据库源连接器 database ------------------------------------------------
 
 export interface DatabaseConnectorInput {
@@ -740,12 +687,6 @@ export const createDatabaseConnector = (input: DatabaseConnectorInput) =>
     poll_interval_seconds: input.pollIntervalSeconds ?? 2,
     connection_config: buildDatabaseConfig(input),
   });
-
-/** 仅列出 database 连接器（客户端过滤；复用 listConnectors）。 */
-export const listDatabaseConnectors = () =>
-  listConnectors().then((cs) =>
-    cs.filter((c) => (c.system_type || "").toLowerCase() === "database"),
-  );
 
 // --- 文件源连接器 file （Excel / Word / PDF）-------------------------------
 
@@ -781,29 +722,6 @@ export const createFileConnector = (input: FileConnectorInput) =>
     connection_config: buildFileConfig(input),
   });
 
-/** 仅列出 file 连接器（客户端过滤；复用 listConnectors）。 */
-export const listFileConnectors = () =>
-  listConnectors().then((cs) =>
-    cs.filter((c) => (c.system_type || "").toLowerCase() === "file"),
-  );
-
-/**
- * 某连接器历史上物化过的文档个体 IRI 集合（facts#<entity_id>）。
- * EntityShadow 不存连接器归属——文档→连接器的唯一回链是各 run 的 applied changes，
- * 故经既有 /runs 端点只读重建归属（无新建后端字段 / 迁移）。
- */
-export const connectorDocIris = async (connectorId: string): Promise<string[]> => {
-  const { runs } = await listConnectorRuns(connectorId);
-  const iris = new Set<string>();
-  for (const r of runs) {
-    for (const ch of r.changes ?? []) {
-      const eid = ch?.entity_id;
-      if (typeof eid === "string" && eid) iris.add(`http://slpra.org/facts#${eid}`);
-    }
-  }
-  return [...iris];
-};
-
 /** 列出研发文档个体（module=document），可按研发阶段过滤（US3 FR-005）。 */
 export const listDocuments = (developmentPhaseIri?: string, pageSize = 100, signal?: AbortSignal) => {
   const params: Record<string, string> = { module: "document", page_size: String(pageSize) };
@@ -835,22 +753,12 @@ export async function resolveDocumentJobId(iri: string): Promise<string | null> 
   return null;
 }
 
-/** 列出"抽取自"某文档的派生实体（extractedFrom 回链；客户端过滤，复用 /api/entities）。 */
-export const listExtractedFrom = async (docIri: string, pageSize = 200): Promise<EntityShadow[]> => {
-  const res = await searchEntities({ page_size: String(pageSize) });
-  return res.items.filter((e) => (e.properties_json?.extractedFrom as string) === docIri);
-};
-
 // --- Compliance (能力六) ----------------------------------------------------
 export interface PendingConclusion {
   id: string;
   risk_level: string | null;
   execution_type: string;
 }
-
-export const verifyAudit = () =>
-  fetchAPI<{ ok: boolean; verified_count?: number; head_seq?: number; broken_at_seq?: number }>(
-    "/api/compliance/audit/verify");
 export const getPendingSignatures = () =>
   fetchAPI<{ conclusions: PendingConclusion[] }>("/api/compliance/signatures/pending");
 export const signConclusion = (data: {
@@ -871,70 +779,13 @@ export const rejectConclusion = (req: RejectRequest) =>
     method: "POST", body: JSON.stringify(req),
   });
 
-// 合规审计链（append-only 只读）。注意:与 getAudit()/`/ontology/audit`（本体审计）不同,
-// 此处指向 `/compliance/audit`（合规哈希链），勿混用。
-export interface ComplianceAuditEntry {
-  seq: number | null;
-  action: string;
-  actor: string | null;
-  entity_iri: string | null;
-  prev_hash: string | null;
-  entry_hash: string | null;
-  details: Record<string, unknown> | null;
-  created_at: string | null;
-}
-export interface ComplianceAuditListResponse { entries: ComplianceAuditEntry[]; }
-const MOCK_AUDIT_ENTRIES: ComplianceAuditEntry[] = [
-  { seq: 1, action: "conclusion_created", actor: "推理引擎", entity_iri: "concl-pde-ibuprofen-001", prev_hash: null, entry_hash: "a1b2c3d4", details: { type: "PDE 计算", substance: "布洛芬" }, created_at: "2026-07-01 09:15:32" },
-  { seq: 2, action: "submitted_for_review", actor: "李明 (高级分析师)", entity_iri: "concl-pde-ibuprofen-001", prev_hash: "a1b2c3d4", entry_hash: "e5f6a7b8", details: { comment: "PDE 计算完成，提交 QA 审批" }, created_at: "2026-07-01 10:22:05" },
-  { seq: 3, action: "conclusion_created", actor: "推理引擎", entity_iri: "concl-maco-aspirin-002", prev_hash: "e5f6a7b8", entry_hash: "c9d0e1f2", details: { type: "MACO 计算", equipment: "反应釜 R-201" }, created_at: "2026-07-01 14:08:47" },
-  { seq: 4, action: "submitted_for_review", actor: "王芳 (高级分析师)", entity_iri: "concl-maco-aspirin-002", prev_hash: "c9d0e1f2", entry_hash: "a3b4c5d6", details: { comment: "MACO 结果已核实" }, created_at: "2026-07-01 15:30:12" },
-  { seq: 5, action: "conclusion_created", actor: "推理引擎", entity_iri: "concl-cleaning-reactor-003", prev_hash: "a3b4c5d6", entry_hash: "e7f8a9b0", details: { type: "清洁验证", equipment: "反应釜 R-301" }, created_at: "2026-07-02 08:45:20" },
-  { seq: 6, action: "submitted_for_review", actor: "张工 (操作员)", entity_iri: "concl-cleaning-reactor-003", prev_hash: "e7f8a9b0", entry_hash: "c1d2e3f4", details: { comment: "目视检查合格，提交 QA" }, created_at: "2026-07-02 09:10:55" },
-  { seq: 7, action: "conclusion_created", actor: "推理引擎", entity_iri: "concl-stability-losartan-004", prev_hash: "c1d2e3f4", entry_hash: "a5b6c7d8", details: { type: "稳定性评估", substance: "氯沙坦钾" }, created_at: "2026-07-02 11:20:33" },
-  { seq: 8, action: "conclusion_created", actor: "推理引擎", entity_iri: "concl-cross-contam-006", prev_hash: "a5b6c7d8", entry_hash: "e9f0a1b2", details: { type: "交叉污染风险", line: "Line-3" }, created_at: "2026-07-03 08:00:15" },
-];
-
-export const getComplianceAudit = (params?: {
-  actor?: string; action?: string; entity_iri?: string;
-}) => {
-  const qs = params
-    ? `?${new URLSearchParams(
-        Object.entries(params).filter(([, v]) => v) as [string, string][],
-      )}`
-    : "";
-  return fetchAPI<ComplianceAuditListResponse>(`/api/compliance/audit${qs}`).catch(
-    () => ({ entries: MOCK_AUDIT_ENTRIES }),
-  );
-};
-
 // --- Extraction (能力二) ----------------------------------------------------
 export const listExtractionConfigs = () =>
   fetchAPI<ExtractionConfig[]>("/api/extraction/configs");
-export const createExtractionConfig = (data: Partial<ExtractionConfig>) =>
-  fetchAPI<ExtractionConfig>("/api/extraction/configs", {
-    method: "POST", body: JSON.stringify(data),
-  });
 export const listExtractionJobs = () =>
   fetchAPI<ExtractionJob[]>("/api/extraction/jobs");
 export const getExtractionJob = (id: string, signal?: AbortSignal) =>
   fetchAPI<ExtractionJob>(`/api/extraction/jobs/${id}`, { signal });
-
-// 研发文档内容抽取（007 US2）：由文档个体人工发起 → 入队（pending）→ 手动 start。
-// 候选进入既有对齐复核队列，确认后入事实层并携 extractedFrom 溯源回链（FR-004/Q1）。
-export interface DocExtractionRequest {
-  doc_ref: string; // 文档个体 IRI（facts#…，溯源锚点）
-  content_ref: string; // 外部正文引用（按需取，平台不存全文，Q2）
-  config_id: string;
-}
-/** 文档个体 → 创建 pending 的 doc_repo 抽取作业（不自动发起，Q1）。 */
-export const enqueueDocumentExtraction = (req: DocExtractionRequest) =>
-  fetchAPI<ExtractionJob>("/api/extraction/jobs/from-document", {
-    method: "POST", body: JSON.stringify(req),
-  });
-/** 手动发起待抽取作业（授权角色）：置 running 并运行抽取管线。 */
-export const startExtractionJob = (jobId: string) =>
-  fetchAPI<ExtractionJob>(`/api/extraction/jobs/${jobId}/start`, { method: "POST" });
 
 export async function createExtractionJob(params: {
   source_type: string; config_id: string; file?: File; db_source?: object;
@@ -950,21 +801,6 @@ export async function createExtractionJob(params: {
   if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
   return res.json();
 }
-
-export const getJobCandidates = (jobId: string) =>
-  fetchAPI<GroupedCandidates>(`/api/extraction/jobs/${jobId}/candidates`);
-export const reviewCandidate = (id: string, status: string, edited?: object) =>
-  fetchAPI<ExtractionCandidate>(`/api/extraction/candidates/${id}/review`, {
-    method: "PUT", body: JSON.stringify({ status, edited_properties: edited }),
-  });
-export const mergeCandidates = (target_id: string, source_ids: string[]) =>
-  fetchAPI<ExtractionCandidate[]>("/api/extraction/candidates/merge", {
-    method: "POST", body: JSON.stringify({ target_id, source_ids }),
-  });
-export const splitCandidate = (id: string, splits: object[]) =>
-  fetchAPI<ExtractionCandidate[]>(`/api/extraction/candidates/${id}/split`, {
-    method: "POST", body: JSON.stringify({ splits }),
-  });
 
 /** Subscribe to job progress via SSE. Returns an unsubscribe fn. */
 export function subscribeJobProgress(
@@ -1005,34 +841,6 @@ export interface ExtractionJob {
   rejected_count: number;
   error_message: string | null;
   created_at: string;
-}
-export interface ExtractionCandidate {
-  id: string;
-  target_class_iri: string;
-  extracted_properties: Record<string, unknown>;
-  candidate_kind: string;
-  group_key: string | null;
-  is_canonical: boolean;
-  source_ref: string | null;
-  degraded_reason: string | null;
-  merged_into_id: string | null;
-  action_conditions: Record<string, unknown> | null;
-  alignment_result: string | null;
-  aligned_iri: string | null;
-  match_score: number | null;
-  review_status: string;
-  committed_iri: string | null;
-  verification_status?: "legacy_unverified";
-}
-export interface CandidateGroup {
-  group_key: string;
-  canonical_candidate_id: string | null;
-  candidates: ExtractionCandidate[];
-}
-export interface GroupedCandidates {
-  job_id: string;
-  groups: CandidateGroup[];
-  ungrouped: ExtractionCandidate[];
 }
 export interface JobProgressEvent {
   job_id: string;
@@ -1124,17 +932,6 @@ export interface TreeNode {
   iri: string; name: string; label: string | null;
   individual_count: number; children: TreeNode[];
 }
-export interface ClassDetail {
-  iri: string; name: string; label_zh: string | null; label_en: string | null;
-  comment: string | null; module: string | null;
-  parent_iris: string[]; children_iris: string[];
-  individual_count: number;
-  object_properties: PropertyInfo[];
-  data_properties: PropertyInfo[];
-  restrictions: RestrictionInfo[];
-}
-export interface PropertyInfo { iri: string; name: string; label: string | null; range: string[]; }
-export interface RestrictionInfo { property: string; type: string; value?: string; cardinality?: number; }
 export interface Individual {
   iri: string; name: string; class_iris: string[];
   label_zh: string | null; label_en: string | null;
@@ -1147,7 +944,6 @@ export interface EntityShadow {
 export interface EntitySearchResult {
   items: EntityShadow[]; total: number; page: number; page_size: number;
 }
-export interface CreateEntityRequest { class_iri: string; name: string; properties: Record<string, unknown>; }
 export interface AssessmentRequest { drug_iri: string; equipment_iris: string[]; assessment_type?: string; }
 export interface AssessmentResponse {
   drug_iri: string; equipment_iris: string[];
@@ -1165,12 +961,9 @@ export interface PDERequest { pod: number; bw?: number; f1?: number; f2?: number
 export interface PDEResponse { pde_value: number; parameters: Record<string, number>; }
 export interface MACORequest { pde?: number; mbs: number; tdd_next: number; min_therapeutic_dose?: number; ld50?: number; route?: string; }
 export interface MACOResult { maco_value: number; method_used: string; all_methods: Record<string, number>; unit?: string; }
-export interface RuleInfo { rule_id: string; group: string; description: string; regulation_ref?: string; }
 export interface KGStats { total_entities: number; by_module: Record<string, number>; by_class: Record<string, number>; }
-export interface GraphData { nodes: GraphNode[]; edges: GraphEdge[]; }
 export interface GraphNode { id: string; label: string | null; type: string; module: string | null; }
 export interface GraphEdge { source: string; target: string; label: string; }
-export interface IntegrationSpec { system_type: string; description: string; endpoints: Record<string, string>[]; }
 
 // ===========================================================================
 // T-Box 维护工作台（能力一）—— 可编辑元数据 API（契约 §2–§11）
@@ -1185,6 +978,7 @@ export interface TBoxRestriction {
 export interface TBoxMapping {
   id: string; class_iri: string | null; mapping_type: string;
   target: string; source_system: string | null; health: string;
+  query_config?: MockQueryConfig | null;
   version: number; status: string;
 }
 export interface TBoxClass {
@@ -1317,15 +1111,6 @@ export interface ActionInput {
 export const getActions = () => fetchAPI<TBoxAction[]>("/api/ontology/actions");
 export const createAction = (data: ActionInput) =>
   fetchAPI<TBoxAction>("/api/ontology/actions", { method: "POST", ...jsonBody(data) });
-export const updateAction = (iri: string, data: ActionInput) =>
-  fetchAPI<TBoxAction>(`/api/ontology/actions/${encodeURIComponent(iri)}`, {
-    method: "PUT", ...jsonBody(data),
-  });
-export const deleteAction = (iri: string, expectedVersion: number) =>
-  fetchAPI<void>(
-    `/api/ontology/actions/${encodeURIComponent(iri)}?expected_version=${expectedVersion}`,
-    { method: "DELETE" },
-  );
 
 // --- E5 restriction --------------------------------------------------------
 export interface RestrictionInput {
@@ -1349,6 +1134,7 @@ export const deleteRestriction = (id: string, expectedVersion: number) =>
 // --- E6 mapping + health ---------------------------------------------------
 export interface MappingInput {
   mapping_type: string; target: string; source_system?: string | null;
+  query_config?: MockQueryConfig | null;
   expected_version?: number;
 }
 export interface MappingHealth {
@@ -1458,16 +1244,6 @@ export const publishRelease = (id: string) =>
   fetchAPI<ReleaseDetail>(`/api/ontology/releases/${id}/publish`, { method: "POST" });
 export const rollbackRelease = (id: string) =>
   fetchAPI<ReleaseDetail>(`/api/ontology/releases/${id}/rollback`, { method: "POST" });
-
-// --- §11 audit -------------------------------------------------------------
-export interface AuditEntry {
-  id: number; action: string; entity_iri: string | null; actor: string | null;
-  release_id: string | null; details: Record<string, unknown> | null; created_at: string | null;
-}
-export const getAudit = (params?: Record<string, string>) => {
-  const qs = params ? `?${new URLSearchParams(params)}` : "";
-  return fetchAPI<AuditEntry[]>(`/api/ontology/audit${qs}`);
-};
 
 // ===========================================================================
 // 声明式规则层 (能力六 / spec 006) — E11/E12/E13 可版本化规则数据 (US3, T041)
@@ -1603,8 +1379,6 @@ export interface ConflictPolicyUpdateInput {
 }
 export const listConflictPolicies = () =>
   fetchAPI<TBoxConflictPolicy[]>("/api/ontology/conflict-policies");
-export const getConflictPolicy = (dimension: string) =>
-  fetchAPI<TBoxConflictPolicy>(`/api/ontology/conflict-policies/${encodeURIComponent(dimension)}`);
 export const updateConflictPolicy = (dimension: string, data: ConflictPolicyUpdateInput) =>
   fetchAPI<TBoxConflictPolicy>(`/api/ontology/conflict-policies/${encodeURIComponent(dimension)}`, {
     method: "PUT", ...jsonBody(data),
@@ -1905,7 +1679,7 @@ export interface DocumentAnalysisRunInput extends DocumentAnalysisCreateInput {
 
 export interface DocumentAnalysisRunLinks {
   self: string;
-  metadata: string;
+  metadata: string | null;
   graph: string;
   source: string;
   events: string;
@@ -2085,12 +1859,6 @@ export interface DocumentAnalysisObjectRef {
   id: string;
   revision: number;
 }
-
-export type DocumentAnalysisSemanticVerdict =
-  | "supported"
-  | "unsupported"
-  | "undetermined"
-  | "not_checked";
 export type DocumentAnalysisAssertionPolarity =
   | "affirmed"
   | "negated"
@@ -2608,12 +2376,6 @@ export interface DocumentAnalysisRunEvent {
   availability: DocumentAnalysisAvailability | null;
 }
 
-export interface DocumentAnalysisControlRequest {
-  expected_revision: number;
-  request_key: string;
-  reason: string;
-}
-
 const documentRunPath = (recognitionRunId: string) =>
   `/api/document-analysis/runs/${encodeURIComponent(recognitionRunId)}`;
 
@@ -2745,6 +2507,23 @@ export interface DocumentAnalysisTargetGraph extends Pick<
   root: DocumentAnalysisEntityRef & { class_iri: string; label: string };
   graph: DocumentAnalysisGraphArtifact;
   targets: DocumentAnalysisTarget[];
+  discovery: {
+    completed_calls: number;
+    inflight_calls: number;
+    candidate_count: number;
+    items: Array<{
+      id: string;
+      kind: "entity" | "property" | "relation" | "observation" | "failure";
+      label: string;
+      class_iri: string | null;
+      predicate_iri: string | null;
+      subject_id: string | null;
+      object_ids: string[];
+      state: "pending" | "rejected" | "accepted" | "observation" | "failed";
+      reasons: string[];
+      sources: Array<{ text: string; selection_ref: string | null }>;
+    }>;
+  };
   summary: {
     relationships: { total: number; supported: number; completed: number; percent: number | null };
     properties: { total: number; supported: number; completed: number; percent: number | null };
@@ -2757,6 +2536,212 @@ export const getDocumentAnalysisTargetGraph = (runId: string, signal?: AbortSign
   fetchAPI<DocumentAnalysisTargetGraph>(`${documentRunPath(runId)}/target-graph`, {
     signal, cache: "no-store",
   });
+
+export const DOCUMENT_HARNESS_PROTOCOL = "document-harness-v1" as const;
+export type DocumentHarnessState = "candidate" | "accepted" | "rejected" | "unresolved";
+
+export interface DocumentHarnessSourceRef {
+  source_id: string;
+  text: string;
+  start: number;
+  end: number;
+  page: number | null;
+  section_id: string;
+  block_id: string;
+}
+
+export interface DocumentHarnessSource {
+  source_id: string;
+  text: string;
+  page: number | null;
+  section_id: string;
+  block_id: string;
+  row: number | null;
+  column: number | null;
+}
+
+export interface DocumentHarnessMention {
+  id: string;
+  label: string;
+  role: string;
+  class_iri: string | null;
+  class_label: string | null;
+  state: DocumentHarnessState;
+  reason: string;
+  evidence: DocumentHarnessSourceRef[];
+}
+
+export interface DocumentHarnessEntity extends DocumentHarnessMention {
+  mentions: DocumentHarnessMention[];
+}
+
+export interface DocumentHarnessCoreference {
+  id: string;
+  left_mention_id: string;
+  right_mention_id: string;
+  verdict: "same" | "different" | "unresolved";
+  basis: "explicit_alias" | "scoped_identifier" | "explicit_reference" | "distinct" | "insufficient";
+  reason: string;
+  evidence: DocumentHarnessSourceRef[];
+  proof: DocumentHarnessSourceRef[];
+  applied: boolean;
+}
+
+export interface DocumentHarnessCardRef {
+  iri: string;
+  label: string;
+}
+
+export interface DocumentHarnessPredicateRef extends DocumentHarnessCardRef {
+  namespace: string;
+  domain_text: string;
+}
+
+export interface DocumentHarnessObservation {
+  id: string;
+  kind: "field" | "entity" | "relation" | "scope" | "validation" | "failure";
+  label: string;
+  reason: string;
+  evidence: DocumentHarnessSourceRef[];
+  field_id: string | null;
+  value: string | null;
+  candidate_subject_ids: string[];
+  object_id: string | null;
+  discovery_cards: Array<DocumentHarnessCardRef & { role: "reading" | "document_properties" }>;
+  alignments: Array<{
+    subject_id: string;
+    card: DocumentHarnessCardRef | null;
+    property_ids: string[];
+    attempts: Array<{
+      state: "mapped" | "unmatched" | "invalid";
+      reason: string;
+      predicates: DocumentHarnessPredicateRef[];
+    }>;
+  }>;
+}
+
+export interface DocumentHarnessProperty {
+  id: string;
+  field_id: string | null;
+  subject_id: string;
+  subject_mention_id: string;
+  card: DocumentHarnessCardRef | null;
+  predicate: DocumentHarnessPredicateRef | null;
+  predicate_iri: string | null;
+  label: string;
+  value: unknown;
+  source_value: string;
+  source_unit: string | null;
+  value_component: "whole" | "span" | "lower" | "upper";
+  value_evidence: DocumentHarnessSourceRef[];
+  state: DocumentHarnessState;
+  reason: string;
+  evidence: DocumentHarnessSourceRef[];
+}
+
+export interface DocumentHarnessRelation {
+  id: string;
+  card: DocumentHarnessCardRef | null;
+  predicate: DocumentHarnessPredicateRef | null;
+  subject_id: string;
+  object_id: string;
+  subject_mention_id: string;
+  object_mention_id: string;
+  predicate_iri: string;
+  label: string;
+  state: DocumentHarnessState;
+  reason: string;
+  evidence: DocumentHarnessSourceRef[];
+  polarity: "positive" | "negative" | "uncertain";
+  conditions: string[];
+}
+
+export interface DocumentHarnessRelationGroup extends Omit<DocumentHarnessRelation, "object_id" | "object_mention_id"> {
+  object_ids: string[];
+  object_mention_ids: string[];
+  participation: "options" | "all" | "unknown";
+  selection: "exactly_one" | "unspecified";
+  timing: "parallel" | "sequential" | "unspecified";
+  timing_state: DocumentHarnessState;
+  timing_reason: string;
+}
+
+export type DocumentInterpretationMeaning = "alternatives" | "parallel" | "joint_unspecified" | "unresolved";
+export type DocumentInterpretationScope = "occurrence" | "document" | "platform";
+
+export interface DocumentInterpretationTask {
+  id: string;
+  subject_label: string;
+  object_labels: string[];
+  relation_label: string;
+  evidence: DocumentHarnessSourceRef[];
+  questions: Array<{ prompt: string; options: Array<{ value: string; label: string }> }>;
+  answer: { meaning: DocumentInterpretationMeaning; scope: DocumentInterpretationScope; revision: number } | null;
+  scope_revisions: Record<DocumentInterpretationScope, number>;
+}
+
+export interface DocumentHarnessTarget {
+  id: string;
+  subject_id: string;
+  predicate_iri: string;
+  label: string;
+  kind: "relation" | "property";
+  range_labels: string[];
+  state: "pending" | "candidate" | "accepted";
+}
+
+export interface DocumentHarnessGraph {
+  protocol: typeof DOCUMENT_HARNESS_PROTOCOL;
+  run_id: string;
+  revision: number;
+  status: string;
+  stage: string;
+  progress: {
+    completed_calls: number;
+    candidate_count: number;
+    fact_count: number;
+    windows_total: number;
+    windows_discovered: number;
+    windows_reviewed: number;
+    scope_complete: boolean;
+    stage_costs: Array<{
+      stage: string;
+      calls: number;
+      seconds: number;
+      input_tokens: number | null;
+      output_tokens: number | null;
+    }>;
+  };
+  entities: DocumentHarnessEntity[];
+  coreferences: DocumentHarnessCoreference[];
+  properties: DocumentHarnessProperty[];
+  relations: DocumentHarnessRelation[];
+  relation_groups: DocumentHarnessRelationGroup[];
+  interpretation_tasks: DocumentInterpretationTask[];
+  observations: DocumentHarnessObservation[];
+  targets: DocumentHarnessTarget[];
+}
+
+export const getDocumentHarnessGraph = (runId: string, signal?: AbortSignal) =>
+  fetchAPI<DocumentHarnessGraph>(`${documentRunPath(runId)}/harness-graph`, {
+    signal, cache: "no-store",
+  });
+
+export const getDocumentHarnessSource = (runId: string, sourceId: string, signal?: AbortSignal) =>
+  fetchAPI<DocumentHarnessSource>(`${documentRunPath(runId)}/harness-source/${encodeURIComponent(sourceId)}`, {
+    signal, cache: "no-store",
+  });
+
+export const answerDocumentInterpretationTask = (
+  runId: string, taskId: string, input: {
+    meaning: DocumentInterpretationMeaning;
+    scope: DocumentInterpretationScope;
+    expected_revision: number;
+  }, signal?: AbortSignal,
+) => fetchAPI<DocumentInterpretationTask>(
+  `${documentRunPath(runId)}/interpretation-tasks/${encodeURIComponent(taskId)}/answer`,
+  { method: "POST", ...jsonBody(input), signal },
+);
 
 export const getDocumentPropertyReviews = (runId: string, signal?: AbortSignal) =>
   fetchAPI<DocumentPropertyReviewList>(`${documentRunPath(runId)}/reviews`, { signal });
@@ -2909,45 +2894,6 @@ export const controlDocumentAnalysisRun = (
     signal,
   });
 };
-
-export const pauseDocumentAnalysisRun = (
-  recognitionRunId: string,
-  request: DocumentAnalysisControlRequest,
-  signal?: AbortSignal,
-) => controlDocumentAnalysisRun(
-  recognitionRunId,
-  "pause",
-  request.expected_revision,
-  request.request_key,
-  request.reason,
-  signal,
-);
-
-export const resumeDocumentAnalysisRun = (
-  recognitionRunId: string,
-  request: DocumentAnalysisControlRequest,
-  signal?: AbortSignal,
-) => controlDocumentAnalysisRun(
-  recognitionRunId,
-  "resume",
-  request.expected_revision,
-  request.request_key,
-  request.reason,
-  signal,
-);
-
-export const cancelDocumentAnalysisRun = (
-  recognitionRunId: string,
-  request: DocumentAnalysisControlRequest,
-  signal?: AbortSignal,
-) => controlDocumentAnalysisRun(
-  recognitionRunId,
-  "cancel",
-  request.expected_revision,
-  request.request_key,
-  request.reason,
-  signal,
-);
 
 export const deleteDocumentAnalysisRun = (
   recognitionRunId: string,
@@ -3158,8 +3104,6 @@ export interface SystemConfigEntry {
   value: unknown;
   updated_at: string | null;
 }
-export const listSystemConfigs = () =>
-  fetchAPI<SystemConfigEntry[]>("/api/system-config");
 export const getSystemConfig = (key: string) =>
   fetchAPI<SystemConfigEntry>(`/api/system-config/${encodeURIComponent(key)}`);
 export const updateSystemConfig = (key: string, value: unknown) =>
@@ -3392,16 +3336,6 @@ export const commitEvidence = (jobId: string, idempotencyKey: string, items: Evi
   });
 export const retryEvidenceCommit = (id: string) =>
   fetchAPI<EvidenceCommit>(`/api/extraction/evidence/commits/${id}/retry`, { method: "POST" });
-export const resolveEvidenceCandidate = (id: string, input: {
-  expected_revision: number; target: EvidenceCandidateRef; reason: string;
-}) => fetchAPI<EvidenceCandidate>(`/api/extraction/evidence/candidates/${id}/resolve`, {
-  method: "POST", body: JSON.stringify(input),
-});
-export const createEvidenceCandidate = (jobId: string, input: {
-  request_key: string; reason: string; candidate: Record<string, unknown>;
-}) => fetchAPI<EvidenceCandidate>(`/api/extraction/jobs/${jobId}/evidence/candidates`, {
-  method: "POST", body: JSON.stringify(input),
-});
 
 export interface DocumentEvidenceIR {
   document_hash: string;
@@ -3496,13 +3430,6 @@ export interface TrainingPairDTO {
   created_at: string;
 }
 
-export interface TemplateMatchDTO {
-  template_id: string;
-  template_name: string;
-  template_version: string;
-  match_source: "selected" | "default";
-}
-
 export const fetchAstTemplates = () =>
   fetchAPI<AstTemplateDTO[]>("/api/ast-templates");
 export const getAstTemplate = (id: string, signal?: AbortSignal) =>
@@ -3547,8 +3474,6 @@ export const updateTemplateRecognitionEngine = (id: string, data: TemplateRecogn
   fetchAPI<TemplateRecognitionEngine>(`/api/ast-templates/${id}/recognition-engine`, {
     method: "PATCH", ...jsonBody(data),
   });
-export const matchTemplateForJob = (jobId: string) =>
-  fetchAPI<TemplateMatchDTO>(`/api/ast-templates/match/${jobId}`);
 
 // 013: 后台把样例 DOCX 解析为忠于原文结构的 tiptap（不扁平化成文本），前端据此
 // 忠实预览并回传结构化内容做 AI 分析——避免「解析成文本→送前台→送回」丢结构。
@@ -3689,30 +3614,6 @@ export interface FactSourceBinding {
 }
 export type CoverageBinding = OntologyRelationBinding | FactSourceBinding;
 
-// 016+: 语义化插槽来源。报告生成时本地 LLM 融合 (1) prompt（作者设定，留空=继承
-// 本节 Section.prompt）与 (2) 关联本体（本节 coverage 关系图谱 + 事实源事实）合成
-// 插槽正文。本身不存绑定数据——是 Section.prompt + Section.coverage 的投影。镜像后端
-// SemanticSource（backend/app/services/reporting/ast_template.py）。
-export interface SemanticSource {
-  kind: "semantic";
-  prompt?: string | null; // null → 继承 Section.prompt
-  coverage_refs?: string[]; // coverageKey 过滤器；[] → 投影本节全部 coverage
-}
-
-// coverageKey：与后端 ast_template.coverage_key 逐字节一致。语义化插槽的
-// coverage_refs 以此键选择本节的 coverage 绑定；清单里合成位点的 slot_id 亦是此键。
-// _short = IRI 末段（最后一个 # 或 / 之后）；无分隔符时原样返回。
-export function coverageKey(binding: CoverageBinding): string {
-  const short = (iri: string): string => {
-    const parts = (iri || "").split("#").flatMap((part) => part.split("/")).filter(Boolean);
-    return parts.length ? parts[parts.length - 1] : iri;
-  };
-  if (binding.kind === "fact_source") {
-    return `coverage.fact_source.${short(binding.source)}`;
-  }
-  return `coverage.${short(binding.predicate_iri)}__${short(binding.range_class_iri)}`;
-}
-
 export interface SuggestSlotsRequest {
   job_id?: string | null;
   document_text?: string | null;
@@ -3821,23 +3722,6 @@ export const previewSectionNarrative = (
     { method: "POST", signal, ...jsonBody(data) },
   );
 
-// 013: Async report generation (when LLM enhancement flags are on)
-
-export interface ReportJobStatus {
-  report_id: string;
-  status: string;
-  error_message?: string | null;
-}
-
-export const startReportGeneration = (
-  jobId: string,
-  opts?: { template_id?: string; dismissed_slot_ids?: string[] },
-) =>
-  fetchAPI<ReportJobStatus>(`/api/extraction/jobs/${jobId}/reports`, {
-    method: "POST",
-    ...jsonBody(opts ?? {}),
-  });
-
 export const pollReportStatus = (jobId: string, reportId: string) =>
   fetchAPI<GeneratedReportDTO & { report_status?: string; report_error?: string }>(
     `/api/extraction/jobs/${jobId}/reports/${reportId}`,
@@ -3853,39 +3737,6 @@ export async function downloadReportById(
   );
   if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
   return res.blob();
-}
-
-/**
- * 通过（后端按文档类别解析的）模板生成风险评估报告，返回 .docx blob。
- *
- * 统一封装同步与异步两条后端路径，屏蔽差异供调用方只拿最终 blob：
- *   · LLM 增强关闭：`POST /risk-report` 直接回 docx（Blob），原样返回；
- *   · LLM 增强开启：先回 `{report_id}`，此处轮询 `pollReportStatus` 至 completed
- *     后再 `downloadReportById` 取件。
- * 生成失败 / 轮询超时抛错，交由调用方提示。两条路径最终都走 `render_risk_report`
- * 的模板分节渲染（resolve_template → RiskReportGenerator(template=…)）。
- */
-export async function generateRiskReportBlob(
-  jobId: string,
-  opts?: { pollIntervalMs?: number; maxAttempts?: number },
-): Promise<Blob> {
-  const response = await generateRiskReport(jobId);
-  if (response instanceof Blob) return response;
-
-  const reportId = response.report_id;
-  const interval = opts?.pollIntervalMs ?? 2000;
-  const maxAttempts = opts?.maxAttempts ?? 60;
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    await new Promise((resolve) => setTimeout(resolve, interval));
-    const status = await pollReportStatus(jobId, reportId);
-    if (status.report_status === "completed") {
-      return downloadReportById(jobId, reportId);
-    }
-    if (status.report_status === "failed") {
-      throw new Error(status.report_error || "报告生成失败");
-    }
-  }
-  throw new Error("报告生成超时，请稍后重试");
 }
 
 // ===========================================================================
@@ -4902,3 +4753,65 @@ export const getDocumentHarness = (runId: string, signal?: AbortSignal) =>
 
 export const getDocumentHarnessContext = (runId: string, callId: string, signal?: AbortSignal) =>
   fetchAPI<HarnessContext>(`${documentRunPath(runId)}/harness/context?call_id=${encodeURIComponent(callId)}`, { signal });
+
+// Mapped Mock sources are read-only candidates, separate from saved entities.
+export interface LookupKeyGroup { property_iris: string[]; scope_property_iris: string[]; }
+export interface MockQueryConfig {
+  label_path: string | null; entity_iri_path?: string | null; class_path?: string | null;
+  identifier_namespace?: string | null; lookup_key_groups: LookupKeyGroup[];
+}
+export interface EntityQueryIssue {
+  code: string; message: string; property_iri?: string | null; record_id?: string | null;
+}
+export interface QueryPropertyDefinition {
+  property_iri: string; label: string; datatype_iris: string[];
+}
+export interface EntitySourceMapping {
+  id: string; class_iri: string; class_label: string; mapping_revision: string;
+  query_config: MockQueryConfig | null; queryable: boolean; issues: EntityQueryIssue[];
+  properties: QueryPropertyDefinition[]; mapped_property_iris: string[];
+  identity_properties: (QueryPropertyDefinition & { available: boolean })[];
+  identity_key_groups: { property_iris: string[]; available: boolean; unavailable_property_iris: string[] }[];
+}
+export interface MappedEntitySource {
+  source_system: string; dataset: string; label: string; source_kind: "mock";
+  fields: { source_path: string; label: string; source_datatype: string; multiple: boolean }[];
+  field_catalog_complete: boolean; issues: EntityQueryIssue[]; mappings: EntitySourceMapping[];
+}
+export interface InitialMockMapping extends MappingInput {
+  class_iri: string; property_bindings: PropertyBindingInput[]; available: boolean;
+}
+export interface EntitySources {
+  sources: MappedEntitySource[]; initial_mappings: InitialMockMapping[];
+}
+export interface MappedEntityQuery {
+  query_id: string; class_iri: string; include_subclasses?: boolean; mapping_ids?: string[];
+  name?: { value: string; match: "exact" | "contains" } | null;
+  property_filters: { property_iri: string; value: string | number | boolean; datatype_iri: string }[];
+  limit?: number;
+  offset?: number;
+}
+export interface MappedEntityCandidate {
+  record_ref: { source_system: string; dataset: string; record_id: string };
+  record_version: string; mapping_id: string; mapping_revision: string; source_kind: "mock";
+  source_entity_iri: string | null; class_iri: string; label: string;
+  properties: { property_iri: string; values: { value: string | number | boolean;
+    datatype_iri: string; raw_value: string | number | boolean; source_path: string;
+    source_index: number | null }[] }[];
+  matches: { kind: string; property_iri?: string | null }[];
+  matched_lookup_groups: number[]; identifier_namespace: string | null;
+  business_scope_status: "provided" | "unspecified"; identity_status: "not_checked";
+  issues: EntityQueryIssue[];
+}
+export interface MappedEntityQueryResult {
+  query_id: string; outcome: "matches" | "no_match" | "unresolved"; complete: boolean;
+  total: number | null; next_offset: number | null;
+  truncated: boolean; candidates: MappedEntityCandidate[]; issues: EntityQueryIssue[];
+  sources: { mapping_id: string; status: string; issues: EntityQueryIssue[] }[];
+}
+export const getEntitySources = (signal?: AbortSignal) =>
+  fetchAPI<EntitySources>("/api/entities/sources", { signal });
+export const queryMappedEntities = (queries: MappedEntityQuery[], signal?: AbortSignal) =>
+  fetchAPI<{ results: MappedEntityQueryResult[] }>("/api/entities/query", {
+    method: "POST", ...jsonBody({ queries }), signal,
+  });

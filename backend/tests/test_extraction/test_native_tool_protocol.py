@@ -130,6 +130,32 @@ def test_responses_answer_format_and_complete_items_can_be_resubmitted(
     assert len(requests(isolated_model_scheduler())) == 2
 
 
+def test_explicit_responses_stream_without_observer_satisfies_stream_only_gateway(
+    isolated_model_scheduler,
+):
+    sent = []
+    body = response_body()
+
+    async def transport(request):
+        payload = json.loads(request.content)
+        sent.append(payload)
+        if payload.get("stream") is not True:
+            return httpx.Response(400, json={"error": {"message": "Stream must be set to true"}})
+        event = {"type": "response.completed", "response": body, "sequence_number": 1}
+        return httpx.Response(
+            200, headers={"Content-Type": "text/event-stream"},
+            content="data: " + json.dumps(event) + "\n\ndata: [DONE]\n\n",
+        )
+
+    client = LocalModelClient("http://model.test/v1", "test", httpx.MockTransport(transport))
+    with model_scope(bind=isolated_model_scheduler()):
+        turn = invoke(client, stream=True)
+
+    assert len(sent) == 1 and sent[0]["stream"] is True
+    assert turn.response_status == "completed"
+    assert turn.output_items == body["output"]
+
+
 @pytest.mark.parametrize("status", ["incomplete", "failed", "queued", "completed"])
 def test_response_failures_and_refusals_reach_controller_without_retries(
     isolated_model_scheduler, status,

@@ -74,6 +74,31 @@ class TargetSummary(ApiModel):
     notes: list[str] = Field(default_factory=list)
 
 
+class DiscoverySource(ApiModel):
+    text: str
+    selection_ref: str | None = None
+
+
+class SavedDiscoveryItem(ApiModel):
+    id: str
+    kind: Literal["entity", "property", "relation", "observation", "failure"]
+    label: str
+    class_iri: str | None = None
+    predicate_iri: str | None = None
+    subject_id: str | None = None
+    object_ids: list[str] = Field(default_factory=list)
+    state: Literal["pending", "rejected", "accepted", "observation", "failed"]
+    reasons: list[str] = Field(default_factory=list)
+    sources: list[DiscoverySource] = Field(default_factory=list)
+
+
+class SavedDiscoverySummary(ApiModel):
+    completed_calls: int = 0
+    inflight_calls: int = 0
+    candidate_count: int = 0
+    items: list[SavedDiscoveryItem] = Field(default_factory=list)
+
+
 class DocumentTargetGraphResponse(RunWatermark):
     phase: Literal["candidate_graph", "evidence_review", "evidence_verification"]
     availability: ArtifactAvailability
@@ -82,3 +107,4 @@ class DocumentTargetGraphResponse(RunWatermark):
     graph: GraphArtifactResponse
     targets: list[GraphTarget] = Field(default_factory=list)
     summary: TargetSummary
+    discovery: SavedDiscoverySummary = Field(default_factory=SavedDiscoverySummary)

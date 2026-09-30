@@ -90,7 +90,7 @@ def test_new_factory_uses_frozen_config_without_legacy_domain_policies(source, m
     assert adapter.chat_template_kwargs == {"enable_thinking": False}
     assert frozen["responses"]["chat_template_kwargs"] == {"enable_thinking": False}
     assert frozen["request_budget"]["stage_output_tokens"] == {
-        "discovery": min(8192, frozen_budget["max_output_tokens"]),
+        "discovery": min(16384, frozen_budget["max_output_tokens"]),
         "verification": 16384,
     }
     assert adapter.instance_reader is adapter.mention_extractor is None

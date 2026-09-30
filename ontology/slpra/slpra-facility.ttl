@@ -155,6 +155,13 @@ slpra-facil:belongsToArea a owl:ObjectProperty ;
 # Data Properties
 # ============================================================
 
+slpra-facil:areaIdentifier a owl:DatatypeProperty ;
+    rdfs:comment "原文明示的生产区域管理编号，按字符串保留。标识的唯一性仅在原文明确的组织、场所及管理编号体系范围内解释；范围不明时不声明全局唯一。不同编号体系或有效时期可对同一区域使用不同标识。"@zh ;
+    rdfs:domain slpra-facil:ProductionArea ;
+    rdfs:range xsd:string ;
+    rdfs:label "production area identifier"@en ;
+    rdfs:label "生产区域编号"@zh .
+
 slpra-facil:pressureDifferential_Pa a owl:DatatypeProperty ;
     rdfs:comment "生产房间相对于指定参考空间的空气压力差，单位为帕；数值的正负方向取决于采用的参考约定。"@zh ;
     rdfs:domain slpra-facil:ProductionRoom ;

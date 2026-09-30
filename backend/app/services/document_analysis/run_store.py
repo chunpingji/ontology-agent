@@ -671,10 +671,12 @@ class DocumentAnalysisRunStore:
                 # starts one new window; automatic replacement remains running.
                 progress_values.update(last_progress_at=stamp, recovery_attempts=0,
                                        recovery_event_head=run.event_head)
-                from app.services.document_analysis import current_state
-                from app.services.document_analysis.state_artifacts import performance_policy
+                source = (self.db.get(DocumentAnalysisArtifact, run.source_artifact_ref)
+                          if run.source_artifact_ref else None)
+                policy = ((source.payload or {}).get("performance_policy") or {}) if source else {}
+                if policy.get("execution_budget") is not None:
+                    from app.services.document_analysis import current_state
 
-                if performance_policy(self, run).get("execution_budget") is not None:
                     # Explicit start/resume resets only this continuous window.
                     # Lease recovery keeps the same row and cumulative requests.
                     # Preserve an explicitly adjusted time limit on continuation.

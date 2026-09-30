@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.dependencies import get_kg_store, get_ontology_engine
+from app.dependencies import get_current_user, get_kg_store, get_ontology_engine
 from app.schemas.entity import (
     CreateIndividualRequest,
     EntitySearchResponse,
@@ -10,6 +10,8 @@ from app.schemas.entity import (
     IndividualResponse,
     UpdateIndividualRequest,
 )
+from app.schemas.entity_query import EntityQueryRequest, EntityQueryResponse
+from app.services.entity_query import EntityQueryService
 from app.services.kg_store import KGStore
 from app.services.ontology_engine import OntologyEngine
 
@@ -33,6 +35,24 @@ def list_entities(
         items=[EntityShadowResponse.model_validate(i) for i in items],
         total=total, page=page, page_size=page_size,
     )
+
+
+@router.get("/sources", dependencies=[Depends(get_current_user)])
+def entity_sources(
+    db: Session = Depends(get_db),
+    engine: OntologyEngine = Depends(get_ontology_engine),
+):
+    return EntityQueryService(db, engine).sources()
+
+
+@router.post("/query", response_model=EntityQueryResponse,
+             dependencies=[Depends(get_current_user)])
+def query_entities(
+    req: EntityQueryRequest,
+    db: Session = Depends(get_db),
+    engine: OntologyEngine = Depends(get_ontology_engine),
+):
+    return EntityQueryService(db, engine).query(req)
 
 
 @router.get("/{iri:path}", response_model=IndividualResponse)

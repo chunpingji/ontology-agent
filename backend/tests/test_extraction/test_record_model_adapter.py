@@ -181,7 +181,7 @@ def setup_record(source, monkeypatch, *, stop_at=None, empty=False, tool_first=F
     adapter = ToolModelRecognitionAdapter(
         object(), index=index, ontology=ontology, metadata=SimpleNamespace(node_summaries=[]),
         profile=ExtractionProfile(), token_counter=len, model_identity="qwen-test",
-        max_input_tokens=1000000, max_output_tokens=2000, tool_limits=ToolLimits(20000),
+        max_input_tokens=1000000, max_output_tokens=16384, tool_limits=ToolLimits(20000),
         recognition_pipeline=RECORD_PIPELINE,
     )
     return adapter, task, context, card, storage, requests, proposal

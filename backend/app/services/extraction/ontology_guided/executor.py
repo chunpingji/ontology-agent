@@ -694,7 +694,7 @@ class OntologyGuidedExecutor:
                     ],
                 })
         contextual = self.record_policy.contextual if self.record_policy else None
-        region_property_fields = bool(
+        region_property_fields = self.evidence_review or bool(
             self.record_policy
             and self.record_policy.schema_region_routing
             and self.record_policy.schema_region_routing.property_field_mode == "region_batch"
@@ -755,8 +755,9 @@ class OntologyGuidedExecutor:
                     reading_sections[identity] = []
             for record in index.records:
                 reading_sources.setdefault(record.record_id, [record.record_id])
-            for field in ([] if self.independent_entity_traversal else extract_attribute_fields(
+            for field in ([] if self.candidate_graph else extract_attribute_fields(
                 index, property_labels=labels, reading_groups=groups,
+                include_unmapped=self.evidence_review,
             )):
                 attribute_fields[field.field_id] = field
                 # A merged table cell may belong to multiple logical rows. All
@@ -779,6 +780,9 @@ class OntologyGuidedExecutor:
             field_slots_by_group = {}
             field_cards_by_group = {}
             for field in attribute_fields.values():
+                if self.evidence_review:
+                    # Reading aids do not add classes or predicates to the routed card.
+                    continue
                 card = compile_attribute_card(
                     field, self.ontology, class_iris=list(discovery_catalog.class_depths),
                     analysis_scope_ref=discovery_catalog.analysis_scope_ref,

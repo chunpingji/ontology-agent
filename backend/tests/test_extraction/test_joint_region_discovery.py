@@ -25,7 +25,8 @@ def joint_setup(tmp_path, monkeypatch, *, change=None, stop_at=None, conditional
         "上述对象乙连接对象丙" + ("；仅在试验阶段连接。" if conditional else "。")
     )
     path = tmp_path / "joint.docx"
-    document.save(path)
+    if not path.exists():
+        document.save(path)  # Cold resume must reuse identical source bytes, including ZIP dates.
     index = RecordIndex(analyze_word_core(path).ir)
     records = list(index.records)
     units = [unit for record in records for unit in record.source_units]

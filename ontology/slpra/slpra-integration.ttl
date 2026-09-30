@@ -48,6 +48,7 @@ slpra-integ:identityKey a owl:AnnotationProperty ;
     rdfs:label "实体身份证据属性"@zh ; rdfs:range xsd:boolean .
 
 slpra-equip:equipmentID slpra-integ:identityKey true .
+slpra-facil:areaIdentifier slpra-integ:identityKey true .
 slpra-drug:productIdentifier a owl:DatatypeProperty ;
     rdfs:domain [ a owl:Class ; owl:unionOf (
         slpra-drug:DrugProduct slpra-drug:ActivePharmaceuticalIngredient

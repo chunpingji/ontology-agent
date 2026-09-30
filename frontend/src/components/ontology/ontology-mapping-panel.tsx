@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 import {
   createMapping,
+  createPropertyBinding,
+  getEntitySources,
+  type EntitySources,
+  type InitialMockMapping,
   deleteMapping,
   getMappingHealth,
   getMappings,
@@ -10,6 +14,7 @@ import {
   type MappingHealth,
   type TBoxMapping,
 } from "@/lib/api";
+import { MockQueryConfigEditor } from "./mock-query-config-editor";
 import { PropertyBindingEditor } from "@/components/ontology/property-binding-editor";
 import { Field } from "@/components/ontology/field";
 import { Button } from "@/components/ui/button";
@@ -26,6 +31,7 @@ import type { useVersionConflict } from "./use-version-conflict";
 
 const MAPPING_TYPES = [
   "slpra_iri", "bfo", "field", "external",
+  "mock_dataset",
   ...SOURCE_ENTITY_MAPPING_TYPES, // 014: db_table / api_endpoint / doc_pattern
 ];
 
@@ -44,6 +50,8 @@ export function OntologyMappingPanel({
   conflict: Conflict;
   onChanged: () => void;
 }) {
+  const [sources, setSources] = useState<EntitySources | null>(null);
+  const [applying, setApplying] = useState(false);
   const [maps, setMaps] = useState<TBoxMapping[]>([]);
   const [health, setHealth] = useState<MappingHealth | null>(null);
   const [form, setForm] = useState({ mapping_type: "bfo", target: "", source_system: "" });
@@ -54,6 +62,7 @@ export function OntologyMappingPanel({
 
   useEffect(() => {
     loadHealth();
+    getEntitySources().then(setSources).catch((e) => setError(String(e)));
   }, []);
 
   // 按 classIri 作为 key 挂载，空白态由初值 [] 覆盖；effect 仅在异步回调内 setState。
@@ -64,6 +73,7 @@ export function OntologyMappingPanel({
   const refresh = () => {
     if (classIri) getMappings(classIri).then(setMaps).catch(() => {});
     loadHealth();
+    getEntitySources().then(setSources).catch((e) => setError(String(e)));
     onChanged();
   };
 
@@ -71,16 +81,31 @@ export function OntologyMappingPanel({
     if (!classIri) return;
     setError(null);
     try {
-      await createMapping(classIri, {
+      const created = await createMapping(classIri, {
         mapping_type: form.mapping_type,
         target: form.target,
-        source_system: form.source_system || null,
+        source_system: form.mapping_type === "mock_dataset" ? "builtin_mock" : form.source_system || null,
       });
+      setExpanded(created.id);
       setForm({ mapping_type: "bfo", target: "", source_system: "" });
       refresh();
     } catch (e) {
       setError(String(e));
     }
+  };
+
+  const applyInitial = async (template: InitialMockMapping) => {
+    if (!classIri) return;
+    setApplying(true); setError(null);
+    try {
+      const existing = (await getMappings(classIri)).find(m => m.mapping_type === "mock_dataset"
+        && m.target === template.target && m.source_system === template.source_system);
+      if (existing) { setExpanded(existing.id); refresh(); return; }
+      const created = await createMapping(classIri, { mapping_type: "mock_dataset", target: template.target,
+        source_system: template.source_system, query_config: template.query_config });
+      setExpanded(created.id);
+      for (const binding of template.property_bindings) await createPropertyBinding(created.id, binding);
+    } catch (e) { setError(String(e)); } finally { setApplying(false); refresh(); }
   };
 
   const remove = async (m: TBoxMapping) => {
@@ -117,9 +142,15 @@ export function OntologyMappingPanel({
         <p className="text-xs text-muted-foreground">先选择一个类</p>
       ) : (
         <>
+          {sources?.initial_mappings.filter(t => t.class_iri === classIri).map(t => <Button
+            key={t.target} size="sm" variant="outline" disabled={applying || !t.available}
+            onClick={() => applyInitial(t)}>
+            {maps.some(m => m.mapping_type === "mock_dataset" && m.target === t.target)
+              ? "打开已有 Mock 映射" : "应用初始 Mock 映射"} · {t.target}
+          </Button>)}
           <ul className="divide-y text-sm">
             {maps.map((m) => {
-              const isSourceEntity = SOURCE_ENTITY_MAPPING_TYPES.includes(m.mapping_type);
+              const isSourceEntity = m.mapping_type === "mock_dataset" || SOURCE_ENTITY_MAPPING_TYPES.includes(m.mapping_type);
               return (
                 <li key={m.id} className="py-1.5">
                   <div className="flex items-center justify-between">
@@ -158,7 +189,12 @@ export function OntologyMappingPanel({
                     </span>
                   </div>
                   {isSourceEntity && expanded === m.id && (
-                    <PropertyBindingEditor mapping={m} onChanged={refresh} />
+                    <>
+                      {m.mapping_type === "mock_dataset" && <MockQueryConfigEditor key={`${m.id}-${m.version}`}
+                        mapping={m} source={sources?.sources.find(s => s.dataset === m.target)} onChanged={refresh} />}
+                      <PropertyBindingEditor mapping={m} onChanged={refresh}
+                        source={sources?.sources.find(s => s.dataset === m.target)} />
+                    </>
                   )}
                 </li>
               );
@@ -172,7 +208,7 @@ export function OntologyMappingPanel({
               <Field label="映射类型" className="w-1/3">
                 <Select
                   value={form.mapping_type}
-                  onValueChange={(v) => setForm({ ...form, mapping_type: v })}
+                  onValueChange={(v) => setForm({ ...form, mapping_type: v, target: "" })}
                 >
                   <SelectTrigger className="h-auto w-full px-2 py-1 text-sm">
                     <SelectValue />
@@ -187,18 +223,24 @@ export function OntologyMappingPanel({
                 </Select>
               </Field>
               <Field label="目标 target" hint="映射指向的 IRI / 字段" className="w-2/3">
-                <Input
+                {form.mapping_type === "mock_dataset" ? <Select value={form.target}
+                  onValueChange={v => setForm({ ...form, target: v })}>
+                  <SelectTrigger><SelectValue placeholder="选择 Mock 数据集" /></SelectTrigger>
+                  <SelectContent>{sources?.sources.map(s => <SelectItem key={s.dataset} value={s.dataset}>
+                    {s.label}</SelectItem>)}</SelectContent>
+                </Select> : <Input
                   placeholder="target"
                   value={form.target}
                   onChange={(e) => setForm({ ...form, target: e.target.value })}
                   className="h-auto w-full px-2 py-1 text-sm"
-                />
+                />}
               </Field>
             </div>
             <Field label="来源系统 source" hint="可选">
               <Input
                 placeholder="source system（可选）"
-                value={form.source_system}
+                disabled={form.mapping_type === "mock_dataset"}
+                value={form.mapping_type === "mock_dataset" ? "builtin_mock" : form.source_system}
                 onChange={(e) => setForm({ ...form, source_system: e.target.value })}
                 className="h-auto w-full px-2 py-1 text-sm"
               />

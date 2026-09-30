@@ -1,0 +1,236 @@
+"""Bounded GPT regression of document identifier values versus global source identity."""
+
+import argparse
+import getpass
+import json
+import shutil
+from copy import deepcopy
+from datetime import UTC, datetime
+from pathlib import Path
+from time import monotonic
+
+from app.evaluation.harness_model_comparison import (
+    gateway_call,
+    request_body,
+    saved_rows,
+    score_state,
+    validate_output,
+    write,
+)
+from app.services.document_harness.protocols import INSTRUCTIONS, PROTOCOL, stage_schema
+
+
+def boundary_payloads(original):
+    """Synthetic diagnostic inputs; expectations never enter model messages."""
+    missing = deepcopy(original)
+    for c in missing["candidates"]:
+        for binding in c["subject"]["identity_binding"]["identifiers"]:
+            binding.update(source_candidates=[], query_complete=False)
+    yield "no_source_candidates", missing, "accepted"
+
+    swapped = deepcopy(original)
+    left, right = swapped["candidates"]
+    left["subject"], right["subject"] = right["subject"], left["subject"]
+    for c in swapped["candidates"]:
+        c["subject_id"] = c["subject"]["entity_id"]
+    yield "swapped_member_ownership", swapped, "rejected"
+
+    name_only = deepcopy(original)
+    name_only["candidates"] = [name_only["candidates"][0]]
+    name_only["sources"][0]["text"] = "该区域名称是642车间，名称中的数字不是管理编号。"
+    yield "name_digit_explicitly_not_identifier", name_only, "rejected"
+
+    scoped = deepcopy(original)
+    for c in scoped["candidates"]:
+        c["predicate_definition"]["description"] = (
+            "该属性仅记录经厂级注册簿核验的唯一编号，"
+            "须有该登记体系及有效核验状态的原文依据。"
+        )
+    yield "predicate_requires_registry_verification", scoped, "unresolved"
+
+
+def review_schema(payload, entity_ids=None):
+    return stage_schema(
+        "evidence_review", source_ids=[s["source_id"] for s in payload["sources"]],
+        candidate_ids=[c["id"] for c in payload["candidates"]],
+        entity_ids=(list(dict.fromkeys(c["subject_id"] for c in payload["candidates"]))
+                    if entity_ids is None else entity_ids),
+    )
+
+
+def run(args):
+    from sqlalchemy import text
+
+    from app.db import SessionLocal
+    from app.services.document_analysis.run_store import content_hash
+    from app.services.document_harness.controller import Engine
+    from app.services.document_harness.lookup_adapter import lookup_current
+    from app.services.document_harness.ontology import SchemaCatalog, freeze_catalog
+    from app.services.extraction.document_ir import DocumentIR
+    from app.services.ontology_engine import OntologyEngine
+
+    root = args.output
+    root.mkdir(parents=True, exist_ok=False)
+    shutil.copy2(__file__, root / "probe.py")
+    shutil.copy2(Path(__file__).with_name("harness_model_comparison.py"), root / "transport.py")
+    shutil.copytree(Path(__file__).parents[1] / "services/document_harness", root / "runtime",
+                    ignore=shutil.ignore_patterns("__pycache__"))
+    shutil.copytree(args.source / "ontology", root / "ontology")
+    history = json.loads((args.source / "calls.json").read_text())
+    reviews, inputs = {}, {}
+    for case in ("members", "parallel_plan"):
+        row = next(c for c in history if c["case"] == case and c["model"] == "sol"
+                   and c["stage"] == "evidence_review")
+        review = json.loads((args.source / f"call-{row['number']:03d}.json").read_text())
+        assert all(c["kind"] == "properties" for c in review["payload"]["candidates"])
+        # Preserve the historical alias menu order for exact same-input comparisons.
+        entity_ids = review["schema"]["$defs"]["TypeConcern"]["properties"]["entity_id"]["enum"]
+        assert review_schema(review["payload"], entity_ids) == review["schema"], (
+            "review_schema_changed"
+        )
+        reviews[case] = review
+        write(root / f"baseline-{case}-review.json", review)
+        ir = DocumentIR.model_validate(
+            saved_rows(args.source, "baseline-" + case, "state", "input")["document"])
+        catalog = SchemaCatalog.model_validate_json(
+            (args.source / f"baseline-{case}-ontology.json").read_text())
+        prior = json.loads((args.source / f"baseline-{case}-input.json").read_text())["policy"]
+        rankings = saved_rows(args.source, "baseline-" + case, "results", "rankings")
+        inputs[case] = (ir, catalog, prior, rankings)
+        write(root / f"{case}-input.json", ir.model_dump(mode="json"))
+        write(root / f"{case}-ontology.json", catalog.model_dump(mode="json"))
+        write(root / f"{case}-rankings.json", rankings)
+    write(root / "manifest.json", {
+        "created_at": datetime.now(UTC), "protocol": PROTOCOL, "model": args.model,
+        "base_url": args.base_url, "source": str(args.source), "instructions": INSTRUCTIONS,
+        "method": "paired fixed evidence-review requests, boundary probes, then empty Engine; "
+                  "all recognition answers newly generated by GPT; only card rankings reused",
+        "repeats_per_review_arm": 3, "call_limit": args.call_limit,
+        "seconds_limit": args.seconds_limit, "reference_is_model_input": False,
+        "reference_status": "developer_regression_not_expert_gold",
+        "production_service_restarted": False, "production_model_changed": False,
+    })
+    world = OntologyEngine(ontology_dir=root / "ontology", store_path=root / "world.sqlite3")
+    world.load()
+    for _, catalog, _, _ in inputs.values():
+        assert freeze_catalog(world, catalog.root_class_iri).snapshot_id == catalog.snapshot_id
+    secret = getpass.getpass("API key (memory only): ")
+    started, calls, summary = monotonic(), [], []
+
+    def invoke(case, phase, stage, payload, schema, instructions=None):
+        if len(calls) >= args.call_limit or monotonic() - started > args.seconds_limit:
+            raise RuntimeError("regression_budget_exhausted")
+        number = len(calls) + 1
+        body = request_body(stage, payload, schema, args.model)
+        if instructions is not None:
+            body["instructions"] = instructions
+        row = {"number": number, "case": case, "phase": phase, "stage": stage,
+               "payload": deepcopy(payload), "schema": schema, "request_body": body}
+        calls.append(row)
+        try:
+            result = gateway_call(body, base_url=args.base_url, secret=secret)
+            row["result"] = result
+            if result["error"]:
+                raise RuntimeError(result["error"])
+            validate_output(stage, payload, schema, result["output"])
+            return result["output"]
+        except Exception as exc:
+            row["error"] = str(exc).replace(secret, "[REDACTED]")[:1000]
+            raise
+        finally:
+            write(root / f"call-{number:03d}.json", row)
+            write(root / "calls.json", [{k: v for k, v in c.items()
+                                         if k not in {"payload", "schema", "request_body"}}
+                                        for c in calls])
+            print(json.dumps({"number": number, "case": case, "phase": phase,
+                              "stage": stage, "error": row.get("error"),
+                              "seconds": row.get("result", {}).get("seconds")}), flush=True)
+
+    def review_case(case, phase, payload, schema, expected, instructions=None):
+        row = {"case": case, "phase": phase, "expected": expected, "pass": False}
+        try:
+            output = invoke(case, phase, "evidence_review", payload, schema, instructions)
+            row["judgments"] = output["judgments"]
+            row["pass"] = all(j["verdict"] == expected and (
+                expected != "accepted" or j["confidence"] >= 0.85 and j["evidence"])
+                for j in output["judgments"].values()) and not output["type_concerns"]
+        except Exception as exc:
+            row["error"] = str(exc).replace(secret, "[REDACTED]")[:1000]
+        row["call_number"] = len(calls)
+        summary.append(row)
+        write(root / "summary.json", summary)
+        print(json.dumps(row, ensure_ascii=False), flush=True)
+
+    try:
+        for case, review in reviews.items():
+            for repeat in range(3):
+                for arm in (("old", "new") if repeat % 2 == 0 else ("new", "old")):
+                    review_case(case, f"fixed_{arm}_{repeat + 1}", review["payload"],
+                                review["schema"], "accepted",
+                                review["request_body"]["instructions"] if arm == "old" else None)
+        for case, payload, expected in boundary_payloads(reviews["members"]["payload"]):
+            review_case(case, "boundary", payload, review_schema(payload), expected)
+
+        with SessionLocal(autoflush=False) as db:
+            db.execute(text("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY"))
+            for case, (ir, catalog, policy, rankings) in inputs.items():
+                queries, initial_calls = [], len(calls)
+
+                def rank(cards, payload, budget):
+                    key = content_hash({"snapshot_id": cards.snapshot_id, "input": payload,
+                                        "card_budget": budget, "policy": policy["card_ranking"]})
+                    if key not in rankings:
+                        raise ValueError("frozen_ranking_input_changed")
+                    return deepcopy(rankings[key])
+
+                def query(operation, cards, argument):
+                    result = lookup_current(db, world, operation, cards, argument)
+                    queries.append({"operation": operation, "argument": argument,
+                                    "result": result})
+                    write(root / f"{case}-queries.json", queries)
+                    return result
+
+                engine = Engine(
+                    ir=ir, catalog=catalog, state={}, save=lambda _: None,
+                    invoke=lambda stage, payload, schema: invoke(
+                        case, "full_engine", stage, payload, schema),
+                    should_stop=lambda: monotonic() - started > args.seconds_limit,
+                    max_input_tokens=policy["max_input_tokens"], rank=rank, lookup=query,
+                )
+                row = {"case": case, "phase": "full_engine", "error": None}
+                try:
+                    engine.run()
+                except Exception as exc:
+                    row["error"] = str(exc).replace(secret, "[REDACTED]")[:1000]
+                write(root / f"{case}-state.json", engine.state)
+                row.update(score_state(engine.state, catalog, case))
+                row["calls"] = len(calls) - initial_calls
+                row["source_identity_statuses"] = sorted({
+                    b["identity_status"] for e in engine.state["entities"].values()
+                    for b in e.get("identity_binding", {}).get("identifiers", [])
+                })
+                summary.append(row)
+                write(root / "summary.json", summary)
+                print(json.dumps({k: row[k] for k in (
+                    "case", "phase", "error", "calls", "identifiers_ok", "relation_ok",
+                    "body_plan_found", "scope_complete", "source_identity_statuses",
+                )}, ensure_ascii=False), flush=True)
+    finally:
+        secret = ""
+        world.close()
+        write(root / "summary.json", summary)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--source", type=Path, required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--base-url", default="http://172.22.0.1:31080/v1")
+    parser.add_argument("--model", default="gpt-6-sol")
+    parser.add_argument("--call-limit", type=int, default=50)
+    parser.add_argument("--seconds-limit", type=int, default=1800)
+    run(parser.parse_args())
+
+
+if __name__ == "__main__":
+    main()

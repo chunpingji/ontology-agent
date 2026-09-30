@@ -16,6 +16,10 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.cuda12
+    # Optional host-only credentials; the API key is never stored in Compose or Git.
+    env_file:
+      - path: ${LOCAL_LLM_SECRET_ENV_FILE:-/etc/ontology-agent/local-llm.env}
+        required: false
     # 开发期间关闭 --reload，避免 WatchFiles 在长时间 LLM 后台任务期间 kill 进程
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
     ports:
@@ -46,7 +50,6 @@ services:
       EVIDENCE_TOTAL_TIMEOUT_S: ${EVIDENCE_TOTAL_TIMEOUT_S:-600}
       LOCAL_LLM_TOTAL_TIMEOUT_S: ${LOCAL_LLM_TOTAL_TIMEOUT_S:-600}
       LOCAL_LLM_MAX_CONCURRENCY: ${LOCAL_LLM_MAX_CONCURRENCY:-2}
-      LOCAL_LLM_API_KEY: ${LOCAL_LLM_API_KEY:-not-needed}
       # 022: 默认 CUDA 12.6 召回与精排；CPU 使用 docker-compose.cpu.yml。
       # 显式选择一张物理卡；未配置时不暴露 GPU，启用后的探测会明确失败。
       NVIDIA_VISIBLE_DEVICES: ${SEMANTIC_RANKING_GPU_ID:-none}

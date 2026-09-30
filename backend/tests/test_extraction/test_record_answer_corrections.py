@@ -6,12 +6,43 @@ from copy import deepcopy
 import pytest
 
 from tests.test_extraction.test_record_model_adapter import setup_record
+from tests.test_extraction.test_record_model_adapter import source as source
 
 pytest_plugins = ["tests.test_extraction.test_record_model_adapter"]
 
 
 def view(request):
     return json.loads(request["input_items"][0]["content"][0]["text"])
+
+
+def test_field_referent_correction_preserves_exact_paid_answer_before_added_observations(
+    source, monkeypatch,
+):
+    def bad_field_name(answer, context, number):
+        if context["stage"] == "discovery" and "answer_correction" not in context:
+            answer["entities"][0]["mentions"] = [source["quote"]("数量为5 mg")]
+
+    adapter, task, context, card, stored, requests, _ = setup_record(
+        source, monkeypatch, transform=bad_field_name,
+    )
+    unit = source["source_unit"]
+    def anchor(text):
+        start = unit.text.index(text)
+        return source["index"].ir.anchor(unit.evidence_id, start, start + len(text)).model_dump(
+            mode="json",
+        )
+    context.tool_inputs["property_fields"] = [{
+        "field_id": "amount-field", "record_id": task.record_id,
+        "label": "数量", "value": "5 mg", "label_refs": [anchor("数量")],
+        "value_refs": [anchor("5 mg")], "exclusive_record": False,
+    }]
+    outcome = adapter.inspect_record(task, context, card)
+    assert len(requests) == 3 and len(outcome.nodes) == 2
+    correction = view(requests[1])["answer_correction"]
+    assert any(issue["reason_code"] == "entity_field_as_name" for issue in correction["issues"])
+    assert correction["previous_answer"]["observations"] == []
+    frozen = stored["results"][stored["protocol"]["discovery_ref"]]["value"]
+    assert any(o["quote"]["text"] == "5 mg" for o in frozen["observations"])
 
 
 def incomplete_support(answer, context, *, composition=False):
@@ -25,6 +56,26 @@ def incomplete_support(answer, context, *, composition=False):
         facet["support"] = [target["payload"]["record_components"][0]["quote"]]
     else:
         facet["support"] = []
+
+
+def test_source_mismatch_is_in_same_single_correction_without_rewriting_paid_answer(
+    source, monkeypatch,
+):
+    def wrong_source(answer, context, number):
+        if context["stage"] == "discovery" and "answer_correction" not in context:
+            answer["entities"][0]["mentions"][0]["text"] = "原文中不存在的对象"
+
+    adapter, task, context, card, _, requests, _ = setup_record(
+        source, monkeypatch, transform=wrong_source,
+    )
+    outcome = adapter.inspect_record(task, context, card)
+    assert len(requests) == 3 and len(outcome.nodes) == 2
+    correction = view(requests[1])["answer_correction"]
+    assert any(issue["reason_code"] == "source_excerpt_mismatch"
+               for issue in correction["issues"])
+    assert correction["previous_answer"]["entities"][0]["mentions"][0]["text"] == (
+        "原文中不存在的对象"
+    )
 
 
 @pytest.mark.parametrize("composition", [False, True])
@@ -220,7 +271,7 @@ def test_oversized_correction_keeps_original_claims_for_normal_gates(
     def setup():
         configured = setup_record(source, monkeypatch, budget=4, transform=mistake)
         adapter = configured[0]
-        adapter.max_output_tokens = 8000
+        adapter.max_output_tokens = 16384
         measured = []
 
         def counter(value):

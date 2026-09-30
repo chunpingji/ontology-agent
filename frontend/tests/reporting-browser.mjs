@@ -35,7 +35,7 @@ try {
   await context.route("**/api/**", async (route) => {
     const request = route.request(), path = new URL(request.url()).pathname;
     const payload = ["POST", "PATCH"].includes(request.method()) ? request.postDataJSON() : null;
-    requests.push({ path, authorization: request.headers().authorization });
+    requests.push({ path, method: request.method(), authorization: request.headers().authorization });
     let response;
     if (path === "/api/report-model-context") response = contracts[0];
     else if (path === "/api/report-contracts") response = contracts;
@@ -43,6 +43,7 @@ try {
     else if (path.endsWith("/recognition-engine")) response = { recognition_mode: "ontology_guided", finder_profile_id: null, finder_profiles: [] };
     else if (path.endsWith("/semantic-sources")) response = { options: [] };
     else if (path.endsWith("/training-pairs")) response = [];
+    else if (path.startsWith("/api/document-analysis/templates/") && request.method() === "GET") response = { run: null };
     else if (path.endsWith("/revisions")) { saved = payload; response = { id: "fixture-2" }; }
     else if (path.endsWith("/compile")) {
       compilationRequest = payload;
@@ -58,8 +59,6 @@ try {
     }
     else if (path === "/api/entities") response = { items: [] };
     else if (path.endsWith("/annotated-document")) response = { content: sampleContent, relationships: [], doc_class: null };
-    else if (path.endsWith("/evidence")) response = { candidates: [], commits: [], snapshot_id: "source-snapshot" };
-    else if (path.endsWith("/evidence/coverage")) response = { availability: "available", material_status: "ready", completion: "complete", required_gaps: 0, diagnostics: [], tasks: [], snapshot_id: "source-snapshot" };
     else if (path === "/api/extraction/jobs") response = [{ id: "job", source_filename: "合成来源.docx", status: "reviewing" }, { id: "other-job", source_filename: "另一来源.docx", status: "reviewing" }];
     else if (/^\/api\/extraction\/jobs\/[^/]+$/.test(path)) response = { id: path.split("/").at(-1), source_type: "word", source_mode: "template_default", status: "reviewing" };
     else if (path.endsWith("/reports")) response = reportCreated ? [{ id: "history", job_id: "job", report_run_id: "frozen-run", report_artifact_id: "draft-artifact", file_size: 12, created_at: "2026-09-06T08:00:00Z", actor: "fixture" }] : [];
@@ -108,7 +107,11 @@ try {
   assert.equal(Object.hasOwn(metadataSaved, "status"), false);
   await page.getByRole("tab", { name: "源文档", exact: true }).click();
   await page.getByRole("button", { name: "合成来源.docx" }).click();
-  await page.getByRole("region", { name: "关系图谱识别结果" }).waitFor();
+  const sourceGraph = page.getByRole("region", { name: "关系图谱", exact: true });
+  await sourceGraph.getByRole("button", { name: "开始识别", exact: true }).waitFor();
+  assert(requests.some((r) => r.path === "/api/document-analysis/templates/fixture/sources/job/runs" && r.method === "GET"));
+  assert.equal(requests.some((r) => r.path.startsWith("/api/document-analysis/") && r.method !== "GET"), false);
+  assert.equal(requests.some((r) => r.path.includes("/evidence")), false);
   await page.getByText("模板样例原文", { exact: true }).waitFor();
   await page.getByRole("tab", { name: "AST模板定义", exact: true }).click();
   const definitionPanel = page.getByRole("complementary", { name: "输出模板定义" });
@@ -125,11 +128,13 @@ try {
   await splitter.dblclick();
   assert.equal((await definitionPanel.boundingBox()).width, definitionBounds.width);
   await page.getByRole("button", { name: "设备表", exact: true }).click();
+  await page.getByText("详细配置：数据绑定、输入变量与呈现方式", { exact: true }).click();
   await page.getByRole("tab", { name: "输入变量", exact: true }).click();
   assert.match(await page.locator("body").innerText(), /共享影响：设备表、共享说明/);
   await page.getByLabel("显示名称", { exact: true }).fill("设备清单");
   assert.equal(await page.getByLabel("添加本体字段").locator("option[value='urn:code']").count(), 1);
   await page.getByRole("button", { name: "共享说明", exact: true }).click();
+  await page.getByText("详细配置：数据绑定、输入变量与呈现方式", { exact: true }).click();
   assert.equal(await page.getByLabel("显示名称", { exact: true }).inputValue(), "设备清单");
   await page.getByRole("button", { name: "上移内容", exact: true }).nth(1).click();
   await page.getByRole("button", { name: "校验语义", exact: true }).click();
@@ -230,6 +235,7 @@ try {
   assert.equal(saved.schema.definitions.inputs.rows.input_id, "rows");
   await page.getByRole("tab", { name: "AST模板定义", exact: true }).click();
   await page.getByRole("button", { name: "设备表", exact: true }).click();
+  await page.getByText("详细配置：数据绑定、输入变量与呈现方式", { exact: true }).click();
   await page.getByRole("tab", { name: "数据绑定", exact: true }).click();
   await page.getByLabel("来源方式", { exact: true }).selectOption("derived");
   await page.getByLabel("规则或业务数据定义", { exact: true }).selectOption("view");
@@ -242,7 +248,7 @@ try {
   await page.getByRole("option", { name: "v1", exact: true }).click();
   await page.waitForURL("**/settings/ast-templates/fixture");
   assert(!requests.some((request) => request.path.endsWith("/ast-coverage")));
-  const result = { status: "pass", synthetic_api: true, checks: ["019 workspace tabs and default page", "b6f9bd4 progress/structure layout and responsive stacking", "real V2 coverage and missing-item navigation", "draft generation and artifact download", "metadata editing and version switching", "source document and evidence review", "sample left and resizable definition right", "shared input editing across tabs", "stable IDs and origin after reorder/save", "unsaved draft preview and stale source notice", "preview and signing state across tabs and coverage refresh", "formal envelope disabled for incomplete material", "exact ontology menus and view controls", "authenticated requests without legacy report execution"], api_requests: requests.length };
+  const result = { status: "pass", synthetic_api: true, checks: ["019 workspace tabs and default page", "b6f9bd4 progress/structure layout and responsive stacking", "real V2 coverage and missing-item navigation", "draft generation and artifact download", "metadata editing and version switching", "source preview and read-only document-run discovery", "sample left and resizable definition right", "shared input editing across tabs", "stable IDs and origin after reorder/save", "unsaved draft preview and stale source notice", "preview and signing state across tabs and coverage refresh", "formal envelope disabled for incomplete material", "exact ontology menus and view controls", "authenticated requests without legacy report execution"], api_requests: requests.length };
   if (process.env.REPORTING_BROWSER_RESULT) await writeFile(process.env.REPORTING_BROWSER_RESULT, JSON.stringify(result, null, 2) + "\n");
   console.log(JSON.stringify(result));
 } finally { await browser.close(); }

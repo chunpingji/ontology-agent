@@ -116,7 +116,7 @@ class CreateRunInput(ApiModel):
 
 class RunLinks(ApiModel):
     self: NonEmpty
-    metadata: NonEmpty
+    metadata: NonEmpty | None
     graph: NonEmpty
     source: NonEmpty
     events: NonEmpty
@@ -898,6 +898,10 @@ ErrorCode = Literal[
     "ADAPTIVE_CONFIGURATION_INVALID",
     "RECOGNITION_MODE_MISMATCH",
     "FINDER_CONFIG_INVALID",
+    "ENGINE_NOT_APPLICABLE",
+    "ENGINE_RETIRED",
+    "HARNESS_INPUT_INVALID",
+    "SOURCE_NOT_READY",
 ]
 
 

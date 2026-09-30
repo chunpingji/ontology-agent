@@ -17,6 +17,7 @@ const modes = { repository: "doc_repo_preview", retired: null, template: "templa
 const labels = { repository: "文档库 CMC", retired: "历史 CMC", template: "模板专用 CMC" };
 const errors = [], requests = [], retiredCalls = [];
 let created, createdPayload, revised, revisionPayload, sampleAttached = false, creates = 0, sampleAttempts = 0, holdSave, holdSample, holdNavigation;
+let holdNextNavigation = true;
 page.on("pageerror", (error) => errors.push(error.message));
 await page.addInitScript(() => {
   localStorage.setItem("slpra.token", "synthetic-token");
@@ -28,7 +29,11 @@ await page.addInitScript(() => {
     window.__fastSaveTimeout && delay === 180_000 ? 1_500 : delay, ...args);
 });
 await page.route("**/settings/ast-templates/saved-template?**", async (route) => {
-  if (route.request().headers().rsc === "1") { holdNavigation = route; return; }
+  if (holdNextNavigation && route.request().headers().rsc === "1") {
+    holdNextNavigation = false;
+    holdNavigation = route;
+    return;
+  }
   return route.continue(); // The saved-template link can perform a full navigation.
 });
 await page.route("**/api/**", async (route) => {
@@ -61,6 +66,9 @@ await page.route("**/api/**", async (route) => {
   if (path === "/api/ast-templates/saved-revision") return reply(revised);
   if (path.endsWith("/coverage-doc-classes")) return reply({ capable: [cmc] });
   if (path.endsWith("/training-pairs")) return reply([]);
+  if (path.endsWith("/semantic-sources")) return reply({ options: [] });
+  if (path.endsWith("/recognition-engine")) return reply({ recognition_mode: "ontology_guided", finder_profile_id: null, finder_profiles: [] });
+  if (path.startsWith("/api/document-analysis/templates/") && request.method() === "GET") return reply({ run: null });
   if (path === "/api/ast-templates/saved-template") return reply(created);
   if (path === "/api/report-contracts") return reply([]);
   if (path === "/api/report-model-context") return reply({ contract_id: "model", definition: { classes: {} } });
@@ -78,15 +86,14 @@ await page.route("**/api/**", async (route) => {
       return reply({ detail: "WORD_RECOGNITION_RETIRED: use POST /api/document-analysis/runs" }, 410);
     }
     if (suffix === "/annotated-document") return reply({ source_type: "word", content: source, preview_only: true });
-    if (suffix === "/evidence") return reply({ candidates: [], commits: [], snapshot_id: null });
-    if (suffix === "/evidence/coverage") return reply({ availability: "available", tasks: [], material_status: "incomplete", required_gaps: 0 });
   }
   errors.push("Unexpected route: " + request.method() + " " + path);
   return reply({});
 });
 
 try {
-  await page.goto(`${origin}/settings/ast-templates`, { waitUntil: "networkidle", timeout: 120_000 });
+  // UI assertions determine readiness; background connections can remain active.
+  await page.goto(`${origin}/settings/ast-templates`, { waitUntil: "domcontentloaded", timeout: 120_000 });
   await page.getByRole("button", { name: "从样例文档创建", exact: true }).first().click();
   const dialog = page.getByRole("dialog");
   await dialog.locator("input").first().fill("CMC 样例回归模板");
@@ -155,10 +162,11 @@ try {
   await page.getByRole("button", { name: "返回列表", exact: true }).click();
   await page.waitForURL("**/settings/ast-templates");
   await expect(page.getByText("CMC 样例回归模板", { exact: true })).toBeVisible();
-  await page.reload({ waitUntil: "networkidle" });
+  await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.getByText("CMC 样例回归模板", { exact: true })).toBeVisible();
-  await page.goto(`${origin}/settings/ast-templates/saved-template?tab=template`, { waitUntil: "networkidle" });
-  await page.reload({ waitUntil: "networkidle" });
+  await page.goto(`${origin}/settings/ast-templates/saved-template?tab=template`, { waitUntil: "domcontentloaded" });
+  await expect(page.getByText("输出样例：评估结论", { exact: true })).toBeVisible();
+  await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.getByText("输出样例：评估结论", { exact: true })).toBeVisible();
   await expect(page.getByRole("tab", { name: "AST模板定义", exact: true })).toHaveAttribute("aria-selected", "true");
   assert.equal(creates, 2);
@@ -166,17 +174,17 @@ try {
   await page.getByLabel("章节标题", { exact: true }).fill("已编辑章节");
   await page.getByRole("tab", { name: "源文档", exact: true }).click();
   await expect(save).toBeInViewport();
-  for (const id of ["repository", "retired"]) {
+  for (const id of ["repository", "retired", "template"]) {
     await page.getByRole("button", { name: new RegExp(labels[id]) }).click();
-    await expect(page.getByRole("link", { name: "打开文档分析" })).toBeVisible();
+    const graph = page.getByRole("region", { name: "关系图谱", exact: true });
+    await expect(graph.getByRole("button", { name: "开始识别", exact: true })).toBeEnabled();
+    assert(requests.some((r) => r.path === `/api/document-analysis/templates/saved-template/sources/${id}/runs` && r.method === "GET"));
     await expect(page.getByRole("button", { name: "重新识别", exact: true })).toHaveCount(0);
   }
-  await page.getByRole("button", { name: /模板专用 CMC/ }).click();
-  await expect(page.getByRole("region", { name: "关系图谱识别结果" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "重新识别", exact: true })).toBeEnabled();
-  assert(requests.some((r) => r.path === "/api/extraction/jobs/template/evidence"));
+  assert.equal(requests.some((r) => r.path.startsWith("/api/document-analysis/") && r.method !== "GET"), false);
+  assert.equal(requests.some((r) => /\/evidence|\/annotation\//.test(r.path)), false);
   assert.deepEqual(retiredCalls, []);
-  assert((await page.evaluate(() => window.__progressSubscriptions)).every((url) => url.includes("/template/progress")));
+  assert.deepEqual(await page.evaluate(() => window.__progressSubscriptions), []);
   await page.getByRole("tab", { name: "报告预览", exact: true }).click();
   await expect(save).toBeInViewport();
   await page.setViewportSize({ width: 800, height: 900 });

@@ -1,9 +1,46 @@
-// Isolated UI regressions: every API request is intercepted with synthetic data.
+// The active extraction drawer with synthetic evidence, source and progress responses.
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { createServer } from "node:http";
+import { execFileSync } from "node:child_process";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const { chromium, expect } = await import(process.env.PLAYWRIGHT_MODULE || "playwright/test");
-const fixture = JSON.parse(await readFile(new URL("./fixtures/reporting-browser.json", import.meta.url)));
+const frontend = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const { build } = await import(process.env.ESBUILD_MODULE || "esbuild");
+const output = await mkdtemp(path.join(os.tmpdir(), "evidence-review-browser-"));
+execFileSync(path.join(frontend, "node_modules/.bin/tailwindcss"),
+  ["-i", "src/app/globals.css", "-o", path.join(output, "styles.css"), "--minify"], { cwd: frontend });
+const css = await readFile(path.join(output, "styles.css"));
+const bundle = await build({ stdin: { contents: `
+import { useState } from "react";
+import { createRoot } from "react-dom/client";
+import { ExtractionDrawer } from "@/components/extraction/extraction-drawer";
+function App() {
+  const [jobId, setJobId] = useState("job");
+  window.selectEvidenceJob = setJobId;
+  return <ExtractionDrawer jobId={jobId} open onOpenChange={() => {}} />;
+}
+createRoot(document.getElementById("root")).render(<App />);
+`, resolveDir: frontend, loader: "tsx" }, bundle: true, write: false, platform: "browser", format: "iife",
+  tsconfig: path.join(frontend, "tsconfig.json"),
+  define: { "process.env.NODE_ENV": '"development"', "process.env.NEXT_PUBLIC_API_URL": '""' },
+  plugins: [{ name: "fixture-link", setup(builder) {
+    builder.onResolve({ filter: /^next\/link$/ }, () => ({ path: "link", namespace: "fixture-link" }));
+    builder.onLoad({ filter: /.*/, namespace: "fixture-link" }, () => ({ contents:
+      "import {createElement} from 'react';export default function Link({href,children,...props}){return createElement('a',{...props,href},children);}",
+      loader: "js", resolveDir: frontend }));
+  } }],
+});
+const server = createServer((request, response) => {
+  if (request.url === "/") response.end('<html><head><link rel="stylesheet" href="/styles.css"></head><body><div id="root"></div><script src="/bundle.js"></script></body></html>');
+  else if (request.url === "/bundle.js") { response.setHeader("Content-Type", "application/javascript"); response.end(bundle.outputFiles[0].text); }
+  else if (request.url === "/styles.css") { response.setHeader("Content-Type", "text/css"); response.end(css); }
+  else { response.writeHead(404); response.end(); }
+});
+await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 const anchor = { document_hash: "a".repeat(64), parser_version: "4", structure_hash: "b".repeat(64),
   evidence_id: "paragraph-1", section_node_id: "section:1", block_id: "paragraph:1:0", physical_page_number: 1 };
 const sampleContent = { type: "doc", content: [{ type: "paragraph", attrs: { evidenceId: anchor.evidence_id },
@@ -73,23 +110,8 @@ try {
     const request = route.request(), path = new URL(request.url()).pathname;
     requests.push({ path, method: request.method(), body: request.postDataJSON() });
     const send = (json, status = 200) => route.fulfill({ status, json });
-    if (path === "/api/report-contracts") return send([]);
-    if (path === "/api/report-model-context") return send({ contract_id: "ontology-1", kind: "ontology",
-      family_id: "ontology", revision_no: 1, status: "published", definition: { classes: fixture.classes } });
-    if (path === "/api/ast-templates/coverage-doc-classes") return send({ capable: ["urn:Report"] });
-    if (path.endsWith("/training-pairs")) return send([]);
-    if (path.startsWith("/api/ast-templates/")) return send({ id: "fixture", name: "合成模板", version: "v2.2", status: "draft",
-      schema_json: fixture.template, sample_content_json: sampleContent, default_source_job_id: "job", default_source_filename: "来源 A.docx" });
-    if (path === "/api/extraction/jobs") return send([
-      { id: "job", source_filename: "来源 A.docx", status: "reviewing" },
-      { id: "second", source_filename: "来源 B.docx", status: "reviewing" },
-    ]);
-    if (/^\/api\/extraction\/jobs\/[^/]+$/.test(path)) return send({
-      id: path.split("/")[4], source_type: "word", source_mode: "template_default", status: "reviewing",
-    });
-    if (path === "/api/entities") return send({ items: [{ iri: "urn:doc:second", class_iri: "urn:Report",
-      label_zh: "来源 B.docx", properties_json: { job_id: "second" } }] });
-    if (path.endsWith("/annotated-document")) return send({ content: sampleContent, relationships: [], doc_class: null });
+    if (path.endsWith("/annotated-document")) return send({ source_type: "word", content: sampleContent,
+      filename: path.includes("/second/") ? "来源 B.docx" : "来源 A.docx", relationships: [], doc_class: null });
     if (path.endsWith("/reports")) return send([]);
     if (path.endsWith("/evidence/extract") || /\/annotation\/(rerun|resume)$/.test(path)) {
       return send({ job_id: "job", run_id: `run-${++executionNumber}`, status: "queued", has_checkpoint: true }, 202);
@@ -145,17 +167,15 @@ try {
   });
   page = await context.newPage();
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.goto((process.env.REPORTING_BROWSER_ORIGIN || "http://127.0.0.1:3107") + "/settings/ast-templates/fixture", { waitUntil: "networkidle" });
-  await page.getByRole("tab", { name: "源文档", exact: true }).click();
-  await page.getByRole("button", { name: "来源 A.docx", exact: true }).click();
+  await page.goto(`http://127.0.0.1:${server.address().port}`);
   const panel = page.getByRole("region", { name: "关系图谱识别结果", exact: true });
   const tree = panel.getByRole("region", { name: "关系图谱树", exact: true });
   const productionBranch = tree.locator('[aria-label="文档关系"] > ul > [data-predicate-iri="urn:hasProductionPlan"]');
   await expect(productionBranch.locator('[data-candidate-id="plan"] [data-candidate-id="batch"]')).toContainText("计划批量：12.00 kg");
   await expect(tree.locator('[data-document-class="urn:Report"]')).toHaveCount(1);
   await expect(tree.locator('[aria-label="文档关系"] > ul > li')).toHaveCount(2);
-  await expect(tree.locator('[data-predicate-iri="urn:previousPlan"]')).toContainText("未识别到关系");
-  await expect(tree.locator('[data-predicate-iri="urn:title"]')).toContainText("未识别到值");
+  await expect(tree.locator('[data-predicate-iri="urn:previousPlan"]')).toContainText("尚无分支处理记录");
+  await expect(tree.locator('[data-predicate-iri="urn:title"]')).toContainText("尚无已识别值");
   await expect(tree.locator('[data-candidate-id="one"] [data-candidate-id="plan"]')).toHaveCount(0);
   await expect(tree.locator('[data-unassociated]')).not.toHaveAttribute("open");
   await expect(tree.locator('[data-document-records]')).toHaveCount(0);
@@ -235,7 +255,7 @@ try {
   const waitingCoverage = new Promise((resolve) => { coverageHeld = resolve; });
   await panel.getByRole("button", { name: "刷新状态", exact: true }).click();
   await waitingCoverage;
-  await page.getByRole("button", { name: /来源 B.docx/ }).click();
+  await page.evaluate(() => window.selectEvidenceJob("second"));
   await expect(tree.locator('[data-candidate-id="two"]')).toHaveCount(1);
   await expect(tree.locator('[data-document-class] > p').first()).toHaveText("来源 B.docx");
   releaseCoverage(); holdCoverage = false;
@@ -250,7 +270,7 @@ try {
   await dialog.getByRole("button", { name: "确认拒绝", exact: true }).click();
   await waitingReview;
   // Exercise a document switch during a pending mutation, even with the modal open.
-  await page.getByRole("button", { name: "来源 A.docx", exact: true, includeHidden: true }).dispatchEvent("click");
+  await page.evaluate(() => window.selectEvidenceJob("job"));
   await expect(productionBranch.locator('[data-candidate-id="plan"]')).toBeVisible();
   await expect(tree.locator('[data-candidate-id="one"]')).toHaveCount(0);
   await expect(dialog).toHaveCount(0);
@@ -270,7 +290,7 @@ try {
   await expect(tree.locator('[data-document-class]')).toHaveCount(1);
   await expect(tree.locator('[data-document-records]')).toHaveCount(0);
   await expect(tree.getByText("同名文档", { exact: true })).toHaveCount(0);
-  await expect(productionBranch).toContainText("未识别到关系");
+  await expect(productionBranch).toContainText("尚无分支处理记录");
   await expect(productionBranch.locator('[data-candidate-id="unbound-plan"]')).toHaveCount(0);
   await expect(tree.locator('[data-unassociated]')).not.toHaveAttribute("open");
   await tree.locator('[data-unassociated] > summary').click();
@@ -318,7 +338,7 @@ try {
     pct: 0, degraded: false, started_at: Date.now() / 1000 - 20, ...event });
   const beforeEvidence = evidenceReads(), beforeCoverage = coverageReads();
   await emitProgress({ data_revision: 1, tasks_processed: 1 });
-  await expect(page.getByRole("button", { name: "暂停并保存结果", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "暂停识别", exact: true })).toBeVisible();
   const modelRequest = { request_id: "request-1", logical_call_id: "call-1", attempt: 1,
     stage: "entity_type_verification", created_at: Date.now() / 1000 - 3,
     deadline_at: Date.now() / 1000 + 40 };
@@ -346,7 +366,7 @@ try {
   await page.waitForTimeout(2200);
   assert.equal(evidenceReads(), settledReads, "clock ticks must not refetch graph data");
   await emitProgress({ annotation_stage: "complete", status: "done", data_revision: 11 });
-  await expect(page.getByRole("button", { name: "暂停并保存结果", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "暂停识别", exact: true })).toHaveCount(0);
   await expect.poll(coverageReads).toBeGreaterThan(beforeCoverage);
   console.log("PASS: incremental SSE refresh is throttled, coverage waits for completion, and the graph stays interactive");
   await panel.getByText("识别进度与工具", { exact: true }).click();
@@ -355,17 +375,20 @@ try {
   const retryButton = panel.getByRole("button", { name: "重试失败任务", exact: true });
   const extractionRequests = () => requests.filter((entry) => entry.path.endsWith("/evidence/extract"));
   await continueButton.click();
-  await expect(page.getByRole("button", { name: "暂停并保存结果", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "暂停识别", exact: true })).toBeVisible();
   await expect(continueButton).toBeDisabled();
   await expect(retryButton).toBeDisabled();
   assert.equal(extractionRequests().length, 1);
   assert.deepEqual(extractionRequests()[0].body, { pause_after: 8 });
-  await emitProgress({ run_id: "run-1", tasks_processed: 18, model_calls: 24, data_revision: 12 });
-  await expect(page.getByRole("status").filter({ hasText: "已处理 18 项" })).toBeVisible();
-  await page.getByRole("button", { name: "暂停并保存结果", exact: true }).click();
+  await emitProgress({ run_id: "run-1", pct: 50, tasks_processed: 18, model_calls: 24, data_revision: 12 });
+  await expect(page.getByText("（50%）", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "暂停识别", exact: true }).click();
   assert.equal(requests.filter((entry) => entry.path.endsWith("/annotation/pause")).length, 1);
   await emitProgress({ run_id: "run-1", annotation_stage: "paused", status: "paused",
     has_checkpoint: true, can_resume: true, data_revision: 13 });
+  await expect(page.getByRole("button", { name: "暂停识别", exact: true })).toHaveCount(0);
+  await panel.getByText("识别进度与工具", { exact: true }).click();
+  await panel.getByLabel("识别操作理由", { exact: true }).fill("已检查模型与失败原因");
   await expect(continueButton).toBeEnabled();
   await expect(retryButton).toBeEnabled();
   await retryButton.click();
@@ -375,6 +398,8 @@ try {
     retry_failed: true, reason: "已检查模型与失败原因", pause_after: 8,
   });
   await emitProgress({ run_id: "run-2", annotation_stage: "complete", status: "done", data_revision: 14 });
+  await expect(page.getByRole("button", { name: "暂停识别", exact: true })).toHaveCount(0);
+  await panel.getByText("识别进度与工具", { exact: true }).click();
   await expect(continueButton).toBeEnabled();
   assert.equal(executionNumber, 2);
   console.log("PASS: continue/retry accept 202, subscribe to one run, disable duplicate starts, and share pause/terminal refresh");
@@ -386,4 +411,6 @@ try {
   releaseCoverage?.();
   releaseReview?.();
   await browser.close();
+  await new Promise((resolve) => server.close(resolve));
+  await rm(output, { recursive: true, force: true });
 }

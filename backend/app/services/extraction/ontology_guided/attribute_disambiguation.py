@@ -86,7 +86,7 @@ def _field(index, record, label_unit, label_span, value_unit=None, value_span=No
 
 
 def extract_attribute_fields(
-    index, *, property_labels: Iterable[str], reading_groups=(),
+    index, *, property_labels: Iterable[str], reading_groups=(), include_unmapped=False,
 ) -> tuple[AttributeField, ...]:
     """Read labelled short fields with exact source spans; do not guess bare identifiers."""
     known = {_normalized(label) for label in property_labels}
@@ -105,7 +105,8 @@ def extract_attribute_fields(
         record_fields = []
         for unit in record.source_units:
             for match in _FIELD.finditer(unit.text):
-                if not _known_label(match.group(1), known) or len(match.group(2).strip()) > 160:
+                if ((not include_unmapped and not _known_label(match.group(1), known))
+                        or len(match.group(2).strip()) > 160):
                     continue
                 start, end = _trimmed_span(unit.text)
                 only = (record.kind != "table_row" and len(record.source_units) == 1
@@ -123,7 +124,7 @@ def extract_attribute_fields(
                 if len(value_unit.text.strip()) > 160:
                     continue
                 for header in record.header_units:
-                    if (_known_label(header.text.strip(), known)
+                    if ((include_unmapped or _known_label(header.text.strip(), known))
                             and index.tables.columns(header) & index.tables.columns(value_unit)):
                         record_fields.append(_field(
                             index, record, header, (0, len(header.text)),

@@ -169,6 +169,29 @@ function loadAnalysisComponent(name) {
   return exports;
 }
 
+test("saved discovery panel separates paid progress, pending output and accepted facts", () => {
+  const value = artifact([], []);
+  value.graph.entities = [root];
+  value.discovery = { completed_calls: 3, inflight_calls: 1, candidate_count: 2, items: [
+    { id: "pending", kind: "entity", label: "对象甲", state: "pending", class_iri: "urn:Device",
+      predicate_iri: null, subject_id: null, object_ids: [], reasons: ["type: 原文缺少角色限定"],
+      sources: [{ text: "对象甲", selection_ref: "source:valid" }] },
+    { id: "invalid", kind: "property", label: "虚构字段", state: "rejected", class_iri: null,
+      predicate_iri: "urn:field", subject_id: "pending", object_ids: [], reasons: ["source_excerpt_mismatch"],
+      sources: [{ text: "虚构字段", selection_ref: null }] },
+  ] };
+  const { SavedDiscoveryPanel } = loadAnalysisComponent("graph-analysis-panel");
+  const html = renderToStaticMarkup(React.createElement(SavedDiscoveryPanel, { artifact: value, onEvidence() {} }));
+  assert.match(html, /调用有进展/);
+  assert.match(html, /候选有产出/);
+  assert.match(html, /实体已登记 0 个/);
+  assert.match(html, /关系及属性 0 条/);
+  assert.match(html, /type: 原文缺少角色限定/);
+  assert.match(html, /引用未通过定位/);
+  assert.equal((html.match(/定位候选原文/g) || []).length, 1);
+  assert.equal(buildTargetGraph(value, new Set([entityRefKey(root)])).edges.length, 0);
+});
+
 test("candidate phase keeps unverified document edges dashed even when supported references are present", () => {
   const value = candidateArtifact([{ ...target, completed: true }]);
   const graph = buildTargetGraph(value, new Set([entityRefKey(root)]));

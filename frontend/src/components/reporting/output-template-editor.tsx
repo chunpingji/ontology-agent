@@ -400,13 +400,10 @@ export function OutputTemplateEditor({ schema, templateId, schemaHash, saving, o
 
   return <TemplateSlotEditor
     recognitionMode={recognitionMode}
-    schema={{ template_id: templateId ?? "new", doc_no: draft.doc_no, sections: [] }}
-    mode={templateId ? "edit" : "create"}
     initialTab={initialTab}
     templateId={templateId} meta={meta} versions={versions} onVersionSwitch={onVersionSwitch}
     onMetaSaved={onMetaSaved} iriPattern={meta?.iriPattern ?? draft.source_slots[0]?.class_iri}
     sampleContentJson={samplePreview} sampleText={sampleText}
-    saving={saving} onSave={() => onSave(draft)} onCancel={onCancel}
     outputEditor={{
       actions: <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b bg-background px-4 py-3">
         <p className="text-xs text-muted-foreground">{templateId

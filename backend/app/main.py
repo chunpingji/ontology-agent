@@ -157,7 +157,7 @@ async def lifespan(app: FastAPI):
     # best-effort wake signal with periodic durable queue/expired-lease sweeps.
     import asyncio
 
-    from app.services.document_analysis.execution import DocumentAnalysisDispatcher
+    from app.services.document_analysis.dispatcher import DocumentAnalysisDispatcher
     from app.services.fact_commit import recover_evidence_commits
 
     recovery_task = asyncio.create_task(

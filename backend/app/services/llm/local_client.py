@@ -148,6 +148,7 @@ async def _consume_response(connection, kwargs):
     if not kwargs.get("stream"):
         return response
     final = None
+    completed_items = {}
     async with response as stream:
         async for event in stream:
             check_cancelled()
@@ -157,12 +158,20 @@ async def _consume_response(connection, kwargs):
             }:
                 observe("delta", channel=("thinking" if "reasoning" in event.type else "output"),
                         text=event.delta)
+            elif event.type == "response.output_item.done":
+                completed_items[event.output_index] = event.item
             elif event.type in {"response.completed", "response.failed", "response.incomplete"}:
                 final = event.response
             elif event.type == "error":
                 raise StructuredModelError("model_stream_error")
     if final is None:
         raise StructuredModelError("model_stream_incomplete")
+    # Some Responses gateways send complete items only as item.done events and
+    # leave the terminal response's output empty. The item is still provider data.
+    if final.status == "completed" and not final.output and completed_items:
+        final = final.model_copy(update={
+            "output": [completed_items[index] for index in sorted(completed_items)],
+        })
     return final
 
 
@@ -263,6 +272,7 @@ def _responses_usage(usage):
 def responses_create(
     client, *, input_items: list[dict], instructions: str,
     model: str | None = None,
+    stream: bool = False,
     tools: list[dict] | None = None,
     tool_choice: str | dict | None = None,
     text_format: dict | None = None,
@@ -303,7 +313,7 @@ def responses_create(
             kwargs[name] = value
     if text_format is not None:
         kwargs["text"] = {"format": text_format}
-    if runtime.get().get("on_harness_event") is not None:
+    if stream or runtime.get().get("on_harness_event") is not None:
         kwargs["stream"] = True
 
     async def run():

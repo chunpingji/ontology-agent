@@ -186,6 +186,32 @@ def test_entity_identifier_does_not_bypass_source_field_role(tmp_path):
     assert targets(frozen, options) == []
 
 
+def test_name_remains_non_identity_without_a_matching_name_slot(tmp_path):
+    proposal, options, quote = fixture(tmp_path, "S-001")
+    owner = options["card"].class_cards[0]
+    owner.properties = [p for p in owner.properties if p.iri != "urn:name"]
+    proposal["properties"][0].update(
+        value_quote=quote("样件甲"), field_support=[quote("名称")],
+    )
+    frozen = freeze(proposal, options)
+    assert frozen.claim_issues == {"property": ["identity_field_role_mismatch"]}
+    assert {row.payload.local_id for row in targets(frozen, options)} == {"entity"}
+
+
+def test_explicitly_declared_name_identity_still_reaches_semantic_verification(tmp_path):
+    proposal, options, quote = fixture(tmp_path, "S-001")
+    owner = options["card"].class_cards[0]
+    owner.properties = [p for p in owner.properties if p.iri != "urn:name"]
+    serial = next(p for p in owner.properties if p.iri == "urn:serial")
+    serial.label = "名称"
+    proposal["properties"][0].update(
+        value_quote=quote("样件甲"), field_support=[quote("名称")],
+    )
+    frozen = freeze(proposal, options)
+    assert frozen.claim_issues == {}
+    assert {row.payload.local_id for row in targets(frozen, options)} == {"entity", "property"}
+
+
 def test_missing_marker_outside_fact_permission_does_not_grant_missing_observation(tmp_path):
     proposal, options, quote = fixture(tmp_path)
     evidence_id = quote("N/A", 1)["evidence_id"]

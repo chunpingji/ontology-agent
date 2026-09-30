@@ -82,6 +82,7 @@ def review_adapter(source, monkeypatch, **options):
     values = setup_adapter(source, monkeypatch, **options)
     adapter, _task, context, *_ = values
     adapter.record_discovery = RecordDiscoveryPolicy(graph_phase="evidence_review")
+    adapter.max_output_tokens = 16384
     context.tool_inputs["graph_phase"] = "evidence_review"
     return values
 
@@ -343,6 +344,7 @@ def test_relation_group_retains_rejection_but_diagnostic_failure_does_not_block_
     context.tool_inputs["entity_nodes"] = [n.model_dump(mode="json") for n in nodes.values()]
     context.tool_inputs["graph_phase"] = "evidence_review"
     adapter.record_discovery = RecordDiscoveryPolicy(graph_phase="evidence_review")
+    adapter.max_output_tokens = 16384
     if failure == "semantic":
         transport = local_client.responses_create
 

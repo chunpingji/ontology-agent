@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { DocumentAnalysisPanel } from "@/components/analysis/document-analysis-panel";
@@ -58,7 +59,14 @@ export function AnalysisTabs() {
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   };
 
-  return (
+  if (activeTab === "graph-analysis") return <GraphAnalysisPanel />;
+
+  return <>
+    <div className="mb-1 flex items-center justify-between">
+      <h1 className="text-xl font-bold">应用分析</h1>
+      <Link href="/approvals" className="text-sm text-primary hover:underline">前往审批中心 →</Link>
+    </div>
+    <p className="mb-5 text-sm text-muted-foreground">风险推理、图谱查询，以及由本体类型指引的 Word 分层元数据与关系图谱分析。</p>
     <Tabs value={activeTab} onValueChange={handleTabChange}>
       <TabsList className="mb-5">
         {TABS.map((tab) => (
@@ -85,9 +93,6 @@ export function AnalysisTabs() {
       <TabsContent value="document">
         <DocumentAnalysisPanel />
       </TabsContent>
-      <TabsContent value="graph-analysis">
-        <GraphAnalysisPanel />
-      </TabsContent>
     </Tabs>
-  );
+  </>;
 }
