@@ -49,7 +49,7 @@ def test_range_projection_is_lossless_and_rejects_ambiguous_or_mixed_unit_values
 def deep_input(tmp_path):
     doc = Document()
     for text in (
-        "记录甲描述本次安排乙。",
+        "本文描述记录甲；记录甲描述本次安排乙。",
         "本次安排乙涉及对象丙。",
         "对象丙的负载范围为3.8- 6.6kg。",
         "补充确认：对象丙关联对象丁。",
@@ -134,7 +134,15 @@ class DeepModel:
                 "unowned_fields": [],
                 "document_field_ids": [],
                 "document_source_fields": [],
-                "relation_hints": [],
+                "relation_hints": [] if supplemental else [{
+                    "subject_id": subject, "object_id": obj, "label": label,
+                    "evidence": [quote(payload, text)["source_id"]],
+                    "polarity": "positive", "conditions": [],
+                } for subject, obj, label, text in (
+                    ("document", "A", "r1", "本文描述记录甲"),
+                    ("A", "B", "r2", "记录甲描述本次安排乙"),
+                    ("B", "C", "r3", "本次安排乙涉及对象丙"),
+                )],
                 "complete": True,
             }
         elif stage == "type_alignment":
@@ -149,7 +157,7 @@ class DeepModel:
                     for entity in payload["entities"]
                 }
             }
-        elif stage == "assertion_alignment":
+        elif stage == "property_alignment":
             fields = {f["field_id"]: f for f in payload["subject"]["fields"]}
             response = {
                 "properties": {
@@ -168,21 +176,14 @@ class DeepModel:
                     }
                     for field_id in payload["property_field_ids"]
                 },
-                "relations": [
-                    {
-                        "object_id": obj["entity_id"],
-                        "predicate_iri": rel["iri"],
-                        "confidence": 0.96,
-                        "evidence": [*payload["subject"]["evidence"], *obj["evidence"]],
-                        "polarity": "positive",
-                        "conditions": [],
-                        "reason": "待核对的路径",
-                    }
-                    for obj in payload["objects"]
-                    for rel in payload["card"]["relations"]
-                ],
-                "complete": True,
             }
+        elif stage == "relation_alignment":
+            response = {"proposals": {item["candidate_id"]: {
+                "verdict": "proposed", "evidence": item["clue_sources"],
+                "polarity": item["polarity_hint"], "conditions": item["condition_hints"],
+                "participation": None, "selection": None, "timing": None,
+                "missing_context": "none", "reason": "按明确原文线索提出路径", "confidence": 0.96,
+            } for item in payload["items"]}}
         else:
             assert stage in {"entity_review", "evidence_review"}
             response = {
@@ -279,12 +280,21 @@ def test_unconfirmed_endpoint_preserves_value_and_owner_without_deriving_bounds(
     assert not result.state.get("properties")
 
 
-def test_later_window_confirms_subject_and_consumes_saved_range_without_refinding_it(deep_input):
-    result = runner(deep_input, DeepModel("unresolved"), all_windows=True)
+def test_later_confirmation_consumes_saved_range_without_refinding_it(deep_input):
+    model = DeepModel("unresolved")
+    result = runner(deep_input, model, all_windows=True)
+    owner = next(row for row in result.state["entities"].values() if row["role"] == "C")
+    before = deepcopy(result.state["fields"])
+    discoveries = sum(stage == "discover" for stage, _ in model.calls)
+    # Apply the explicit endpoint-review result; mere later co-occurrence cannot confirm it.
+    result.commit({"entities": {owner["id"]: {**owner, "state": "accepted"}}})
+    result.run()
     props = list(result.state["properties"].values())
     assert len(props) == 2 and all(p["state"] == "accepted" for p in props)
     assert {p["value"] for p in props} == {"3.8", "6.6"}
     assert result.state["cursor"]["main"]["scope_complete"]
+    assert result.state["fields"] == before
+    assert sum(stage == "discover" for stage, _ in model.calls) == discoveries
 
 
 def test_invalid_owner_does_not_discard_exact_raw_observation(deep_input):
@@ -298,17 +308,17 @@ def test_invalid_owner_does_not_discard_exact_raw_observation(deep_input):
     assert not any(
         observation["field_id"] in e["field_ids"] for e in result.state["entities"].values()
     )
-    assert not result.state["windows"][observation["window_id"]]["complete"]
+    assert not result.state["windows"][observation["window_id"]]["discovery_complete"]
 
 
 def test_model_cannot_derive_bounds_for_an_unconfirmed_subject(deep_input):
-    result = runner(deep_input, DeepModel("unresolved", forged_component=True))
+    model = DeepModel("unresolved", forged_component=True)
+    result = runner(deep_input, model)
     assert not result.state.get("properties")
-    assert any(
-        o["reason"] == "range_projection_requires_confirmed_subject_and_exact_range"
-        for row in result.state["observations"].values()
-        for o in row.get("alignment_outcomes", {}).values()
-    )
+    assert not any(stage == "property_alignment" for stage, _ in model.calls)
+    work = [row for row in result.state["work"].values() if row["kind"] == "property_alignment"]
+    assert work and all(row["status"] == "waiting" for row in work)
+    assert all(row["reason_code"] == "type_or_constraint_unresolved" for row in work)
 
 
 def test_range_cannot_become_two_unrelated_values_of_the_same_predicate(deep_input):
@@ -316,7 +326,7 @@ def test_range_cannot_become_two_unrelated_values_of_the_same_predicate(deep_inp
 
     def model(stage, payload, schema):
         answer = original(stage, payload, schema)
-        if stage == "assertion_alignment":
+        if stage == "property_alignment":
             for choice in answer["properties"].values():
                 for mapping in choice["mappings"]:
                     mapping["predicate_iri"] = "urn:depth:p"

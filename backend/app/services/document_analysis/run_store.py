@@ -1340,6 +1340,9 @@ class DocumentAnalysisRunStore:
         run_fingerprint: str | None = None,
         stop_reason: str | None = None,
         expires_at: datetime | None = None,
+        work_version: int | None = None,
+        request_version: int | None = None,
+        ranking_version: int | None = None,
     ) -> DocumentAnalysisRun:
         """CAS the run head after a fenced stage transition."""
 
@@ -1372,6 +1375,15 @@ class DocumentAnalysisRunStore:
                 values["stop_reason"] = stop_reason
             if expires_at is not None:
                 values["expires_at"] = expires_at
+            for name, value in (("work_version", work_version),
+                                ("request_version", request_version),
+                                ("ranking_version", ranking_version)):
+                if value is not None:
+                    if type(value) is not int or value not in {
+                        getattr(run, name), getattr(run, name) + 1,
+                    }:
+                        raise HeadConflict("invalid version advance", field=name)
+                    values[name] = value
             self._validate_distinct_ids(run, values)
             if execution_status in LEASE_RELEASING_EXECUTION_STATUSES:
                 values["finished_at"] = self._clock()

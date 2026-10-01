@@ -195,7 +195,8 @@ def run(args):
                     invoke=lambda stage, payload, schema: invoke(
                         case, "full_engine", stage, payload, schema),
                     should_stop=lambda: monotonic() - started > args.seconds_limit,
-                    max_input_tokens=policy["max_input_tokens"], rank=rank, lookup=query,
+                    max_request_bytes=policy["execution_policy"]["wire_bytes_per_call"],
+                    rank=rank, lookup=query, policy=policy,
                 )
                 row = {"case": case, "phase": "full_engine", "error": None}
                 try:

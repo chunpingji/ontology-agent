@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, ListTodo, Loader2, Pause, Play, RefreshCw } from "lucide-react";
+import { ListTodo, Loader2, Pause, Play, Plus, RefreshCw } from "lucide-react";
 
 import { DocumentAnalysisHistory } from "@/components/analysis/document-analysis-history";
+import { GraphAnalysisUpload } from "@/components/analysis/graph-analysis-upload";
 import { SourceHarnessPanel } from "@/components/analysis/source-harness-panel";
 import { TargetGraphCanvas } from "@/components/analysis/target-graph-canvas";
 import { WordViewer } from "@/components/extraction/word-viewer";
@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   controlDocumentAnalysisRun, createReportDocumentRun, getDocumentAnalysisRun,
   getDocumentAnalysisSource, getDocumentAnalysisSourceSelection, getDocumentAnalysisTargetGraph,
@@ -42,6 +43,7 @@ export function GraphAnalysisPanel() {
   const [lookupError, setLookupError] = useState<{ iri: string; message: string } | null>(null);
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
+  const [sourceMode, setSourceMode] = useState(documentIri ? "report" : "upload");
   const [reload, setReload] = useState(0);
   const [harnessTaskCount, setHarnessTaskCount] = useState<{ runId: string; count: number | null } | null>(null);
   const [openTaskDrawerRunId, setOpenTaskDrawerRunId] = useState<string | null>(null);
@@ -58,15 +60,9 @@ export function GraphAnalysisPanel() {
       ? current : { runId: activeRunId, count });
   }, [activeRunId]);
   const searching = Boolean(documentIri && !explicitRunId && latest?.iri !== documentIri && lookupError?.iri !== documentIri);
-  const documentParams = new URLSearchParams(params.toString());
-  documentParams.set("tab", "document");
-  if (activeRunId) documentParams.set("documentRun", activeRunId);
-  documentParams.delete("run");
-  documentParams.delete("job_id");
-  documentParams.delete("node_id");
 
   useEffect(() => {
-    if (activeRunId) return;
+    if (activeRunId || sourceMode !== "report") return;
     const controller = new AbortController();
     void listDocuments(undefined, 500, controller.signal).then((result) => {
       if (controller.signal.aborted) return;
@@ -74,7 +70,7 @@ export function GraphAnalysisPanel() {
       setDocumentError(null);
     }).catch((error: unknown) => { if (!controller.signal.aborted) setDocumentError(message(error)); });
     return () => controller.abort();
-  }, [reload, activeRunId]);
+  }, [reload, activeRunId, sourceMode]);
 
   useEffect(() => {
     if (!documentIri || explicitRunId) return;
@@ -97,6 +93,8 @@ export function GraphAnalysisPanel() {
     if (iri) next.set("documentIri", iri); else next.delete("documentIri");
     if (runId) next.set("documentRun", runId); else next.delete("documentRun");
     next.delete("run");
+    next.delete("job_id");
+    next.delete("node_id");
     router.replace(`${pathname}?${next}`, { scroll: false });
     setStartError(null);
   };
@@ -108,7 +106,9 @@ export function GraphAnalysisPanel() {
     setStarting(true);
     setStartError(null);
     try {
-      const receipt = await createReportDocumentRun(documentIri, crypto.randomUUID(), controller.signal);
+      const requestKey = globalThis.crypto?.randomUUID?.()
+        ?? `graph-report:${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const receipt = await createReportDocumentRun(documentIri, requestKey, controller.signal);
       if (!controller.signal.aborted) select(documentIri, receipt.recognition_run_id);
     } catch (error) {
       if (!controller.signal.aborted) setStartError(message(error));
@@ -123,7 +123,10 @@ export function GraphAnalysisPanel() {
         <p className="text-xs text-muted-foreground">沿文档根逐层查看实体、属性与原文依据。</p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <Button asChild size="sm" variant="outline"><Link href={`${pathname}?${documentParams}`} prefetch={false}><ArrowLeft className="size-3.5" />返回文档分析</Link></Button>
+        {activeRunId && <Button size="sm" variant="outline" disabled={starting} onClick={() => {
+          setSourceMode("upload");
+          select("", null);
+        }}><Plus className="size-3.5" />新建分析</Button>}
         <Button size="sm" variant="outline" onClick={() => setReload((value) => value + 1)}><RefreshCw className="size-3.5" />刷新结果</Button>
         {activeRunId && currentTaskCount !== null && <Button variant="outline" size="icon" className="relative" aria-label={`人工确认任务，待处理 ${currentTaskCount} 项`} title="人工确认任务" onClick={() => onTaskDrawerOpenChange(true)}>
           <ListTodo className="size-4" />
@@ -131,22 +134,35 @@ export function GraphAnalysisPanel() {
         </Button>}
       </div>
     </header>
-    {!activeRunId && <Card>
+    {!activeRunId && <Card aria-label="创建图谱分析">
+      <CardHeader className="pb-3"><CardTitle className="text-base">选择文档进行图谱分析</CardTitle></CardHeader>
       <CardContent className="space-y-3 p-4">
-        <div className="flex flex-wrap items-end gap-3">
-          <label className="min-w-60 flex-1 space-y-1.5 text-sm"><span>报告文档</span>
-            <select value={documentIri} disabled={starting} onChange={(event) => select(event.target.value, null)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-              <option value="">选择已上传的报告</option>
-              {documentIri && !documents.some((document) => document.iri === documentIri) && <option value={documentIri}>{documentIri.split("#").at(-1)}</option>}
-              {documents.map((document) => <option key={document.iri} value={document.iri}>{document.label_zh || document.label_en || document.iri.split("#").at(-1)}</option>)}
-            </select>
-          </label>
-          <Button variant="outline" aria-label="刷新报告列表" onClick={() => setReload((value) => value + 1)}><RefreshCw className="size-4" /></Button>
-          <Button disabled={!documentIri || starting || searching} onClick={() => void start()}>{starting ? <Loader2 className="size-4 animate-spin" /> : <Play className="size-4" />}{activeRunId ? "新建分析" : "开始分析"}</Button>
-        </div>
-        {searching && <p className="text-sm text-muted-foreground" role="status">正在查找报告的现有运行…</p>}
-        {[documentError, lookupError?.iri === documentIri ? lookupError.message : null, startError].filter(Boolean).map((error, index) => <p key={index} role="alert" className="break-words text-sm text-destructive">{error}</p>)}
-        {!activeRunId && !searching && <p className="text-sm text-muted-foreground">点击“开始分析”启动识别；切换报告、查看历史和刷新页面只读取结果。</p>}
+        <Tabs value={sourceMode} onValueChange={setSourceMode}>
+          <TabsList aria-label="图谱分析文档来源" className="mb-4">
+            <TabsTrigger value="upload" disabled={starting}>上传新文档</TabsTrigger>
+            <TabsTrigger value="report" disabled={starting}>选择已有报告</TabsTrigger>
+          </TabsList>
+          <TabsContent value="upload">
+            <GraphAnalysisUpload starting={starting} onStartingChange={setStarting} onCreated={(runId) => select("", runId)} />
+          </TabsContent>
+          <TabsContent value="report" className="space-y-3">
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="min-w-60 flex-1 space-y-1.5 text-sm">
+                <label htmlFor="graph-analysis-report">报告文档</label>
+                <select id="graph-analysis-report" value={documentIri} disabled={starting} onChange={(event) => select(event.target.value, null)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                  <option value="">选择已上传的报告</option>
+                  {documentIri && !documents.some((document) => document.iri === documentIri) && <option value={documentIri}>{documentIri.split("#").at(-1)}</option>}
+                  {documents.map((document) => <option key={document.iri} value={document.iri}>{document.label_zh || document.label_en || document.iri.split("#").at(-1)}</option>)}
+                </select>
+              </div>
+              <Button variant="outline" aria-label="刷新报告列表" disabled={starting} onClick={() => setReload((value) => value + 1)}><RefreshCw className="size-4" /></Button>
+              <Button disabled={!documentIri || starting || searching} onClick={() => void start()}>{starting ? <Loader2 className="size-4 animate-spin" /> : <Play className="size-4" />}{starting ? "正在创建分析" : "开始分析"}</Button>
+            </div>
+            {searching && <p className="text-sm text-muted-foreground" role="status">正在查找报告的现有运行…</p>}
+            {[documentError, lookupError?.iri === documentIri ? lookupError.message : null, startError].filter(Boolean).map((error, index) => <p key={index} role="alert" className="break-words text-sm text-destructive">{error}</p>)}
+          </TabsContent>
+        </Tabs>
+        <p className="text-xs text-muted-foreground">选择文件和本体类型不会启动任务；点击“开始分析”启动识别。切换报告、查看历史和刷新页面只读取结果。</p>
       </CardContent>
     </Card>}
     {activeRunId && <GraphAnalysisRunView key={activeRunId} runId={activeRunId} refreshRevision={reload} taskDrawerOpen={taskDrawerOpen} onTaskDrawerOpenChange={onTaskDrawerOpenChange} onTaskCountChange={onTaskCountChange} />}

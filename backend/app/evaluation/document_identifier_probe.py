@@ -22,7 +22,7 @@ from app.services.document_harness.model import call_model, freeze_policy
 from app.services.document_harness.ontology import catalog_from_graph, freeze_catalog
 from app.services.document_harness.protocols import INSTRUCTIONS, Discovery, stage_schema
 from app.services.document_harness.ranking import GUIDANCE_RULE, reading_card
-from app.services.document_harness.source import Window, build_windows, reference
+from app.services.document_harness.source import Window, reference
 from app.services.extraction.document_ir import DocumentIR, build_document_ir
 from app.services.extraction.docx_structure import parse_docx_structure
 from app.services.llm.model_runtime import model_scope
@@ -668,7 +668,8 @@ def main():
             invoke=invoke,
             save=save,
             should_stop=lambda: False,
-            max_input_tokens=policy["max_input_tokens"],
+            max_request_bytes=policy["execution_policy"]["wire_bytes_per_call"],
+            policy=policy,
         )
         runtime.windows = [window]
         try:
@@ -737,7 +738,8 @@ def main():
                 invoke=invoke,
                 save=lambda _: None,
                 should_stop=lambda: True,
-                max_input_tokens=policy["max_input_tokens"],
+                max_request_bytes=policy["execution_policy"]["wire_bytes_per_call"],
+                policy=policy,
             )
             runtime.windows = [window]
             runtime.run()  # Initialise only; supplied candidates below are test hypotheses.
@@ -806,7 +808,16 @@ def main():
             runtime.should_stop = lambda: False
             try:
                 if attributes:
-                    runtime.evidence_review(window)
+                    from app.services.document_harness.work_execution import (
+                        review_assertions,
+                        review_for,
+                    )
+
+                    changes = {}
+                    for candidate in properties.values():
+                        review_for(runtime, changes, "properties", candidate)
+                    runtime.commit(changes)
+                    review_assertions(runtime, list(runtime.state["work"].values()), window)
                     rows = list(runtime.state["properties"].values())
                 else:
                     runtime.entity_review(window)
@@ -872,13 +883,46 @@ def main():
                 invoke=invoke,
                 save=lambda _: None,
                 should_stop=lambda: False,
-                max_input_tokens=policy["max_input_tokens"],
+                max_request_bytes=policy["execution_policy"]["wire_bytes_per_call"],
+                policy=policy,
             )
-            runtime.state["cursor"] = {
-                "main": {"window_index": len(build_windows(ir)), "stage": "coreference_review"}
-            }
+            from app.services.document_harness.coreference import review_coreferences
+            from app.services.document_harness.work import make_work
+
+            # These pair controls supply the tested endpoints as fixture premises.
+            # They do not exercise discovery or ask the online planner for all pairs.
+            pair = [e["id"] for e in state["entities"].values() if e["id"] != "document"]
+            if len(pair) != 2:
+                raise ValueError("identity_control_requires_one_explicit_pair")
+            work = make_work(
+                "coreference_review",
+                {
+                    "left_mention_id": pair[0],
+                    "right_mention_id": pair[1],
+                    "clue_refs": [
+                        reference(ir, unit.evidence_id, 0, len(unit.text))
+                        for unit in ir.evidence_units
+                        if unit.text.strip()
+                    ],
+                },
+                runtime.state,
+                runtime.catalog,
+                runtime.execution_policy,
+            )
+            runtime.commit(
+                {
+                    "work": {work["id"]: work},
+                    "cursor": {
+                        "main": {
+                            "active_window_id": None,
+                            "active_batch": None,
+                            "stage": "coreference_review",
+                        }
+                    },
+                }
+            )
             try:
-                runtime.run()
+                review_coreferences(runtime, work_rows=[work])
                 decisions = list(runtime.state.get("coreferences", {}).values())
                 summary[name] = {
                     "expected": expected,

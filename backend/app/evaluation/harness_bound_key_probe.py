@@ -190,7 +190,7 @@ def check_bound_value(subject, predicate, value):
 
 
 def guard_answer(stage, payload, answer):
-    if stage == "assertion_alignment":
+    if stage == "property_alignment":
         fields = {f["field_id"]: f for f in payload["subject"]["fields"]}
         for key, response in answer.properties.items():
             for mapping in response.mappings:
@@ -201,7 +201,7 @@ def guard_answer(stage, payload, answer):
         for candidate in payload["candidates"]:
             if (candidate["kind"] == "properties"
                     and answer.judgments[candidate["id"]].verdict == "accepted"):
-                check_bound_value(candidate["subject"], candidate["predicate_iri"],
+                check_bound_value(candidate["subject"], candidate["predicate_definition"]["iri"],
                                   candidate["value"])
 
 
@@ -236,7 +236,7 @@ class BoundEngine(Engine):
 
     def call(self, stage, payload, schema):
         provided = deepcopy(payload) if self.carry_bindings else without_bindings(payload)
-        if self.carry_bindings and stage in ("assertion_alignment", "evidence_review"):
+        if self.carry_bindings and stage in ("property_alignment", "evidence_review"):
             provided["binding_review_policy"] = DOWNSTREAM_RULE
         answer = super().call(stage, provided, schema)
         try:
@@ -376,7 +376,7 @@ def main():
             engine = BoundEngine(ir=ir, catalog=catalog, state=state, invoke=invoke,
                                  save=lambda _: None, should_stop=lambda: False,
                                  lookup=lookup, trace=trace,
-                                 max_input_tokens=policy["max_input_tokens"])
+                                 policy=policy)
             error = None
             try:
                 engine.bind(engine.windows[0])
@@ -392,7 +392,7 @@ def main():
                 branch = BoundEngine(ir=ir, catalog=catalog, state=engine.state, invoke=invoke,
                                      save=lambda _: None, should_stop=lambda: False,
                                      lookup=lookup, trace=trace, carry_bindings=condition == "D",
-                                     max_input_tokens=policy["max_input_tokens"])
+                                     policy=policy)
                 branch_error = error
                 if not branch_error:
                     try:

@@ -12,10 +12,12 @@ Count = Annotated[int, Field(ge=0)]
 Iri = Annotated[str, Field(pattern=r"^[A-Za-z][A-Za-z0-9+.-]*:[^\s]+$")]
 CandidateState = Literal["candidate", "accepted", "rejected", "unresolved"]
 Stage = Literal[
-    "ingest", "parse", "discover", "type_alignment", "entity_review", "assertion_alignment",
+    "ingest", "parse", "discover", "type_alignment", "referent_alignment",
+    "referent_candidates", "referent_selection", "entity_review", "planning",
+    "property_alignment", "relation_alignment", "group_interpretation",
     "evidence_review", "coreference_review", "complete",
-    "referent_alignment", "referent_candidates", "referent_selection",
 ]
+WorkStatus = Literal["ready", "waiting", "pruned", "done", "failed"]
 
 
 class HarnessModel(BaseModel):
@@ -81,6 +83,13 @@ class HarnessPredicateRef(HarnessCardRef):
     domain_text: str
 
 
+class HarnessVerification(HarnessModel):
+    method: Literal["rule", "llm"] | None
+    rule_id: NonEmpty | None
+    rule_version: NonEmpty | None
+    semantic_verdict: Literal["accepted", "rejected", "unresolved"] | None
+
+
 class HarnessProperty(HarnessModel):
     id: NonEmpty
     field_id: str | None
@@ -98,6 +107,7 @@ class HarnessProperty(HarnessModel):
     state: CandidateState
     reason: NonEmpty
     evidence: list[HarnessSourceRef]
+    verification: HarnessVerification
 
 
 class HarnessRelation(HarnessModel):
@@ -115,6 +125,7 @@ class HarnessRelation(HarnessModel):
     evidence: list[HarnessSourceRef]
     polarity: Literal["positive", "negative", "uncertain"]
     conditions: list[str]
+    verification: HarnessVerification
 
 
 class HarnessRelationGroup(HarnessModel):
@@ -137,6 +148,7 @@ class HarnessRelationGroup(HarnessModel):
     timing: Literal["parallel", "sequential", "unspecified"]
     timing_state: CandidateState
     timing_reason: NonEmpty
+    verification: HarnessVerification
 
 
 class HarnessAlignmentAttempt(HarnessModel):
@@ -184,6 +196,27 @@ class HarnessStageCost(HarnessModel):
     # whose earlier failed attempt did not return usage.
     input_tokens: Count | None
     output_tokens: Count | None
+    unmeasured_attempts: Count
+
+
+class HarnessReading(HarnessModel):
+    total_characters: Count
+    processed_characters: Count
+    complete: bool
+
+    @model_validator(mode="after")
+    def processed_within_source(self):
+        if self.processed_characters > self.total_characters:
+            raise ValueError("reading_exceeds_source_length")
+        return self
+
+
+class HarnessWorkCounts(HarnessModel):
+    ready: Count
+    waiting: Count
+    pruned: Count
+    done: Count
+    failed: Count
 
 
 class HarnessProgress(HarnessModel):
@@ -194,7 +227,29 @@ class HarnessProgress(HarnessModel):
     windows_discovered: Count
     windows_reviewed: Count
     scope_complete: bool
+    reading: HarnessReading
+    work_counts: HarnessWorkCounts
+    candidate_scope_limited: bool
+    rule_verified_count: Count
+    llm_verified_count: Count
     stage_costs: list[HarnessStageCost]
+
+    @model_validator(mode="after")
+    def scope_matches_reading(self):
+        if self.scope_complete != self.reading.complete:
+            raise ValueError("reading_scope_mismatch")
+        return self
+
+
+class HarnessCandidateWork(HarnessModel):
+    id: NonEmpty
+    kind: Literal["relation_alignment", "coreference_review"]
+    subject_id: NonEmpty
+    object_ids: list[NonEmpty]
+    predicate_iri: Iri | None
+    status: WorkStatus
+    reason_code: NonEmpty | None
+    evidence: list[HarnessSourceRef]
 
 
 class InterpretationAnswer(HarnessModel):
@@ -232,7 +287,7 @@ class SubmitInterpretationAnswer(HarnessModel):
 
 
 class HarnessGraph(HarnessModel):
-    protocol: Literal["document-harness-v1"]
+    protocol: Literal["document-harness-v2"]
     run_id: UUID
     revision: Count
     status: Literal[
@@ -249,6 +304,7 @@ class HarnessGraph(HarnessModel):
     interpretation_tasks: list[InterpretationTask]
     observations: list[HarnessObservation]
     targets: list[HarnessTarget]
+    candidate_work: list[HarnessCandidateWork]
 
 
 class HarnessSource(HarnessModel):

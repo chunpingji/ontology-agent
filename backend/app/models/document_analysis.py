@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import (
     JSON,
+    BigInteger,
     Boolean,
     CheckConstraint,
     DateTime,
@@ -302,6 +303,27 @@ class DocumentRunRequest(Base):
     """Latest dispatch/accounting state of one request or lineage protocol."""
 
     __tablename__ = "document_analysis_requests"
+
+    __table_args__ = tuple(
+        CheckConstraint(f"{column} IS NULL OR {column} >= 0", name=f"ck_doc_request_{column}")
+        for column in (
+            "call_attempts", "call_duration_us", "call_input_tokens", "call_output_tokens",
+            "call_unknown_input", "call_unknown_output", "call_unmeasured_attempts",
+        )
+    )
+
+    call_stage: Mapped[str | None] = mapped_column(String(64))
+    call_status: Mapped[str | None] = mapped_column(String(24))
+    call_attempts: Mapped[int | None] = mapped_column(Integer)
+    call_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    call_finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    call_duration_us: Mapped[int | None] = mapped_column(BigInteger)
+    call_input_tokens: Mapped[int | None] = mapped_column(BigInteger)
+    call_output_tokens: Mapped[int | None] = mapped_column(BigInteger)
+    call_unknown_input: Mapped[int | None] = mapped_column(Integer)
+    call_unknown_output: Mapped[int | None] = mapped_column(Integer)
+    call_unmeasured_attempts: Mapped[int | None] = mapped_column(Integer)
+    call_error: Mapped[str | None] = mapped_column(String(200))
 
     recognition_run_id: Mapped[uuid.UUID] = mapped_column(
         GUID(), ForeignKey("document_analysis_runs.recognition_run_id", ondelete="CASCADE"),

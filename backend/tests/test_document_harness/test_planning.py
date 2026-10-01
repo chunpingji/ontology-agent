@@ -7,8 +7,15 @@ from docx import Document
 from rdflib import Graph, Namespace
 
 from app.services.document_harness.ontology import catalog_from_graph
-from app.services.document_harness.planning import alignment_jobs, context_window
+from app.services.document_harness.planning import (
+    admit_relation_work,
+    alignment_jobs,
+    build_source_index,
+    collect_relation_seeds,
+    context_window,
+)
 from app.services.document_harness.source import make_window, quote_for_reference, reference
+from app.services.document_harness.work import DEFAULT_POLICY
 from app.services.extraction.document_ir import build_document_ir
 from app.services.extraction.docx_structure import parse_docx_structure
 
@@ -34,32 +41,58 @@ def entity(key, class_iri, *, fields=(), role="object", state="candidate"):
             "state": state, "field_ids": list(fields), "evidence": []}
 
 
-def test_current_and_historical_subjects_can_propose_cross_window_pairs_before_acceptance():
+def test_explicit_clue_can_propose_a_cross_window_pair_before_acceptance(tmp_path):
+    ir = document(tmp_path, ["Historical A", "Current B"])
+    left, right = [reference(ir, unit.evidence_id, 0, len(unit.text))
+                   for unit in ir.evidence_units]
     values = {
         "root": entity("root", EX.Root, role="document_root", state="accepted"),
-        "old-a": entity("old-a", EX.A, state="unresolved"),
-        "old-b": entity("old-b", EX.B, state="unresolved"),
-        "new-b": entity("new-b", EX.B),
-        "untyped": entity("untyped", "https://example.test/unknown"),
+        "old-a": {**entity("old-a", EX.A, state="unresolved"), "referent": left},
+        "new-b": {**entity("new-b", EX.B), "referent": right},
     }
-    jobs = alignment_jobs(catalog(), values, ["new-b", "untyped"])
-    assert ("old-a", ["new-b"]) in jobs
-    assert ("new-b", ["old-a"]) in jobs
-    assert ("root", ["new-b"]) in jobs
-    assert all("old-b" not in objects for subject, objects in jobs if subject == "root")
-    assert all(subject != "untyped" and "untyped" not in objects for subject, objects in jobs)
+    state = {"entities": values, "hints": {}, "fields": {}}
+    index = build_source_index(ir, state)
+    assert collect_relation_seeds(ir, catalog(), state, {"entities": values},
+                                  index, DEFAULT_POLICY) == []
+    hint = {"id": "hint", "subject_id": "old-a", "object_id": "new-b", "label": "uses",
+            "evidence": [left, right]}
+    state["hints"][hint["id"]] = hint
+    seeds = collect_relation_seeds(ir, catalog(), state, {"hints": state["hints"]},
+                                   index, DEFAULT_POLICY)
+    assert [(s["subject_id"], s["object_ids"]) for s in seeds] == [("old-a", ["new-b"])]
+    assert seeds[0]["endpoint_hypothesis"]
+    assert set(ref["source_id"] for ref in seeds[0]["clue_refs"]) == {
+        left["source_id"], right["source_id"],
+    }
 
 
-def test_jobs_bound_objects_without_merging_identically_named_entities_or_losing_fields():
-    values = {"new-a": entity("new-a", EX.A, fields=["field-a"])}
-    values.update({f"b{i}": entity(f"b{i}", EX.B) for i in range(9)})
-    values["leaf"] = entity("leaf", EX.Leaf, fields=["field-leaf"])
-    jobs = alignment_jobs(catalog(), values, ["new-a", "leaf"])
-    a_jobs = [objects for subject, objects in jobs if subject == "new-a"]
-    assert [len(objects) for objects in a_jobs] == [4, 4, 1]
-    assert {key for objects in a_jobs for key in objects} == {f"b{i}" for i in range(9)}
-    assert ("leaf", []) in jobs
-    assert not alignment_jobs(catalog(), {"a": entity("a", EX.A)}, [])
+def test_clue_work_batches_preserve_distinct_same_name_mentions_and_fields(tmp_path):
+    ir = document(tmp_path, ["原字段：完整原值", *("same spelling" for _ in range(9))])
+    first = window_for(ir, [ir.evidence_units[0]])
+    field = first.fields[0]
+    left = reference(ir, ir.evidence_units[0].evidence_id, 0, len(ir.evidence_units[0].text))
+    values = {"new-a": {**entity("new-a", EX.A, fields=[field["id"]]), "referent": left}}
+    hints = {}
+    for i, unit in enumerate(ir.evidence_units[1:]):
+        ref = reference(ir, unit.evidence_id, 0, len(unit.text))
+        values[f"b{i}"] = {**entity(f"b{i}", EX.B), "referent": ref}
+        hints[str(i)] = {"id": str(i), "subject_id": "new-a", "object_id": f"b{i}",
+                         "label": "uses", "evidence": [left, ref]}
+    state = {"entities": values, "hints": hints, "fields": {field["id"]: field}}
+    before = deepcopy(state)
+    cards = catalog()
+    seeds = collect_relation_seeds(ir, cards, state, {"hints": hints},
+                                   build_source_index(ir, state), DEFAULT_POLICY)
+    rows = admit_relation_work(seeds, state, cards, DEFAULT_POLICY)
+    jobs = list(alignment_jobs(state, rows, DEFAULT_POLICY))
+    assert sum(len(batch) for batch in jobs) == 9
+    assert all(len(batch) <= DEFAULT_POLICY["relation_items_per_call"] for batch in jobs)
+    assert {row["input"]["object_ids"][0] for batch in jobs for row in batch} == {
+        f"b{i}" for i in range(9)
+    }
+    assert len({row["id"] for row in rows}) == 9
+    assert state == before
+    assert state["fields"][field["id"]]["value"] == "完整原值"
 
 
 def document(tmp_path, paragraphs):

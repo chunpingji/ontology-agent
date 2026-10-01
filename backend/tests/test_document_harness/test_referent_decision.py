@@ -1,6 +1,7 @@
 """Explicit source-supported decisions replace an uncalibrated numeric veto."""
 
 from copy import deepcopy
+from dataclasses import replace
 
 import jsonschema
 import pytest
@@ -8,7 +9,7 @@ from pydantic import ValidationError
 from test_grouped_alignment import engine_fixture
 from test_lookup import lookup_fixture as lookup_fixture
 
-from app.services.document_harness.controller import Engine
+from app.services.document_harness.controller import Engine, Paused
 from app.services.document_harness.protocols import ReferentSelection, stage_schema
 from app.services.document_harness.referents import run_referent_alignment
 
@@ -116,3 +117,103 @@ def test_resumed_low_score_supported_decision_does_not_call_or_register_again(lo
     assert len(calls) == count
     assert len(restored.entities(window)) == 2
     assert next(iter(saved["referent_work"].values()))["selection"]["confidence"] == 0.77
+
+
+@pytest.mark.parametrize("selected,member_count", [("members", 2), ("single", 1)])
+def test_refinement_rebinds_collective_object_hints_without_flattening(
+    lookup_fixture, selected, member_count,
+):
+    engine, window, _ = engine_fixture(lookup_fixture, selected=selected)
+    evidence = engine.state["entities"]["old"]["evidence"]
+    hint = {"id": "h", "subject_id": "document", "object_id": "old", "label": "uses",
+            "evidence": evidence, "window_id": window.id, "polarity": "negative",
+            "conditions": ["Only when X"]}
+    engine.state["hints"] = {"h": deepcopy(hint)}
+    engine.state["reference_cues"] = {"c": {
+        "id": "c", "subject_id": "document", "target_ids": ["old"],
+        "target_expression": evidence[0], "evidence": evidence,
+        "polarity": "uncertain", "conditions": ["If approved"],
+    }}
+    run_referent_alignment(engine, window)
+    members = next(iter(engine.state["referent_work"].values()))["member_ids"]
+    assert len(members) == member_count
+    retained = engine.state["hints"]["h"]
+    assert retained["object_ids"] == members
+    assert "object_id" not in retained
+    assert retained["evidence"] == hint["evidence"]
+    assert retained["polarity"] == "negative" and retained["conditions"] == ["Only when X"]
+    assert engine.state["reference_cues"]["c"]["target_ids"] == members
+    assert engine.state["reference_cues"]["c"]["conditions"] == ["If approved"]
+    assert not engine.state.get("relations")
+
+
+def test_refinement_retains_ambiguous_subjects_and_waiting_observation(lookup_fixture):
+    engine, window, _ = engine_fixture(lookup_fixture)
+    evidence = engine.state["entities"]["old"]["evidence"]
+    engine.state["hints"] = {"h": {
+        "id": "h", "subject_id": "old", "object_id": "document", "label": "mentioned in",
+        "evidence": evidence, "window_id": window.id, "polarity": "positive", "conditions": [],
+    }}
+    engine.state["reference_cues"] = {"c": {
+        "id": "c", "subject_id": "old", "target_ids": ["document"],
+        "target_expression": evidence[0], "evidence": evidence,
+    }}
+    run_referent_alignment(engine, window)
+    members = next(iter(engine.state["referent_work"].values()))["member_ids"]
+    for domain, key in [("hints", "h"), ("reference_cues", "c")]:
+        row = engine.state[domain][key]
+        assert row["subject_id"] is None
+        assert row["ambiguous_subject_members"] == members
+        assert row["status"] == "waiting"
+        assert row["evidence"] == evidence
+    observation = next(row for row in engine.state["observations"].values()
+                       if row.get("reason_code") == "ambiguous_subject_members")
+    assert observation["state"] == "unresolved"
+    assert observation["candidate_subject_ids"] == members
+    assert not engine.state.get("relations")
+
+
+def test_referent_task_identity_does_not_depend_on_window_packaging(lookup_fixture):
+    keys = []
+    for renamed in (False, True):
+        engine, window, _ = engine_fixture(lookup_fixture)
+        if renamed:
+            original_id = window.id
+            window = replace(window, id="different-reading-package")
+            engine.windows = [window]
+            engine.state["entities"]["old"]["window_id"] = window.id
+            engine.state["window_entities"][window.id] = engine.state["window_entities"].pop(
+                original_id,
+            )
+            engine.state["windows"] = {window.id: {
+                **Engine.window_row(window, [0]), "phase": "referent_alignment",
+            }}
+            engine.state["cursor"]["main"]["active_window_id"] = window.id
+
+        def pause(*args):
+            raise Paused()
+
+        engine.invoke = pause
+        with pytest.raises(Paused):
+            run_referent_alignment(engine, window)
+        keys.append(next(iter(engine.state["referent_work"])))
+    assert keys[0] == keys[1]
+
+
+def test_every_referent_call_pins_physical_window_and_current_work(lookup_fixture):
+    engine, window, calls = engine_fixture(lookup_fixture)
+    original = engine.invoke
+
+    def invoke(stage, payload, schema):
+        assert engine._call_window is not None
+        assert engine._call_window.payload()["sources"] == payload["sources"]
+        assert len(engine._call_targets) == 1
+        target = engine._call_targets[0]
+        assert target["domain"] == "referent_work"
+        assert target["id"] in engine.state["referent_work"]
+        assert target["dependency_hash"]
+        return original(stage, payload, schema)
+
+    engine.invoke = invoke
+    run_referent_alignment(engine, window)
+    assert {stage for stage, _ in calls} == {"referent_candidates", "referent_selection"}

@@ -110,7 +110,7 @@ def test_invalid_member_anchor_is_not_a_registered_entity(tmp_path, mutation, re
         return
     engine = discover(ir, catalog, window, [item])
     assert set(engine.state["entities"]) == {"document"}
-    assert not engine.state["windows"][window.id]["complete"]
+    assert not engine.state["windows"][window.id]["discovery_complete"]
     assert any(row["reason"] == reason for row in engine.state["observations"].values())
 
 

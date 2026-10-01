@@ -68,6 +68,20 @@ def seed_run(db, fixture, *, owner="analyst", document_hash=None, two_tasks=Fals
             "selection": "unspecified", "timing": "unspecified",
             "timing_state": "unresolved", "timing_reason": "时间未决",
         })
+    from app.services.document_harness.accounting import empty_metrics, update_business_metrics
+    from app.services.document_harness.projection import build_graph_base
+    from app.services.document_harness.runtime import read_rows
+
+    db.flush()
+    state = read_rows(db, run)
+    metrics = empty_metrics()
+    for domain, rows in state.items():
+        for row in rows.values():
+            metrics = update_business_metrics(metrics, domain, None, row)
+    seed_row(db, run, "metrics", "main", metrics)
+    seed_row(db, run, "display", "graph", {
+        "work_version": run.work_version, "base": build_graph_base(state, payload),
+    })
     db.commit()
     return run
 

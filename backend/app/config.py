@@ -6,6 +6,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    document_harness_table_rules_json: str = "[]"
     template_finder_config_path: Path = (
         Path(__file__).resolve().parent / "services/template_finder/profiles/bindings.json"
     )

@@ -55,6 +55,34 @@
 
 ---
 
+## VS Code 调试后端
+
+用 VS Code 打开**仓库根目录**，在扩展面板的「工作区推荐」中安装 Python、
+Python Debugger 和 Pylance（Remote SSH 场景安装在远端）。配置使用
+`backend/.venv/bin/python`；如果编辑器已选过其他解释器，执行
+`Python: Select Interpreter` 选择该路径。
+
+扩展安装完成后，执行 `Developer: Reload Window` 重新加载窗口再启动调试。
+若提示 `Couldn't find a debug adapter descriptor for debug type 'debugpy'`，
+在扩展面板搜索 `@id:ms-python.debugpy`，确认 Python Debugger 已在当前远端启用，
+然后重新加载窗口，让扩展激活并注册调试器。
+
+调试读取独立的 `backend/.env`。首次配置时若文件不存在，复制
+`backend/debug.env.example` 为 `backend/.env`，并核对 `DATABASE_URL`：
+示例连接 Compose 默认发布的 `127.0.0.1:55432`，数据库须已启动。
+模型或其他可选能力按需在此文件配置，使用宿主机可访问的路径和地址。
+
+在「运行和调试」中选择 **Backend: FastAPI**，设置断点后按 **F5**。
+调试服务地址为 <http://127.0.0.1:8001/docs>，避开现有容器的 `8000` 端口；
+采用单进程且关闭自动重载，修改代码后重新启动调试。
+前端现有 nginx 入口仍转发到容器后端；直接通过上述 Swagger 页面发请求即可触发调试断点。
+
+F5 会执行应用正常启动流程，包括数据库迁移、TTL 播种和后台任务；
+需要隔离调试时将 `backend/.env` 指向专用开发数据库。
+配置也启用了 VS Code 的 pytest 测试发现，可在测试面板调试单个测试。
+
+---
+
 ## 本地抽取模型（air-gap：GLiNER NER + 中文嵌入器）
 
 平台部署于 **air-gap（无网络）** 环境,运行期**严禁出网**。本地 NER（`urchade/gliner_multi-v2.1`）

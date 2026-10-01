@@ -91,10 +91,10 @@ def _candidates(run, state):
     return [row for row in candidates.values() if row["base"] not in accepted]
 
 
-def _public_task(db, run, task):
+def _public_task(db, run, task, answers=None):
     keys = _scope_keys(run, task)
-    rows = {scope: db.get(DocumentInterpretationAnswer, key)
-            for scope, key in keys.items()}
+    rows = ({scope: db.get(DocumentInterpretationAnswer, key) for scope, key in keys.items()}
+            if answers is None else {scope: answers.get(key) for scope, key in keys.items()})
     answer = next((rows[scope] for scope in ("occurrence", "document", "platform")
                    if rows[scope] is not None), None)
     return {
@@ -117,7 +117,16 @@ def _public_task(db, run, task):
 
 def interpretation_tasks(db, run, state):
     require_harness(db, run)
-    return [_public_task(db, run, task) for task in _candidates(run, state)]
+    return attach_interpretation_answers(db, run, _candidates(run, state))
+
+
+def attach_interpretation_answers(db, run, task_seeds):
+    """Resolve all current answers in one query, retaining the three-scope precedence."""
+    keys = {key for task in task_seeds for key in _scope_keys(run, task).values()}
+    answers = {row.scope_key: row for row in db.scalars(
+        select(DocumentInterpretationAnswer).where(DocumentInterpretationAnswer.scope_key.in_(keys))
+    )} if keys else {}
+    return [_public_task(db, run, task, answers) for task in task_seeds]
 
 
 def submit_answer(db, run, identity, task_id, request):

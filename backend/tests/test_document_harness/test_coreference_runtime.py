@@ -7,7 +7,9 @@ from app.schemas.document_harness import HarnessGraph
 from app.services.document_analysis.run_store import DocumentAnalysisRunStore, content_hash
 from app.services.document_harness.application import ENGINE
 from app.services.document_harness.controller import Engine, Paused
-from app.services.document_harness.runtime import Repository
+from app.services.document_harness.coreference import review_coreferences
+from app.services.document_harness.runtime import Repository, initialize_state
+from app.services.document_harness.work import DEFAULT_POLICY, make_work
 from tests.test_document_harness.test_coreference import (
     answer,
     two,
@@ -32,10 +34,11 @@ def test_paid_coreference_resume_and_owned_read_only_projection(
         root_class_label="报告", ontology_snapshot_hash=content_hash(payload),
         source_artifact_id="source:" + key, source_storage_uri="original.docx",
         source_media_type="application/docx", source_size_bytes=1,
-        source_payload={"engine": ENGINE, "policy": {"max_input_tokens": 32768}},
+        source_payload={"engine": ENGINE, "policy": {"max_request_bytes": 32768}},
         ontology_artifact_id="ontology:" + key, ontology_payload=payload,
         progress={"engine": ENGINE},
     )
+    initialize_state(db, run, payload)
     token = store.claim(run.recognition_run_id, "analyst", actor="test", worker_id="test")
     db.commit()
     repo = Repository(db, run, token)
@@ -54,6 +57,13 @@ def test_paid_coreference_resume_and_owned_read_only_projection(
         "predicate_iri": "urn:test:describes", "label": "描述", "state": "accepted",
         "reason": "原文支持", "evidence": [ref], "polarity": "positive", "conditions": ["周一"],
     }}
+    work = make_work("coreference_review", {
+        "left_mention_id": "0", "right_mention_id": "1",
+        "clue_refs": [initial["entities"]["0"]["referent"]],
+    }, initial, catalog, DEFAULT_POLICY)
+    initial["work"] = {work["id"]: work}
+    initial["cursor"] = {"main": {"stage": "coreference_review", "active_window_id": None,
+                                  "active_batch": None, "scope_complete": False}}
     repo.save(initial)
     calls, pause = [], {"value": False}
     def model_call(stage, inputs, schema, policy):
@@ -63,27 +73,30 @@ def test_paid_coreference_resume_and_owned_read_only_projection(
                 "usage": {"input_tokens": 20, "output_tokens": 10}}
     monkeypatch.setattr(model, "call_model", model_call)
     def engine(repository):
-        value = Engine(ir=ir, catalog=catalog, state=repository.load(), invoke=repository.invoke,
-                       save=repository.save, should_stop=lambda: pause["value"])
-        value.state["cursor"] = {"main": {
-            "stage": "coreference_review", "window_index": len(value.windows),
-            "windows_total": len(value.windows), "windows_discovered": len(value.windows),
-            "windows_reviewed": len(value.windows), "scope_complete": False,
-        }}
-        return value
-    # Simulate stopping after the paid result has committed, before business consumption.
-    def interrupted(stage, payload, schema):
-        repo.invoke(stage, payload, schema)
+        return Engine(
+            ir=ir, catalog=catalog, state=repository.load(), invoke=repository.invoke,
+            save=repository.save, should_stop=lambda: pause["value"],
+            prepare_batch=repository.prepare_batch, invoke_prepared=repository.invoke_prepared,
+            batch_request=repository.batch_request,
+        )
+    # Stop after payment commits, before the exact current batch is applied.
+    def interrupted(batch):
+        repo.invoke_prepared(batch)
         raise Paused()
     first = engine(repo)
-    first.invoke = interrupted
-    first.run()
+    first.invoke_prepared = interrupted
+    try:
+        review_coreferences(first)
+    except Paused:
+        pass
     assert len(calls) == 1 and not repo.load().get("coreferences")
+    assert repo.load()["cursor"]["main"]["active_batch"]["targets"][0]["id"] == work["id"]
     pause["value"] = False
     resumed_repo = Repository(db, run, token)
     continued = engine(resumed_repo)
-    continued.run()
+    review_coreferences(continued)
     assert len(calls) == 1
+    assert resumed_repo.load()["cursor"]["main"]["active_batch"] is None
     assert resumed_repo.load()["entities"] == original_mentions
     endpoint = f"/api/document-analysis/runs/{run.recognition_run_id}/harness-graph"
     for _ in range(2):

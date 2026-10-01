@@ -27,10 +27,10 @@ def test_duplicate_response_keys_fail_without_losing_paid_raw_answer(monkeypatch
 
     monkeypatch.setattr(model, "responses_create", respond)
     policy = {
-        "protocol": "document-harness-v3", "max_output_tokens": 16384,
+        "protocol": "document-harness-v4", "max_output_tokens": 16384,
         "model": model.settings.local_llm_model,
         "model_revision": model.settings.local_llm_model_revision,
-        "max_input_tokens": 32768, "timeout_seconds": 10,
+        "max_request_bytes": 32768, "timeout_seconds": 10,
         "temperature": 0.1,
     }
     result = model.call_model("type_alignment", {}, {}, policy)
@@ -62,10 +62,10 @@ def test_current_output_contract_is_visible_in_prompt_as_well_as_decoding_gramma
 
     monkeypatch.setattr(model, "responses_create", respond)
     policy = {
-        "protocol": "document-harness-v3", "max_output_tokens": 16384,
+        "protocol": "document-harness-v4", "max_output_tokens": 16384,
         "model": model.settings.local_llm_model,
         "model_revision": model.settings.local_llm_model_revision,
-        "max_input_tokens": 32768, "timeout_seconds": 10, "temperature": 0.1,
+        "max_request_bytes": 32768, "timeout_seconds": 10, "temperature": 0.1,
     }
     assert model.call_model("discover", payload, schema, policy)["output"] == {"answer": "ok"}
 
@@ -101,17 +101,17 @@ def test_gateway_schema_inlines_annotated_refs_and_requires_default_fields(monke
 
     monkeypatch.setattr(model, "responses_create", respond)
     policy = {
-        "protocol": "document-harness-v3", "max_output_tokens": 16384,
+        "protocol": "document-harness-v4", "max_output_tokens": 16384,
         "model": model.settings.local_llm_model,
         "model_revision": model.settings.local_llm_model_revision,
-        "max_input_tokens": 32768, "timeout_seconds": 10, "temperature": 0.1,
+        "max_request_bytes": 32768, "timeout_seconds": 10, "temperature": 0.1,
     }
     result = model.call_model("discover", {}, schema, policy)
     assert result["error"] is None
     assert schema == original
 
 
-def test_legacy_input_budget_does_not_reject_large_model_request(monkeypatch):
+def test_transport_does_not_apply_controller_request_byte_limit(monkeypatch):
     monkeypatch.setattr(model, "get_local_llm", lambda: object())
     payload = {"evidence": "文档证据" * 5000}
     schema = {"type": "object", "properties": {"answer": {"type": "string"}}}
@@ -126,10 +126,10 @@ def test_legacy_input_budget_does_not_reject_large_model_request(monkeypatch):
 
     monkeypatch.setattr(model, "responses_create", respond)
     policy = {
-        "protocol": "document-harness-v3", "max_output_tokens": 16384,
+        "protocol": "document-harness-v4", "max_output_tokens": 16384,
         "model": model.settings.local_llm_model,
         "model_revision": model.settings.local_llm_model_revision,
-        "max_input_tokens": 32768, "max_context_tokens": 65536,
+        "max_request_bytes": 32768, "max_context_tokens": 65536,
         "timeout_seconds": 10, "temperature": 0.1,
     }
     assert model.call_model("evidence_review", payload, schema, policy)["output"] == {
@@ -138,7 +138,10 @@ def test_legacy_input_budget_does_not_reject_large_model_request(monkeypatch):
     assert len(called) == 1
 
 
-def test_new_runs_do_not_freeze_input_or_context_budgets():
+def test_new_runs_freeze_physical_byte_policy_without_fake_input_token_budgets():
     policy = model.freeze_policy()
-    assert "max_input_tokens" not in policy
+    assert "max_request_bytes" not in policy
     assert "max_context_tokens" not in policy
+
+    assert policy["execution_policy"]["wire_bytes_per_call"] == 96000
+    assert policy["execution_policy"]["table_relation_rules"] == []

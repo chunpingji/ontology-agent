@@ -88,9 +88,9 @@ def test_identical_binding_fields_with_and_without_downstream_context(
         assert payload["subject"]["fields"][0]["value"] == "A1"
         return {"properties": {alias: {"mappings": [{"predicate_iri": NS + "code",
                 "value_component": "whole", "value_quote": None, "confidence": 0.9}],
-                "reason": "This member's exact original ID"}}, "relations": [], "complete": True}
+                "reason": "This member's exact original ID"}}}
     engine.invoke = invoke
-    engine.call("assertion_alignment", {"subject": subject}, {})
+    engine.call("property_alignment", {"subject": subject, "property_field_ids": [alias]}, {})
 
 
 def test_swapped_member_quote_is_rejected_before_state_replacement(lookup_fixture, monkeypatch):
@@ -200,7 +200,8 @@ def test_downstream_accepted_aggregate_cannot_override_member_binding():
     subject = {"identifier_binding": {"identifiers": [{"property_iri": NS + "code",
                                                         "quote": quote("A1")}]}}
     payload = {"candidates": [{"id": "C1", "kind": "properties", "subject": subject,
-                                "predicate_iri": NS + "code", "value": "A1/A2"}]}
+                                "predicate_definition": {"iri": NS + "code"},
+                                "value": "A1/A2"}]}
     with pytest.raises(ValueError, match="downstream_value_conflict"):
         guard_answer("evidence_review", payload, SimpleNamespace(judgments={
             "C1": SimpleNamespace(verdict="accepted"),
@@ -217,10 +218,10 @@ def test_alignment_cannot_reintroduce_aggregate_span(lookup_fixture, monkeypatch
     window = context_window(engine.ir, engine.windows[0], [entity], engine.state["fields"])
     subject = engine.entity_input(entity, window)
     alias = subject["fields"][0]["field_id"]
-    result = STAGES["assertion_alignment"].model_validate({
+    result = STAGES["property_alignment"].model_validate({
         "properties": {alias: {"mappings": [{"predicate_iri": NS + "code",
             "value_component": "span", "value_quote": quote("A1/A2"), "confidence": 1}],
-            "reason": "Conflicting aggregate value"}}, "relations": [], "complete": True,
+            "reason": "Conflicting aggregate value"}},
     })
     with pytest.raises(ValueError, match="downstream_value_conflict"):
-        guard_answer("assertion_alignment", {"subject": subject}, result)
+        guard_answer("property_alignment", {"subject": subject}, result)

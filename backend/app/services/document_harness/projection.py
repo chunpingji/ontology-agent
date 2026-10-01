@@ -3,13 +3,26 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from copy import deepcopy
 
-from app.models.document_analysis import DocumentAnalysisArtifact
-from app.services.document_analysis.run_store import DocumentAnalysisRunStore, content_hash
+from sqlalchemy import and_, select
+from sqlalchemy.orm import aliased
+
+from app.models.document_analysis import (
+    DocumentAnalysisArtifact,
+    DocumentAnalysisRun,
+    DocumentRunCurrentState,
+)
+from app.services.document_analysis.run_store import (
+    DocumentAnalysisRunStore,
+    RunNotFound,
+    content_hash,
+)
+from app.services.document_harness.accounting import stage_costs
 from app.services.document_harness.application import ENGINE, HarnessError, require_harness
 from app.services.document_harness.coreference import project_coreferences
-from app.services.document_harness.interpretations import interpretation_tasks
-from app.services.document_harness.runtime import call_summaries, read_rows
+from app.services.document_harness.interpretations import _candidates, attach_interpretation_answers
+from app.services.document_harness.runtime import read_rows
 from app.services.extraction.document_ir import DocumentIR
 
 FIELDS = {
@@ -127,10 +140,8 @@ def _catalog(db, run):
     return artifact.payload if artifact else {"classes": {}}
 
 
-def graph_response(db, run):
-    require_harness(db, run)
-    state = read_rows(db, run, domains={*FIELDS, "cursor", "fields", "windows", "coreferences"})
-    catalog = _catalog(db, run)
+def build_graph_base(state, catalog):
+    """Project business state once per public change; never read the call ledger."""
     classes = catalog.get("classes", {})
     properties_by_field, owners_by_field = defaultdict(list), defaultdict(list)
     for prop in state.get("properties", {}).values():
@@ -138,47 +149,7 @@ def graph_response(db, run):
     for entity in state.get("entities", {}).values():
         for field_id in entity.get("field_ids", []):
             owners_by_field[field_id].append(entity["id"])
-    calls = call_summaries(db, run)
-    cursor = state.get("cursor", {}).get("main", {})
-    costs = {}
-    for call in calls.values():
-        stage = call["stage"]
-        entry = costs.setdefault(stage, {
-            "stage": stage, "calls": 0, "seconds": 0, "input_tokens": 0, "output_tokens": 0,
-        })
-        entry["calls"] += call.get("attempts") or 1
-        entry["seconds"] += call.get("seconds") or 0
-        usage = call.get("usage") or {}
-        for name, alternate in (("input_tokens", "prompt_tokens"),
-                                ("output_tokens", "completion_tokens")):
-            measured = usage.get(name, usage.get(alternate))
-            if (call.get("unmeasured_attempts") or type(measured) is not int
-                    or measured < 0 or entry[name] is None):
-                entry[name] = None
-            else:
-                entry[name] += measured
-    result = {
-        "protocol": ENGINE, "run_id": str(run.recognition_run_id), "revision": run.revision,
-        "status": run.execution_status, "stage": cursor.get("stage", run.stage),
-        "progress": {
-            "completed_calls": sum(call.get("status") == "completed" for call in calls.values()),
-            "candidate_count": sum(
-                row.get("role") != "document_root"
-                for kind in ("entities", "properties", "relations", "relation_groups")
-                for row in state.get(kind, {}).values()
-            ),
-            "fact_count": sum(
-                row.get("state") == "accepted" and row.get("role") != "document_root"
-                for kind in ("entities", "properties", "relations", "relation_groups")
-                for row in state.get(kind, {}).values()
-            ),
-            "windows_total": cursor.get("windows_total", 0),
-            "windows_discovered": cursor.get("windows_discovered", 0),
-            "windows_reviewed": cursor.get("windows_reviewed", 0),
-            "scope_complete": cursor.get("scope_complete", False),
-            "stage_costs": list(costs.values()),
-        },
-    }
+    result = {}
     for kind, fields in FIELDS.items():
         result[kind] = []
         for row in state.get(kind, {}).values():
@@ -190,6 +161,9 @@ def graph_response(db, run):
             item["evidence"] = evidence
             if kind in {"properties", "relations", "relation_groups"}:
                 item["card"] = card_ref(classes, row.get("alignment_class_iri"))
+                item["verification"] = {name: (row.get("verification") or {}).get(name)
+                                        for name in ("method", "rule_id", "rule_version",
+                                                     "semantic_verdict")}
                 item["predicate"] = predicate_ref(
                     classes, row.get("predicate_iri"), row.get("alignment_class_iri"),
                 )
@@ -203,16 +177,14 @@ def graph_response(db, run):
                     row, state, catalog, properties_by_field, owners_by_field,
                 ))
             result[kind].append(item)
-    for key, call in calls.items():
-        if call.get("status") == "failed":
-            result["observations"].append({
-                "id": f"call-failure:{key}", "label": f"{call['stage']} 调用失败",
-                "reason": call.get("error") or "model_request_failed", "evidence": [],
-                "field_id": None, "value": None, "candidate_subject_ids": [],
-                "kind": "failure", "object_id": None, "discovery_cards": [], "alignments": [],
-            })
-    result["interpretation_tasks"] = interpretation_tasks(db, run, state)
-    project_coreferences(result, list(state.get("coreferences", {}).values()), classes)
+    result["task_seeds"] = _candidates(None, state)
+    result["candidate_work"] = [candidate_work(row) for row in state.get("work", {}).values()
+                                if row.get("kind") in {"relation_alignment", "coreference_review"}]
+    project_coreferences(result, [
+        {key: row[key] for key in ("id", "left_mention_id", "right_mention_id", "verdict", "basis",
+                                  "reason", "evidence", "proof")}
+        for row in state.get("coreferences", {}).values()
+    ], classes)
     targets = []
     for entity in result["entities"]:
         card = classes.get(entity.get("class_iri"))
@@ -239,6 +211,79 @@ def graph_response(db, run):
                                                       for x in claims) else "pending"),
                 })
     result["targets"] = targets
+    return result
+
+
+
+def candidate_work(row):
+    seed = row.get("input") or row
+    return {
+        "id": row["id"], "kind": row["kind"],
+        "subject_id": seed.get("subject_id") or seed.get("left_mention_id"),
+        "object_ids": seed.get("object_ids", [seed["right_mention_id"]]
+                                   if seed.get("right_mention_id") else []),
+        "predicate_iri": seed.get("predicate_iri"), "status": row["status"],
+        "reason_code": row.get("reason_code"),
+        "evidence": seed.get("clue_refs", seed.get("evidence", [])),
+    }
+
+
+def read_graph_bundle(db, run_id, owner_id):
+    """Read the current head and three small rows from one SQL snapshot."""
+    aliases = [aliased(DocumentRunCurrentState) for _ in range(3)]
+    query = select(DocumentAnalysisRun, *aliases).where(
+        DocumentAnalysisRun.recognition_run_id == run_id,
+        DocumentAnalysisRun.owner_id == owner_id,
+        DocumentAnalysisRun.deletion_state != "deleted",
+    )
+    for row, domain, key in zip(aliases, ("metrics", "display", "cursor"),
+                                ("main", "graph", "main")):
+        query = query.outerjoin(row, and_(
+            row.recognition_run_id == DocumentAnalysisRun.recognition_run_id,
+            row.domain == "harness:" + domain, row.business_key == content_hash(key),
+        ))
+    bundle = db.execute(query.execution_options(populate_existing=True)).one_or_none()
+    if bundle is None:
+        raise RunNotFound(run_id=str(run_id))
+    run, *rows = bundle
+    values = []
+    for row in rows:
+        if row is not None and content_hash(row.payload) != row.content_hash:
+            raise ValueError("harness_current_row_hash_mismatch")
+        values.append(deepcopy(row.payload["value"]) if row else None)
+    metrics, display, cursor = values
+    if not metrics or not display or display.get("work_version") != run.work_version:
+        raise HarnessError("HARNESS_DISPLAY_NOT_READY", "展示结果尚未就绪，请稍后重试",
+                           status_code=409, retryable=True)
+    return run, metrics, display["base"], cursor or {}
+
+
+def graph_response(db, run):
+    require_harness(db, run)
+    run, metrics, base, cursor = read_graph_bundle(db, run.recognition_run_id, run.owner_id)
+    result = deepcopy(base)
+    result["interpretation_tasks"] = attach_interpretation_answers(
+        db, run, result.pop("task_seeds"),
+    )
+    reading = cursor.get("reading") or {
+        "total_characters": 0, "processed_characters": 0,
+        "complete": cursor.get("scope_complete", False),
+    }
+    result.update({
+        "protocol": ENGINE, "run_id": str(run.recognition_run_id), "revision": run.revision,
+        "status": run.execution_status, "stage": cursor.get("stage", run.stage),
+        "progress": {
+            **{key: metrics[key] for key in ("completed_calls", "candidate_count", "fact_count",
+                                            "work_counts", "rule_verified_count",
+                                            "llm_verified_count")},
+            **{key: cursor.get(key, 0) for key in ("windows_total", "windows_discovered",
+                                                 "windows_reviewed")},
+            "scope_complete": reading["complete"], "reading": reading,
+            "candidate_scope_limited": (metrics["limited_scope_count"] > 0
+                                        or metrics["work_counts"]["pruned"] > 0),
+            "stage_costs": stage_costs(metrics),
+        },
+    })
     return result
 
 

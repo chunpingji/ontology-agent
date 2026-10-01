@@ -162,7 +162,7 @@ def _available_actions(run: DocumentAnalysisRun, role: str | None) -> list[str]:
         return ["pause", "cancel", "delete"]
     if status in {"paused", "retryable_failure"}:
         actions = ["resume", "cancel", "delete"]
-        if ((run.progress or {}).get("engine") != "document-harness-v1"
+        if ((run.progress or {}).get("engine") != "document-harness-v2"
                 and (run.expires_at is None or _aware(run.expires_at) > datetime.now(UTC))):
             actions.append(
                 "ranking_budget_disable" if run.ranking_budget_enabled else "ranking_budget_enable"
@@ -570,8 +570,8 @@ class DocumentAnalysisApplication:
     def _extraction_protocol(self, run: DocumentAnalysisRun) -> str | None:
         source_id = ((run.artifact_manifest or {}).get("source") or {}).get("artifact_id")
         source = self.db.get(DocumentAnalysisArtifact, source_id) if source_id else None
-        if source and (source.payload or {}).get("engine") == "document-harness-v1":
-            return "document-harness-v1"
+        if source and (source.payload or {}).get("engine") == "document-harness-v2":
+            return "document-harness-v2"
         return ((source.payload or {}).get("performance_policy") or {}).get(
             "extraction_protocol"
         ) if source else None

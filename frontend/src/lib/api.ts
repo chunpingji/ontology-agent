@@ -110,6 +110,16 @@ export class VersionConflictError extends Error {
   }
 }
 
+export class HarnessDisplayNotReadyError extends Error {
+  readonly status = 409;
+  readonly code = "HARNESS_DISPLAY_NOT_READY";
+
+  constructor() {
+    super("结果暂未就绪，请刷新");
+    this.name = "HarnessDisplayNotReadyError";
+  }
+}
+
 export async function fetchAPI<T>(path: string, options?: RequestInit): Promise<T> {
   const isMultipart =
     typeof FormData !== "undefined" && options?.body instanceof FormData;
@@ -135,14 +145,18 @@ export async function fetchAPI<T>(path: string, options?: RequestInit): Promise<
     if (res.status === 409) {
       let current: number | null = null;
       let message = body;
+      let harnessDisplayNotReady = false;
       try {
         const parsed = JSON.parse(body);
         const detail = parsed.detail ?? parsed.error ?? parsed;
         current = detail?.current_revision ?? detail?.current_version ?? null;
         message = detail?.message ?? body;
+        harnessDisplayNotReady = /^\/api\/document-analysis\/runs\/[^/]+\/harness-graph$/.test(path)
+          && detail?.code === "HARNESS_DISPLAY_NOT_READY";
       } catch {
         /* keep raw body */
       }
+      if (harnessDisplayNotReady) throw new HarnessDisplayNotReadyError();
       throw new VersionConflictError(message, current);
     }
     throw new Error(`API ${res.status}: ${body}`);
@@ -2537,8 +2551,20 @@ export const getDocumentAnalysisTargetGraph = (runId: string, signal?: AbortSign
     signal, cache: "no-store",
   });
 
-export const DOCUMENT_HARNESS_PROTOCOL = "document-harness-v1" as const;
+export const DOCUMENT_HARNESS_PROTOCOL = "document-harness-v2" as const;
 export type DocumentHarnessState = "candidate" | "accepted" | "rejected" | "unresolved";
+export type DocumentHarnessStage = "ingest" | "parse" | "discover" | "type_alignment"
+  | "referent_alignment" | "referent_candidates" | "referent_selection" | "entity_review"
+  | "planning" | "property_alignment" | "relation_alignment" | "group_interpretation"
+  | "evidence_review" | "coreference_review" | "complete";
+export type DocumentHarnessWorkStatus = "ready" | "waiting" | "pruned" | "done" | "failed";
+
+export interface DocumentHarnessVerification {
+  method: "rule" | "llm" | null;
+  rule_id: string | null;
+  rule_version: string | null;
+  semantic_verdict: "accepted" | "rejected" | "unresolved" | null;
+}
 
 export interface DocumentHarnessSourceRef {
   source_id: string;
@@ -2637,6 +2663,7 @@ export interface DocumentHarnessProperty {
   state: DocumentHarnessState;
   reason: string;
   evidence: DocumentHarnessSourceRef[];
+  verification: DocumentHarnessVerification;
 }
 
 export interface DocumentHarnessRelation {
@@ -2654,6 +2681,7 @@ export interface DocumentHarnessRelation {
   evidence: DocumentHarnessSourceRef[];
   polarity: "positive" | "negative" | "uncertain";
   conditions: string[];
+  verification: DocumentHarnessVerification;
 }
 
 export interface DocumentHarnessRelationGroup extends Omit<DocumentHarnessRelation, "object_id" | "object_mention_id"> {
@@ -2695,7 +2723,7 @@ export interface DocumentHarnessGraph {
   run_id: string;
   revision: number;
   status: string;
-  stage: string;
+  stage: DocumentHarnessStage;
   progress: {
     completed_calls: number;
     candidate_count: number;
@@ -2704,12 +2732,22 @@ export interface DocumentHarnessGraph {
     windows_discovered: number;
     windows_reviewed: number;
     scope_complete: boolean;
+    reading: {
+      total_characters: number;
+      processed_characters: number;
+      complete: boolean;
+    };
+    work_counts: Record<DocumentHarnessWorkStatus, number>;
+    candidate_scope_limited: boolean;
+    rule_verified_count: number;
+    llm_verified_count: number;
     stage_costs: Array<{
-      stage: string;
+      stage: DocumentHarnessStage;
       calls: number;
       seconds: number;
       input_tokens: number | null;
       output_tokens: number | null;
+      unmeasured_attempts: number;
     }>;
   };
   entities: DocumentHarnessEntity[];
@@ -2720,6 +2758,18 @@ export interface DocumentHarnessGraph {
   interpretation_tasks: DocumentInterpretationTask[];
   observations: DocumentHarnessObservation[];
   targets: DocumentHarnessTarget[];
+  candidate_work: DocumentHarnessCandidateWork[];
+}
+
+export interface DocumentHarnessCandidateWork {
+  id: string;
+  kind: "relation_alignment" | "coreference_review";
+  subject_id: string;
+  object_ids: string[];
+  predicate_iri: string | null;
+  status: DocumentHarnessWorkStatus;
+  reason_code: string | null;
+  evidence: DocumentHarnessSourceRef[];
 }
 
 export const getDocumentHarnessGraph = (runId: string, signal?: AbortSignal) =>

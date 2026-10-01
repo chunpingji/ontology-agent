@@ -23,7 +23,7 @@ def additions(*texts):
 def resume(engine):
     return Engine(ir=engine.ir, catalog=engine.catalog, state=engine.state, invoke=engine.invoke,
                   save=lambda _: None, should_stop=lambda: False, lookup=engine.lookup,
-                  max_input_tokens=engine.max_input_tokens)
+                  max_request_bytes=engine.max_request_bytes)
 
 
 def with_missing_spans(engine, final=None):
@@ -286,15 +286,15 @@ def test_expanded_catalog_cannot_bypass_input_budget(lookup_fixture):
 
     def respond(stage, payload, schema):
         calls.append(stage)
-        engine.max_input_tokens = request_size(stage, payload, schema)
+        engine.max_request_bytes = request_size(stage, payload, schema)
         return additions("A1/A2", "A1", "A2")
 
     engine.invoke = respond
-    with pytest.raises(ValueError, match="harness_input_budget_exceeded"):
+    with pytest.raises(ValueError, match="HARNESS_EVIDENCE_CONTEXT_TOO_LARGE"):
         run_referent_alignment(engine, window)
     assert calls == ["referent_candidates"]
     assert next(iter(engine.state["referent_work"].values()))["spans_extended"]
-    engine.max_input_tokens = 32768
+    engine.max_request_bytes = 32768
     engine.invoke = original
     run_referent_alignment(engine, window)
     assert {e["label"] for e in engine.entities(window)} == {"A1", "A2"}

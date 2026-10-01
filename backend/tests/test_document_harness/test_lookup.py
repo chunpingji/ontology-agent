@@ -276,7 +276,7 @@ def test_oversized_feedback_retains_draft_without_silent_truncation(lookup_fixtu
         calls.append(payload["lookup_mode"])
         assert payload["lookup_mode"] == "draft"
         return {**discovery(["A1/A2"]), "lookup_requests": [request("A1")]}
-    engine, _ = runner(fixture, invoke, max_input_tokens=32768)
+    engine, _ = runner(fixture, invoke, max_request_bytes=32768)
     engine.run()
     assert calls == ["draft"]
     status = next(iter(engine.state["windows"].values()))["lookup"]

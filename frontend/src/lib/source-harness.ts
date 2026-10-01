@@ -1,16 +1,41 @@
 import type {
   DocumentHarnessEntity, DocumentHarnessGraph, DocumentHarnessObservation,
-  DocumentHarnessProperty, DocumentHarnessRelation,
+  DocumentHarnessProperty, DocumentHarnessRelation, DocumentHarnessStage, DocumentHarnessWorkStatus,
 } from "@/lib/api";
 
 export const HARNESS_STATES = { candidate: "候选", accepted: "已采信", rejected: "未采信", unresolved: "未决" };
-export const HARNESS_STAGES: Record<string, string> = {
+export const HARNESS_STAGES: Record<DocumentHarnessStage, string> = {
   ingest: "保存输入", parse: "读取原文", discover: "发现原文候选",
   type_alignment: "对齐本体类型", entity_review: "核对实体指称与类型",
   referent_alignment: "核对编号指称", referent_candidates: "提出编号分组", referent_selection: "核对指称分组",
-  assertion_alignment: "对齐关系与属性", evidence_review: "核对原文依据",
+  planning: "筛选候选任务", property_alignment: "对齐属性", relation_alignment: "对齐关系",
+  group_interpretation: "解释关系组", evidence_review: "核对原文依据",
   coreference_review: "核对文档内共指", complete: "本轮结束",
 };
+export const HARNESS_WORK_STATES: Record<DocumentHarnessWorkStatus, string> = {
+  ready: "待处理", waiting: "等待条件或补证", pruned: "本轮剪枝未处理",
+  done: "已处理任务", failed: "处理失败",
+};
+export const HARNESS_WORK_REASONS: Record<string, string> = {
+  invalid_reference: "原文引用无效", missing_endpoint: "缺少关系端点",
+  invalid_group_contract: "关系组结构无效", ontology_incompatible: "与已确认的本体约束不兼容",
+  type_or_constraint_unresolved: "类型或约束尚未明确", ambiguous_subject_members: "主体成员尚不明确",
+  insufficient_context: "原文依据不足", weak_quota: "受本轮候选配额限制，尚未核对",
+  reference_targets_truncated: "引用目标范围受限，尚未核对",
+};
+
+export function harnessCompletionMessage(graph: DocumentHarnessGraph) {
+  if (!graph.progress.reading.complete) return "原文范围尚未处理完成";
+  if (graph.status !== "finished") return "原文阅读范围已处理；候选任务仍按当前状态执行";
+  const counts = graph.progress.work_counts;
+  const unresolved = counts.ready + counts.waiting + counts.pruned + counts.failed > 0
+    || graph.progress.candidate_scope_limited
+    || [...graph.entities, ...graph.properties, ...graph.relations, ...graph.relation_groups]
+      .some((item) => item.state === "candidate" || item.state === "unresolved")
+    || graph.relation_groups.some((item) => item.timing_state === "candidate" || item.timing_state === "unresolved")
+    || graph.interpretation_tasks.some((item) => !item.answer);
+  return unresolved ? "本轮选定范围已处理；仍有未核对或未决项" : "本轮选定范围已处理";
+}
 export const OBSERVATION_KINDS = {
   field: "原字段", entity: "实体提及", relation: "关系线索", scope: "范围提示",
   validation: "校验异常", failure: "调用失败",
@@ -208,5 +233,6 @@ export function harnessCosts(costs: DocumentHarnessGraph["progress"]["stage_cost
     ? costs.reduce((total, cost) => total + cost[key]!, 0) : null;
   const input = sumTokens("input_tokens"), output = sumTokens("output_tokens");
   return { calls: costs.reduce((sum, cost) => sum + cost.calls, 0), seconds: costs.reduce((sum, cost) => sum + cost.seconds, 0),
+    unmeasuredAttempts: costs.reduce((sum, cost) => sum + cost.unmeasured_attempts, 0),
     input, output, tokens: input == null || output == null ? null : input + output };
 }

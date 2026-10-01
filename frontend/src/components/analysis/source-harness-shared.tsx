@@ -2,7 +2,7 @@
 
 import { ExternalLink } from "lucide-react";
 import { badgeVariants } from "@/components/ui/badge";
-import type { DocumentHarnessCardRef, DocumentHarnessPredicateRef, DocumentHarnessSource, DocumentHarnessSourceRef, DocumentHarnessState } from "@/lib/api";
+import type { DocumentHarnessCardRef, DocumentHarnessPredicateRef, DocumentHarnessSource, DocumentHarnessSourceRef, DocumentHarnessState, DocumentHarnessVerification } from "@/lib/api";
 import { HARNESS_STATES } from "@/lib/source-harness";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +12,13 @@ export function StateBadge({ state }: { state: DocumentHarnessState }) {
     state === "rejected" && "border-destructive/20 bg-destructive/5 text-destructive",
     (state === "candidate" || state === "unresolved") && "border-amber-600/20 bg-amber-500/10 text-amber-800 dark:text-amber-400",
   )}>{HARNESS_STATES[state]}</span>;
+}
+
+export function HarnessVerificationLabel({ verification }: { verification: DocumentHarnessVerification }) {
+  if (!verification.method) return null;
+  return <span className="text-xs text-muted-foreground" data-verification-method={verification.method}>
+    {verification.method === "rule" ? "规则证明" : "模型核对"}
+  </span>;
 }
 
 export function OntologyTerm({ term }: { term: DocumentHarnessCardRef }) {

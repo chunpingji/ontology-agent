@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import type { DocumentHarnessGraph, DocumentHarnessObservation, DocumentHarnessSourceRef } from "@/lib/api";
-import { displayValue, filterHarnessObservations, hasObservationContext, observationResults, observationSubjects, OBSERVATION_KINDS, OBSERVATION_RESULTS } from "@/lib/source-harness";
-import { EvidenceList, HarnessOntologyContext, OntologyTerm, StateBadge } from "./source-harness-shared";
+import { displayValue, filterHarnessObservations, HARNESS_WORK_REASONS, HARNESS_WORK_STATES, hasObservationContext, observationResults, observationSubjects, OBSERVATION_KINDS, OBSERVATION_RESULTS } from "@/lib/source-harness";
+import { EvidenceList, HarnessOntologyContext, HarnessVerificationLabel, OntologyTerm, StateBadge } from "./source-harness-shared";
 
 interface ObservationProps {
   graph: DocumentHarnessGraph;
@@ -73,6 +73,7 @@ export function HarnessObservations({ graph, selectedEntity, onSelectEntity, onS
       </tbody></table></div>
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"><p aria-live="polite">显示 {(page - 1) * 10 + 1}–{Math.min(page * 10, visible.length)} 条，共 {visible.length} 条{visible.length !== total && `（全部 ${total} 条）`}</p><div className="flex items-center gap-2"><Button size="sm" variant="outline" disabled={page === 1} onClick={() => setPaging({ key, page: page - 1 })}><ChevronLeft className="size-4" />上一页</Button><span>{page} / {pages}</span><Button size="sm" variant="outline" disabled={page === pages} onClick={() => setPaging({ key, page: page + 1 })}>下一页<ChevronRight className="size-4" /></Button></div></div>
     </>}
+    <HarnessCandidateWorkList graph={graph} onSource={onSource} onSelectEntity={onSelectEntity} />
     <details className="border-t pt-3"><summary className="cursor-pointer text-sm font-medium">模型调用失败（{failures.length}）</summary><p className="my-3 text-xs text-muted-foreground">技术失败单独记录，不作为原文未匹配或未采信原因。</p>{failures.map((item) => <div key={item.id} className="space-y-1 rounded-md border p-3 text-sm"><p>{item.label}</p><p className="whitespace-pre-wrap break-words text-xs text-destructive">{item.reason}</p></div>)}</details>
     <Dialog open={Boolean(detail)} onOpenChange={(open) => { if (!open) setDetailId(null); }}>
       <DialogContent className="max-h-[90dvh] w-[calc(100%_-_2rem)] max-w-4xl overflow-y-auto">
@@ -103,7 +104,7 @@ export function HarnessObservationDetail({ graph, item, onSelectEntity, onSource
         <p className="text-sm font-semibold">属性对齐主体：{entities.get(alignment.subject_id)?.label ?? alignment.subject_id}</p>
         <p className="rounded bg-primary/5 p-3">本次对齐类型卡：{alignment.card ? <OntologyTerm term={alignment.card} /> : "未记录"}</p>
         {alignment.property_ids.map((id) => { const property = properties.get(id); return property && property.subject_id === alignment.subject_id ? <div key={id} className="space-y-2 border-l-2 border-primary/30 pl-3">
-          <div className="flex flex-wrap items-center gap-2"><Badge variant="secondary">数据属性</Badge><p className="font-medium">{property.label}：{displayValue(property.value)}</p><Badge variant="outline">对齐成功</Badge><StateBadge state={property.state} /></div>
+          <div className="flex flex-wrap items-center gap-2"><Badge variant="secondary">数据属性</Badge><p className="font-medium">{property.label}：{displayValue(property.value)}</p><Badge variant="outline">对齐成功</Badge><StateBadge state={property.state} /><HarnessVerificationLabel verification={property.verification} /></div>
           <HarnessOntologyContext card={property.card} predicate={property.predicate} /><p className="whitespace-pre-wrap break-words">属性核对原因：{property.reason}</p>
           {property.value_evidence?.length > 0 && <div className="space-y-1"><p className="text-muted-foreground">取值位置</p><EvidenceList evidence={property.value_evidence} onSource={onSource} /></div>}
         </div> : <p key={id} className="text-muted-foreground">关联属性不可用：{id}</p>; })}
@@ -114,4 +115,53 @@ export function HarnessObservationDetail({ graph, item, onSelectEntity, onSource
     <p className="whitespace-pre-wrap break-words border-t pt-3 text-xs text-muted-foreground">观察记录说明（不代表各主体的最终判定）：{item.reason}</p>
     <p className="text-xs text-muted-foreground">未保存的卡片来源显示“未记录”，不从主体当前类型倒推；不同主体和菜单的判定分别保留。</p>
   </div>;
+}
+
+export function HarnessCandidateWorkList({ graph, onSource, onSelectEntity }: {
+  graph: DocumentHarnessGraph;
+  onSource: ObservationProps["onSource"];
+  onSelectEntity: ObservationProps["onSelectEntity"];
+}) {
+  const [status, setStatus] = useState("all");
+  const [page, setPage] = useState(1);
+  const visible = graph.candidate_work.filter((item) => status === "all" || item.status === status);
+  const pages = Math.max(1, Math.ceil(visible.length / 10));
+  const currentPage = Math.min(page, pages);
+  const endpoints = new Map<string, { id: string; label: string }>();
+  for (const entity of graph.entities) {
+    endpoints.set(entity.id, { id: entity.id, label: entity.label });
+    for (const mention of entity.mentions ?? []) endpoints.set(mention.id, { id: entity.id, label: mention.label });
+  }
+  const endpoint = (id: string) => {
+    const entity = endpoints.get(id);
+    return entity
+      ? <button type="button" className="break-words text-primary hover:underline" onClick={() => onSelectEntity(entity.id)}>{entity.label}</button>
+      : <span className="break-all">{id}</span>;
+  };
+  return <section className="space-y-3 border-t pt-4" aria-label="候选执行情况">
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <h4 className="text-sm font-semibold">候选执行情况（{graph.candidate_work.length}）</h4>
+      <select aria-label="候选任务状态" className="rounded-md border bg-background p-2 text-xs" value={status}
+        onChange={(event) => { setStatus(event.target.value); setPage(1); }}>
+        <option value="all">全部任务状态</option>
+        {Object.entries(HARNESS_WORK_STATES).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+      </select>
+    </div>
+    <p className="text-xs text-muted-foreground">候选执行情况与事实采信分别记录。剪枝表示本轮未处理；已处理任务也可能没有形成事实。</p>
+    {!visible.length && <p className="text-xs text-muted-foreground">暂无符合条件的候选任务。</p>}
+    {visible.slice((currentPage - 1) * 10, currentPage * 10).map((item) => <div key={item.id}
+      className="space-y-2 rounded-md border p-3 text-xs" data-candidate-work-id={item.id} data-work-status={item.status}>
+      <div className="flex flex-wrap items-center gap-2"><Badge variant="outline">{item.kind === "relation_alignment" ? "关系候选" : "共指候选"}</Badge><span>{HARNESS_WORK_STATES[item.status]}</span></div>
+      <p>{endpoint(item.subject_id)}<span className="mx-2">{item.kind === "coreference_review" ? "与" : "→"}</span>
+        {item.object_ids.map((id, index) => <span key={id}>{index > 0 && "、"}{endpoint(id)}</span>)}</p>
+      {item.predicate_iri && <p className="break-all text-muted-foreground">候选谓词：{item.predicate_iri}</p>}
+      {item.reason_code && <p>{HARNESS_WORK_REASONS[item.reason_code] ?? item.reason_code}</p>}
+      <EvidenceList evidence={item.evidence} onSource={onSource} />
+    </div>)}
+    {pages > 1 && <div className="flex items-center justify-end gap-2 text-xs">
+      <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}>上一页候选</Button>
+      <span>{currentPage} / {pages}</span>
+      <Button variant="outline" size="sm" disabled={currentPage === pages} onClick={() => setPage(currentPage + 1)}>下一页候选</Button>
+    </div>}
+  </section>;
 }

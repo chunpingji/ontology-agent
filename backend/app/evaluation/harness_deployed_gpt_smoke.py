@@ -99,8 +99,8 @@ def main():
 
         engine = Engine(ir=ir, catalog=catalog, state={}, invoke=invoke,
                         save=lambda _: None, should_stop=lambda: False,
-                        max_input_tokens=policy["max_input_tokens"],
-                        rank=ranker.rank, lookup=query)
+                        max_request_bytes=policy["execution_policy"]["wire_bytes_per_call"],
+                        rank=ranker.rank, lookup=query, policy=policy)
         error = None
         try:
             engine.run()
