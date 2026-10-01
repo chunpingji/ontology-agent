@@ -1,5 +1,40 @@
 # 验证
 
+## 并列入口与新文档上传（2026-09-30）
+
+图谱分析与文档分析是并列功能；本节替代下方历史 V2 验证中的「返回文档分析」头部。
+图谱分析入口默认展示「上传新文档」，结果页保留顶层功能标签并提供「新建分析」。
+
+1. 打开 `/analysis?tab=graph-analysis`，确认图谱分析和文档分析是并列标签。
+2. 选择 .doc / .docx 和本体根类型；缺少任一输入不可开始，选择输入不会上传或启动模型。
+3. 点击「开始分析」；成功后的 URL 仍为 `tab=graph-analysis`，并包含新 `documentRun`。
+4. 上传失败保留文件和类型，可以重试；HTTP 内网入口也能生成请求键，同草稿重试沿用请求键。
+5. 结果页「新建分析」回到本功能上传入口；已有报告、历史、刷新和功能切换均不自动启动识别。
+
+在 `frontend/` 实际执行：
+
+```bash
+node --test tests/document-analysis-runs.test.mjs tests/source-harness.test.mjs tests/target-graph.test.mjs
+./node_modules/.bin/tsc --noEmit
+npm run lint -- src/components/analysis/analysis-tabs.tsx \
+  src/components/analysis/graph-analysis-panel.tsx \
+  src/components/analysis/graph-analysis-upload.tsx \
+  tests/graph-analysis-upload-browser.mjs tests/source-harness-browser.mjs
+PLAYWRIGHT_MODULE=/opt/dev/chen/jpi-project/jpi-test/zhjszx-replica/node_modules/playwright/test.mjs \
+  node tests/graph-analysis-upload-browser.mjs
+PLAYWRIGHT_MODULE=/opt/dev/chen/jpi-project/jpi-test/zhjszx-replica/node_modules/playwright/test.mjs \
+  DOCUMENT_BROWSER_OUTPUT=/tmp/source-harness-parallel-navigation-browser \
+  node tests/source-harness-browser.mjs
+```
+
+结果：**77 passed**，类型检查、定向 ESLint 通过。上传浏览器验证包括本体目录失败重读、
+Word 后缀/根类型校验、显式 multipart 上传、失败保留草稿、相同请求键重试、重复点击阻止、
+结果定位、刷新、新建和历史/功能切换。模拟了 2 次上传 POST，全部 API 被拦截，无真实模型调用。
+现有结果页浏览器回归通过，22 次 GET、0 次写请求，无未拦截 API 或脚本错误。
+产物分别位于 `/tmp/graph-analysis-upload-browser/` 与 `/tmp/source-harness-parallel-navigation-browser/`。
+390px 截图仍受既有固定侧栏挤压，当前测试的控件可见/页宽断言不代表移动端布局验收。
+前端开发容器挂载源码，已通过当前入口加载修改；本轮没有重启后端或创建真实分析运行。
+
 ## 工艺物料关系的主体范围（2026-09-22）
 
 权威 TTL 的 `usesMaterial` 定义域为 `CMCReport ∪ SynthesisStep`，值域为
@@ -313,3 +348,14 @@ python -m app.evaluation.document_identifier_probe \
 本次工程验证 228 个不同测试通过；真实模型严格回归 A/B 各 8/15、C 与 C＋定位反馈
 各 10/15。目标原句未得到三个区域，整体识别验收未通过。完整成本、失败样例与生效范围
 以验证记录为准。
+# 2026-09-30 性能与剪枝验证入口
+
+使用新协议创建运行，旧运行不做转换。本轮实际结果及未验收项见
+[性能与候选剪枝实施验证](validation-performance.md)，不混用上方历史验证数量。
+
+1. 在 backend/ 用既有 .venv 执行 `python -m pytest -p no:cacheprovider -q tests/test_document_harness/ tests/test_extraction/test_document_harness_runtime.py`。
+2. 在 frontend/ 执行 `node --test tests/source-harness.test.mjs tests/target-graph.test.mjs`、`./node_modules/.bin/tsc --noEmit`。
+3. 对照方案 A/P/V：成本未知与复用、无连接大实体集、反证保护、组不拆边、缓存只读及暂停批次。
+4. PostgreSQL 只使用符合 fixture 要求的专用测试库；未配置报告 skip，不能以 SQLite 替代。
+5. 真实评测固定输入/本体/模型/参考/预算的新运行，分别报告候选召回、最终事实和成本。
+   没有批准参考仅报告工程和费用，不修改在途运行、不重启服务。

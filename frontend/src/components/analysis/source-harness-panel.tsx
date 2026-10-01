@@ -14,13 +14,13 @@ import {
   type DocumentInterpretationMeaning, type DocumentInterpretationScope, type DocumentInterpretationTask,
 } from "@/lib/api";
 import { DOCUMENT_ANALYSIS_STATUS_LABELS } from "@/lib/document-analysis";
-import { harnessCosts, HARNESS_STAGES } from "@/lib/source-harness";
+import { harnessCompletionMessage, harnessCosts, HARNESS_STAGES, HARNESS_WORK_STATES } from "@/lib/source-harness";
 import { HarnessCandidates } from "./source-harness-workspace";
 import { HarnessObservations } from "./source-harness-observations";
 import { HarnessSourcePreview } from "./source-harness-shared";
 
 export { HarnessCandidates, HarnessRelationCanvas, HarnessPropertyDetail } from "./source-harness-workspace";
-export { HarnessObservations, HarnessObservationDetail } from "./source-harness-observations";
+export { HarnessObservations, HarnessObservationDetail, HarnessCandidateWorkList } from "./source-harness-observations";
 export { HarnessSourcePreview } from "./source-harness-shared";
 export { observationResults, filterHarnessObservations } from "@/lib/source-harness";
 
@@ -136,7 +136,7 @@ export function SourceHarnessPanel({ initialRun, refreshRevision = 0, taskDrawer
     <section aria-label="当前分析文档" className="flex flex-wrap items-center justify-between gap-4 rounded-lg border bg-muted/30 p-4">
       <div className="flex min-w-0 items-center gap-3"><div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><FileText className="size-5" /></div><div className="min-w-0 space-y-1.5">
         <h2 className="break-words text-sm font-semibold">{run.input.filename}</h2>
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"><span>根类型：{run.input.root_class_label || "未记录"}</span><span aria-hidden="true">·</span><span>{!graph ? "正在读取阅读范围…" : graph.progress.scope_complete ? "本轮阅读范围已核对" : "本轮阅读范围尚未核对完成"}</span></div>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"><span>根类型：{run.input.root_class_label || "未记录"}</span><span aria-hidden="true">·</span><span>{!graph ? "正在读取阅读范围…" : graph.progress.reading.complete ? "本轮原文阅读范围已处理" : "本轮原文阅读范围尚未处理完成"}</span></div>
       </div></div>
       <div className="flex flex-wrap items-center gap-3">
         <Badge variant={run.status === "finished" ? "success" : "secondary"} className="px-2 py-0.5 text-[11px]">{run.status === "finished" ? "本轮已结束" : DOCUMENT_ANALYSIS_STATUS_LABELS[run.status]}</Badge>
@@ -149,6 +149,7 @@ export function SourceHarnessPanel({ initialRun, refreshRevision = 0, taskDrawer
     {run.error && <p role="alert" className="break-words text-sm text-destructive">{run.error.safe_detail}</p>}
     {!graph && !error && <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />正在读取已保存的分析结果…</p>}
     {graph && <>
+      <HarnessProgress graph={graph} />
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList aria-label="图谱分析分区" className="h-auto max-w-full flex-wrap justify-start">
           <TabsTrigger value="entities">实体图谱与属性</TabsTrigger>
@@ -250,11 +251,15 @@ function HarnessInterpretationTaskForm({ task, onSource, onAnswer }: {
 
 export function HarnessProgress({ graph }: { graph: DocumentHarnessGraph }) {
   const progress = graph.progress;
-  return <div className="space-y-3">
+  return <section className="space-y-3" aria-label="阅读与任务进度">
+    <p className="text-sm font-medium">原文范围已处理 {progress.reading.processed_characters.toLocaleString()} / {progress.reading.total_characters.toLocaleString()} 字符</p>
+    <p className="text-xs text-muted-foreground">此数字表示原文阅读覆盖。阅读批次：已发现 {progress.windows_discovered} / {progress.windows_total}，已处理 {progress.windows_reviewed} / {progress.windows_total}（含拆分后的父子批次）。</p>
+    <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs">{Object.entries(HARNESS_WORK_STATES).map(([status, label]) => <span key={status} className="text-muted-foreground">{label}<strong className="ml-2 tabular-nums text-foreground">{progress.work_counts[status as keyof typeof progress.work_counts]}</strong></span>)}</div>
     <div className="flex flex-wrap gap-x-8 gap-y-2 text-xs">{[["已完成调用", progress.completed_calls], ["已保存候选", progress.candidate_count], ["已采信事实", progress.fact_count]].map(([label, count]) => <span key={label} className="text-muted-foreground">{label}<strong className="ml-2 text-base font-semibold tabular-nums text-foreground">{count}</strong></span>)}</div>
-    <p className="text-xs text-muted-foreground">阅读范围：已发现 {progress.windows_discovered} / {progress.windows_total} 个单元 · 已核对 {progress.windows_reviewed} / {progress.windows_total} 个单元</p>
-    <p className="text-xs text-muted-foreground">{progress.scope_complete ? "本轮全文范围核对已结束；已处理范围不代表识别准确率或事实完整度。" : "全文范围尚未核对完成；调用进展、候选产出和事实采信分别计数。"}</p>
-  </div>;
+    <p className="text-xs text-muted-foreground">已采信事实的证明来源：规则证明 {progress.rule_verified_count} · 模型核对 {progress.llm_verified_count}</p>
+    {progress.candidate_scope_limited && <p className="text-xs text-amber-700 dark:text-amber-400">本轮候选范围受限，仍有未处理的候选。</p>}
+    <p className="text-xs text-muted-foreground">{harnessCompletionMessage(graph)}。阅读覆盖、任务处理和事实采信分别计数。</p>
+  </section>;
 }
 
 export function HarnessStageCosts({ graph }: { graph: DocumentHarnessGraph }) {
@@ -264,12 +269,12 @@ export function HarnessStageCosts({ graph }: { graph: DocumentHarnessGraph }) {
   const order = Object.keys(HARNESS_STAGES);
   const rows = [...costs].sort((a, b) => order.indexOf(a.stage) - order.indexOf(b.stage));
   return <section className="space-y-4" aria-label="各阶段模型成本">
-    <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-lg font-semibold">各阶段模型成本</h3><p className="text-xs text-muted-foreground">{total.calls} 次调用 · 请求累计 {total.seconds.toFixed(1)} 秒 · Token 合计 {format(total.tokens)}</p></div>
-    <HarnessProgress graph={graph} />
+    <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-lg font-semibold">各阶段模型成本</h3><p className="text-xs text-muted-foreground">{total.calls} 次调用 · 已测累计耗时 {total.seconds.toFixed(1)} 秒 · Token 合计 {format(total.tokens)}</p></div>
+    {total.unmeasuredAttempts > 0 && <p className="text-xs text-muted-foreground">{total.unmeasuredAttempts} 次尝试缺少耗时测量，未计入已测耗时。</p>}
     {!rows.length ? <p className="rounded-md border border-dashed p-6 text-sm text-muted-foreground">尚无已记录的模型调用成本。</p> : <div className="overflow-x-auto rounded-lg border"><table className="w-full min-w-[700px] text-left text-xs">
-      <thead className="bg-muted/40 text-muted-foreground"><tr>{["阶段", "模型调用", "请求耗时(秒)", "输入 Token", "输出 Token", "耗时占比"].map((label) => <th key={label} scope="col" className="px-4 py-3 font-normal">{label}</th>)}</tr></thead>
+      <thead className="bg-muted/40 text-muted-foreground"><tr>{["阶段", "模型调用", "已测耗时(秒)", "输入 Token", "输出 Token", "已测耗时占比"].map((label) => <th key={label} scope="col" className="px-4 py-3 font-normal">{label}</th>)}</tr></thead>
       <tbody>{rows.map((cost, index) => { const share = total.seconds > 0 ? cost.seconds / total.seconds * 100 : null; return <tr key={cost.stage} className="border-t"><td className="px-4 py-3.5"><span className={`mr-2 inline-block size-1.5 rounded-full ${index < 3 ? "bg-primary" : "bg-teal-600"}`} />{HARNESS_STAGES[cost.stage] ?? cost.stage}</td><td className="px-4 py-3.5 tabular-nums">{cost.calls}</td><td className="px-4 py-3.5 tabular-nums">{cost.seconds.toFixed(1)}</td><td className="px-4 py-3.5 tabular-nums">{format(cost.input_tokens)}</td><td className="px-4 py-3.5 tabular-nums">{format(cost.output_tokens)}</td><td className="px-4 py-3.5"><div className="flex items-center gap-3"><span className="h-1.5 w-28 overflow-hidden rounded-full bg-muted"><span className={`block h-full rounded-full ${index < 3 ? "bg-primary" : "bg-teal-600"}`} style={{ width: `${share ?? 0}%` }} /></span><span className="tabular-nums">{share == null ? "—" : `${share.toFixed(0)}%`}</span></div></td></tr>; })}</tbody>
     </table></div>}
-    <p className="text-xs leading-relaxed text-muted-foreground">按实际调用累计，含重试；请求耗时不等于整轮运行时间。缺失的 Token 显示“未知”，不计为 0；占比仅表示模型请求耗时。</p>
+    <p className="text-xs leading-relaxed text-muted-foreground">按实际调用累计，含重试；已测耗时不等于整轮运行时间。缺失的 Token 显示“未知”，不计为 0；占比仅表示已测模型请求耗时。</p>
   </section>;
 }

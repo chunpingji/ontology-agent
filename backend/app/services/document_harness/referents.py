@@ -238,6 +238,47 @@ def query_feedback(engine, answer, refs, class_iri):
     return {**response, "capabilities": capabilities["capabilities"]}
 
 
+def rebind_clues(engine, window, replacements, changes):
+    """Preserve a collective clue as a collective clue after physical refinement."""
+    def expand(keys):
+        return list(dict.fromkeys(member for key in keys
+                                  for member in replacements.get(key, [key])))
+
+    for domain in ("hints", "reference_cues"):
+        for key, original in engine.state.get(domain, {}).items():
+            owners = [original.get("subject_id"), original.get("object_id"),
+                      *original.get("object_ids", []), *original.get("target_ids", []),
+                      *original.get("ambiguous_subject_members", [])]
+            if not set(replacements).intersection(owners):
+                continue
+            row = deepcopy(original)
+            subject = row.get("subject_id")
+            if subject in replacements:
+                members = replacements[subject]
+                row["subject_id"] = members[0] if len(members) == 1 else None
+                if len(members) > 1:
+                    row["ambiguous_subject_members"] = list(members)
+                    row.update(status="waiting", reason_code="ambiguous_subject_members")
+            elif row.get("ambiguous_subject_members"):
+                row["ambiguous_subject_members"] = expand(row["ambiguous_subject_members"])
+            if "object_id" in row or "object_ids" in row:
+                objects = row.get("object_ids", [row.get("object_id")])
+                row["object_ids"] = expand([obj for obj in objects if obj is not None])
+                row.pop("object_id", None)
+            if "target_ids" in row:
+                row["target_ids"] = expand(row["target_ids"])
+            changes[domain][key] = row
+            if row.get("ambiguous_subject_members"):
+                oid, observation = engine.observation(
+                    window, "关系线索主体归属待确定",
+                    "原主体已细分为多个物理成员；保留完整线索，不推断每个成员均成立",
+                    row.get("evidence", []), kind="relation",
+                    candidate_subject_ids=row["ambiguous_subject_members"],
+                )
+                observation.update(state="unresolved", reason_code="ambiguous_subject_members")
+                changes["observations"][oid] = observation
+
+
 def run_referent_alignment(engine, base_window):
     buckets = defaultdict(list)
     for entity in engine.entities(base_window):
@@ -252,7 +293,10 @@ def run_referent_alignment(engine, base_window):
                and STRING in p["datatype_iris"] for p in guidance["identity_properties"]):
             buckets[(card.iri, entity["referent"]["source_id"])].append(entity)
     for (class_iri, _), entities in buckets.items():
-        task_id = identity("referent_group", base_window.id, sorted(e["id"] for e in entities))
+        task_id = identity("referent_group", class_iri, sorted(
+            (e["referent"]["source_id"], e["referent"]["start"], e["referent"]["end"])
+            for e in entities
+        ))
         if engine.state.get("referent_work", {}).get(task_id, {}).get("done"):
             continue
         card = engine.catalog.classes[class_iri]
@@ -293,6 +337,9 @@ def run_referent_alignment(engine, base_window):
             if work.get("proposal_feedback"):
                 payload["proposal_feedback"] = work["proposal_feedback"]
             if "proposal" not in work:
+                engine._call_window = window
+                engine._call_targets = [{"domain": "referent_work", "id": task_id,
+                                         "dependency_hash": identity(task_id, payload)}]
                 answer = engine.call("referent_candidates", payload, stage_schema(
                     "referent_candidates", source_ids=group_source_ids,
                     property_iris=properties,
@@ -360,6 +407,10 @@ def run_referent_alignment(engine, base_window):
         if "feedback" not in work:
             work["feedback"] = query_feedback(engine, answer, refs, class_iri)
             engine.commit({"referent_work": {task_id: work}})
+        engine._call_window = window
+        engine._call_targets = [{"domain": "referent_work", "id": task_id,
+                                 "dependency_hash": identity(task_id, work["proposal"],
+                                                             work["feedback"])}]
         selection = engine.call("referent_selection", {
             **payload, "proposal": work["proposal"], "lookup_feedback": work["feedback"],
         }, stage_schema("referent_selection", source_ids=source_ids,
@@ -435,10 +486,12 @@ def run_referent_alignment(engine, base_window):
             for eid in replaced:
                 changes["entities"][eid] = None
                 changes["source_candidates"][eid] = None
-            # A whole-group hint is not proof for each newly selected member.
-            for hid, hint in engine.state.get("hints", {}).items():
-                if hint["subject_id"] in replaced or hint["object_id"] in replaced:
-                    changes["hints"][hid] = None
+            replacements = {
+                old["id"]: [key for key in member_ids if overlap(
+                    old["referent"], changes["entities"][key]["referent"],
+                )] for old in entities if old["id"] in replaced
+            }
+            rebind_clues(engine, base_window, replacements, changes)
             current_ids = engine.state["window_entities"][base_window.id]["ids"]
             changes["window_entities"][base_window.id] = {
                 "ids": [key for key in current_ids if key not in replaced] + member_ids,

@@ -146,7 +146,7 @@ def test_registration_uses_source_anchor_without_name_and_accounts_for_failures(
     assert len(entities) == (1 if bad_anchor else 2)
     assert all(e["label"] == "Alpha" and e["name"] is None for e in entities)
     assert all(e["state"] == "candidate" and e["class_iri"] is None for e in entities)
-    assert engine.state["windows"][window.id]["complete"] is not bad_anchor
+    assert engine.state["windows"][window.id]["discovery_complete"] is not bad_anchor
     if bad_anchor:
         failure = next(o for o in engine.state["observations"].values()
                        if o["reason"] == "source_quote_mismatch")

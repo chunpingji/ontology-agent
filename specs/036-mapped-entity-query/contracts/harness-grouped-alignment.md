@@ -31,3 +31,10 @@
 关系组使用本体合法谓词与当前已提供的端点，包含 `object_ids`、`participation=options|all|unknown`、`selection=exactly_one|unspecified`、`timing=parallel|sequential|unspecified`、极性与条件。选择和时间分别受参与方式约束；选项组不能展开肯定边。关系参与和时间分项核验。来源记录不能证明文档关系。
 
 公开图谱增加 `relation_groups`，保留参与状态、时间状态、成员和原文证据；页面关联关系中展示。指称竞争解释通过当前观察展示，编号绑定传入模型上下文。所有新运行默认启用。验收使用当前代码新建运行，不重写旧实测产物。
+# 2026-09-30 候选剪枝接线补充
+
+新 Harness 协议采用独立属性/关系提议和共享证据核对。分组替换物理提及时必须重绑定原 hint/cue，
+保留完整对象成员；主体归属有歧义保持 waiting，不删除线索或展开肯定边。
+participation=unknown 先做一次有界补证及组解释，再独立核对；无新增证据保持未决。
+人工答案继续独立展示，不写模型事实。详见
+[性能与剪枝契约](../../035-independent-document-harness/contracts/performance-pruning.md)。

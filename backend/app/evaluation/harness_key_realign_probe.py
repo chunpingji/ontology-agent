@@ -251,8 +251,8 @@ class ProbeEngine(Engine):
             "source_status": source_status,
         }
         schema = review_schema(window, [aliases[e["id"]] for e in entities], list(registry))
-        if (self.max_input_tokens is not None
-                and request_size(REVIEW_STAGE, payload, schema) > self.max_input_tokens):
+        if (self.max_request_bytes is not None
+                and request_size(REVIEW_STAGE, payload, schema) > self.max_request_bytes):
             raise ValueError("key_realignment_input_budget_exceeded")
         self.trace("before-key-review", self.state)
         answer = KeyRealignment.model_validate(self.invoke(REVIEW_STAGE, payload, schema))
@@ -399,14 +399,14 @@ def main():
                                     prefix.state.get("cursor", {}).get("main", {}).get("stage")
                                     == "entity_review"
                                 ), rank=rank, lookup=lookup,
-                                max_input_tokens=policy["max_input_tokens"])
+                                policy=policy)
                 prefix.run()
                 trace("state", prefix.state)
                 for condition in args.conditions:
                     current = f"{case}-{repeat + 1}-{condition}"
                     kwargs = dict(ir=ir, catalog=catalog, state=prefix.state, invoke=invoke,
                                   save=lambda _: None, should_stop=lambda: False, lookup=lookup,
-                                  max_input_tokens=policy["max_input_tokens"])
+                                  policy=policy)
                     engine = Engine(**kwargs) if condition == "A" else ProbeEngine(
                         key_lookup=lookup, condition=condition, trace=trace, **kwargs,
                     )

@@ -49,6 +49,9 @@ def gateway_schema(schema):
 
 
 def freeze_policy() -> dict:
+    from .evidence_gate import normalize_table_rules
+    from .work import DEFAULT_POLICY
+
     if settings.local_llm_max_tokens < OUTPUT_TOKENS:
         raise ValueError("harness_requires_16384_output_tokens")
     return {
@@ -59,14 +62,17 @@ def freeze_policy() -> dict:
         "max_output_tokens": OUTPUT_TOKENS,
         "timeout_seconds": settings.local_llm_total_timeout_s,
         "card_ranking": freeze_ranking_policy(settings),
+        "execution_policy": {**DEFAULT_POLICY, "table_relation_rules": normalize_table_rules(
+            settings.document_harness_table_rules_json,
+        )},
     }
 
 
 def request_size(stage, payload, schema):
-    """Diagnostic UTF-8 byte upper bound, not a reported tokenizer measurement.
+    """Estimate prompt/schema UTF-8 bytes for the independent batch packing limit.
 
-    Byte-level tokenizers need at most one token per byte. A fixed margin covers
-    message delimiters. This estimate is not an execution budget.
+    A fixed margin covers message delimiters. This is not a tokenizer count or
+    a measurement of paid usage; actual usage comes from the model response.
     """
     return (
         len(

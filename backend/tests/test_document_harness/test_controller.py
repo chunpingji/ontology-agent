@@ -57,11 +57,19 @@ class Model:
         if stage == "referent_candidates":
             return {"new_spans": [], "expressions": [], "partitions": []}
         if stage == "coreference_review":
-            return {"judgments": {pair["pair_id"]: {
-                "verdict": "unresolved", "basis": "insufficient", "confidence": 0.95,
-                "evidence": [s["source_id"] for s in sources],
-                "proof": [], "reason": "No direct co-reference proof in this context",
-            } for pair in payload["pairs"]}}
+            return {
+                "judgments": {
+                    pair["pair_id"]: {
+                        "verdict": "unresolved",
+                        "basis": "insufficient",
+                        "confidence": 0.95,
+                        "evidence": [s["source_id"] for s in sources],
+                        "proof": [],
+                        "reason": "No direct co-reference proof in this context",
+                    }
+                    for pair in payload["pairs"]
+                }
+            }
         if stage == "discover":
             fields = {f["label"]: f["field_id"] for f in payload["fields"]}
             return {
@@ -112,45 +120,46 @@ class Model:
                     for e in payload["entities"]
                 }
             }
-        if stage == "assertion_alignment":
+        if stage == "property_alignment":
             subject = payload["subject"]
-            properties = {key: {"mappings": [],
-                                "reason": "Current card has no matching property"}
-                          for key in payload["property_field_ids"]}
-            relations = []
+            properties = {
+                key: {"mappings": [], "reason": "Current card has no matching property"}
+                for key in payload["property_field_ids"]
+            }
             for f in subject["fields"]:
                 if f["label"] == "颜色" and f["field_id"] in payload["property_field_ids"]:
                     properties[f["field_id"]] = {
-                            "mappings": [{"confidence": 0.95, "value_component": "whole",
-                            "value_quote": None,
-                            "predicate_iri": "urn:test:foreign"
-                            if self.foreign_property
-                            else "urn:test:color"}],
-                            "reason": "Original field role",
-                        }
-            for obj in payload["objects"]:
-                if subject["role"] == "document_root":
-                    predicate = "urn:test:describes"
-                elif subject["label"] == "Alpha" and obj["label"] == "Beta":
-                    predicate = "urn:test:contains"
-                else:
-                    continue
-                relations.append(
-                    {
-                        "object_id": obj["entity_id"],
-                        "predicate_iri": predicate,
-                        "confidence": 0.95,
-                        "reason": "Source relation",
-                        "evidence": (
-                            [quote(sources, "Alpha contains Beta")["source_id"]]
-                            if any("Alpha contains Beta" in s["text"] for s in sources)
-                            else obj["evidence"]
-                        ),
-                        "polarity": "positive",
-                        "conditions": [],
+                        "mappings": [
+                            {
+                                "confidence": 0.95,
+                                "value_component": "whole",
+                                "value_quote": None,
+                                "predicate_iri": "urn:test:foreign"
+                                if self.foreign_property
+                                else "urn:test:color",
+                            }
+                        ],
+                        "reason": "Original field role",
                     }
-                )
-            return {"properties": properties, "relations": relations, "complete": True}
+            return {"properties": properties}
+        if stage == "relation_alignment":
+            return {
+                "proposals": {
+                    item["candidate_id"]: {
+                        "verdict": "proposed",
+                        "polarity": item["polarity_hint"],
+                        "conditions": item["condition_hints"],
+                        "participation": None,
+                        "selection": None,
+                        "timing": None,
+                        "missing_context": "none",
+                        "evidence": item["clue_sources"],
+                        "reason": "Source relation",
+                        "confidence": 0.95,
+                    }
+                    for item in payload["items"]
+                }
+            }
         assert stage in {"entity_review", "evidence_review"}
         judgments = {}
         for c in payload["candidates"]:
@@ -162,17 +171,18 @@ class Model:
             if self.bad_review:
                 evidence = [quote(sources, "对象记录")["source_id"]]
             judgments[c["id"]] = {
-                    "verdict": "accepted",
-                    "confidence": 0.99,
-                    "evidence": evidence,
-                    "reason": "Literal source and role checked",
-                }
-        return {"judgments": judgments, **({"type_concerns": []}
-                                         if stage == "evidence_review" else {})}
+                "verdict": "accepted",
+                "confidence": 0.99,
+                "evidence": evidence,
+                "reason": "Literal source and role checked",
+            }
+        return {
+            "judgments": judgments,
+            **({"type_concerns": []} if stage == "evidence_review" else {}),
+        }
 
 
-def execute(inputs, model, *, stop=lambda: False, state=None, windows=None,
-            max_input_tokens=None):
+def execute(inputs, model, *, stop=lambda: False, state=None, windows=None, max_request_bytes=None):
     ir, catalog = inputs
     snapshots = []
     engine = Engine(
@@ -182,7 +192,7 @@ def execute(inputs, model, *, stop=lambda: False, state=None, windows=None,
         invoke=model,
         save=lambda changes: snapshots.append(deepcopy(changes)),
         should_stop=stop,
-        max_input_tokens=max_input_tokens,
+        max_request_bytes=max_request_bytes,
     )
     if windows is not None:
         engine.windows = windows
@@ -197,9 +207,9 @@ def test_full_new_pipeline_preserves_sources_and_exposes_dashed_before_review(in
         "discover",
         "type_alignment",
         "entity_review",
-        "assertion_alignment",
+        "property_alignment",
+        "relation_alignment",
         "evidence_review",
-        "coreference_review",
     }
     mentions = [e for e in state["entities"].values() if e["role"] != "document_root"]
     assert len(mentions) == 2
@@ -271,8 +281,11 @@ def test_shared_field_preserves_separate_subject_card_outcomes_and_actual_mappin
     assert len(outcomes) == 3
     root = next(o for o in outcomes if o["subject_id"] == "document")
     assert root == {
-        "subject_id": "document", "class_iri": "urn:test:Report", "predicate_iris": [],
-        "state": "unmatched", "reason": "当前类型卡无合法属性可对齐",
+        "subject_id": "document",
+        "class_iri": "urn:test:Report",
+        "predicate_iris": [],
+        "state": "unmatched",
+        "reason": "当前类型卡无合法属性可对齐",
     }
     mapped = [o for o in outcomes if o["state"] == "mapped"]
     assert len(mapped) == 2
@@ -281,14 +294,19 @@ def test_shared_field_preserves_separate_subject_card_outcomes_and_actual_mappin
     assert all(o["predicate_iris"] == ["urn:test:color"] for o in mapped)
     properties = list(state["properties"].values())
     assert len(properties) == 2
-    assert all(p["alignment_class_iri"] == "urn:test:Thing" and p["state"] == "accepted"
-               and p["field_id"] == observation["field_id"] for p in properties)
+    assert all(
+        p["alignment_class_iri"] == "urn:test:Thing"
+        and p["state"] == "accepted"
+        and p["field_id"] == observation["field_id"]
+        for p in properties
+    )
     hint = next(o for o in state["observations"].values() if o["kind"] == "relation")
     assert hint["subject_id"] != hint["object_id"]
 
 
 def test_split_property_menus_do_not_turn_one_unmatched_menu_into_global_rejection(
-    inputs, monkeypatch,
+    inputs,
+    monkeypatch,
 ):
     from app.services.document_harness import controller
     from app.services.document_harness.ontology import PropertyCard
@@ -296,14 +314,18 @@ def test_split_property_menus_do_not_turn_one_unmatched_menu_into_global_rejecti
     ir, catalog = inputs
     card = catalog.classes["urn:test:Thing"]
     extra = PropertyCard(iri="urn:test:size", label="尺寸", description="对象尺寸")
-    catalog = catalog.model_copy(update={"classes": {
-        **catalog.classes,
-        card.iri: card.model_copy(update={"properties": (*card.properties, extra)}),
-    }})
+    catalog = catalog.model_copy(
+        update={
+            "classes": {
+                **catalog.classes,
+                card.iri: card.model_copy(update={"properties": (*card.properties, extra)}),
+            }
+        }
+    )
     original_size = controller.request_size
 
     def size(stage, payload, schema):
-        if stage == "assertion_alignment" and len(payload["card"]["properties"]) > 1:
+        if stage == "property_alignment" and len(payload["card"]["properties"]) > 1:
             return 1000000
         return original_size(stage, payload, schema)
 
@@ -312,14 +334,14 @@ def test_split_property_menus_do_not_turn_one_unmatched_menu_into_global_rejecti
 
     def model(stage, payload, schema):
         answer = original(stage, payload, schema)
-        if stage == "assertion_alignment":
+        if stage == "property_alignment":
             menu = {p["iri"] for p in payload["card"]["properties"]}
             for choice in answer["properties"].values():
                 if any(mapping["predicate_iri"] not in menu for mapping in choice["mappings"]):
                     choice.update(mappings=[], reason="尺寸菜单不匹配颜色")
         return answer
 
-    state, _ = execute((ir, catalog), model, max_input_tokens=32768)
+    state, _ = execute((ir, catalog), model, max_request_bytes=32768)
     row = next(o for o in state["observations"].values() if o["label"] == "颜色")
     outcomes = {tuple(a["predicate_iris"]): a for a in row["alignment_outcomes"].values()}
     assert outcomes[("urn:test:size",)]["state"] == "unmatched"
@@ -330,18 +352,20 @@ def test_split_property_menus_do_not_turn_one_unmatched_menu_into_global_rejecti
 
 @pytest.mark.parametrize("change", ["omit", "extra"])
 def test_controller_rejects_inexact_property_keys_even_if_model_skips_dynamic_schema(
-    inputs, change,
+    inputs,
+    change,
 ):
     base = Model()
 
     def model(stage, payload, schema):
         response = base(stage, payload, schema)
-        if stage == "assertion_alignment" and payload["property_field_ids"]:
+        if stage == "property_alignment" and payload["property_field_ids"]:
             if change == "omit":
                 response["properties"].pop(payload["property_field_ids"][0])
             else:
                 response["properties"]["unknown"] = {
-                    "mappings": [], "reason": "not a requested field",
+                    "mappings": [],
+                    "reason": "not a requested field",
                 }
         return response
 
@@ -354,7 +378,7 @@ def test_explicit_null_property_mapping_retains_each_original_field_and_reason(i
 
     def model(stage, payload, schema):
         response = base(stage, payload, schema)
-        if stage == "assertion_alignment":
+        if stage == "property_alignment":
             fields = {field["field_id"]: field for field in payload["subject"]["fields"]}
             response["properties"] = {
                 key: {
@@ -368,9 +392,12 @@ def test_explicit_null_property_mapping_retains_each_original_field_and_reason(i
     state, _ = execute(inputs, model)
     assert not state.get("properties")
     observations = {
-        row["label"]: row for row in state["observations"].values()
-        if any(outcome["reason"].startswith("No legal match for ")
-               for outcome in row.get("alignment_outcomes", {}).values())
+        row["label"]: row
+        for row in state["observations"].values()
+        if any(
+            outcome["reason"].startswith("No legal match for ")
+            for outcome in row.get("alignment_outcomes", {}).values()
+        )
     }
     assert set(observations) == {"名称", "颜色", "对象"}
     for field in state["fields"].values():
@@ -387,7 +414,8 @@ def test_explicit_null_property_mapping_retains_each_original_field_and_reason(i
 
 def test_document_fields_are_aligned_without_body_entities(inputs):
     ir, _ = inputs
-    graph = Graph().parse(data="""
+    graph = Graph().parse(
+        data="""
         @prefix : <urn:test:> .
         @prefix owl: <http://www.w3.org/2002/07/owl#> .
         @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
@@ -395,7 +423,9 @@ def test_document_fields_are_aligned_without_body_entities(inputs):
         :Report a owl:Class .
         :color a owl:DatatypeProperty ; rdfs:domain :Report ; rdfs:label "颜色" ;
           rdfs:range xsd:string .
-    """, format="turtle")
+    """,
+        format="turtle",
+    )
     catalog = catalog_from_graph(graph, "urn:test:Report")
     calls = []
 
@@ -403,30 +433,48 @@ def test_document_fields_are_aligned_without_body_entities(inputs):
         calls.append(stage)
         if stage == "discover":
             return {
-                "entities": [], "relation_hints": [], "unowned_fields": [], "complete": True,
+                "entities": [],
+                "relation_hints": [],
+                "unowned_fields": [],
+                "complete": True,
                 "document_source_fields": [],
                 "document_field_ids": [
                     f["field_id"] for f in payload["fields"] if f["label"] == "颜色"
                 ],
             }
-        if stage == "assertion_alignment":
+        if stage == "property_alignment":
             assert payload["subject"]["role"] == "document_root"
             return {
-                "properties": {payload["property_field_ids"][0]: {
-                    "mappings": [{"predicate_iri": "urn:test:color", "confidence": 0.99,
-                                  "value_component": "whole", "value_quote": None}],
-                    "reason": "原字段",
-                }},
-                "relations": [], "complete": True,
+                "properties": {
+                    payload["property_field_ids"][0]: {
+                        "mappings": [
+                            {
+                                "predicate_iri": "urn:test:color",
+                                "confidence": 0.99,
+                                "value_component": "whole",
+                                "value_quote": None,
+                            }
+                        ],
+                        "reason": "原字段",
+                    }
+                },
             }
         assert stage == "evidence_review"
-        return {"type_concerns": [], "judgments": {c["id"]: {
-            "verdict": "accepted", "confidence": 0.99,
-            "evidence": c["evidence"], "reason": "原值和归属明确",
-        } for c in payload["candidates"]}}
+        return {
+            "type_concerns": [],
+            "judgments": {
+                c["id"]: {
+                    "verdict": "accepted",
+                    "confidence": 0.99,
+                    "evidence": c["evidence"],
+                    "reason": "原值和归属明确",
+                }
+                for c in payload["candidates"]
+            },
+        }
 
     state, _ = execute((ir, catalog), model)
-    assert calls == ["discover", "assertion_alignment", "evidence_review"]
+    assert calls == ["discover", "property_alignment", "evidence_review"]
     assert [p["value"] for p in state["properties"].values()] == ["red"]
     assert all(p["state"] == "accepted" for p in state["properties"].values())
 
@@ -452,19 +500,29 @@ def test_discovery_oversized_input_splits_before_model_call(inputs, tmp_path):
         assert stage == "discover"
         assert request_size(stage, payload, schema) <= budget
         calls.append(payload)
-        return {"entities": [], "relation_hints": [], "document_field_ids": [],
-                "document_source_fields": [],
-                "unowned_fields": [], "complete": True}
+        return {
+            "entities": [],
+            "relation_hints": [],
+            "document_field_ids": [],
+            "document_source_fields": [],
+            "unowned_fields": [],
+            "complete": True,
+        }
 
     engine = Engine(
-        ir=ir, catalog=catalog, state={}, invoke=model, save=lambda _: None,
-        should_stop=lambda: False, max_input_tokens=budget,
+        ir=ir,
+        catalog=catalog,
+        state={},
+        invoke=model,
+        save=lambda _: None,
+        should_stop=lambda: False,
+        max_request_bytes=budget,
     )
     engine.windows = build_windows(ir, max_chars=4800)
     engine.run()
-    assert engine.state["extra_windows"]
+    assert any(row["children"] for row in engine.state["windows"].values())
     assert len(calls) > 1
-    assert engine.state["cursor"]["main"]["windows_reviewed"] == len(calls)
+    assert engine.state["cursor"]["main"]["windows_reviewed"] == len(engine.state["windows"])
     assert engine.state["cursor"]["main"]["scope_complete"]
 
 
@@ -474,15 +532,20 @@ def test_reading_limit_does_not_claim_full_scope(inputs):
     def incomplete(stage, payload, schema):
         assert stage == "discover"
         calls.append(payload)
-        return {"entities": [], "relation_hints": [], "document_field_ids": [],
-                "document_source_fields": [],
-                "unowned_fields": [], "complete": False}
+        return {
+            "entities": [],
+            "relation_hints": [],
+            "document_field_ids": [],
+            "document_source_fields": [],
+            "unowned_fields": [],
+            "complete": False,
+        }
 
     state, _ = execute(inputs, incomplete)
     assert state["cursor"]["main"]["stage"] == "complete"
     assert not state["cursor"]["main"]["scope_complete"]
     assert 1 < len(calls) <= 31
-    assert state["extra_windows"]
+    assert any(row["children"] for row in state["windows"].values())
 
 
 def test_prose_field_can_be_proposed_without_a_preparsed_field(inputs):
@@ -514,7 +577,9 @@ def test_prose_field_can_be_proposed_without_a_preparsed_field(inputs):
 
 @pytest.mark.parametrize("overlap,confirmed", [(True, True), (True, False), (False, True)])
 def test_untyped_overlapping_referent_gets_independent_menu_without_borrowing_verdict(
-    inputs, overlap, confirmed,
+    inputs,
+    overlap,
+    confirmed,
 ):
     original = Model()
     comparisons = []
@@ -530,7 +595,8 @@ def test_untyped_overlapping_referent_gets_independent_menu_without_borrowing_ve
             if len(payload["entities"]) > 1:
                 untyped = next(e for e in payload["entities"] if e["role"] == "component")
                 answer["entities"][untyped["entity_id"]].update(
-                    class_iri=None, reason="批量回答将类型留给另一个候选",
+                    class_iri=None,
+                    reason="批量回答将类型留给另一个候选",
                 )
             else:
                 comparisons.append(payload)
@@ -590,7 +656,9 @@ def test_combined_review_quotes_cover_a_long_source_value(inputs):
     assert not engine.review_sources_cover("properties", candidate, refs)
 
 
-def test_cross_window_relation_rechecks_unresolved_endpoint_without_name_merging(inputs, tmp_path):
+def test_explicit_cross_window_reference_preserves_endpoint_gate_without_name_merging(
+    inputs, tmp_path
+):
     _, catalog = inputs
     doc = Document()
     doc.add_heading("第一份对象记录", 1)
@@ -609,7 +677,9 @@ def test_cross_window_relation_rechecks_unresolved_endpoint_without_name_merging
             field = next(f for f in payload["fields"] if f["label"] == "名称")
             name = field["value"]
             return {
-                "document_field_ids": [], "document_source_fields": [], "unowned_fields": [],
+                "document_field_ids": [],
+                "document_source_fields": [],
+                "unowned_fields": [],
                 "entities": [
                     {
                         "local_id": "e",
@@ -622,6 +692,20 @@ def test_cross_window_relation_rechecks_unresolved_endpoint_without_name_merging
                     }
                 ],
                 "relation_hints": [],
+                "reference_cues": [
+                    {
+                        "local_subject_id": "e",
+                        "reference": quote(payload["sources"], "Alpha"),
+                        "relation_label": "contains",
+                        "direction": "incoming",
+                        "kind": "explicit_reference",
+                        "polarity": "positive",
+                        "conditions": [],
+                        "evidence": [quote(payload["sources"], "Alpha contains Beta")["source_id"]],
+                    }
+                ]
+                if name == "Beta"
+                else [],
                 "complete": True,
             }
         answer = original(stage, payload, schema)
@@ -638,19 +722,27 @@ def test_cross_window_relation_rechecks_unresolved_endpoint_without_name_merging
     assert len(windows) == 2  # Explicit budget boundary, not a section-per-call assumption.
     state, _ = execute((ir, catalog), model, windows=windows)
     assert len([e for e in state["entities"].values() if e["role"] != "document_root"]) == 2
-    assert all(e["state"] == "accepted" for e in state["entities"].values())
-    assert any(
-        r["predicate_iri"] == "urn:test:contains" and r["state"] == "accepted"
-        for r in state["relations"].values()
+    alpha = next(e for e in state["entities"].values() if e["label"] == "Alpha")
+    assert alpha["state"] == "unresolved"
+    relation = next(iter(state["relations"].values()))
+    assert relation["state"] == "unresolved"
+    assert relation["verification"]["semantic_verdict"] == "accepted"
+    before = len(original.calls)
+    runner = Engine(
+        ir=ir,
+        catalog=catalog,
+        state=state,
+        invoke=model,
+        save=lambda _: None,
+        should_stop=lambda: False,
     )
+    runner.commit({"entities": {alpha["id"]: {**alpha, "state": "accepted"}}})
+    assert runner.state["relations"][relation["id"]]["state"] == "accepted"
+    assert len(original.calls) == before
     for stage, payload, _ in original.calls:
-        if stage == "assertion_alignment":
-            available = {s["source_id"] for s in payload["sources"]}
-            assert all(
-                ref in available
-                for obj in [payload["subject"], *payload["objects"]]
-                for ref in obj["evidence"]
-            )
+        if stage == "relation_alignment":
+            available = {source["source_id"] for source in payload["sources"]}
+            assert all(ref in available for obj in payload["entities"] for ref in obj["evidence"])
 
 
 def test_pause_after_discovery_preserves_candidate_and_resumes_next_stage(inputs):
@@ -686,7 +778,7 @@ def test_review_schema_requires_evidence_for_accepted():
                 "reason": "x",
                 "evidence": [],
             }
-        }
+        },
     }
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(value, schema)
@@ -694,10 +786,13 @@ def test_review_schema_requires_evidence_for_accepted():
     jsonschema.validate(value, schema)
 
 
-@pytest.mark.parametrize("target_stage,field,error", [
-    ("type_alignment", "entities", "type_alignment_entity_set_mismatch"),
-    ("evidence_review", "judgments", "review_candidate_set_mismatch"),
-])
+@pytest.mark.parametrize(
+    "target_stage,field,error",
+    [
+        ("type_alignment", "entities", "type_alignment_answer_set_mismatch"),
+        ("evidence_review", "judgments", "evidence_review_answer_set_mismatch"),
+    ],
+)
 def test_fixed_answer_set_is_also_checked_after_model_transport(inputs, target_stage, field, error):
     original = Model()
 
@@ -716,9 +811,15 @@ def test_fixed_answer_objects_do_not_depend_on_answer_key_order(inputs):
 
     def model(stage, payload, schema):
         answer = original(stage, payload, schema)
-        for field in ("entities", "judgments") if stage in {
-            "type_alignment", "evidence_review",
-        } else ():
+        for field in (
+            ("entities", "judgments")
+            if stage
+            in {
+                "type_alignment",
+                "evidence_review",
+            }
+            else ()
+        ):
             if field in answer:
                 answer[field] = dict(reversed(list(answer[field].items())))
         return answer

@@ -21,7 +21,7 @@ from app.services.document_analysis.run_store import (
     content_hash,
 )
 
-ENGINE = "document-harness-v1"
+ENGINE = "document-harness-v2"
 
 
 class HarnessError(RuntimeError):
@@ -123,6 +123,10 @@ async def create_run(
             ontology_artifact_id=f"harness-schema:{catalog_hash}",
             ontology_payload=catalog, ontology_is_exclusive=False,
         )
+        if created:
+            from .runtime import initialize_state
+
+            initialize_state(db, run, catalog)
         db.commit()
         if not created:
             storage.discard_run(run_id)

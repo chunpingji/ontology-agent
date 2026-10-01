@@ -28,7 +28,12 @@ from app.services.document_harness.application import ENGINE
 from app.services.document_harness.ontology import catalog_from_graph
 from app.services.document_harness.projection import graph_response, source_response
 from app.services.document_harness.ranking import default_policy
-from app.services.document_harness.runtime import HarnessCallFailed, Repository, read_rows
+from app.services.document_harness.runtime import (
+    HarnessCallFailed,
+    Repository,
+    initialize_state,
+    read_rows,
+)
 from app.services.extraction.word_analysis import analyze_word_core
 from app.services.llm.local_client import StructuredModelError
 from app.services.llm.model_runtime import ModelCancelled
@@ -56,9 +61,24 @@ def _run(db, *, owner="analyst", engine=ENGINE, document_hash="d" * 64, catalog=
         ontology_artifact_id="schema:" + key, ontology_payload=catalog,
         progress={"engine": engine},
     )
+    initialize_state(db, run, catalog)
     token = store.claim(run.recognition_run_id, owner, actor="test", worker_id="test")
     db.commit()
     return run, token
+
+
+def _discovery():
+    return {"entities": [], "document_field_ids": [], "document_source_fields": [],
+            "unowned_fields": [], "relation_hints": [], "reference_cues": [], "complete": True}
+
+
+def _requests(db, run):
+    repo = Repository(db, run, "")
+    return {row.payload["key"]: repo.get_call_record(row.payload["key"])
+            for row in db.scalars(select(DocumentRunRequest).where(
+                DocumentRunRequest.recognition_run_id == run.recognition_run_id,
+                DocumentRunRequest.domain == "harness:calls",
+            ))}
 
 
 def test_paid_response_is_saved_once_and_reused_before_application(db, monkeypatch):
@@ -67,7 +87,7 @@ def test_paid_response_is_saved_once_and_reused_before_application(db, monkeypat
 
     run, token = _run(db)
     calls = []
-    answer = {"output": {"entities": []}, "usage": {"input_tokens": 9, "output_tokens": 2},
+    answer = {"output": _discovery(), "usage": {"input_tokens": 9, "output_tokens": 2},
               "seconds": 1.5, "raw_response": {"id": "paid"}, "error": None}
     def call(*args):
         assert runtime.get()["stage"] == "discover"
@@ -78,21 +98,20 @@ def test_paid_response_is_saved_once_and_reused_before_application(db, monkeypat
     repository = Repository(db, run, token)
     assert repository.invoke("discover", {"source": "original"}, {}) == answer["output"]
     # A fresh repository simulates pause/restart before the controller applies it.
-    assert Repository(db, run, token).invoke("discover", {"source": "original"}, {}) == {
-        "entities": [],
-    }
+    assert Repository(db, run, token).invoke("discover", {"source": "original"}, {}) == _discovery()
     assert len(calls) == 1
     results = read_rows(db, run, model=DocumentRunResult)["calls"]
     assert next(iter(results.values()))["raw_response"] == {"id": "paid"}
-    assert next(iter(read_rows(db, run, model=DocumentRunRequest)["calls"].values()))[
+    assert next(iter(_requests(db, run).values()))[
         "status"
     ] == "completed"
-    request = next(iter(read_rows(db, run, model=DocumentRunRequest)["calls"].values()))
+    request = next(iter(_requests(db, run).values()))
     assert request["payload"] == {"source": "original"}
     assert request["schema"] == {}
-    assert graph_response(db, run)["progress"]["stage_costs"] == [{
-        "stage": "discover", "calls": 1, "seconds": 1.5, "input_tokens": 9, "output_tokens": 2,
-    }]
+    cost = graph_response(db, run)["progress"]["stage_costs"][0]
+    assert cost["stage"] == "discover" and cost["calls"] == 1
+    assert cost["input_tokens"] == 9 and cost["output_tokens"] == 2
+    assert cost["seconds"] >= 0 and cost["unmeasured_attempts"] == 0
 
 
 def test_span_extension_uses_separate_paid_answer_and_reuses_it_on_resume(db, monkeypatch):
@@ -106,23 +125,24 @@ def test_span_extension_uses_separate_paid_answer_and_reuses_it_on_resume(db, mo
                                              {"span_id": "P2", "text": "A2"}],
                 "new_spans_allowed": False}
 
+    def expected(payload):
+        return {"new_spans": [], "partitions": [], "expressions": [
+            {"id": ref["span_id"], "span_id": ref["span_id"], "property_iri": "urn:test:id"}
+            for ref in payload["evidence_spans"]
+        ]}
+
     def call(stage, payload, schema, policy):
         calls.append(payload)
-        return {"output": {"expressions": ["P1", "P2"] if payload["evidence_spans"] else []},
-                "usage": {"output_tokens": 8},
+        return {"output": expected(payload), "usage": {"output_tokens": 8},
                 "seconds": 0.2, "raw_response": {}, "error": None}
 
     monkeypatch.setattr(model, "call_model", call)
     for _ in range(2):
         repository = Repository(db, run, token)
-        assert repository.invoke("referent_candidates", original, {}) == {
-            "expressions": [],
-        }
-        assert repository.invoke("referent_candidates", expanded, {}) == {
-            "expressions": ["P1", "P2"],
-        }
+        assert repository.invoke("referent_candidates", original, {}) == expected(original)
+        assert repository.invoke("referent_candidates", expanded, {}) == expected(expanded)
     assert calls == [original, expanded]
-    requests = read_rows(db, run, model=DocumentRunRequest)["calls"]
+    requests = _requests(db, run)
     assert len(requests) == 2
     assert all(r["attempts"] == 1 and r["status"] == "completed" for r in requests.values())
 
@@ -202,17 +222,17 @@ def test_retryable_model_error_saves_only_complete_answer(db, monkeypatch, error
         calls.append(1)
         if len(calls) == 1:
             raise StructuredModelError(error_code)
-        return {"output": {"entities": []}, "raw_response": {"id": "complete"},
+        return {"output": _discovery(), "raw_response": {"id": "complete"},
                 "usage": {"input_tokens": 9}, "seconds": 1.5, "error": None}
 
     monkeypatch.setattr(model, "call_model", call)
-    assert Repository(db, run, token).invoke("discover", {}, {}) == {"entities": []}
-    assert Repository(db, run, token).invoke("discover", {}, {}) == {"entities": []}
+    assert Repository(db, run, token).invoke("discover", {}, {}) == _discovery()
+    assert Repository(db, run, token).invoke("discover", {}, {}) == _discovery()
     assert len(calls) == 2
-    request = next(iter(read_rows(db, run, model=DocumentRunRequest)["calls"].values()))
+    request = next(iter(_requests(db, run).values()))
     assert request["status"] == "completed"
     assert request["attempts"] == 2
-    assert request["unmeasured_attempts"] == 1
+    assert request["unmeasured_attempts"] == 0
     result = next(iter(read_rows(db, run, model=DocumentRunResult)["calls"].values()))
     assert result["raw_response"] == {"id": "complete"}
     costs = graph_response(db, run)["progress"]["stage_costs"]
@@ -236,9 +256,10 @@ def test_retryable_model_error_stops_after_bounded_retries(db, monkeypatch, erro
         Repository(db, run, token).invoke("discover", {}, {})
     assert len(calls) == 3
     assert not read_rows(db, run, model=DocumentRunResult)
-    request = next(iter(read_rows(db, run, model=DocumentRunRequest)["calls"].values()))
+    request = next(iter(_requests(db, run).values()))
     assert request["status"] == "failed"
-    assert request["attempts"] == request["unmeasured_attempts"] == 3
+    assert request["attempts"] == 3
+    assert request["unmeasured_attempts"] == 0
     assert request["error"] == error_code
 
 
@@ -264,7 +285,7 @@ def test_retryable_model_error_does_not_retry_after_pause(db, monkeypatch, error
     with pytest.raises(ModelCancelled):
         Repository(db, run, token).invoke("discover", {}, {})
     assert len(calls) == 1
-    request = next(iter(read_rows(db, run, model=DocumentRunRequest)["calls"].values()))
+    request = next(iter(_requests(db, run).values()))
     assert request["attempts"] == 1
     assert request["error"] == error_code
 
@@ -379,14 +400,16 @@ def test_create_api_defaults_to_new_engine_without_old_policy(
     source = db.get(DocumentAnalysisArtifact, run.source_artifact_ref).payload
     assert "performance_policy" not in source
     assert source["policy"]["max_output_tokens"] == 16384
-    assert not read_rows(db, run)
+    assert set(read_rows(db, run)) == {"metrics", "display"}
+    assert graph_response(db, run)["progress"]["completed_calls"] == 0
     graph_url = links["graph"]
     graph = client.get(graph_url, headers=analyst_headers)
     assert graph.status_code == 200, graph.text
     assert graph.json()["stage"] == "ingest"
     assert graph.json()["status"] == "queued"
     assert graph.json()["progress"]["completed_calls"] == 0
-    assert not read_rows(db, run)
+    assert set(read_rows(db, run)) == {"metrics", "display"}
+    assert graph_response(db, run)["progress"]["completed_calls"] == 0
 
 
 def test_worker_pause_commits_paid_answer_and_resume_uses_current_business_state(
@@ -417,7 +440,7 @@ def test_worker_pause_commits_paid_answer_and_resume_uses_current_business_state
         db.commit()
         return {"output": {"entities": [], "relation_hints": [], "complete": True,
                            "document_field_ids": [], "document_source_fields": [],
-                           "unowned_fields": []},
+                           "unowned_fields": [], "reference_cues": []},
                 "raw_response": {}, "error": None, "usage": {}, "seconds": 0.1}
 
     monkeypatch.setattr(model, "call_model", answer)
@@ -743,7 +766,7 @@ def test_failed_transport_records_duration_and_preserves_unknown_token_counts(db
     from app.services.document_harness import model, runtime
 
     run, token = _run(db)
-    times = iter((10.0, 13.75, 20.0))
+    times = iter((10.0, 13.75, 20.0, 22.0))
     monkeypatch.setattr(runtime, "monotonic", lambda: next(times))
 
     def failed(*_args):
@@ -752,17 +775,18 @@ def test_failed_transport_records_duration_and_preserves_unknown_token_counts(db
     monkeypatch.setattr(model, "call_model", failed)
     with pytest.raises(TimeoutError):
         Repository(db, run, token).invoke("discover", {}, {})
-    request = next(iter(read_rows(db, run, model=DocumentRunRequest)["calls"].values()))
+    request = next(iter(_requests(db, run).values()))
     assert request["finished_at"] and request["started_at"]
-    assert request["seconds"] == 3.75
-    assert request["usage"] is None
+    assert request["duration_us"] == 3_750_000
+    assert request["unknown_input"] == request["unknown_output"] == 1
     graph = HarnessGraph.model_validate(graph_response(db, run))
     assert graph.progress.stage_costs[0].seconds == 3.75
     assert graph.progress.stage_costs[0].input_tokens is None
     assert graph.progress.stage_costs[0].output_tokens is None
     assert graph.observations[0].reason == "TimeoutError"
     monkeypatch.setattr(model, "call_model", lambda *_: {
-        "output": {}, "raw_response": {}, "usage": {"input_tokens": 9, "output_tokens": 2},
+        "output": _discovery(), "raw_response": {},
+        "usage": {"input_tokens": 9, "output_tokens": 2},
         "seconds": 2.0, "error": None,
     })
     Repository(db, run, token).invoke("discover", {}, {})

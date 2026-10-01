@@ -238,7 +238,9 @@ def main():
                     engine = Engine(
                         ir=ir, catalog=catalog, state={}, invoke=model, save=save,
                         should_stop=lambda: state.get("cursor", {}).get("main", {}).get("stage")
-                        not in (None, "discover"), max_input_tokens=policy["max_input_tokens"],
+                        not in (None, "discover"),
+                        policy=policy,
+                        max_request_bytes=policy["execution_policy"]["wire_bytes_per_call"],
                         rank=rank, lookup=query_port if condition != "A" else None,
                     )
                     engine.windows = [build_windows(ir)[0]]

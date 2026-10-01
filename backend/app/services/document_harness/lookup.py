@@ -89,8 +89,8 @@ def run_discovery(engine, window, payload=None, capabilities=None):
             source_ids=[s["source_id"] for s in window.sources],
             field_ids=[f["alias"] for f in window.fields],
         )
-        if (engine.max_input_tokens is not None
-                and request_size("discover", payload, schema) > engine.max_input_tokens):
+        if (engine.max_request_bytes is not None
+                and request_size("discover", payload, schema) > engine.max_request_bytes):
             return None, {"issues": ["lookup_draft_budget_exceeded"]}
         work = {"payload": payload, "schema": schema}
         save()
@@ -124,8 +124,8 @@ def run_discovery(engine, window, payload=None, capabilities=None):
         source_ids=[s["source_id"] for s in window.sources],
         field_ids=[f["alias"] for f in window.fields],
     )
-    if (engine.max_input_tokens is not None
-            and request_size("discover", payload, schema) > engine.max_input_tokens):
+    if (engine.max_request_bytes is not None
+            and request_size("discover", payload, schema) > engine.max_request_bytes):
         metadata.update(status="not_completed", issues=["lookup_feedback_budget_exceeded"])
         return base_discovery(draft), metadata
     refined = engine.call("discover", payload, schema)

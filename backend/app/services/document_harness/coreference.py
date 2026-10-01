@@ -34,29 +34,56 @@ def pair_id(left, right):
     return identity("coreference", sorted((left, right)))
 
 
-def candidate_pairs(state, classes):
-    """No name threshold: aliases may share no characters. Unchecked pairs stay pending."""
-    entities = sorted((row for row in state.get("entities", {}).values()
-                       if row["state"] == "accepted" and row["role"] != "document_root"
-                       and row.get("referent")), key=lambda row: row["id"])
-    for left, right in combinations(entities, 2):
-        key = pair_id(left["id"], right["id"])
-        if key not in state.get("coreferences", {}) and compatible(classes, left, right):
+def candidate_pairs(state, classes, work_rows=None):
+    """Only source-clued work is eligible; type compatibility never creates a pair."""
+    rows = state.get("work", {}).values() if work_rows is None else work_rows
+    seen = set()
+    for work in sorted(rows, key=lambda row: row["id"]):
+        if work["kind"] != "coreference_review" or work["status"] != "ready":
+            continue
+        data = work["input"]
+        keys = sorted([data["left_mention_id"], data["right_mention_id"]])
+        left, right = [state.get("entities", {}).get(key) for key in keys]
+        if (keys[0] == keys[1] or not data.get("clue_refs")
+                or any(row is None or row.get("state") != "accepted"
+                       or row.get("role") == "document_root" or not row.get("referent")
+                       or row.get("referent_unresolved") for row in (left, right))
+                or not compatible(classes, left, right)):
+            continue
+        key = pair_id(*keys)
+        if key not in seen:
+            seen.add(key)
             yield key, left, right
 
 
-def review_coreferences(engine):
+def review_coreferences(engine, *, work_rows=None):
     """One bounded call at a time, saving each result through the existing current state."""
+    rows = [row for row in (engine.state.get("work", {}).values()
+                           if work_rows is None else work_rows)
+            if row["kind"] == "coreference_review" and row["status"] == "ready"]
+    by_pair = {pair_id(row["input"]["left_mention_id"], row["input"]["right_mention_id"]): row
+               for row in rows}
+    pending = list(candidate_pairs(engine.state, engine.catalog.classes, rows))
+    eligible = {key for key, _, _ in pending}
+    waiting = {row["id"]: {**row, "status": "waiting",
+                           "reason_code": "coreference_source_or_endpoint_unresolved"}
+               for key, row in by_pair.items() if key not in eligible}
+    if waiting:
+        engine.commit({"work": waiting})
+
     def review(pairs):
+        batch_work = [engine.state["work"][by_pair[key]["id"]] for key, _, _ in pairs]
         entities = {row["id"]: row for _, left, right in pairs for row in (left, right)}
         sections = {row["referent"]["section_id"] for row in entities.values()}
         headings = [reference(engine.ir, unit.evidence_id, 0, len(unit.text))
                     for unit in engine.ir.evidence_units
                     if unit.kind == "heading" and unit.section_node_id in sections
                     and unit.text.strip()]
+        clues = [reference(engine.ir, *ref) if isinstance(ref, (list, tuple)) else ref
+                 for work in batch_work for ref in work["input"]["clue_refs"]]
         window = context_window(
             engine.ir, Window("coreference", [], [], []), entities.values(),
-            engine.state.get("fields", {}), headings,
+            engine.state.get("fields", {}), [*headings, *clues],
         )
         aliases = engine.entity_aliases(window)
         ids = {f"P{i + 1}": pair for i, pair in enumerate(pairs)}
@@ -83,19 +110,25 @@ def review_coreferences(engine):
                                         for row in (left, right)]
                                   for key, (_, left, right) in ids.items()
                               })
-        if (engine.max_input_tokens is not None
+        if (engine.max_request_bytes is not None
                 and request_size("coreference_review", payload, schema)
-                > engine.max_input_tokens):
+                > engine.max_request_bytes):
             if len(pairs) == 1:
-                raise ValueError("harness_single_coreference_input_too_large")
+                raise ValueError("HARNESS_EVIDENCE_CONTEXT_TOO_LARGE")
             middle = len(pairs) // 2
             review(pairs[:middle])
             review(pairs[middle:])
             return
+        cursor = engine.state.get("cursor", {}).get("main")
+        if cursor is not None and cursor.get("stage") != "coreference_review":
+            engine.commit({"cursor": {"main": {**cursor, "stage": "coreference_review"}}})
+        engine._call_window = window
+        engine._call_targets = [{"domain": "work", "id": row["id"],
+                                 "dependency_hash": row["dependency_hash"]} for row in batch_work]
         answer = engine.call("coreference_review", payload, schema)
         if set(answer.judgments) != set(ids):
             raise ValueError("coreference_pair_set_mismatch")
-        changes = {}
+        changes, completed = {}, {}
         for alias, judgment in answer.judgments.items():
             key, left, right = ids[alias]
             verdict, reason = judgment.verdict, judgment.reason
@@ -134,9 +167,15 @@ def review_coreferences(engine):
                 "verdict": verdict, "basis": judgment.basis, "reason": reason,
                 "evidence": evidence, "proof": proof,
             }
-        engine.commit({"coreferences": changes})
+            work = engine.state["work"][by_pair[key]["id"]]
+            changes[key]["dependency_hash"] = work["dependency_hash"]
+            completed[work["id"]] = {
+                **work, "status": "done", "reason_code": None,
+                "output_ids": [key], "applied_dependency_hash": work["dependency_hash"],
+            }
+        engine.commit({"coreferences": changes, "work": completed})
 
-    pending = candidate_pairs(engine.state, engine.catalog.classes)
+    pending = iter(pending)
     while batch := list(islice(pending, 6)):
         review(batch)
 

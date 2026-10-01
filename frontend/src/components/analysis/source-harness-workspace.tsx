@@ -11,7 +11,7 @@ import { buildHarnessHierarchy, displayValue, filterHarnessEntities, harnessTree
   HARNESS_STATES, hasObservationContext, observationSubjects, type HarnessHierarchy } from "@/lib/source-harness";
 import { cn } from "@/lib/utils";
 import { HarnessRelationCanvas } from "./source-harness-relation-graph";
-import { EvidenceList, HarnessOntologyContext, StateBadge } from "./source-harness-shared";
+import { EvidenceList, HarnessOntologyContext, HarnessVerificationLabel, StateBadge } from "./source-harness-shared";
 
 export { HarnessRelationCanvas } from "./source-harness-relation-graph";
 
@@ -121,7 +121,7 @@ export function HarnessCandidates({ graph, selectedEntity, onSelectEntity, onSou
 
 export function HarnessPropertyDetail({ item, onSource }: { item: DocumentHarnessProperty; onSource: SelectionProps["onSource"] }) {
   return <div className="space-y-3 rounded-md bg-muted/30 p-4 text-sm">
-    <div className="flex flex-wrap items-center gap-2"><h5 className="font-medium">{item.label}：{displayValue(item.value)}</h5><StateBadge state={item.state} />{!item.predicate_iri && <Badge variant="outline">尚未匹配合法属性</Badge>}</div>
+    <div className="flex flex-wrap items-center gap-2"><h5 className="font-medium">{item.label}：{displayValue(item.value)}</h5><StateBadge state={item.state} /><HarnessVerificationLabel verification={item.verification} />{!item.predicate_iri && <Badge variant="outline">尚未匹配合法属性</Badge>}</div>
     <p className="whitespace-pre-wrap break-words text-xs">属性核对原因：{item.reason}</p>
     <HarnessOntologyContext card={item.card} predicate={item.predicate} />
     <p className="whitespace-pre-wrap break-words text-xs text-muted-foreground">原值：{item.source_value}{item.value_component !== "whole" && <> · {item.value_component === "span" ? "原文中的属性值" : item.value_component === "lower" ? "下限" : "上限"}{item.source_unit ? `（${item.source_unit}）` : ""}</>}</p>
@@ -166,7 +166,7 @@ function HarnessEntityDetail({ graph, entity, hierarchy, onSelectEntity, onSourc
       <TabsContent value="relations" className="space-y-3 pt-2">
         {!relations.length && !groups.length && <p className="py-6 text-sm text-muted-foreground">尚无该实体的关系候选。</p>}
         {groups.map((group) => <div key={group.id} className="space-y-3 rounded-md border p-3">
-          <div className="flex flex-wrap items-center gap-2 text-sm"><span>{hierarchy.entities.get(group.subject_id)?.label} → {group.label}</span><StateBadge state={group.state} /></div>
+          <div className="flex flex-wrap items-center gap-2 text-sm"><span>{hierarchy.entities.get(group.subject_id)?.label} → {group.label}</span><StateBadge state={group.state} /><HarnessVerificationLabel verification={group.verification} /></div>
           <p className="text-sm">{{ options: "备选对象组", all: "所有成员均参与", unknown: "参与方式未决" }[group.participation]}{group.selection === "exactly_one" && " · 择一"}：{group.object_ids.map((id, index) => <span key={id}>{index > 0 && "、"}<button type="button" className="text-primary hover:underline" onClick={() => onSelectEntity(id)}>{hierarchy.entities.get(id)?.label ?? id}</button></span>)}</p>
           <p className="text-xs text-muted-foreground">极性：{{ positive: "肯定", negative: "否定", uncertain: "未确定" }[group.polarity]}{group.conditions.length > 0 && ` · 条件：${group.conditions.join("；")}`}</p>
           <p className="whitespace-pre-wrap break-words text-xs">{group.reason}</p>
@@ -174,7 +174,7 @@ function HarnessEntityDetail({ graph, entity, hierarchy, onSelectEntity, onSourc
           <HarnessOntologyContext card={group.card} predicate={group.predicate} /><EvidenceList evidence={group.evidence} onSource={onSource} />
         </div>)}
         {relations.map((relation) => <div key={relation.id} className="space-y-3 rounded-md border p-3"><div className="flex flex-wrap items-center gap-2 text-sm">
-          {[relation.subject_id, relation.object_id].map((id, index) => <span key={`${index}:${id}`} className="contents">{index > 0 && <span title={relation.predicate_iri}>→ {relation.label} →</span>}<button type="button" className="break-words text-primary hover:underline" onClick={() => onSelectEntity(id)}>{hierarchy.entities.get(id)?.label ?? id}</button></span>)}<StateBadge state={relation.state} /></div>
+          {[relation.subject_id, relation.object_id].map((id, index) => <span key={`${index}:${id}`} className="contents">{index > 0 && <span title={relation.predicate_iri}>→ {relation.label} →</span>}<button type="button" className="break-words text-primary hover:underline" onClick={() => onSelectEntity(id)}>{hierarchy.entities.get(id)?.label ?? id}</button></span>)}<StateBadge state={relation.state} /><HarnessVerificationLabel verification={relation.verification} /></div>
           <p className="text-xs text-muted-foreground">极性：{relation.polarity === "positive" ? "肯定" : relation.polarity === "negative" ? "否定" : "未确定"}{relation.conditions.length > 0 && ` · 条件：${relation.conditions.join("；")}`}</p>
           <p className="whitespace-pre-wrap break-words text-xs">{relation.reason}</p><HarnessOntologyContext card={relation.card} predicate={relation.predicate} /><EvidenceList evidence={relation.evidence} onSource={onSource} />
         </div>)}

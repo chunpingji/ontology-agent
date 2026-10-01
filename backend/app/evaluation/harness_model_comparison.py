@@ -390,7 +390,8 @@ def compare(args):
                         ir=ir, catalog=catalog, state={}, invoke=model_call,
                         save=lambda change: changes.append(deepcopy(change)),
                         should_stop=lambda: monotonic() - started > args.seconds_limit,
-                        max_input_tokens=policy["max_input_tokens"], rank=rank, lookup=query,
+                        max_request_bytes=policy["execution_policy"]["wire_bytes_per_call"],
+                        rank=rank, lookup=query, policy=policy,
                     )
                     try:
                         engine.run()

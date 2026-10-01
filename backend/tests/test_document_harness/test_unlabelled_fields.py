@@ -59,14 +59,14 @@ def test_unlabelled_value_has_explicit_ownership_and_never_invents_a_label_quote
                 "class_iri": "urn:unlabelled:Thing", "confidence": 0.99,
                 "evidence": e["evidence"], "reason": "原文对象",
             } for e in payload["entities"]}}
-        if stage == "assertion_alignment":
+        if stage == "property_alignment":
             fields = {f["field_id"]: f for f in payload["subject"]["fields"]}
             assert all(fields[f]["label"] == "" for f in payload["property_field_ids"])
             return {"properties": {f: {
                 "mappings": [{"predicate_iri": "urn:unlabelled:audience",
                               "value_component": "whole", "value_quote": None, "confidence": 0.99}],
                 "reason": "由原值和上下文判断属性含义，属性名来自卡片",
-            } for f in payload["property_field_ids"]}, "relations": [], "complete": True}
+            } for f in payload["property_field_ids"]}}
         assert stage in {"entity_review", "evidence_review"}
         return {**({"type_concerns": []} if stage == "evidence_review" else {}),
                 "judgments": {c["id"]: {

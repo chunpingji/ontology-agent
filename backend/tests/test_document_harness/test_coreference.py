@@ -18,6 +18,7 @@ from app.services.document_harness.coreference import (
 from app.services.document_harness.ontology import catalog_from_graph
 from app.services.document_harness.protocols import stage_schema
 from app.services.document_harness.source import reference
+from app.services.document_harness.work import DEFAULT_POLICY, make_work
 from app.services.extraction.document_ir import build_document_ir
 from app.services.extraction.docx_structure import parse_docx_structure
 
@@ -26,7 +27,8 @@ from app.services.extraction.docx_structure import parse_docx_structure
 def case(tmp_path):
     doc = Document()
     texts = ["清洗设备甲（以下简称清洗单元）编号 EQ-17。", "清洗单元在周一使用。",
-             "同名设备用于周二，编号 EQ-18。", "另有一台未编号清洗设备。"]
+             "同名设备用于周二，编号 EQ-18；与清洗设备甲、清洗单元并非同一设备。",
+             "另有一台未编号清洗设备。"]
     for i, text in enumerate(texts):
         doc.add_heading(f"第{i + 1}节", 1)
         doc.add_paragraph(text)
@@ -55,7 +57,18 @@ def case(tmp_path):
                             "state": "accepted", "reason": "任务类型", "evidence": [],
                             "field_ids": [], "window_id": None}
     state = {"entities": entities}
+    add_work(state, catalog, [("0", "1")])
     return ir, catalog, state
+
+
+def add_work(state, catalog, pairs):
+    for left, right in pairs:
+        work = make_work("coreference_review", {
+            "left_mention_id": left, "right_mention_id": right,
+            "clue_refs": [state["entities"][left]["referent"],
+                          state["entities"][right]["referent"]],
+        }, state, catalog, DEFAULT_POLICY)
+        state.setdefault("work", {})[work["id"]] = work
 
 
 def answer(payload, verdict="same", basis="explicit_alias"):
@@ -89,9 +102,16 @@ def runner(case, invoke, *, state=None, stop=lambda: False, budget=32768, save=N
     ir, catalog, initial = case
     state = deepcopy(state or initial)
     engine = Engine(ir=ir, catalog=catalog, state=state, invoke=invoke,
-                    save=save or (lambda changes: None), should_stop=stop, max_input_tokens=budget)
+                    save=save or (lambda changes: None), should_stop=stop, max_request_bytes=budget)
+    if not engine.state.get("windows"):
+        engine.state["windows"] = {
+            window.id: {**Engine.window_row(window, [i]), "phase": "done",
+                        "discovery_complete": True, "discovery_attempted": True}
+            for i, window in enumerate(engine.windows)
+        }
     engine.state.setdefault("cursor", {"main": {
-        "stage": "discover", "window_index": len(engine.windows), "scope_complete": False,
+        "stage": "planning", "active_window_id": None, "active_batch": None,
+        "scope_complete": False,
         "windows_total": len(engine.windows), "windows_discovered": len(engine.windows),
         "windows_reviewed": len(engine.windows),
     }})
@@ -105,12 +125,16 @@ def two(case):
     return state
 
 
-def test_final_stage_default_cross_section_alias_and_exact_proof(case):
+def test_explicit_cross_section_alias_work_and_exact_proof(case):
     calls = []
     state = two(case)
     before = deepcopy(state)
     def invoke(stage, payload, schema):
         assert stage == "coreference_review"
+        assert engine._call_window.payload()["sources"] == payload["sources"]
+        assert engine._call_targets == [{
+            "domain": "work", "id": row["id"], "dependency_hash": row["dependency_hash"],
+        } for row in engine.state["work"].values() if row["status"] == "ready"]
         assert len({source["section"] for source in payload["sources"]}) == 2
         assert any(source["kind"] == "heading" for source in payload["sources"])
         result = answer(payload)
@@ -123,6 +147,9 @@ def test_final_stage_default_cross_section_alias_and_exact_proof(case):
     assert engine.state["cursor"]["main"]["stage"] == "complete"
     decision = next(iter(engine.state["coreferences"].values()))
     assert decision["verdict"] == "same" and decision["proof"]
+    work = next(iter(engine.state["work"].values()))
+    assert work["status"] == "done" and work["output_ids"] == [decision["id"]]
+    assert work["applied_dependency_hash"] == work["dependency_hash"]
     for ref in decision["evidence"] + decision["proof"]:
         assert case[0].unit(ref["source_id"]).text[ref["start"]:ref["end"]] == ref["text"]
     engine.run()
@@ -175,11 +202,34 @@ def test_negative_and_unknown_do_not_merge_or_disappear(case, verdict, basis):
 
 def test_type_and_confirmation_boundaries_do_not_depend_on_names(case):
     state = deepcopy(case[2])
+    add_work(state, case[1], [("0", "2"), ("0", "3")])
     state["entities"]["1"]["class_iri"] = "urn:test:Specific"
     state["entities"]["2"]["class_iri"] = "urn:test:Batch"
     state["entities"]["3"]["state"] = "unresolved"
     pairs = list(candidate_pairs(state, case[1].classes))
     assert [(a["id"], b["id"]) for _, a, b in pairs] == [("0", "1")]
+
+
+def test_compatible_types_and_same_name_without_clue_work_do_not_generate_pairs(case):
+    state = deepcopy(case[2])
+    state["work"] = {}
+    state["entities"]["1"]["label"] = state["entities"]["0"]["label"]
+    assert list(candidate_pairs(state, case[1].classes)) == []
+    calls = []
+    engine = runner(case, lambda *args: calls.append(args), state=state)
+    engine.run()
+    assert not calls and not engine.state.get("coreferences")
+
+
+def test_ineligible_work_waits_and_does_not_block_reading_completion(case):
+    state = two(case)
+    state["entities"]["1"]["state"] = "unresolved"
+    calls = []
+    engine = runner(case, lambda *args: calls.append(args), state=state)
+    engine.run()
+    assert not calls
+    assert next(iter(engine.state["work"].values()))["status"] == "waiting"
+    assert engine.state["cursor"]["main"]["stage"] == "complete"
 
 
 def decision(left, right, verdict="same"):
@@ -237,17 +287,20 @@ def test_budget_split_pause_resume_saves_pairs_and_never_truncates_sources(case,
                      for pair in payload["pairs"])
         paused = len(calls) == 1
         return answer(payload, "unresolved", "insufficient")
-    engine = runner(case, invoke, budget=200, stop=lambda: paused)
+    state = deepcopy(case[2])
+    add_work(state, case[1], [("0", "2"), ("1", "2")])
+    engine = runner(case, invoke, state=state, budget=200, stop=lambda: paused)
     engine.run()
     assert len(engine.state["coreferences"]) == 1
     assert engine.state["cursor"]["main"]["stage"] == "coreference_review"
     continued = runner(case, invoke, state=engine.state, budget=200)
     continued.run()
-    assert len(continued.state["coreferences"]) == 6
-    assert len(calls) == 6
+    assert len(continued.state["coreferences"]) == 3
+    assert len(calls) == 3
+    assert all(row["status"] == "done" for row in continued.state["work"].values())
     # Unbudgetable single pairs fail explicitly, never become a successful empty result.
     too_small = runner(case, invoke, state=two(case), budget=99)
-    with pytest.raises(ValueError, match="single_coreference"):
+    with pytest.raises(ValueError, match="HARNESS_EVIDENCE_CONTEXT_TOO_LARGE"):
         too_small.run()
 
 

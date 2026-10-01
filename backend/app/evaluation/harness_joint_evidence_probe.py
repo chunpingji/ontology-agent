@@ -138,7 +138,8 @@ def run_engines(args, cases, invoke, summaries, started):
                 engine = Engine(
                     ir=ir, catalog=catalog, state={}, save=lambda _: None, invoke=ask,
                     should_stop=lambda: monotonic() - started > args.seconds_limit,
-                    max_input_tokens=policy["max_input_tokens"], rank=rank, lookup=query,
+                    max_request_bytes=policy["execution_policy"]["wire_bytes_per_call"],
+                    rank=rank, lookup=query, policy=policy,
                 )
                 row = {"case": name, "phase": "full_engine", "error": None}
                 try:

@@ -10,7 +10,7 @@ const output = process.env.DOCUMENT_BROWSER_OUTPUT || "/tmp/source-harness-v2-br
 await mkdir(output, { recursive: true });
 const runId = "synthetic-graph-v2";
 const documentIri = "urn:document:synthetic-graph-v2";
-const run = { contract_version: "document-analysis-runs-v1", extraction_protocol: "document-harness-v1",
+const run = { contract_version: "document-analysis-runs-v1", extraction_protocol: "document-harness-v2",
   recognition_run_id: runId, run_revision: 1, event_head: 1, artifact_revision: 1,
   status: "paused", stage: "discover", available_actions: [], error: null,
   created_at: "2026-09-22T00:00:00Z", expires_at: null,
@@ -24,21 +24,25 @@ const predicate = { iri: "https://example.test/material/identifier", label: "中
   namespace: "https://example.test/material/", domain_text: "物料 <urn:schema:Material>" };
 const entity = (id, label, extra = {}) => ({ id, label, role: "entity", class_iri: card.iri, class_label: card.label,
   state: "accepted", reason: "合成验收：原文指称与类型已核对", evidence: [source], ...extra });
-const property = (id, subject_id, label, value, extra = {}) => ({ id, subject_id, field_id: "field:1",
+const verification = { method: "llm", rule_id: null, rule_version: null, semantic_verdict: "accepted" };
+const property = (id, subject_id, label, value, extra = {}) => ({ verification, id, subject_id, field_id: "field:1",
   card, predicate: { ...predicate, label }, predicate_iri: predicate.iri, label, value,
   source_value: source.text, source_unit: null, value_component: "span", value_evidence: [valueSource],
   state: "accepted", reason: "原文值与主体归属已核对", evidence: [source], ...extra });
-const relation = (id, subject_id, object_id, extra = {}) => ({ id, subject_id, object_id, label: "关联对象",
+const relation = (id, subject_id, object_id, extra = {}) => ({ verification, id, subject_id, object_id, label: "关联对象",
   predicate_iri: "urn:related", card, predicate: null, state: "accepted", polarity: "positive", conditions: [],
   reason: "合成关系证据", evidence: [source], ...extra });
 const observation = (id, extra = {}) => ({ id, kind: "field", label: `原字段 ${id}`, field_id: `field:${id}`,
   value: "待对齐原值", candidate_subject_ids: [], object_id: null, reason: "合成观察独立保存",
   evidence: [source], discovery_cards: [], alignments: [], ...extra });
-const graph = { coreferences: [], relation_groups: [], protocol: "document-harness-v1", run_id: runId, revision: 1, status: "paused", stage: "evidence_review",
+const graph = { coreferences: [], relation_groups: [], candidate_work: [], interpretation_tasks: [], protocol: "document-harness-v2", run_id: runId, revision: 1, status: "paused", stage: "evidence_review",
   progress: { completed_calls: 5, candidate_count: 20, fact_count: 8, windows_total: 10,
-    windows_discovered: 5, windows_reviewed: 2, scope_complete: false, stage_costs: [
-      { stage: "discover", calls: 2, seconds: 30, input_tokens: null, output_tokens: null },
-      { stage: "type_alignment", calls: 3, seconds: 10, input_tokens: 0, output_tokens: 23 },
+    windows_discovered: 5, windows_reviewed: 2, scope_complete: false,
+    reading: { total_characters: 4000, processed_characters: 2000, complete: false },
+    work_counts: { ready: 0, waiting: 1, pruned: 2, done: 5, failed: 0 },
+    candidate_scope_limited: true, rule_verified_count: 0, llm_verified_count: 8, stage_costs: [
+      { stage: "discover", calls: 2, seconds: 30, input_tokens: null, output_tokens: null, unmeasured_attempts: 0 },
+      { stage: "type_alignment", calls: 3, seconds: 10, input_tokens: 0, output_tokens: 23, unmeasured_attempts: 0 },
     ] },
   // Root deliberately not first; d is four hops away and material has multiple parents.
   entities: [entity("material", "物料甲"), entity("root", "报告根", { role: "document_root", class_iri: "urn:schema:Report", class_label: "报告" }),
@@ -66,6 +70,7 @@ const graph = { coreferences: [], relation_groups: [], protocol: "document-harne
 };
 for (const item of graph.entities) item.mentions = [{ ...item }];
 graph.relation_groups.push({
+  verification,
   id: "options", subject_id: "plan", subject_mention_id: "plan",
   object_ids: ["workshop", "negative"], object_mention_ids: ["workshop", "negative"],
   predicate_iri: "urn:area-options", label: "生产区域选项", card, predicate: null,
@@ -132,15 +137,15 @@ try {
   await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toHaveText("图谱分析");
   await expect(header.getByText("沿文档根逐层查看实体、属性与原文依据。", { exact: true })).toBeVisible();
   await expect(page.getByLabel("报告文档", { exact: true })).toHaveCount(0);
-  await expect(page.getByRole("tab", { name: "推理", exact: true })).toHaveCount(0);
+  const functions = page.getByRole("tablist", { name: "应用分析功能", exact: true });
+  await expect(functions.getByRole("tab", { name: "文档分析", exact: true })).toBeVisible();
+  await expect(functions.getByRole("tab", { name: "图谱分析", exact: true })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("button", { name: "刷新结果", exact: true })).toHaveCount(1);
-  const backHref = new URL(await header.getByRole("link", { name: "返回文档分析" }).getAttribute("href"), origin);
-  assert.equal(backHref.searchParams.get("tab"), "document");
-  assert.equal(backHref.searchParams.get("documentRun"), runId);
-  assert.equal(backHref.searchParams.get("documentIri"), documentIri);
+  await expect(header.getByRole("link", { name: "返回文档分析" })).toHaveCount(0);
+  await expect(header.getByRole("button", { name: "新建分析", exact: true })).toBeVisible();
   await expect(document).toContainText("图谱分析合成验收.docx");
   await expect(document).toContainText("根类型：报告");
-  await expect(document).toContainText("本轮阅读范围尚未核对完成");
+  await expect(document).toContainText("本轮原文阅读范围尚未处理完成");
   await expect(document).toContainText("已暂停");
   await expect(document.locator("time")).toHaveText(/更新于 \d{2}:\d{2}/);
   await expect(document).not.toContainText("示例数据");
@@ -241,14 +246,16 @@ try {
   run.status = "finished";
   graph.status = "finished";
   graph.progress.scope_complete = true;
+  graph.progress.reading.complete = true;
+  graph.progress.reading.processed_characters = graph.progress.reading.total_characters;
   const refreshedGraph = page.waitForResponse((response) => response.url().endsWith("/harness-graph") && response.ok());
   await header.getByRole("button", { name: "刷新结果", exact: true }).click();
   await refreshedGraph;
   await expect(document).toContainText("本轮已结束");
-  await expect(document).toContainText("本轮阅读范围已核对");
+  await expect(document).toContainText("本轮原文阅读范围已处理");
   await expect(workspace.getByText("原值：3.8–6.6 kg · 下限（kg）", { exact: true })).toBeVisible();
   await expect(entityTab).toHaveAttribute("aria-selected", "true");
-  checks.push("design header, real run summary and refresh time, preserved return context, refresh without resetting selection");
+  checks.push("parallel function navigation, real run summary and refresh time, new analysis entry, refresh without resetting selection");
   await workspace.getByLabel("搜索实体或属性").fill("DEEP-04");
   await expect(tree.locator('[data-entity-id="d"]')).toBeVisible();
   await expect(tree.locator('[data-entity-id="root"]')).toBeVisible();
