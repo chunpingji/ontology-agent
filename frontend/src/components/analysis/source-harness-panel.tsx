@@ -251,9 +251,13 @@ function HarnessInterpretationTaskForm({ task, onSource, onAnswer }: {
 
 export function HarnessProgress({ graph }: { graph: DocumentHarnessGraph }) {
   const progress = graph.progress;
+  const windows = progress.reading_windows;
+  const phaseLabels = { reading: "局部阅读", entities: "实体核验", coreference: "共指核验", graph: "图谱分析", done: "本轮完成" };
   return <section className="space-y-3" aria-label="阅读与任务进度">
     <p className="text-sm font-medium">原文范围已处理 {progress.reading.processed_characters.toLocaleString()} / {progress.reading.total_characters.toLocaleString()} 字符</p>
-    <p className="text-xs text-muted-foreground">此数字表示原文阅读覆盖。阅读批次：已发现 {progress.windows_discovered} / {progress.windows_total}，已处理 {progress.windows_reviewed} / {progress.windows_total}（含拆分后的父子批次）。</p>
+    <p className="text-sm">完整覆盖 {progress.reading.complete_characters?.toLocaleString() ?? "待更新"} / {progress.reading.total_characters.toLocaleString()} 字符</p>
+    <p className="text-xs text-muted-foreground">已处理包含已保存的局部结果；完整覆盖仅统计确认读完的范围，两者均按原文去重。阅读批次：已保存 {windows.saved} / {windows.total}，处理中 {windows.active}，覆盖完整 {windows.complete}，覆盖不完整 {windows.incomplete}。</p>
+    <p className="text-xs text-muted-foreground">当前阶段：{phaseLabels[progress.phase]}。阅读结果保存后，继续核验实体、共指和图谱事实。</p>
     <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs">{Object.entries(HARNESS_WORK_STATES).map(([status, label]) => <span key={status} className="text-muted-foreground">{label}<strong className="ml-2 tabular-nums text-foreground">{progress.work_counts[status as keyof typeof progress.work_counts]}</strong></span>)}</div>
     <div className="flex flex-wrap gap-x-8 gap-y-2 text-xs">{[["已完成调用", progress.completed_calls], ["已保存候选", progress.candidate_count], ["已采信事实", progress.fact_count]].map(([label, count]) => <span key={label} className="text-muted-foreground">{label}<strong className="ml-2 text-base font-semibold tabular-nums text-foreground">{count}</strong></span>)}</div>
     <p className="text-xs text-muted-foreground">已采信事实的证明来源：规则证明 {progress.rule_verified_count} · 模型核对 {progress.llm_verified_count}</p>

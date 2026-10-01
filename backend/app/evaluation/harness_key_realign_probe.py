@@ -40,9 +40,10 @@ from app.services.document_harness.ontology import freeze_catalog, identity_guid
 from app.services.document_harness.planning import context_window
 from app.services.document_harness.protocols import (
     INSTRUCTIONS,
-    DiscoveryRefinement,
+    Discovery,
     Message,
     Quote,
+    SourceSuggestion,
     stage_schema,
 )
 from app.services.document_harness.ranking import CardRanker
@@ -82,7 +83,8 @@ class IdentifierDecision(Message):
     reason: str = Field(min_length=1, max_length=300)
 
 
-class KeyRealignment(DiscoveryRefinement):
+class KeyRealignment(Discovery):
+    source_suggestions: list[SourceSuggestion] = Field(max_length=12)
     interpretations: dict[str, IdentifierDecision]
 
 
@@ -92,6 +94,12 @@ def review_schema(window, entity_ids, candidate_ids):
         source_ids=[s["source_id"] for s in window.sources],
         field_ids=[f["alias"] for f in window.fields],
     )
+    # This experiment replaces a complete post-type partition, unlike optional lookup refinement.
+    discovery = schema["$defs"].pop("Discovery")
+    schema["properties"].pop("replacement")
+    schema["required"].remove("replacement")
+    schema["properties"].update(discovery["properties"])
+    schema["required"].extend(discovery["required"])
     decision = IdentifierDecision.model_json_schema()
     decision.pop("$defs", None)
     schema["$defs"]["IdentifierDecision"] = decision

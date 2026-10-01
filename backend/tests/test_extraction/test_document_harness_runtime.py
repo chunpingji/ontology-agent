@@ -56,7 +56,8 @@ def _run(db, *, owner="analyst", engine=ENGINE, document_hash="d" * 64, catalog=
         source_storage_uri="original.docx", source_media_type="application/docx",
         source_size_bytes=1, source_payload={"engine": engine, "policy": {
             "max_input_tokens": 32768, "max_context_tokens": 65536,
-            "card_ranking": default_policy(),
+            "card_ranking": default_policy(), "protocol": "document-harness-v6",
+            "execution_policy": {"flow": "local_reading", "reading_concurrency": 2},
         }},
         ontology_artifact_id="schema:" + key, ontology_payload=catalog,
         progress={"engine": engine},
@@ -452,7 +453,8 @@ def test_worker_pause_commits_paid_answer_and_resume_uses_current_business_state
     )
     assert events[-1][2]["status"] == "paused"
     assert events[-1][2]["run_revision"] == run.revision
-    assert read_rows(db, run)["cursor"]["main"]["stage"] == "type_alignment"
+    assert read_rows(db, run)["cursor"]["main"]["phase"] == "reading"
+    assert len(read_rows(db, run)["cursor"]["main"]["active_batches"]) == 1
     assert len(read_rows(db, run, model=DocumentRunResult)["calls"]) == 1
     store = DocumentAnalysisRunStore(db)
     store.request_control(

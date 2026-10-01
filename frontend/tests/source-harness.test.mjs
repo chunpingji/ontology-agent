@@ -45,8 +45,8 @@ const entity = { ...mention, mentions: [mention] };
 function graph() {
   return {
     protocol: "document-harness-v2", run_id: "run", revision: 1, status: "running", stage: "discover",
-    progress: { completed_calls: 7, candidate_count: 4, fact_count: 0, windows_total: 10, windows_discovered: 2, windows_reviewed: 1, scope_complete: false,
-      reading: { total_characters: 4000, processed_characters: 800, complete: false },
+    progress: { completed_calls: 7, candidate_count: 4, fact_count: 0, phase: "reading", reading_windows: { total: 10, saved: 2, complete: 1, incomplete: 1, active: 2 }, scope_complete: false,
+      reading: { total_characters: 4000, processed_characters: 800, complete_characters: 300, complete: false },
       work_counts: { ready: 2, waiting: 3, pruned: 4, done: 5, failed: 0 },
       candidate_scope_limited: true, rule_verified_count: 0, llm_verified_count: 0,
       stage_costs: [{ stage: "discover", calls: 5, seconds: 123.4, input_tokens: 4000, output_tokens: 2000, unmeasured_attempts: 0 }] },
@@ -271,6 +271,10 @@ test("calls and candidates do not appear as accepted facts or document completen
   assert.match(render(exports.HarnessStageCosts, { graph: graph() }), /123\.4/);
   assert.doesNotMatch(html, /\d+%/);
   assert.match(html, /原文范围已处理 800 \/ 4,000 字符/);
+  assert.match(html, /完整覆盖 300 \/ 4,000 字符/);
+  assert.match(html, /已保存 2 \/ 10，处理中 2，覆盖完整 1，覆盖不完整 1/);
+  assert.match(html, /当前阶段：局部阅读/);
+  assert.doesNotMatch(html, /父子批次|已发现/);
   assert.match(html, /已处理任务/);
   assert.match(html, /等待条件或补证/);
   assert.match(html, /本轮剪枝未处理/);
@@ -280,7 +284,7 @@ test("calls and candidates do not appear as accepted facts or document completen
 test("finished reading preserves unresolved work and does not claim fact completeness", () => {
   const value = graph();
   value.status = "finished";
-  value.progress.reading = { total_characters: 4000, processed_characters: 4000, complete: true };
+  value.progress.reading = { total_characters: 4000, processed_characters: 4000, complete_characters: 4000, complete: true };
   value.progress.scope_complete = true;
   assert.equal(helpers.harnessCompletionMessage(value), "本轮选定范围已处理；仍有未核对或未决项");
   value.progress.work_counts = { ready: 0, waiting: 0, pruned: 0, done: 50, failed: 0 };

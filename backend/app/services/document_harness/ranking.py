@@ -15,7 +15,7 @@ from time import monotonic
 
 from .ontology import SchemaCatalog, identity_guidance
 
-PROTOCOL = "harness-card-ranking-v1"
+PROTOCOL = "harness-card-ranking-v2"
 GUIDANCE_RULE = (
     "这些本体卡仅用于理解可能的对象、字段归属和关系；排名或属性匹配不证明类型成立。"
     "仍只从原文发现对象，不为每张卡造实体；否定分类、缺失值和身份边界按原文处理。"
@@ -83,10 +83,40 @@ def reading_card(card, *, annotation_contracts=()):
         **identity_guidance(card, annotation_contracts=annotation_contracts),
         "relations": [
             {"iri": rel.iri, "label": rel.label, "description": rel.description,
-             "range_class_iris": list(rel.range_class_iris), "direction": rel.direction}
+             "range": [item.model_dump(mode="json", exclude_none=True) for item in rel.range],
+             "direction": rel.direction}
             for rel in card.relations if rel.constraint_status == "resolved"
         ],
     }
+
+
+def reading_guidance(catalog, iris):
+    """Share identical definitions, retaining class-specific constraints and complete keys."""
+    classes, definitions, contracts = [], {"relations": {}, "identity_properties": {}}, {}
+    identity_rule = None
+    for iri in iris:
+        card = reading_card(catalog.classes[iri], annotation_contracts=catalog.annotation_contracts)
+        identity_rule = card.pop("identity_rule")
+        for contract in card.pop("annotation_contracts"):
+            contracts[contract["iri"]] = contract
+        for kind, shared in definitions.items():
+            for definition in card.pop(kind):
+                key = json.dumps(definition, sort_keys=True, ensure_ascii=False)
+                item = shared.setdefault(key, {**definition, "class_iris": []})
+                item["class_iris"].append(iri)
+        classes.append(card)
+    return {
+        "rule": GUIDANCE_RULE, "classes": classes,
+        **{kind: list(values.values()) for kind, values in definitions.items()},
+        "identity_rule": identity_rule,
+        "annotation_contracts": [contracts[k] for k in sorted(contracts)],
+    }
+
+
+def guidance_bytes(catalog, iris):
+    # The empty bundle is already included by the request preparer.
+    return (len(json.dumps(reading_guidance(catalog, iris), ensure_ascii=False).encode())
+            - len(json.dumps(reading_guidance(catalog, []), ensure_ascii=False).encode()))
 
 
 def _ancestors(catalog, iri, allowed):
@@ -211,7 +241,10 @@ def rank_cards(catalog, payload, card_budget, *, policy=None, dense_scores=None,
     while len(selected) < policy["max_cards"]:
         options = []
         for iri in pool:
-            if iri in selected or (remaining is not None and costs[iri] > remaining):
+            if iri in selected:
+                continue
+            marginal_bytes = guidance_bytes(catalog, [*selected, iri]) - bytes_used
+            if remaining is not None and marginal_bytes > remaining:
                 continue
             field_gain = sum(weights[key] for key in field_sets[iri] - covered_fields) / field_total
             ancestor_gain = sum(
@@ -225,9 +258,9 @@ def rank_cards(catalog, payload, card_budget, *, policy=None, dense_scores=None,
             break
         gain, iri, field_gain, ancestor_gain = min(options, key=lambda row: (-row[0], row[1]))
         selected.append(iri)
-        bytes_used += costs[iri]
-        if remaining is not None:
-            remaining -= costs[iri]
+        bytes_used = guidance_bytes(catalog, selected)
+        if card_budget is not None:
+            remaining = card_budget - bytes_used
         gains[iri] = {"gain": gain, "new_field_coverage": field_gain,
                       "new_ancestor_coverage": ancestor_gain}
         covered_fields.update(field_sets[iri])
@@ -246,7 +279,9 @@ def rank_cards(catalog, payload, card_budget, *, policy=None, dense_scores=None,
             "selection": gains.get(iri), "card_bytes": costs[iri],
             "omission_reason": None if iri in selected else (
                 "card_exceeds_remaining_budget"
-                if remaining is not None and costs[iri] > remaining else "card_limit"
+                if remaining is not None
+                and guidance_bytes(catalog, [*selected, iri]) - bytes_used > remaining
+                else "card_limit"
             ),
         } for iri in pool],
         "outside_pool_iris": sorted(allowed - set(pool)),

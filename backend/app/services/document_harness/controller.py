@@ -5,8 +5,9 @@ from __future__ import annotations
 from collections import defaultdict
 from copy import deepcopy
 
+from .calls import MemoryCalls
 from .continuation import restore_window_plan, serialize_window_plan, split_reading_window
-from .lookup import run_discovery
+from .lookup import finish_discovery, next_discovery
 from .model import request_size
 from .observations import value_components
 from .ontology import SchemaCatalog, identity_guidance, model_menu
@@ -17,9 +18,10 @@ from .protocols import (
     stage_schema,
     validate_paid_output,
 )
-from .ranking import GUIDANCE_RULE, CardRanker, reading_card
+from .ranking import CardRanker, reading_guidance
+from .reading import decode_local_discovery, merge_local_discovery
 from .referents import binding_input, run_referent_alignment
-from .source import build_windows, identity, missing, quote_for_reference, references_cover
+from .source import build_windows, identity, quote_for_reference, references_cover
 from .work import DEFAULT_POLICY, WorkIndex, digest
 
 
@@ -56,6 +58,11 @@ class Engine:
         invoke_prepared=None,
         batch_request=None,
         rank_pairs=None,
+        submit_prepared=None,
+        collect_prepared=None,
+        settle_prepared=None,
+        call_result=None,
+        calls=None,
     ):
         self.ir, self.catalog = ir, SchemaCatalog.model_validate(catalog)
         self.state = deepcopy(state)
@@ -66,6 +73,24 @@ class Engine:
         self.rank, self.lookup = rank or CardRanker().rank, lookup
         self.prepare_batch, self.invoke_prepared = prepare_batch, invoke_prepared
         self.batch_request, self.rank_pairs = batch_request, rank_pairs
+        self._memory_calls = None
+        if prepare_batch is None:
+            calls = self._memory_calls = calls or MemoryCalls(invoke)
+            self.prepare_batch, self.invoke_prepared = calls.prepare, calls.invoke_prepared
+            self.batch_request, call_result = calls.request, calls.result
+            submit_prepared, collect_prepared, settle_prepared = (
+                calls.submit,
+                calls.collect,
+                calls.settle,
+            )
+        self.submit_prepared, self.collect_prepared = submit_prepared, collect_prepared
+        self.settle_prepared, self.call_result = settle_prepared, call_result
+        if (
+            self.execution_policy["flow"] != "local_reading"
+            or type(self.execution_policy["reading_concurrency"]) is not int
+            or self.execution_policy["reading_concurrency"] not in (1, 2)
+        ):
+            raise ValueError("harness_new_run_required")
         self.windows = (
             [
                 restore_window_plan(ir, row["plan"])
@@ -79,23 +104,55 @@ class Engine:
         )
         self.source_index = build_source_index(ir, self.state)
         self.work_index = WorkIndex(self.state)
-        self._call_window, self._call_targets = None, []
-        self._paid_ready = False
-        self._call_aliases = {}
 
-    def commit(self, changes):
+    @property
+    def invoke(self):
+        return self._invoke
+
+    @invoke.setter
+    def invoke(self, value):
+        self._invoke = value
+        if getattr(self, "_memory_calls", None) is not None:
+            self._memory_calls.invoke = value
+
+    def commit(self, changes, *, batch_id=None):
         from .work_execution import enforce_group_consistency, invalidate_changes
 
         changes = deepcopy(changes)
         invalidate_changes(self, changes)
         enforce_group_consistency(self, changes)
-        if self._paid_ready:
-            cursor = changes.setdefault("cursor", {}).get(
-                "main", self.state.get("cursor", {}).get("main", {})
+        cursor = deepcopy(
+            changes.get("cursor", {}).get(
+                "main",
+                self.state.get("cursor", {}).get("main", {}),
             )
-            changes["cursor"]["main"] = {**cursor, "active_batch": None}
+        )
+        if batch_id is not None:
+            if batch_id not in cursor.get("active_batches", {}):
+                raise ValueError("harness_batch_not_active")
+            del cursor["active_batches"][batch_id]
+        if cursor:
+            windows = {**self.state.get("windows", {}), **changes.get("windows", {})}
+            leaves = [row for row in windows.values() if not row["children"]]
+            complete = sum(row["reading_state"] == "complete" for row in leaves)
+            incomplete = sum(row["reading_state"] == "incomplete" for row in leaves)
+            cursor["reading_windows"] = {
+                "total": len(leaves),
+                "saved": complete + incomplete,
+                "complete": complete,
+                "incomplete": incomplete,
+                "active": len(
+                    {
+                        b["window_id"]
+                        for b in cursor.get("active_batches", {}).values()
+                        if b["stage"] == "discover"
+                    }
+                ),
+            }
+            changes.setdefault("cursor", {})["main"] = cursor
         self.save(changes)
         for domain, rows in changes.items():
+            self.state.setdefault(domain, {})
             for key, value in rows.items():
                 if value is None:
                     self.state.setdefault(domain, {}).pop(key, None)
@@ -103,100 +160,88 @@ class Engine:
                     self.state.setdefault(domain, {})[key] = deepcopy(value)
         self.source_index.update(changes.get("entities", {}))
         self.work_index.update(changes.get("work", {}))
-        self._paid_ready = False
-        self._call_targets = []
-        self._call_aliases = {}
 
-    def raw_call(self, stage, payload, schema):
+    def prepare_call(
+        self, stage, payload, schema, *, window=None, targets=None, aliases=None, step=None
+    ):
         if self.should_stop():
             raise Paused()
         if request_size(stage, payload, schema) > self.max_request_bytes:
             raise ValueError("HARNESS_EVIDENCE_CONTEXT_TOO_LARGE")
         cursor = self.state.get("cursor", {}).get("main", {})
-        if not self.prepare_batch:
-            result = self.invoke(stage, payload, schema)
-        else:
-            batch = cursor.get("active_batch")
-            window = self._call_window
-            if batch is None:
-                target = {
-                    "window_id": cursor.get("active_window_id"),
-                    "window_phase": self.state.get("windows", {})
-                    .get(
-                        cursor.get("active_window_id"),
-                        {},
-                    )
-                    .get("phase"),
-                    "targets": self._call_targets
-                    or [
-                        {
-                            "domain": "windows",
-                            "id": cursor.get("active_window_id") or "final",
-                            "dependency_hash": digest(payload),
-                        }
-                    ],
-                    "alias_bindings": {
-                        **(
-                            {alias: key for key, alias in self.entity_aliases(window).items()}
-                            if window
-                            else {}
-                        ),
-                        **(
-                            {field["alias"]: field["id"] for field in window.fields}
-                            if window
-                            else {}
-                        ),
-                        **self._call_aliases,
-                    },
-                    "source_bindings": {
-                        s["source_id"]: [
-                            s["evidence_id"],
-                            s["offset"],
-                            s["offset"] + len(s["text"]),
-                        ]
-                        for s in window.sources
-                    }
-                    if window
-                    else {},
+        target = {
+            "window_id": window.id if window else None,
+            "step": step or stage,
+            "targets": targets
+            or [
+                {
+                    "domain": "windows",
+                    "id": window.id if window else "final",
+                    "dependency_hash": digest(payload),
                 }
-                batch = self.prepare_batch(stage, payload, schema, target)
-                self.state["cursor"]["main"] = {**cursor, "active_batch": batch}
-                for target in batch["targets"]:
-                    if target["domain"] == "work":
-                        self.state["work"][target["id"]]["last_call_key"] = batch["call_key"]
-            else:
-                saved = self.batch_request(batch)
-                work_batch = all(target["domain"] == "work" for target in batch["targets"])
-                sources = (
-                    {
-                        source["source_id"]: [
-                            source["evidence_id"],
-                            source["offset"],
-                            source["offset"] + len(source["text"]),
-                        ]
-                        for source in window.sources
-                    }
-                    if window
+            ],
+            "alias_bindings": {
+                **(
+                    {alias: key for key, alias in self.entity_aliases(window).items()}
+                    if window and stage != "discover"
                     else {}
-                )
-                if (
-                    batch["stage"] != stage
-                    or saved["schema"] != schema
-                    or (not work_batch and saved["payload"] != payload)
-                    or batch.get("source_bindings", {}) != sources
-                ):
-                    raise ValueError("harness_active_batch_input_changed")
-            result = self.invoke_prepared(batch)
-        self._paid_ready = True
-        return result
+                ),
+                **({f["alias"]: f["id"] for f in window.fields} if window else {}),
+                **(aliases or {}),
+            },
+            "source_bindings": {
+                s["source_id"]: [s["evidence_id"], s["offset"], s["offset"] + len(s["text"])]
+                for s in window.sources
+            }
+            if window
+            else {},
+        }
+        active = cursor.get("active_batches", {})
+        existing = next((b for b in active.values() if b["window_id"] == target["window_id"]), None)
+        if existing:
+            saved = self.batch_request(existing)
+            work_batch = all(t["domain"] == "work" for t in existing["targets"])
+            if (
+                existing["stage"] != stage
+                or existing["step"] != target["step"]
+                or existing["targets"] != target["targets"]
+                or existing["source_bindings"] != target["source_bindings"]
+                or existing["alias_bindings"] != target["alias_bindings"]
+                or saved["schema"] != schema
+                or (not work_batch and saved["payload"] != payload)
+            ):
+                raise ValueError("harness_active_batch_input_changed")
+            return existing
+        batch = self.prepare_batch(stage, payload, schema, target)
+        changes = {
+            "cursor": {
+                "main": {
+                    **cursor,
+                    "active_batches": {
+                        **active,
+                        batch["batch_id"]: batch,
+                    },
+                }
+            }
+        }
+        for item in batch["targets"]:
+            if item["domain"] == "work":
+                row = self.state["work"][item["id"]]
+                changes.setdefault("work", {})[item["id"]] = {
+                    **row,
+                    "last_call_key": batch["call_key"],
+                }
+        self.commit(changes)
+        return batch
 
-    def call(self, stage, payload, schema):
+    def call(self, stage, payload, schema, **context):
+        batch = self.prepare_call(stage, payload, schema, **context)
+        output = self.invoke_prepared(batch)
+        validate_paid_output(stage, payload, output)
         response_model = (
             discovery_model(payload.get("lookup_mode")) if stage == "discover" else STAGES[stage]
         )
-        output = self.raw_call(stage, payload, schema)
-        validate_paid_output(stage, payload, output)
-        return response_model.model_validate(output)
+        return response_model.model_validate(output), batch["batch_id"]
 
     def run(self):
         # A new Engine is entered only for the initial run or explicit continue.
@@ -214,16 +259,15 @@ class Engine:
                 {
                     "cursor": {
                         "main": {
-                            "active_window_id": None,
-                            "active_batch": None,
+                            "phase": "reading",
+                            "entity_window_id": None,
+                            "active_batches": {},
                             "stage": "discover",
-                            "windows_total": len(self.windows),
-                            "windows_discovered": 0,
-                            "windows_reviewed": 0,
                             "scope_complete": False,
                             "reading": {
                                 "total_characters": 0,
                                 "processed_characters": 0,
+                                "complete_characters": 0,
                                 "complete": False,
                             },
                         }
@@ -246,53 +290,76 @@ class Engine:
                 }
             )
             self.update_reading()
+        planned = set()
         try:
             while not self.should_stop():
                 cursor = self.state["cursor"]["main"]
-                active = cursor.get("active_window_id")
-                if active:
-                    window = next(w for w in self.windows if w.id == active)
-                    self._call_window = window
-                    phase = self.state["windows"][active]["phase"]
-                    getattr(self, phase)(window)
-                    continue
-                promoted = {
-                    key: {**row, "phase": "type_alignment"}
-                    for key, row in self.state["windows"].items()
-                    if row["phase"] == "waiting_children"
-                    and all(
-                        self.state["windows"][child]["phase"] == "done" for child in row["children"]
-                    )
-                }
-                if promoted:
-                    self.commit({"windows": promoted})
-                available = [
-                    row
-                    for row in self.state["windows"].values()
-                    if row["phase"] not in {"done", "waiting_children"}
-                ]
-                if available:
-                    row = min(available, key=lambda item: item["order"])
-                    self.commit(
-                        {
-                            "cursor": {
-                                "main": {
-                                    **self.state["cursor"]["main"],
-                                    "active_window_id": row["plan"]["id"],
-                                    "stage": self.public_stage(row["phase"]),
+                phase = cursor["phase"]
+                if phase == "reading":
+                    self.read_windows()
+                elif phase == "entities":
+                    available = [
+                        row
+                        for row in self.state["windows"].values()
+                        if row["entity_phase"] != "done"
+                    ]
+                    if not available:
+                        self.set_phase("coreference", "coreference_review")
+                        continue
+                    key = cursor.get("entity_window_id")
+                    if key is None:
+                        row = min(available, key=lambda row: (row["order"], row["plan"]["id"]))
+                        key = row["plan"]["id"]
+                        self.commit(
+                            {
+                                "cursor": {
+                                    "main": {
+                                        **cursor,
+                                        "entity_window_id": key,
+                                        "stage": row["entity_phase"],
+                                    }
                                 }
                             }
-                        }
+                        )
+                    window = next(w for w in self.windows if w.id == key)
+                    getattr(self, self.state["windows"][key]["entity_phase"])(window)
+                elif phase in {"coreference", "graph"}:
+                    from .work_execution import plan_coreference_work, plan_graph_work
+
+                    if phase not in planned:
+                        (plan_coreference_work if phase == "coreference" else plan_graph_work)(self)
+                        planned.add(phase)
+                    if self.drain_work(None):
+                        continue
+                    if any(w["status"] == "failed" for w in self.state.get("work", {}).values()):
+                        raise ValueError("harness_work_failed")
+                    self.set_phase("graph", "planning") if phase == "coreference" else (
+                        self.set_phase("done", "complete")
                     )
-                    continue
-                if self.drain_work(None):
-                    continue
-                if any(w["status"] == "failed" for w in self.state.get("work", {}).values()):
-                    raise ValueError("harness_work_failed")
-                self.update_reading(stage="complete")
-                return
+                elif phase == "done":
+                    self.update_reading(stage="complete")
+                    return
+                else:
+                    raise ValueError("harness_new_run_required")
         except Paused:
             return
+        finally:
+            if self.settle_prepared:
+                self.settle_prepared()
+            if self._memory_calls:
+                self._memory_calls.close()
+
+    def set_phase(self, phase, stage):
+        cursor = self.state["cursor"]["main"]
+        if cursor["active_batches"]:
+            raise ValueError("harness_phase_has_pending_batches")
+        self.commit(
+            {
+                "cursor": {
+                    "main": {**cursor, "phase": phase, "stage": stage, "entity_window_id": None}
+                }
+            }
+        )
 
     @staticmethod
     def window_row(window, order, parent_id=None, depth=0):
@@ -302,21 +369,12 @@ class Engine:
             "children": [],
             "order": order,
             "depth": depth,
-            "phase": "discover",
-            "discovery_complete": False,
-            "discovery_attempted": False,
-            "reading_incomplete": False,
+            "reading_state": "pending",
+            "entity_phase": "type_alignment",
         }
 
-    @staticmethod
-    def public_stage(phase):
-        return {"waiting_children": "discover", "drain_work": "planning", "done": "planning"}.get(
-            phase, phase
-        )
-
     def update_reading(self, *, stage=None):
-        by_source = defaultdict(list)
-        total = defaultdict(list)
+        by_source, processed, total = defaultdict(list), defaultdict(list), defaultdict(list)
         for row in self.state["windows"].values():
             for ref in row["plan"]["primary_ranges"]:
                 unit = self.ir.unit(ref["evidence_id"])
@@ -324,7 +382,9 @@ class Engine:
                     continue
                 if row["parent_id"] is None:
                     total[ref["evidence_id"]].append((ref["start"], ref["end"]))
-                if not row["children"] and row["discovery_complete"]:
+                if row.get("result_saved"):
+                    processed[ref["evidence_id"]].append((ref["start"], ref["end"]))
+                if not row["children"] and row["reading_state"] == "complete":
                     by_source[ref["evidence_id"]].append((ref["start"], ref["end"]))
 
         def length(ranges):
@@ -337,7 +397,7 @@ class Engine:
             return result
 
         complete = all(
-            row["discovery_complete"]
+            row["reading_state"] == "complete"
             for row in self.state["windows"].values()
             if not row["children"]
         )
@@ -351,70 +411,32 @@ class Engine:
                         "stage": stage or cursor["stage"],
                         "reading": {
                             "total_characters": length(total),
-                            "processed_characters": length(by_source),
+                            "processed_characters": length(processed),
+                            "complete_characters": length(by_source),
                             "complete": complete,
                         },
-                        "windows_total": len(self.state["windows"]),
-                        "windows_discovered": sum(
-                            r["discovery_attempted"] for r in self.state["windows"].values()
-                        ),
-                        "windows_reviewed": sum(
-                            r["phase"] == "done" for r in self.state["windows"].values()
-                        ),
                     }
                 }
             }
         )
 
-    def advance(self, stage, *, changes=None, complete=None, reviewed=True):
+    def advance(self, stage, *, changes=None):
         changes = changes or {}
         cursor = dict(self.state["cursor"]["main"])
-        key = cursor["active_window_id"]
-        window = next(w for w in self.windows if w.id == key)
+        key = cursor["entity_window_id"]
         row = dict(changes.get("windows", {}).get(key, self.state["windows"][key]))
-        if row["phase"] == "discover" and complete is not None:
-            row.update(discovery_attempted=True, discovery_complete=complete)
-            children = (
-                split_reading_window(self.ir, window)
-                if not complete and row["depth"] < self.execution_policy["reading_split_depth"]
-                else []
-            )
-            if children:
-                row.update(children=[w.id for w in children], phase="waiting_children")
-                for i, child in enumerate(children):
-                    changes.setdefault("windows", {})[child.id] = self.window_row(
-                        child,
-                        [*row["order"], i],
-                        key,
-                        row["depth"] + 1,
-                    )
-                    self.windows.append(child)
-                cursor["active_window_id"] = None
-            else:
-                row.update(phase="type_alignment", reading_incomplete=not complete)
-        else:
-            row["phase"] = "done" if stage == "discover" else stage
-            if row["phase"] == "done":
-                cursor["active_window_id"] = None
-        cursor["stage"] = self.public_stage(row["phase"])
+        row["entity_phase"] = "done" if stage == "planning" else stage
+        cursor["stage"] = "entity_review" if stage == "planning" else stage
+        if row["entity_phase"] == "done":
+            cursor["entity_window_id"] = None
         changes.setdefault("windows", {})[key] = row
         changes["cursor"] = {"main": cursor}
         self.commit(changes)
-        self.update_reading()
-
-    def planning(self, window):
-        from .work_execution import plan_work
-
-        plan_work(self, window)
-        self.advance("drain_work")
 
     def drain_work(self, window):
         from .work_execution import drain_work
 
-        changed = drain_work(self, window)
-        if window is not None and not changed:
-            self.advance("discover")
-        return changed
+        return drain_work(self, window)
 
     def observation(self, window, label, reason, evidence=(), *, kind="validation", **context):
         key = identity("observation", window.id, label, reason, evidence, kind, context)
@@ -461,22 +483,24 @@ class Engine:
         # An older field brought into this alignment window was not necessarily
         # discovered under this window's reading cards.
         initial["discovery_window_id"] = None
-        row = deepcopy(
-            changes["observations"].get(
-                key,
-                self.state.get("observations", {}).get(key, initial),
-            )
-        )
+        current = {**self.state.get("observations", {}), **changes["observations"]}
+        keys = [
+            oid
+            for oid, obs in current.items()
+            if obs.get("kind") == "field" and obs.get("field_id") == field["id"]
+        ] or [key]
         predicate_iris = sorted(predicates)
         outcome_key = identity("alignment", subject["id"], subject["class_iri"], predicate_iris)
-        row.setdefault("alignment_outcomes", {})[outcome_key] = {
-            "subject_id": subject["id"],
-            "class_iri": subject["class_iri"],
-            "predicate_iris": predicate_iris,
-            "reason": reason,
-            "state": state,
-        }
-        changes["observations"][key] = row
+        for oid in keys:
+            row = deepcopy(current.get(oid, initial))
+            row.setdefault("alignment_outcomes", {})[outcome_key] = {
+                "subject_id": subject["id"],
+                "class_iri": subject["class_iri"],
+                "predicate_iris": predicate_iris,
+                "reason": reason,
+                "state": state,
+            }
+            changes["observations"][oid] = row
 
     def pending_property_subjects(self):
         return [
@@ -491,12 +515,7 @@ class Engine:
             )
         ]
 
-    def discover(self, window):
-        self._call_window = window
-        if self.state.get("windows", {}).get(window.id, {}).get("lookup_work"):
-            answer, lookup_info = run_discovery(self, window)
-            self.register_discovery(window, answer, lookup_info)
-            return
+    def discovery_input(self, window):
         payload = window.payload()
         payload["document"] = {
             "label": self.state["entities"]["document"]["label"],
@@ -507,323 +526,149 @@ class Engine:
                 if prop.constraint_status == "resolved"
             ],
         }
-        payload["known_mentions"] = [
-            {"label": e["label"], "role": e["role"], "name": q}
-            for e in self.state.get("entities", {}).values()
-            if e.get("referent") and (q := quote_for_reference(window, e["referent"]))
-        ][:12]
         schema = stage_schema(
             "discover",
             source_ids=[s["source_id"] for s in window.sources],
             field_ids=[f["alias"] for f in window.fields],
+            primary_source_ids=[r["source_id"] for r in payload["reading_scope"]],
         )
-        payload["schema_guidance"] = {"rule": GUIDANCE_RULE, "classes": []}
-        if (
-            self.max_request_bytes is not None
-            and request_size("discover", payload, schema) > self.max_request_bytes
-        ):
+        payload["schema_guidance"] = reading_guidance(self.catalog, [])
+        if request_size("discover", payload, schema) > self.max_request_bytes:
             key, item = self.observation(
-                window,
-                "阅读输入超出预算",
-                "调用前拆分阅读范围；本范围尚未完成发现或核对",
-                kind="scope",
+                window, "阅读输入超出预算", "调用前拆分阅读范围", kind="scope"
             )
-            self.advance(
-                "discover",
-                changes={"observations": {key: item}},
-                complete=False,
-                reviewed=False,
+            self.finish_window(window, {"observations": {key: item}}, complete=False)
+            return None
+        info = self.state["windows"][window.id]
+        guidance = info.get("guidance_class_iris")
+        if guidance is None:
+            ranked = self.rank(
+                self.catalog,
+                window.payload(),
+                max(0, self.max_request_bytes - request_size("discover", payload, schema)),
             )
-            return
-        if self.should_stop():
-            raise Paused()
-        ranked = self.rank(
-            self.catalog,
-            window.payload(),
-            max(0, self.max_request_bytes - request_size("discover", payload, schema))
-            if self.max_request_bytes is not None
-            else None,
-        )
-        guidance = ranked["selected_iris"]
-        if (
-            ranked["snapshot_id"] != self.catalog.snapshot_id
-            or len(guidance) != len(set(guidance))
-            or not set(guidance) <= set(self.catalog.reachable_class_iris)
-        ):
-            raise ValueError("harness_ranking_catalog_mismatch")
-        payload["schema_guidance"]["classes"] = [
-            reading_card(
-                self.catalog.classes[iri], annotation_contracts=self.catalog.annotation_contracts
-            )
-            for iri in guidance
-        ]
-        info = self.state.get("windows", {}).get(window.id, {"complete": True})
-        self.commit({"windows": {window.id: {**info, "guidance_class_iris": guidance}}})
-        answer, lookup_info = None, {}
-        if self.lookup:
-            capability_result = self.lookup("capabilities", self.catalog, guidance)
-            capabilities = capability_result["capabilities"]
-            lookup_info = {"status": "unavailable", "issues": capability_result.get("issues", [])}
-            if capabilities:
-                answer, lookup_info = run_discovery(self, window, payload, capabilities)
-        if answer is None:
-            answer = self.call("discover", payload, schema)
-        self.register_discovery(window, answer, lookup_info)
+            guidance = ranked["selected_iris"]
+            if (
+                ranked["snapshot_id"] != self.catalog.snapshot_id
+                or len(guidance) != len(set(guidance))
+                or not set(guidance) <= set(self.catalog.reachable_class_iris)
+            ):
+                raise ValueError("harness_ranking_catalog_mismatch")
+            self.commit({"windows": {window.id: {**info, "guidance_class_iris": guidance}}})
+        payload["schema_guidance"] = reading_guidance(self.catalog, guidance)
+        return payload, schema
 
-    def register_discovery(self, window, answer, lookup_info):
-        changes = defaultdict(dict)
-        fields = {f["alias"]: f for f in window.fields}
-        local = {}
-        discovery_valid = True
-        for mention in answer.entities:
-            evidence = []
-            try:
-                if mention.local_id in local:
-                    raise ValueError("duplicate_local_entity_id")
-                evidence = window.quotes(self.ir, mention.evidence)
-                name = window.resolve(self.ir, mention.name) if mention.name else None
-                anchor = window.resolve_anchor(self.ir, mention.anchor)
-                if name and (
-                    missing(name["text"])
-                    or name["text"].strip().casefold()
-                    in {
-                        "是",
-                        "否",
-                        "yes",
-                        "no",
-                        "true",
-                        "false",
-                    }
-                ):
-                    raise ValueError("missing_or_boolean_value_is_not_entity_name")
-                if name and name not in evidence:
-                    evidence.insert(0, name)
-                if anchor not in evidence:
-                    evidence.insert(0, anchor)
-                assigned = [fields[f] for f in mention.field_ids]
-                # Reject a whole field masquerading as a named object. A record
-                # hypothesis without a name remains possible, pending review.
-                if (
-                    name
-                    and any(
-                        name["source_id"] == ref["source_id"]
-                        and name["start"] <= ref["start"]
-                        and name["end"] >= ref["end"]
-                        for f in assigned
-                        for ref in f["evidence"][:1]
-                    )
-                    and any(
-                        name["text"].strip() == s["text"].strip()
-                        for s in window.sources
-                        if s["evidence_id"] == name["source_id"]
-                    )
-                ):
-                    raise ValueError("whole_field_is_not_entity_name")
-                key = identity("mention", anchor, mention.role)
-                local[mention.local_id] = key
-                existing = self.state.get("entities", {}).get(key)
-                # Only exact same physical referent and role reuses an ID.
-                # A second mention with the same spelling never resolves identity.
-                entity = existing or {
-                    "id": key,
-                    "label": name["text"] if name else anchor["text"],
-                    "name": name,
-                    "role": mention.role,
-                    "class_iri": None,
-                    "class_label": None,
-                    "state": "candidate",
-                    "reason": "原文提及已保存，类型和归属待对齐",
-                    "evidence": evidence,
-                    "window_id": window.id,
-                    "field_ids": [],
-                    "referent": anchor,
-                }
-                changes["entities"][key] = {
-                    **entity,
-                    "field_ids": sorted(set(entity["field_ids"] + [f["id"] for f in assigned])),
-                }
-                for field in assigned:
-                    changes["fields"][field["id"]] = field
-            except (ValueError, KeyError) as exc:
-                discovery_valid = False
-                key, item = self.observation(
-                    window,
-                    mention.role,
-                    str(exc),
-                    evidence,
-                    kind="entity",
-                )
-                changes["observations"][key] = item
-        for field in window.fields:
-            changes["fields"][field["id"]] = field
-            key, item = self.field_observation(
-                window,
-                field,
-                "missing_source_value"
-                if field["missing"]
-                else "原字段观察；采信状态见对应属性候选",
+    def finish_window(self, window, changes, *, complete, batch_id=None):
+        row = {**self.state["windows"][window.id], **changes.get("windows", {}).get(window.id, {})}
+        row.pop("lookup_work", None)
+        children = (
+            split_reading_window(self.ir, window)
+            if (not complete and row["depth"] < self.execution_policy["reading_split_depth"])
+            else []
+        )
+        row["reading_state"] = "split" if children else "complete" if complete else "incomplete"
+        row["children"] = [w.id for w in children]
+        for i, child in enumerate(children):
+            changes.setdefault("windows", {})[child.id] = self.window_row(
+                child,
+                [*row["order"], i],
+                window.id,
+                row["depth"] + 1,
             )
-            changes["observations"][key] = item
-        root = deepcopy(self.state["entities"]["document"])
-        for alias in answer.document_field_ids:
-            if alias not in fields:
-                raise ValueError("document_field_outside_reading_window")
-            if fields[alias]["id"] not in root["field_ids"]:
-                root["field_ids"].append(fields[alias]["id"])
-        changes["entities"]["document"] = root
-        proposed_fields = (
-            [(root, proposed, False) for proposed in answer.document_source_fields]
-            + [
-                (changes["entities"].get(local.get(mention.local_id)), proposed, True)
-                for mention in answer.entities
-                for proposed in mention.source_fields
-            ]
-            + [
-                (None, proposed, False)
-                for proposed in [
-                    *answer.unowned_fields,
-                    *lookup_info.get("retained_fields", []),
-                ]
-            ]
+            self.windows.append(child)
+        changes.setdefault("windows", {})[window.id] = row
+        self.commit(changes, batch_id=batch_id)
+        self.update_reading()
+
+    def register_discovery(self, window, answer, lookup_info, *, batch_id=None):
+        delta = decode_local_discovery(
+            self.ir, window, answer, lookup_info, self.state["entities"]["document"]
         )
-        for owner, proposed, requires_owner in proposed_fields:
-            try:
-                label = window.resolve(self.ir, proposed.label) if proposed.label else None
-                value = window.resolve(self.ir, proposed.value)
-                evidence = [label, value] if label else [value]
-                key = identity("field", evidence)
-                field = {
-                    "id": key,
-                    "alias": "",
-                    "label": label["text"] if label else "",
-                    "value": value["text"],
-                    "missing": missing(value["text"]),
-                    "evidence": evidence,
-                    "value_evidence": [value],
-                    "source_aliases": [],
-                    "row": None,
-                }
-                changes["fields"][key] = field
-                reason = "原文补充字段，归属和谓词待对齐"
-                if owner is not None:
-                    if key not in owner["field_ids"]:
-                        owner["field_ids"].append(key)
-                elif requires_owner:
-                    reason = "候选主体引用无效；保留原字段，归属待定"
-                obs_id, item = self.field_observation(
-                    window,
-                    field,
-                    "missing_source_value" if field["missing"] else reason,
-                )
-                changes["observations"][obs_id] = item
-            except (ValueError, KeyError) as exc:
-                key, item = self.observation(
-                    window,
-                    proposed.label.text if proposed.label else "独立原文",
-                    str(exc),
-                    kind="field",
-                )
-                changes["observations"][key] = item
-        for hint in answer.relation_hints:
-            try:
-                subject = "document" if hint.subject_id == "document" else local[hint.subject_id]
-                obj = local[hint.object_id]
-                evidence = window.quotes(self.ir, hint.evidence)
-                if subject == obj:
-                    raise ValueError("self_relation_hint_requires_explicit_review")
-                key = identity("hint", subject, hint.label, obj, evidence)
-                changes["hints"][key] = {
-                    "id": key,
-                    "subject_id": subject,
-                    "object_id": obj,
-                    "label": hint.label,
-                    "evidence": evidence,
-                    "polarity": hint.polarity,
-                    "conditions": hint.conditions,
-                    "window_id": window.id,
-                }
-                obs_id, item = self.observation(
-                    window,
-                    hint.label,
-                    "原文关系线索，尚未映射合法谓词",
-                    evidence,
-                    kind="relation",
-                    subject_id=subject,
-                    object_id=obj,
-                )
-                changes["observations"][obs_id] = item
-            except (KeyError, ValueError) as exc:
-                key, item = self.observation(window, hint.label, str(exc), kind="relation")
-                changes["observations"][key] = item
-        for cue in answer.reference_cues:
-            try:
-                subject = (
-                    "document"
-                    if cue.local_subject_id == "document"
-                    else local[cue.local_subject_id]
-                )
-                ref = window.resolve(self.ir, cue.reference)
-                refs = window.quotes(self.ir, cue.evidence)
-                key = identity("reference_cue", subject, ref, cue.direction, cue.relation_label)
-                changes["reference_cues"][key] = {
-                    "id": key,
-                    "subject_id": subject,
-                    "reference": ref,
-                    "relation_label": cue.relation_label,
-                    "direction": cue.direction,
-                    "kind": cue.kind,
-                    "evidence": refs,
-                    "polarity": cue.polarity,
-                    "conditions": cue.conditions,
-                }
-            except (KeyError, ValueError):
-                discovery_valid = False
-        changes["window_entities"][window.id] = {"ids": list(dict.fromkeys(local.values()))}
-        if lookup_info:
-            current = dict(self.state["windows"][window.id])
-            current.pop("lookup_work", None)
-            current["lookup"] = {
-                k: v
-                for k, v in lookup_info.items()
-                if k not in {"retained_fields", "candidates", "suggestions"}
-            }
-            changes["windows"][window.id] = current
-            for suggestion in lookup_info.get("suggestions", []):
-                entity_id = local.get(suggestion["local_id"])
-                if entity_id not in changes["entities"]:
-                    continue
-                candidates = [lookup_info["candidates"][key] for key in suggestion["candidate_ids"]]
-                changes["source_candidates"][entity_id] = {
-                    "entity_id": entity_id,
-                    "candidates": candidates,
-                    "identity_status": "not_checked",
-                    "reason": suggestion["reason"],
-                }
-                key, item = self.observation(
-                    window,
-                    "来源候选（身份未核对）",
-                    "、".join(c["label"] for c in candidates) + "；" + suggestion["reason"],
-                    changes["entities"][entity_id]["evidence"],
-                    kind="entity",
-                    candidate_subject_ids=[entity_id],
-                )
-                changes["observations"][key] = item
-            for issue in lookup_info.get("issues", []):
-                key, item = self.observation(window, "来源查询未完成", issue)
-                changes["observations"][key] = item
-        capacity = (
-            len(answer.entities) == 12
-            or len(answer.relation_hints) == 16
-            or len(answer.reference_cues) == 8
-            or len(proposed_fields) >= 16
-            or len(answer.document_source_fields) == 8
-            or any(len(mention.source_fields) == 8 for mention in answer.entities)
+        changes = merge_local_discovery(
+            self.state,
+            delta,
+            {key: row["order"] for key, row in self.state["windows"].items()},
         )
-        self.advance(
-            "type_alignment",
-            changes=dict(changes),
-            complete=answer.complete and not capacity and discovery_valid,
-        )
+        changes.setdefault("windows", {}).setdefault(window.id, {})["result_saved"] = True
+        self.finish_window(window, changes, complete=delta["complete"], batch_id=batch_id)
+
+    def reading_request(self, batch):
+        window = next(w for w in self.windows if w.id == batch["window_id"])
+        row = self.state["windows"][window.id]
+        request = self.batch_request(batch)
+        payload = window.payload()
+        sources = {s["source_id"]: [s["evidence_id"], s["offset"], s["offset"] + len(s["text"])]
+                   for s in window.sources}
+        step = request["payload"].get("lookup_mode", "plain")
+        if (row["reading_state"] != "pending" or batch["stage"] != "discover"
+                or batch["step"] != step
+                or (step == "refine") != bool(row.get("lookup_work"))
+                or batch["source_bindings"] != sources
+                or batch["alias_bindings"] != {f["alias"]: f["id"] for f in window.fields}
+                or request["payload"]["sources"] != payload["sources"]
+                or request["payload"]["fields"] != payload["fields"]
+                or batch["targets"] != [{"domain": "windows", "id": window.id,
+                                          "dependency_hash": digest(request["payload"])}]):
+            raise ValueError("harness_active_batch_input_changed")
+        return window, request
+
+    def read_windows(self):
+        try:
+            while not self.should_stop():
+                active = self.state["cursor"]["main"]["active_batches"]
+                occupied = {b["window_id"] for b in active.values()}
+                for batch in active.values():
+                    self.reading_request(batch)
+                    self.submit_prepared(batch)
+                pending = sorted(
+                    (
+                        row
+                        for key, row in self.state["windows"].items()
+                        if row["reading_state"] == "pending" and key not in occupied
+                    ),
+                    key=lambda row: (row["order"], row["plan"]["id"]),
+                )
+                for row in pending:
+                    if self.should_stop():
+                        break
+                    if (
+                        len(self.state["cursor"]["main"]["active_batches"])
+                        >= (self.execution_policy["reading_concurrency"])
+                    ):
+                        break
+                    window = next(w for w in self.windows if w.id == row["plan"]["id"])
+                    prepared = next_discovery(self, window)
+                    if prepared is None:
+                        continue
+                    payload, schema, step = prepared
+                    batch = self.prepare_call("discover", payload, schema, window=window, step=step)
+                    self.submit_prepared(batch)
+                active = list(self.state["cursor"]["main"]["active_batches"].values())
+                if not active:
+                    if any(
+                        row["reading_state"] == "pending" for row in self.state["windows"].values()
+                    ):
+                        continue
+                    self.set_phase("entities", "type_alignment")
+                    return
+                completed = self.collect_prepared(active)
+                if self.should_stop():
+                    return
+                for batch, output, error in completed:
+                    if error:
+                        raise error
+                    if self.should_stop():
+                        return
+                    window, request = self.reading_request(batch)
+                    validate_paid_output(
+                        "discover", request["payload"], output, schema=request["schema"]
+                    )
+                    answer = discovery_model(request["payload"].get("lookup_mode")).model_validate(
+                        output,
+                    )
+                    finish_discovery(self, window, batch, answer)
+        finally:
+            self.settle_prepared()
 
     def entities(self, window):
         ids = (
@@ -831,7 +676,17 @@ class Engine:
             if window.entity_ids is not None
             else self.state.get("window_entities", {}).get(window.id, {}).get("ids", [])
         )
-        return [self.state["entities"][key] for key in ids]
+        return [
+            self.state["entities"][key]
+            for key in sorted(ids, key=lambda key: self.source_index.position(
+                self.state["entities"][key]) if key in self.state["entities"] else (-1, 0, key))
+            if key in self.state["entities"]
+            and (
+                window.entity_ids is not None
+                or self.state.get("cursor", {}).get("main", {}).get("phase") != "entities"
+                or self.state["entities"][key].get("window_id") == window.id
+            )
+        ]
 
     def entity_aliases(self, window):
         return {
@@ -878,6 +733,11 @@ class Engine:
             "label": entity["label"],
             "role": entity["role"],
             "name": quote_for_reference(window, entity["name"]) if entity.get("name") else None,
+            "name_candidates": [
+                q
+                for ref in entity.get("name_candidates", [])
+                if (q := quote_for_reference(window, ref))
+            ],
             "anchor": quote_for_reference(window, entity["referent"])
             if entity.get("referent")
             else None,
@@ -933,6 +793,7 @@ class Engine:
                     "referent": entity.get("referent"),
                     "evidence": entity.get("evidence"),
                     "name": entity.get("name"),
+                    "name_candidates": entity.get("name_candidates", []),
                     "role": entity.get("role"),
                     "identity_binding": entity.get("identity_binding"),
                     "fields": {
@@ -1012,19 +873,26 @@ class Engine:
                 else:
                     raise ValueError("harness_single_type_input_too_large")
                 return
-            self._call_window = window
             task_key = digest({"payload": payload, "schema": schema})
             previous = self.state.get("type_work", {}).get(task_key)
             if previous:
                 answer = STAGES["type_alignment"].model_validate(previous["answer"])
             else:
-                self._call_targets = [
-                    {"domain": "entities", "id": entity["id"],
-                     "dependency_hash": input_hash(entity)}
+                targets = [
+                    {
+                        "domain": "entities",
+                        "id": entity["id"],
+                        "dependency_hash": input_hash(entity),
+                    }
                     for entity in selected_entities
                 ]
-                answer = self.call("type_alignment", payload, schema)
-                self.commit({"type_work": {task_key: {"answer": answer.model_dump(mode="json")}}})
+                answer, batch_id = self.call(
+                    "type_alignment", payload, schema, window=window, targets=targets
+                )
+                self.commit(
+                    {"type_work": {task_key: {"answer": answer.model_dump(mode="json")}}},
+                    batch_id=batch_id,
+                )
             if set(answer.entities) != set(ids):
                 raise ValueError("type_alignment_entity_set_mismatch")
             for entity_id, choice in answer.entities.items():
@@ -1188,13 +1056,19 @@ class Engine:
                 batch(items[:middle])
                 batch(items[middle:])
                 return
-            self._call_window = window
-            self._call_aliases = {alias: key for key, alias in aliases.items()}
-            self._call_targets = [
+            call_aliases = {alias: key for key, alias in aliases.items()}
+            targets = [
                 {"domain": "entities", "id": entity["id"], "dependency_hash": digest(rows[i])}
                 for i, entity in enumerate(items)
             ]
-            answer = self.call("entity_review", payload, schema)
+            answer, batch_id = self.call(
+                "entity_review",
+                payload,
+                schema,
+                window=window,
+                targets=targets,
+                aliases=call_aliases,
+            )
             changes = {}
             for entity in items:
                 judgment = answer.judgments[aliases[entity["id"]]]
@@ -1220,7 +1094,7 @@ class Engine:
                     "source_verdict": verdict,
                     "source_reason": reason,
                 }
-            self.commit({"entities": changes})
+            self.commit({"entities": changes}, batch_id=batch_id)
 
         groups = []
         for entity in candidates:

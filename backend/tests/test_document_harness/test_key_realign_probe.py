@@ -82,7 +82,7 @@ def test_actual_mapped_keys_replace_aggregate_and_require_fresh_type_review(
     assert [e["label"] for e in entities] == ["A1", "A2"]
     assert all(e["class_iri"] is None and e["state"] == "candidate" for e in entities)
     assert engine.state["cursor"]["main"]["stage"] == "type_alignment"
-    assert engine.state["cursor"]["main"]["windows_discovered"] == 1
+    assert engine.state["cursor"]["main"]["reading_windows"]["saved"] == 1
     orphan = next(f for f in engine.state["fields"].values() if f["value"] == "A1/A2")
     assert all(orphan["id"] not in e["field_ids"] for e in entities)
     assert not engine.state.get("properties") and not engine.state.get("relations")

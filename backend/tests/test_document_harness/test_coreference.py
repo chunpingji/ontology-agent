@@ -105,15 +105,13 @@ def runner(case, invoke, *, state=None, stop=lambda: False, budget=32768, save=N
                     save=save or (lambda changes: None), should_stop=stop, max_request_bytes=budget)
     if not engine.state.get("windows"):
         engine.state["windows"] = {
-            window.id: {**Engine.window_row(window, [i]), "phase": "done",
-                        "discovery_complete": True, "discovery_attempted": True}
+            window.id: {**Engine.window_row(window, [i]), "entity_phase": "done",
+                        "reading_state": "complete"}
             for i, window in enumerate(engine.windows)
         }
     engine.state.setdefault("cursor", {"main": {
-        "stage": "planning", "active_window_id": None, "active_batch": None,
+        "stage": "planning", "entity_window_id": None, "active_batches": {}, "phase": "coreference",
         "scope_complete": False,
-        "windows_total": len(engine.windows), "windows_discovered": len(engine.windows),
-        "windows_reviewed": len(engine.windows),
     }})
     return engine
 
@@ -131,8 +129,9 @@ def test_explicit_cross_section_alias_work_and_exact_proof(case):
     before = deepcopy(state)
     def invoke(stage, payload, schema):
         assert stage == "coreference_review"
-        assert engine._call_window.payload()["sources"] == payload["sources"]
-        assert engine._call_targets == [{
+        batch = next(iter(engine.state["cursor"]["main"]["active_batches"].values()))
+        assert set(batch["source_bindings"]) == {s["source_id"] for s in payload["sources"]}
+        assert batch["targets"] == [{
             "domain": "work", "id": row["id"], "dependency_hash": row["dependency_hash"],
         } for row in engine.state["work"].values() if row["status"] == "ready"]
         assert len({source["section"] for source in payload["sources"]}) == 2

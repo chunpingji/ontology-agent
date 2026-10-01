@@ -68,7 +68,7 @@ def test_model_bindings_generate_only_member_fields_and_leave_aggregate_observat
         assert engine.state["source_candidates"][entity["id"]]["identity_status"] == "not_checked"
     assert engine.state["entities"]["document"] == old["entities"]["document"]
     assert any(f["value"] == "A1/A2" for f in engine.state["fields"].values())
-    assert engine.state["cursor"]["main"]["windows_discovered"] == 1
+    assert engine.state["cursor"]["main"]["reading_windows"]["saved"] == 1
     assert not engine.state.get("properties")
 
 

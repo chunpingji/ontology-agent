@@ -10,10 +10,13 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from .protocols import PROTOCOL
 from .source import identity
 
 DEFAULT_POLICY = {
     "schema": "harness-pruning/1",
+    "flow": "local_reading",
+    "reading_concurrency": 2,
     "weak_candidates_per_subject_predicate_region": 4,
     "weak_candidates_per_region": 64,
     "reference_targets_per_cue": 8,
@@ -150,7 +153,16 @@ def dependency_hash(kind, data, state, catalog, policy):
     from .evidence_gate import _related_hints
 
     deps = dependencies(kind, data, state)
-    endpoint_fields = ("referent", "class_iri", "type_evidence", "identity_binding")
+    endpoint_fields = (
+        "referent",
+        "class_iri",
+        "type_evidence",
+        "identity_binding",
+        "name",
+        "name_candidates",
+        "field_ids",
+        "role",
+    )
     inputs = {
         k: v
         for k, v in data.items()
@@ -195,7 +207,7 @@ def dependency_hash(kind, data, state, catalog, policy):
             "fields": {
                 key: {
                     f: state.get("fields", {}).get(key, {}).get(f)
-                    for f in ("value", "value_evidence", "evidence")
+                    for f in ("label", "value", "missing", "value_evidence", "evidence")
                 }
                 for key in deps["field_ids"]
             },
@@ -212,7 +224,7 @@ def dependency_hash(kind, data, state, catalog, policy):
             else [],
             "ontology": catalog.ontology_hash,
             "policy": policy,
-            "protocol": "document-harness-v4",
+            "protocol": PROTOCOL,
         }
     )
 

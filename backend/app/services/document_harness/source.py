@@ -79,9 +79,29 @@ class Window:
     fields: list[dict]
     primary_ids: list[str]
     entity_ids: list[str] | None = None
+    primary_ranges: list[dict] | None = None
+
+    def primary(self):
+        if self.primary_ranges is not None:
+            return self.primary_ranges
+        return [{"evidence_id": s["evidence_id"], "start": s["offset"],
+                 "end": s["offset"] + len(s["text"])} for s in self.sources
+                if s["evidence_id"] in self.primary_ids]
+
+    def owns(self, ref):
+        return references_cover(ref, [{"source_id": r["evidence_id"],
+                                       "start": r["start"], "end": r["end"]}
+                                      for r in self.primary()])
 
     def payload(self):
         return {
+            "reading_scope": [
+                {"source_id": s["source_id"], "start": max(r["start"], s["offset"]) - s["offset"],
+                 "end": min(r["end"], s["offset"] + len(s["text"])) - s["offset"]}
+                for s in self.sources for r in self.primary()
+                if r["evidence_id"] == s["evidence_id"]
+                and r["start"] < s["offset"] + len(s["text"]) and r["end"] > s["offset"]
+            ],
             "sources": [
                 {k: v for k, v in source.items() if k not in {"evidence_id", "offset"}}
                 for source in self.sources

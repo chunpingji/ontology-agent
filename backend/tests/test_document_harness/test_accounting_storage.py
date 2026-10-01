@@ -129,14 +129,14 @@ def test_prepared_batch_persists_exact_members_and_cached_answer_without_dispatc
     repo = Repository(db, run, token)
     repo.save({"work": {"w": {"id": "w", "kind": "property_alignment", "status": "ready",
                               "dependency_hash": "h"}}})
-    target = {"window_id": "window", "window_phase": "drain_work",
+    target = {"window_id": "window", "step": "property_alignment",
               "targets": [{"domain": "work", "id": "w", "dependency_hash": "h"}],
               "alias_bindings": {"C1": "w"}, "source_bindings": {"S1": ["source", 0, 4]}}
     batch = repo.prepare_batch("discover", {"sources": [{"text": "text"}]}, {}, target)
     assert repo.get_call_record(batch["call_key"])["status"] == "prepared"
     assert repo.metrics()["stages"] == {}
     assert repo.load()["work"]["w"]["last_call_key"] == batch["call_key"]
-    with pytest.raises(HeadConflict, match="already_active"):
+    with pytest.raises(HeadConflict, match="capacity_exceeded"):
         repo.prepare_batch("discover", {"sources": []}, {}, target)
     policy = source_payload(db, run)["policy"]
     request = repo.batch_request(batch)
@@ -148,8 +148,8 @@ def test_prepared_batch_persists_exact_members_and_cached_answer_without_dispatc
     )
     resumed = Repository(db, run, token)
     assert resumed.invoke_prepared(batch) == {} and resumed.metrics() == metrics
-    assert resumed.load()["cursor"]["main"]["active_batch"] == batch
-    resumed.save({"cursor": {"main": {"active_batch": None}}, "work": {
+    assert resumed.load()["cursor"]["main"]["active_batches"][batch["batch_id"]] == batch
+    resumed.save({"cursor": {"main": {"active_batches": {}}}, "work": {
         "w": {**resumed.load()["work"]["w"], "status": "done"},
     }})
     assert resumed.metrics()["work_counts"]["done"] == 1
@@ -159,7 +159,7 @@ def test_private_cursor_and_cost_changes_leave_display_version_unchanged(db):
     run, token = _run(db)
     repo = Repository(db, run, token)
     base = get_row(db, run, "display", "graph")
-    repo.save({"cursor": {"main": {"active_batch": None, "stage": "discover"}}})
+    repo.save({"cursor": {"main": {"active_batches": {}, "stage": "discover"}}})
     key, attempt = call(repo)
     repo.finish_attempt(key, attempt, answer(), 1)
     assert get_row(db, run, "display", "graph") == base

@@ -103,6 +103,7 @@ class SourceIndex:
                 names = []
                 if current.get("referent"):
                     names = [current.get("label", ""), current["referent"]["text"]]
+                    names.extend(q["text"] for q in current.get("name_candidates", []))
                     names.extend(item.get("value", "") for item in
                                  (current.get("identity_binding") or {}).get("identifiers", []))
                 values.extend((self.by_text, lookup_text(name)) for name in names if name)
@@ -161,6 +162,45 @@ def resolve_predicates(catalog, subject, objects, clue):
         and not unresolved
         and not missing_type and confirmed,
     }
+
+
+def resolve_reference_cues(ir, state, index, policy):
+    """Resolve saved original-text cues against the full mention index, without graph work."""
+    entities = state.get("entities", {})
+    changes = {}
+    for cue in state.get("reference_cues", {}).values():
+        if cue.get("subject_id") not in entities or cue.get("ambiguous_subject_members"):
+            changes[cue["id"]] = {**cue, "target_ids": [], "reference_targets_truncated": False}
+            continue
+        text = lookup_text(cue["reference"]["text"])
+        targets = set(index.by_text.get(text, ()))
+        # Exact identifiers/names may appear within a longer explicit reference.
+        if not targets:
+            for name, keys in index.by_text.items():
+                if name and label_matches(text, name):
+                    targets.update(keys)
+        targets.discard(cue["subject_id"])
+        if not targets and cue["kind"] == "anaphora":
+            unit = ir.unit(cue["reference"]["source_id"])
+            previous = [
+                u
+                for u in ir.evidence_units
+                if u.section_node_id == unit.section_node_id
+                and u.text.strip()
+                and u.kind != "heading"
+                and ir.evidence_units.index(u) < ir.evidence_units.index(unit)
+            ]
+            if previous:
+                targets.update(index.by_source.get(previous[-1].evidence_id, ()))
+        ordered = sorted(targets, key=lambda key: ref_key(entities[key]["referent"]))
+        limited = len(ordered) > policy["reference_targets_per_cue"]
+        ordered = ordered[: policy["reference_targets_per_cue"]]
+        changes[cue["id"]] = {
+            **cue,
+            "target_ids": ordered,
+            "reference_targets_truncated": limited,
+        }
+    return changes
 
 
 def collect_relation_seeds(ir, catalog, state, delta, index, policy):
@@ -254,35 +294,9 @@ def collect_relation_seeds(ir, catalog, state, delta, index, policy):
             conditions=hint.get("conditions", []),
         )
 
-    for cue in state.get("reference_cues", {}).values():
-        text = lookup_text(cue["reference"]["text"])
-        targets = set(index.by_text.get(text, ()))
-        # Exact identifiers/names may appear within a longer explicit reference.
-        if not targets:
-            for name, keys in index.by_text.items():
-                if name and label_matches(text, name):
-                    targets.update(keys)
-        targets.discard(cue["subject_id"])
-        if not targets and cue["kind"] == "anaphora":
-            unit = ir.unit(cue["reference"]["source_id"])
-            previous = [
-                u
-                for u in ir.evidence_units
-                if u.section_node_id == unit.section_node_id
-                and u.text.strip()
-                and u.kind != "heading"
-                and ir.evidence_units.index(u) < ir.evidence_units.index(unit)
-            ]
-            if previous:
-                targets.update(index.by_source.get(previous[-1].evidence_id, ()))
-        ordered = sorted(targets, key=lambda key: ref_key(entities[key]["referent"]))
-        limited = len(ordered) > policy["reference_targets_per_cue"]
-        ordered = ordered[: policy["reference_targets_per_cue"]]
-        index.cue_changes[cue["id"]] = {
-            **cue,
-            "target_ids": ordered,
-            "reference_targets_truncated": limited,
-        }
+    index.cue_changes = resolve_reference_cues(ir, state, index, policy)
+    for cue in index.cue_changes.values():
+        ordered = cue["target_ids"]
         if cue.get("relation_label") is None:
             continue
         for key in ordered:

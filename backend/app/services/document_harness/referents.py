@@ -71,6 +71,23 @@ def overlap(a, b):
             and b["start"] < a["end"])
 
 
+def local_groups(buckets):
+    """Only overlapping draft anchors compete about the same physical mention."""
+    for (class_iri, _), entities in buckets.items():
+        group, end = [], -1
+        for entity in sorted(entities, key=lambda e: (
+            e["referent"]["start"], e["referent"]["end"], e["id"],
+        )):
+            ref = entity["referent"]
+            if group and ref["start"] >= end:
+                yield class_iri, group
+                group, end = [], -1
+            group.append(entity)
+            end = max(end, ref["end"])
+        if group:
+            yield class_iri, group
+
+
 def member_reference(member, refs, ir):
     selected = [refs[key] for key in member.expression_ids]
     if len({ref["source_id"] for ref in selected}) != 1:
@@ -292,7 +309,7 @@ def run_referent_alignment(engine, base_window):
         if any(p["property_kind"] == "data" and p["constraint_status"] == "resolved"
                and STRING in p["datatype_iris"] for p in guidance["identity_properties"]):
             buckets[(card.iri, entity["referent"]["source_id"])].append(entity)
-    for (class_iri, _), entities in buckets.items():
+    for class_iri, entities in local_groups(buckets):
         task_id = identity("referent_group", class_iri, sorted(
             (e["referent"]["source_id"], e["referent"]["start"], e["referent"]["end"])
             for e in entities
@@ -309,6 +326,15 @@ def run_referent_alignment(engine, base_window):
         work = deepcopy(engine.state.get("referent_work", {}).get(task_id, {}))
         if "key_context" not in work:
             work["key_context"] = key_context(engine, window, class_iri)
+            candidates = []
+            for candidate in work["key_context"]["key_candidates"]:
+                occurrences = [o for o in candidate["key_occurrences"] if any(
+                    overlap(window.resolve(engine.ir, o["quote"]), e["referent"])
+                    for e in entities
+                )]
+                if occurrences:
+                    candidates.append({**candidate, "key_occurrences": occurrences})
+            work["key_context"]["key_candidates"] = candidates
             engine.commit({"referent_work": {task_id: work}})
         if "span_catalog" not in work:
             work["span_catalog"], work["identifier_span_ids"] = initial_spans(
@@ -319,7 +345,8 @@ def run_referent_alignment(engine, base_window):
             **work["key_context"],
             "sources": window.payload()["sources"],
             "mentions": [{"anchor": quote_for_reference(window, e["referent"]),
-                          "label": e["label"]} for e in entities],
+                          "label": e["label"], "start": e["referent"]["start"],
+                          "end": e["referent"]["end"]} for e in entities],
             "class_definition": {"iri": card.iri, "label": card.label,
                                  "description": card.description,
                                  "definition": [d.model_dump(mode="json") for d in card.definition],
@@ -337,19 +364,46 @@ def run_referent_alignment(engine, base_window):
             if work.get("proposal_feedback"):
                 payload["proposal_feedback"] = work["proposal_feedback"]
             if "proposal" not in work:
-                engine._call_window = window
-                engine._call_targets = [{"domain": "referent_work", "id": task_id,
-                                         "dependency_hash": identity(task_id, payload)}]
-                answer = engine.call("referent_candidates", payload, stage_schema(
-                    "referent_candidates", source_ids=group_source_ids,
-                    property_iris=properties,
-                    span_ids=identifiers, new_spans_allowed=payload["new_spans_allowed"],
-                ))
+                targets = [
+                    {
+                        "domain": "referent_work",
+                        "id": task_id,
+                        "dependency_hash": identity(task_id, payload),
+                    }
+                ]
+                answer, batch_id = engine.call(
+                    "referent_candidates",
+                    payload,
+                    stage_schema(
+                        "referent_candidates",
+                        source_ids=group_source_ids,
+                        property_iris=properties,
+                        span_ids=identifiers,
+                        new_spans_allowed=payload["new_spans_allowed"],
+                    ),
+                    window=window,
+                    targets=targets,
+                )
                 # Failed answers remain current too; resume cannot repeat a paid proposal.
                 work["proposal"] = answer.model_dump(mode="json")
-                engine.commit({"referent_work": {task_id: work}})
+                engine.commit({"referent_work": {task_id: work}}, batch_id=batch_id)
             answer = ReferentCandidates.model_validate(work["proposal"])
             if not answer.new_spans:
+                try:
+                    refs = validate_partitions(answer, spans, engine.ir, properties, identifiers)
+                except ValueError as exc:
+                    if (str(exc) != "overlapping_members_in_same_partition"
+                            or work.get("proposal_corrected")):
+                        raise
+                    # Preserve the rejected answer as feedback, not as the next answer
+                    # to consume. The persisted correction limit also applies on resume.
+                    work["proposal_corrected"] = True
+                    work["proposal_feedback"] = {
+                        "issue": str(exc),
+                        "rejected_proposal": work.pop("proposal"),
+                    }
+                    engine.commit({"referent_work": {task_id: work}})
+                    continue
                 break
             if work.get("spans_extended"):
                 raise ValueError("identifier_span_extension_exhausted")
@@ -382,7 +436,6 @@ def run_referent_alignment(engine, base_window):
                         spans_extended=True)
             work.pop("proposal")
             engine.commit({"referent_work": {task_id: work}})
-        refs = validate_partitions(answer, spans, engine.ir, properties, identifiers)
         if not refs:
             engine.commit({"referent_work": {task_id: {**work, "done": True}}})
             continue
@@ -407,14 +460,29 @@ def run_referent_alignment(engine, base_window):
         if "feedback" not in work:
             work["feedback"] = query_feedback(engine, answer, refs, class_iri)
             engine.commit({"referent_work": {task_id: work}})
-        engine._call_window = window
-        engine._call_targets = [{"domain": "referent_work", "id": task_id,
-                                 "dependency_hash": identity(task_id, work["proposal"],
-                                                             work["feedback"])}]
-        selection = engine.call("referent_selection", {
-            **payload, "proposal": work["proposal"], "lookup_feedback": work["feedback"],
-        }, stage_schema("referent_selection", source_ids=source_ids,
-                        partition_ids=[p.id for p in answer.partitions], span_ids=spans))
+        targets = [
+            {
+                "domain": "referent_work",
+                "id": task_id,
+                "dependency_hash": identity(task_id, work["proposal"], work["feedback"]),
+            }
+        ]
+        selection, batch_id = engine.call(
+            "referent_selection",
+            {
+                **payload,
+                "proposal": work["proposal"],
+                "lookup_feedback": work["feedback"],
+            },
+            stage_schema(
+                "referent_selection",
+                source_ids=source_ids,
+                partition_ids=[p.id for p in answer.partitions],
+                span_ids=spans,
+            ),
+            window=window,
+            targets=targets,
+        )
         selected, support, selection_issue = resolve_selection(
             selection, answer, refs, spans, engine.ir,
         )
@@ -492,16 +560,37 @@ def run_referent_alignment(engine, base_window):
                 )] for old in entities if old["id"] in replaced
             }
             rebind_clues(engine, base_window, replacements, changes)
-            current_ids = engine.state["window_entities"][base_window.id]["ids"]
-            changes["window_entities"][base_window.id] = {
-                "ids": [key for key in current_ids if key not in replaced] + member_ids,
-            }
+            for wid, membership in engine.state.get("window_entities", {}).items():
+                if replaced.intersection(membership["ids"]):
+                    changes["window_entities"][wid] = {
+                        "ids": sorted(
+                            {
+                                member
+                                for key in membership["ids"]
+                                for member in replacements.get(key, [key])
+                            }
+                        )
+                    }
             # Existing source observations retain their evidence without dangling owners.
             for oid, obs in engine.state.get("observations", {}).items():
-                if (replaced.intersection(obs.get("candidate_subject_ids", []))
-                        or obs.get("subject_id") in replaced or obs.get("object_id") in replaced):
+                if (
+                    replaced.intersection(obs.get("candidate_subject_ids", []))
+                    or obs.get("subject_id") in replaced
+                    or obs.get("object_id") in replaced
+                ):
                     changes["observations"][oid] = {
-                        **obs, "candidate_subject_ids": [], "subject_id": None, "object_id": None,
+                        **obs,
+                        "candidate_subject_ids": sorted({
+                            member for old in [*obs.get("candidate_subject_ids", []),
+                                               obs.get("subject_id"), obs.get("object_id")]
+                            if old is not None for member in replacements.get(old, [old])
+                        }),
+                        "subject_id": (replacements[obs["subject_id"]][0]
+                                       if len(replacements.get(obs.get("subject_id"), [])) == 1
+                                       else None),
+                        "object_id": (replacements[obs["object_id"]][0]
+                                      if len(replacements.get(obs.get("object_id"), [])) == 1
+                                      else None),
                     }
         alternatives = [
             p.id + ": " + " + ".join(
@@ -522,7 +611,7 @@ def run_referent_alignment(engine, base_window):
             "selected_partition_id": selected.id if selected else None,
             "selection_issue": selection_issue, "member_ids": member_ids,
         }
-        engine.commit(dict(changes))
+        engine.commit(dict(changes), batch_id=batch_id)
     engine.advance("entity_review")
 
 

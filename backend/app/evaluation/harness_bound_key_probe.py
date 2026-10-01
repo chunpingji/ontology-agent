@@ -27,7 +27,6 @@ from app.services.document_harness.ontology import SchemaCatalog, identity_guida
 from app.services.document_harness.planning import context_window
 from app.services.document_harness.protocols import (
     INSTRUCTIONS,
-    DiscoveryRefinement,
     Message,
     Quote,
 )
@@ -173,7 +172,10 @@ def apply_bindings(engine, window, answer, registry, allowed_properties):
                                     "reason": "模型统一编号绑定的来源建议；身份未核验"})
     if len(mentions) >= 12:
         raise ValueError("binding_member_capacity")
-    converted = DiscoveryRefinement.model_validate({
+    from app.evaluation.harness_key_realign_probe import KeyRealignment
+
+    converted = KeyRealignment.model_validate({
+        "interpretations": {},
         "entities": mentions, "source_suggestions": suggestions, "document_field_ids": [],
         "document_source_fields": [], "unowned_fields": [], "relation_hints": [], "complete": True,
     })
@@ -234,17 +236,17 @@ class BoundEngine(Engine):
             }
         return result
 
-    def call(self, stage, payload, schema):
+    def call(self, stage, payload, schema, **context):
         provided = deepcopy(payload) if self.carry_bindings else without_bindings(payload)
         if self.carry_bindings and stage in ("property_alignment", "evidence_review"):
             provided["binding_review_policy"] = DOWNSTREAM_RULE
-        answer = super().call(stage, provided, schema)
+        answer, batch_id = super().call(stage, provided, schema, **context)
         try:
             guard_answer(stage, payload, answer)
         except ValueError as exc:
             self.trace("guard-rejection", {"stage": stage, "error": str(exc)})
             raise
-        return answer
+        return answer, batch_id
 
     def bind(self, window):
         entities = self.entities(window)

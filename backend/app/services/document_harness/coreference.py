@@ -122,10 +122,13 @@ def review_coreferences(engine, *, work_rows=None):
         cursor = engine.state.get("cursor", {}).get("main")
         if cursor is not None and cursor.get("stage") != "coreference_review":
             engine.commit({"cursor": {"main": {**cursor, "stage": "coreference_review"}}})
-        engine._call_window = window
-        engine._call_targets = [{"domain": "work", "id": row["id"],
-                                 "dependency_hash": row["dependency_hash"]} for row in batch_work]
-        answer = engine.call("coreference_review", payload, schema)
+        targets = [
+            {"domain": "work", "id": row["id"], "dependency_hash": row["dependency_hash"]}
+            for row in batch_work
+        ]
+        answer, batch_id = engine.call(
+            "coreference_review", payload, schema, window=window, targets=targets
+        )
         if set(answer.judgments) != set(ids):
             raise ValueError("coreference_pair_set_mismatch")
         changes, completed = {}, {}
@@ -173,7 +176,7 @@ def review_coreferences(engine, *, work_rows=None):
                 **work, "status": "done", "reason_code": None,
                 "output_ids": [key], "applied_dependency_hash": work["dependency_hash"],
             }
-        engine.commit({"coreferences": changes, "work": completed})
+        engine.commit({"coreferences": changes, "work": completed}, batch_id=batch_id)
 
     pending = iter(pending)
     while batch := list(islice(pending, 6)):

@@ -139,6 +139,7 @@ def _schema_mutation(function):
     def call(self, *args, **kwargs):
         with self._lock:
             self._semantic_schema = None
+            self._harness_catalogs = {}
             return function(self, *args, **kwargs)
     return call
 
@@ -149,6 +150,7 @@ class OntologyEngine:
         self._store_path = store_path or settings.owl_store_path
         self._lock = threading.RLock()
         self._semantic_schema = None
+        self._harness_catalogs = {}
         self._world: owlready2.World | None = None
         self._cardinality_graph: rdflib.Graph | None = None
         self._ontologies: dict[str, owlready2.Ontology] = {}
@@ -163,6 +165,7 @@ class OntologyEngine:
             if self.is_loaded:
                 return
             self._semantic_schema = None
+            self._harness_catalogs = {}
             self._validate_module_registry()
             self._store_path.parent.mkdir(parents=True, exist_ok=True)
             # 物化库为权威 TTL 的派生缓存（TTL 为唯一权威源，永不回写）。每次启动重建，
@@ -253,6 +256,7 @@ class OntologyEngine:
     def _discard_partial_world(self) -> None:
         """Reset state after a failed load while the caller already holds ``_lock``."""
         self._semantic_schema = None
+        self._harness_catalogs = {}
         self._cardinality_graph = None
         world = self._world
         self._world = None
@@ -277,6 +281,7 @@ class OntologyEngine:
     def close(self) -> None:
         with self._lock:
             self._semantic_schema = None
+            self._harness_catalogs = {}
             self._cardinality_graph = None
             if self._world:
                 self._world.close()
@@ -1124,6 +1129,7 @@ class OntologyEngine:
         self._world = restored
         self._ontologies = {key: restored.get_ontology(iri) for key, iri in namespaces.items()}
         self._semantic_schema = None
+        self._harness_catalogs = {}
 
     @staticmethod
     def _sync_functional(prop, functional: bool) -> None:
@@ -1272,6 +1278,7 @@ class OntologyEngine:
                 self._cardinality_graph = previous_graph
                 raise OntologyIntegrityError("Release projection rolled back") from exc
             self._semantic_schema = None
+            self._harness_catalogs = {}
 
     def _individual_to_info(self, ind) -> IndividualInfo:
         label_zh, label_en = self._get_bilingual_labels(ind)

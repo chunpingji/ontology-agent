@@ -21,9 +21,8 @@ const run = {
 const graph = {
   protocol: run.extraction_protocol, run_id: runId, revision: 1, status: "paused", stage: "discover",
   progress: {
-    completed_calls: 0, candidate_count: 0, fact_count: 0, windows_total: 1,
-    windows_discovered: 0, windows_reviewed: 0, scope_complete: false,
-    reading: { total_characters: 10, processed_characters: 0, complete: false },
+    completed_calls: 0, candidate_count: 0, fact_count: 0, phase: "reading", reading_windows: { total: 1, saved: 0, complete: 0, incomplete: 0, active: 0 }, scope_complete: false,
+    reading: { total_characters: 10, processed_characters: 0, complete_characters: 0, complete: false },
     work_counts: { ready: 0, waiting: 0, pruned: 0, done: 0, failed: 0 },
     candidate_scope_limited: false, rule_verified_count: 0, llm_verified_count: 0, stage_costs: [],
   },

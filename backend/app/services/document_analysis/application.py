@@ -1173,6 +1173,15 @@ class DocumentAnalysisApplication:
             raise DocumentAnalysisError(
                 "ENGINE_NOT_APPLICABLE", "独立 Harness 不使用旧排序预算协议", status_code=409,
             )
+        if harness and action == "resume":
+            from app.services.document_harness.application import HarnessError, require_current_flow
+
+            try:
+                require_current_flow(self.db, run)
+            except HarnessError as exc:
+                raise DocumentAnalysisError(
+                    exc.code, exc.message, status_code=exc.status_code,
+                ) from exc
         previous_ranking_budget_enabled = run.ranking_budget_enabled
         try:
             outcome = self.store.request_control(

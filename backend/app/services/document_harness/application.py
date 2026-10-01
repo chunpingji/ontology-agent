@@ -51,6 +51,18 @@ def require_harness(db, run):
         raise HarnessError("ENGINE_NOT_APPLICABLE", "该运行不属于独立文档 Harness，请新建运行")
 
 
+def require_current_flow(db, run):
+    from .protocols import PROTOCOL
+
+    require_harness(db, run)
+    policy = source_payload(db, run).get("policy", {})
+    execution = policy.get("execution_policy", {})
+    if (policy.get("protocol") != PROTOCOL or execution.get("flow") != "local_reading"
+            or type(execution.get("reading_concurrency")) is not int
+            or execution["reading_concurrency"] not in (1, 2)):
+        raise HarnessError("HARNESS_NEW_RUN_REQUIRED", "该运行使用旧执行策略，请新建运行")
+
+
 async def create_run(
     db, engine, *, owner_id, file, root_class_iri, request_key, metadata_mode, origin=None,
 ):

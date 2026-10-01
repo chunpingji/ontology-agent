@@ -28,11 +28,11 @@ def complete_window(ir):
 
 
 def assert_primary_covered(parent, children):
-    original = getattr(parent, "primary_ranges", [
+    original = getattr(parent, "primary_ranges", None) or [
         {"evidence_id": source["evidence_id"], "start": source["offset"],
          "end": source["offset"] + len(source["text"])}
         for source in parent.sources if source["evidence_id"] in parent.primary_ids
-    ])
+    ]
     for expected in original:
         spans = sorted((span["start"], span["end"]) for child in children
                        for span in child.primary_ranges

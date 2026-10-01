@@ -53,9 +53,10 @@ def discover(ir, catalog, window, entities):
         calls.append(answer)
         return answer
 
+    saved = []
     engine = Engine(
-        ir=ir, catalog=catalog, state={}, invoke=invoke, save=lambda _: None,
-        should_stop=lambda: bool(calls),
+        ir=ir, catalog=catalog, state={}, invoke=invoke, save=lambda changes: saved.append(changes),
+        should_stop=lambda: any(c.get("window_entities") for c in saved),
         rank=lambda *_: {"snapshot_id": catalog.snapshot_id, "selected_iris": []},
     )
     engine.windows = [window]
@@ -110,7 +111,7 @@ def test_invalid_member_anchor_is_not_a_registered_entity(tmp_path, mutation, re
         return
     engine = discover(ir, catalog, window, [item])
     assert set(engine.state["entities"]) == {"document"}
-    assert not engine.state["windows"][window.id]["discovery_complete"]
+    assert not engine.state["windows"][window.id]["reading_state"] == "complete"
     assert any(row["reason"] == reason for row in engine.state["observations"].values())
 
 

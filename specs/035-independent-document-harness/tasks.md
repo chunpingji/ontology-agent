@@ -1,5 +1,33 @@
 # 任务
 
+## 2026-10-01 当前修正任务：阅读效率
+
+- [x] RE001 固定诊断基线，更新规范/澄清/计划/数据和接口契约。
+- [x] RE002 主范围协议、辅助上下文边界与失败模式回归。
+- [x] RE003 本体目录缓存及变更失效、共享指引与实际预算回归。
+- [x] RE004 空反馈免重答、可选完整替换与暂停复用回归。
+- [x] RE005 双进度计数与前后端契约验证。
+- [x] RE006 真实 GPT 前两窗口与全文范围限额实测，记录耗时/成本/覆盖及未完成范围；见 [validation-reading-efficiency.md](validation-reading-efficiency.md)，不表示全文或最终事实质量验收完成。
+- [x] RE007 受影响回归、部署生效检查与交付文档；04:41 UTC 实际 HTTP、数据库 revision、默认并发和只读检查通过。
+
+
+## 2026-10-01 当前任务：阅读窗口并行与后置共指
+
+对应 PW-FR-001—010；历史任务不作为本轮验证结果。
+
+- [x] PW001 同步 spec/澄清/plan/research/data-model/公开契约和验收清单。
+- [x] PW002 [PW1] 新增 reading.py 和纯局部抽取/顺序无关合并测试，保留字段与线索。
+- [x] PW003 [PW3] runtime 显式 BatchRef、二路传输及原子计账/应用，替换单 active_batch。
+- [x] PW004 [PW1] controller 阅读补位、拆分、lookup 续步和暂停恢复，默认并发二。
+- [x] PW005 [PW2] 后置实体核验、确定归属及所有窗口的成员重绑。
+- [x] PW006 [PW2] 全局引用/共指与图谱规划，恢复规划不重置已完成工作。
+- [x] PW007 [PW3] schema/projection/前端新阶段和叶窗口进度，GET 只读。
+- [x] PW008 定向及全 Harness 回归、专用 PostgreSQL、前端验证；结果见 [validation-parallel-reading.md](validation-parallel-reading.md)。
+- [ ] PW009 真实模型并发 1/2 的耗时、token 和质量对照：尚未执行；部署核对确认容器 GPT 已启用，model_revision 为空。工程与部署验收不能代替真实模型对照。
+- [x] PW010 按用户授权部署到现有源码挂载环境，确认默认二窗口、实际 HTTP 新契约、数据库 revision、旧运行 GET 零调用及合成 API 浏览器验收；见 [validation-parallel-reading.md](validation-parallel-reading.md)。
+
+任务顺序 PW002→PW003→PW004→PW005→PW006→PW007→PW008；PW001 为全部前置。
+
 - [x] UI1 按已确认 Frame 补充 V2 展示范围、分层规则与验收契约。
 - [x] UI2 实现文档根层级树/关系图及实体属性联动。
 - [x] UI3 实现三分区 Tab、阶段成本、观察筛选/分页和独立对齐详情；跨 Tab 联动并保留筛选和页码。

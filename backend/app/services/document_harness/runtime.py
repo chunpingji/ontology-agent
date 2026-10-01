@@ -10,6 +10,8 @@ import hashlib
 import logging
 import re
 import threading
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from contextvars import copy_context
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -41,7 +43,12 @@ from app.services.document_harness.accounting import (
     update_business_metrics,
     update_call_metrics,
 )
-from app.services.document_harness.application import ENGINE, require_harness, source_payload
+from app.services.document_harness.application import (
+    ENGINE,
+    HarnessError,
+    require_current_flow,
+    source_payload,
+)
 from app.services.extraction.doc_converter import ensure_docx
 from app.services.extraction.document_ir import DocumentIR
 from app.services.extraction.word_analysis import analyze_word_core
@@ -52,6 +59,23 @@ logger = logging.getLogger(__name__)
 PREFIX = "harness:"
 MODEL_CALL_MAX_ATTEMPTS = 3
 RETRYABLE_MODEL_ERRORS = frozenset({"model_stream_incomplete", "model_request_failed"})
+
+
+def model_transport(stage, payload, schema, policy):
+    """Worker boundary: immutable inputs, no Repository or business Session."""
+    from .model import call_model
+
+    started = monotonic()
+    try:
+        with model_scope(stage=stage):
+            result = call_model(stage, payload, schema, policy)
+        return result, None, round((monotonic() - started) * 1_000_000)
+    except Exception as exc:
+        return (
+            {"error": failure_reason(exc), "transport_failure": True, "usage": None},
+            exc,
+            (round((monotonic() - started) * 1_000_000)),
+        )
 
 
 class HarnessCallFailed(RuntimeError):
@@ -129,6 +153,8 @@ class Repository:
         self.store = DocumentAnalysisRunStore(db)
         self._ranker = None
         self._catalog = None
+        self._pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="harness-model")
+        self._flights = {}
 
     def current(self):
         self.db.expire_all()
@@ -178,19 +204,38 @@ class Repository:
             raise ValueError("harness_metrics_not_initialized")
         return value
 
-    def progress(self, *, stage=None, status=None, error=None, stop_reason=None,
-                 work_changed=False, request_changed=False, ranking_changed=False, commit=True):
+    def progress(
+        self,
+        *,
+        stage=None,
+        status=None,
+        error=None,
+        stop_reason=None,
+        work_changed=False,
+        request_changed=False,
+        ranking_changed=False,
+        commit=True,
+    ):
         run = self.run
         cursor = get_row(self.db, run, "cursor", "main") or {}
         metrics = self.metrics()
         progress = {
-            "engine": ENGINE, "extraction_protocol": ENGINE,
+            "engine": ENGINE,
+            "extraction_protocol": ENGINE,
             "model_calls": metrics["completed_calls"],
-            "candidate_count": metrics["candidate_count"], "fact_count": metrics["fact_count"],
-            "cursor": {key: cursor[key] for key in (
-                "stage", "scope_complete", "reading", "windows_total",
-                "windows_discovered", "windows_reviewed",
-            ) if key in cursor},
+            "candidate_count": metrics["candidate_count"],
+            "fact_count": metrics["fact_count"],
+            "cursor": {
+                key: cursor[key]
+                for key in (
+                    "stage",
+                    "phase",
+                    "scope_complete",
+                    "reading",
+                    "reading_windows",
+                )
+                if key in cursor
+            },
         }
         stage = stage or cursor.get("stage", run.stage)
         status = status or run.execution_status
@@ -406,6 +451,7 @@ class Repository:
         return scores
 
     def close(self):
+        self._pool.shutdown(wait=True)
         if self._ranker is not None:
             self._ranker.close()
 
@@ -456,24 +502,37 @@ class Repository:
         return row
 
     def prepare_batch(self, stage, payload, schema, application_target):
-        """Persist the only recovery entry and its exact request before model dispatch."""
+        """Add an application target to the current cursor before dispatch."""
         try:
             self.current()
             policy = source_payload(self.db, self.run)["policy"]
             key = content_hash({"stage": stage, "payload": payload, "schema": schema,
                                 "policy": policy})
             cursor = get_row(self.db, self.run, "cursor", "main") or {}
-            batch = {"call_key": key, "stage": stage,
-                     "window_id": application_target.get("window_id"),
-                     "window_phase": application_target.get("window_phase"),
-                     "targets": deepcopy(application_target.get("targets", [])),
-                     "alias_bindings": deepcopy(application_target.get("alias_bindings", {})),
-                     "source_bindings": deepcopy(application_target.get("source_bindings", {}))}
-            if cursor.get("active_batch"):
-                if cursor["active_batch"] != batch:
-                    raise HeadConflict("harness_batch_already_active")
+            batch = {
+                "call_key": key,
+                "stage": stage,
+                "window_id": application_target.get("window_id"),
+                "step": application_target.get("step", stage),
+                "targets": deepcopy(application_target.get("targets", [])),
+                "alias_bindings": deepcopy(application_target.get("alias_bindings", {})),
+                "source_bindings": deepcopy(application_target.get("source_bindings", {})),
+            }
+            batch["batch_id"] = content_hash(batch)
+            active = dict(cursor.get("active_batches", {}))
+            if batch["batch_id"] in active:
+                if active[batch["batch_id"]] != batch:
+                    raise HeadConflict("harness_batch_identity_conflict")
                 self.db.commit()
                 return batch
+            limit = (
+                policy["execution_policy"]["reading_concurrency"]
+                if (cursor.get("phase") == "reading")
+                else 1
+            )
+            if len(active) >= limit:
+                raise HeadConflict("harness_batch_capacity_exceeded")
+            active[batch["batch_id"]] = batch
             self._prepared_row(key, stage, payload, schema, policy)
             for target in batch["targets"]:
                 if target["domain"] not in {"windows", "entities", "referent_work", "work"}:
@@ -485,7 +544,13 @@ class Repository:
                     self.put(DocumentRunCurrentState, "work", {
                         target["id"]: {**item, "last_call_key": key},
                     })
-            self.put(DocumentRunCurrentState, "cursor", {"main": {**cursor, "active_batch": batch}})
+            if cursor.get("reading_windows") is not None:
+                cursor["reading_windows"] = {**cursor["reading_windows"], "active": len({
+                    b["window_id"] for b in active.values() if b["stage"] == "discover"
+                })}
+            self.put(
+                DocumentRunCurrentState, "cursor", {"main": {**cursor, "active_batches": active}}
+            )
             self.progress(request_changed=True)
             return batch
         except Exception:
@@ -504,10 +569,118 @@ class Repository:
 
     def invoke_prepared(self, batch):
         cursor = get_row(self.db, self.run, "cursor", "main") or {}
-        if cursor.get("active_batch") != batch:
+        if cursor.get("active_batches", {}).get(batch["batch_id"]) != batch:
             raise HeadConflict("harness_batch_not_active")
         request = self.batch_request(batch)
         return self.invoke(batch["stage"], request["payload"], request["schema"])
+
+    def call_result(self, call_key):
+        result = get_row(self.db, self.run, "calls", call_key, model=DocumentRunResult)
+        if result is None:
+            raise ValueError("harness_paid_result_missing")
+        if result.get("error") or not isinstance(result.get("output"), dict):
+            raise HarnessCallFailed(result.get("error") or "model_output_invalid")
+        return deepcopy(result["output"])
+
+    def submit_prepared(self, batch):
+        self.current()
+        cursor = get_row(self.db, self.run, "cursor", "main") or {}
+        if cursor.get("active_batches", {}).get(batch["batch_id"]) != batch:
+            raise HeadConflict("harness_batch_not_active")
+        key = batch["call_key"]
+        request = self.batch_request(batch)
+        saved = get_row(self.db, self.run, "calls", key, model=DocumentRunResult)
+        self.db.commit()
+        if saved is not None or key in self._flights:
+            return
+        self._start_transport(key, batch["stage"], request, 1)
+
+    def _start_transport(self, key, stage, request, tries):
+        if self.should_stop():
+            raise ModelCancelled()
+        policy = deepcopy(source_payload(self.db, self.run)["policy"])
+        attempt = self.begin_attempt(key, stage, request["payload"], request["schema"], policy)
+        future = self._pool.submit(
+            copy_context().run,
+            model_transport,
+            stage,
+            deepcopy(request["payload"]),
+            deepcopy(request["schema"]),
+            policy,
+        )
+        self._flights[key] = {
+            "future": future,
+            "attempt": attempt,
+            "stage": stage,
+            "request": request,
+            "tries": tries,
+        }
+
+    def _collect_transport(self, key):
+        from .protocols import validate_paid_output
+
+        flight = self._flights.pop(key)
+        result, error, measured_us = flight["future"].result()
+        request = flight["request"]
+        if not result.get("error") and isinstance(result.get("output"), dict):
+            try:
+                validate_paid_output(
+                    flight["stage"], request["payload"], result["output"], schema=request["schema"]
+                )
+            except (ValueError, TypeError, KeyError) as exc:
+                result = {**result, "error": failure_reason(exc)}
+        self.finish_attempt(key, flight["attempt"], result, measured_us)
+        if error is None and (result.get("error") or not isinstance(result.get("output"), dict)):
+            error = HarnessCallFailed(result.get("error") or "model_output_invalid")
+        return error
+
+    def collect_prepared(self, batches):
+        """Save every completed answer before returning application work to the Engine."""
+        ready, errors, retries = [], {}, {}
+        keys = {batch["call_key"] for batch in batches}
+        if keys and all(key in self._flights for key in keys):
+            wait([self._flights[key]["future"] for key in keys], return_when=FIRST_COMPLETED)
+        for key in sorted(keys):
+            flight = self._flights.get(key)
+            if flight is not None:
+                if not flight["future"].done():
+                    continue
+                error = errors[key] = self._collect_transport(key)
+                if (isinstance(error, StructuredModelError) and str(error) in RETRYABLE_MODEL_ERRORS
+                        and flight["tries"] < MODEL_CALL_MAX_ATTEMPTS):
+                    retries[key] = flight
+            else:
+                try:
+                    self.call_result(key)
+                except Exception as exc:
+                    errors[key] = exc
+            ready.extend(batch for batch in batches if batch["call_key"] == key)
+        # Observe every completed sibling before allowing another paid attempt.
+        fatal = any(error is not None and key not in retries for key, error in errors.items())
+        if retries and not fatal and not self.should_stop():
+            for key, flight in retries.items():
+                self._start_transport(key, flight["stage"], flight["request"], flight["tries"] + 1)
+            ready = [b for b in ready if b["call_key"] not in retries]
+        output = []
+        for batch in ready:
+            error = errors.get(batch["call_key"])
+            try:
+                result = None if error else self.call_result(batch["call_key"])
+            except Exception as exc:
+                result, error = None, exc
+            output.append((batch, result, error))
+        return output
+
+    def settle_prepared(self):
+        # No new attempt after pause/failure. Collect all already-started siblings.
+        first_error = None
+        for key in list(self._flights):
+            try:
+                self._collect_transport(key)
+            except Exception as exc:
+                first_error = first_error or exc
+        if first_error:
+            raise first_error
 
     def begin_attempt(self, call_key, stage, payload, schema, policy):
         try:
@@ -686,10 +859,10 @@ def execute_claimed(db, run, token):
     """Run only a newly created harness run; no old state is decoded or migrated."""
     from app.services.document_harness.controller import Engine
 
-    require_harness(db, run)
     repo = Repository(db, run, token)
     with LeaseKeeper(db.get_bind(), run, token) as keeper:
         try:
+            require_current_flow(db, run)
             if not repo.should_stop():
                 ir = _input(repo)
                 ref = repo.store.get_artifact(
@@ -700,19 +873,34 @@ def execute_claimed(db, run, token):
                 if content_hash(catalog) != run.ontology_snapshot_hash:
                     raise ValueError("schema_catalog_hash_mismatch")
                 with model_scope(
-                    run_id=str(run.recognition_run_id), bind=db.get_bind(),
+                    run_id=str(run.recognition_run_id),
+                    bind=db.get_bind(),
                     should_stop=keeper.lost.is_set,
                 ):
                     Engine(
-                        ir=ir, catalog=catalog, state=repo.load(), invoke=repo.invoke,
-                        save=repo.save, should_stop=repo.should_stop,
+                        ir=ir,
+                        catalog=catalog,
+                        state=repo.load(),
+                        invoke=repo.invoke,
+                        save=repo.save,
+                        should_stop=repo.should_stop,
                         rank=repo.rank,
-                        lookup=repo.lookup, prepare_batch=repo.prepare_batch,
-                        invoke_prepared=repo.invoke_prepared, batch_request=repo.batch_request,
-                        policy=source_payload(db, repo.run)["policy"], rank_pairs=repo.rank_pairs,
-                        max_request_bytes=source_payload(db, repo.run)["policy"].get(
-                            "execution_policy", {},
-                        ).get("wire_bytes_per_call", 96000),
+                        lookup=repo.lookup,
+                        prepare_batch=repo.prepare_batch,
+                        invoke_prepared=repo.invoke_prepared,
+                        batch_request=repo.batch_request,
+                        submit_prepared=repo.submit_prepared,
+                        collect_prepared=repo.collect_prepared,
+                        settle_prepared=repo.settle_prepared,
+                        call_result=repo.call_result,
+                        policy=source_payload(db, repo.run)["policy"],
+                        rank_pairs=repo.rank_pairs,
+                        max_request_bytes=source_payload(db, repo.run)["policy"]
+                        .get(
+                            "execution_policy",
+                            {},
+                        )
+                        .get("wire_bytes_per_call", 96000),
                     ).run()
             repo.current()
             if repo.run.execution_status == "pausing":
@@ -746,9 +934,11 @@ def execute_claimed(db, run, token):
             try:
                 repo.current()
                 repo.progress(status="failed", error={
-                    "code": "HARNESS_STAGE_FAILED",
-                    "message": f"阶段执行失败：{failure_reason(exc)}；已保存当前工作",
-                    "retryable": True, "failure_type": type(exc).__name__,
+                    "code": exc.code if isinstance(exc, HarnessError) else "HARNESS_STAGE_FAILED",
+                    "message": (exc.message if isinstance(exc, HarnessError)
+                                else f"阶段执行失败：{failure_reason(exc)}；已保存当前工作"),
+                    "retryable": exc.retryable if isinstance(exc, HarnessError) else True,
+                    "failure_type": type(exc).__name__,
                     "failure_reason": failure_reason(exc),
                 })
             except (FenceViolation, RunDeleted, RunNotFound):

@@ -63,7 +63,7 @@ def create_engine(case, invoke, *, state=None, policy=None, budget=None):
         policy={"execution_policy": policy or {}}, max_request_bytes=budget,
     )
     engine.state.setdefault("cursor", {"main": {
-        "active_window_id": None, "active_batch": None, "stage": "planning",
+        "entity_window_id": None, "active_batches": {}, "phase": "graph", "stage": "planning",
     }})
     return engine
 

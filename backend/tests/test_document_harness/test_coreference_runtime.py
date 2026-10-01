@@ -62,8 +62,9 @@ def test_paid_coreference_resume_and_owned_read_only_projection(
         "clue_refs": [initial["entities"]["0"]["referent"]],
     }, initial, catalog, DEFAULT_POLICY)
     initial["work"] = {work["id"]: work}
-    initial["cursor"] = {"main": {"stage": "coreference_review", "active_window_id": None,
-                                  "active_batch": None, "scope_complete": False}}
+    initial["cursor"] = {"main": {"stage": "coreference_review", "entity_window_id": None,
+                                  "active_batches": {}, "phase": "coreference",
+                                  "scope_complete": False}}
     repo.save(initial)
     calls, pause = [], {"value": False}
     def model_call(stage, inputs, schema, policy):
@@ -90,13 +91,14 @@ def test_paid_coreference_resume_and_owned_read_only_projection(
     except Paused:
         pass
     assert len(calls) == 1 and not repo.load().get("coreferences")
-    assert repo.load()["cursor"]["main"]["active_batch"]["targets"][0]["id"] == work["id"]
+    pending = next(iter(repo.load()["cursor"]["main"]["active_batches"].values()))
+    assert pending["targets"][0]["id"] == work["id"]
     pause["value"] = False
     resumed_repo = Repository(db, run, token)
     continued = engine(resumed_repo)
     review_coreferences(continued)
     assert len(calls) == 1
-    assert resumed_repo.load()["cursor"]["main"]["active_batch"] is None
+    assert not resumed_repo.load()["cursor"]["main"]["active_batches"]
     assert resumed_repo.load()["entities"] == original_mentions
     endpoint = f"/api/document-analysis/runs/{run.recognition_run_id}/harness-graph"
     for _ in range(2):

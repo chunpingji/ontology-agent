@@ -496,6 +496,9 @@ def freeze_catalog(engine: Any, root_class_iri: str) -> SchemaCatalog:
     expressions are read directly from RDF to preserve conjunction semantics.
     """
     with engine.lexical_read_scope():
+        cache = getattr(engine, "_harness_catalogs", None)
+        if cache is not None and root_class_iri in cache:
+            return cache[root_class_iri]
         graph = Graph()
         for triple in engine._world.as_rdflib_graph():
             graph.add(triple)
@@ -509,7 +512,10 @@ def freeze_catalog(engine: Any, root_class_iri: str) -> SchemaCatalog:
                 item["iri"] for item in engine.get_data_properties_by_domain(str(ref))
                 if item.get("identity_key") is True
             )
-        return catalog_from_graph(graph, root_class_iri, identity_property_iris=identity)
+        catalog = catalog_from_graph(graph, root_class_iri, identity_property_iris=identity)
+        if cache is not None:
+            cache[root_class_iri] = catalog
+        return catalog
 
 
 def get_class_card(catalog: SchemaCatalog, class_iri: str) -> ClassCard:

@@ -3,10 +3,20 @@
 from collections import defaultdict
 from copy import deepcopy
 
-from .evidence_gate import assertion_dependency_hash, precheck_assertion, try_rule_seed
+from .evidence_gate import (
+    _related_hints,
+    assertion_dependency_hash,
+    precheck_assertion,
+    try_rule_seed,
+)
 from .observations import property_value
 from .ontology import legal_property, model_menu
-from .planning import admit_relation_work, collect_relation_seeds, context_window
+from .planning import (
+    admit_relation_work,
+    collect_relation_seeds,
+    context_window,
+    resolve_reference_cues,
+)
 from .protocols import stage_schema
 from .referents import validate_bound_property
 from .source import Window, identity, quote_for_reference, reference, references_cover
@@ -174,41 +184,45 @@ def enforce_group_consistency(engine, changes):
             changes["relation_groups"][key] = updated
 
 
-def plan_work(engine, window):
+def upsert_work(state, rows):
+    """Replanning identical semantic inputs preserves paid bindings and menu progress."""
+    changes = {}
+    for row in rows:
+        old = state.get("work", {}).get(row["id"])
+        if old and old["dependency_hash"] == row["dependency_hash"]:
+            continue
+        changes[row["id"]] = row
+    return changes
+
+
+def plan_graph_work(engine):
     state, policy = engine.state, engine.execution_policy
-    ids = set(state.get("window_entities", {}).get(window.id, {}).get("ids", [])) | {"document"}
-    # Existing cues are revisited through the source index; no entity-pair matrix.
-    delta = {
-        "entities": {key: state["entities"][key] for key in ids if key in state["entities"]},
-        "fields": {f["id"]: state["fields"].get(f["id"], f) for f in window.fields},
-        "hints": {
-            key: row
-            for key, row in state.get("hints", {}).items()
-            if row.get("window_id") == window.id
-        },
-    }
+    delta = {domain: state.get(domain, {}) for domain in ("entities", "fields", "hints")}
     seeds = collect_relation_seeds(
-        engine.ir, engine.catalog, state, delta, engine.source_index, policy
+        engine.ir,
+        engine.catalog,
+        state,
+        delta,
+        engine.source_index,
+        policy,
     )
     ranking = (
         engine.rank_pairs
-        if engine.policy.get("card_ranking", {}).get("semantic", {}).get("enabled")
+        if engine.policy.get("card_ranking", {})
+        .get(
+            "semantic",
+            {},
+        )
+        .get("enabled")
         else None
     )
     rows = admit_relation_work(seeds, state, engine.catalog, policy, ranking)
-    changes = {
-        "work": {row["id"]: row for row in rows},
-        "observations": engine.source_index.scope_changes,
-        "reference_cues": engine.source_index.cue_changes,
-    }
     for subject in state["entities"].values():
         if not subject.get("class_iri"):
             continue
         for field_id in subject.get("field_ids", []):
             field = state.get("fields", {}).get(field_id)
-            if not field or (
-                subject["id"] == "document" and not engine.field_visible(field_id, window)
-            ):
+            if not field:
                 continue
             row = make_work(
                 "property_alignment",
@@ -221,30 +235,109 @@ def plan_work(engine, window):
                 row.update(status="waiting", reason_code="type_or_constraint_unresolved")
             if field.get("missing"):
                 row.update(status="done", reason_code="missing_source_value")
-            changes["work"][row["id"]] = row
-    for cue in changes["reference_cues"].values():
+            rows.append(row)
+    engine.commit(
+        {
+            "work": upsert_work(state, rows),
+            "observations": engine.source_index.scope_changes,
+            "reference_cues": engine.source_index.cue_changes,
+        }
+    )
+
+
+def scoped_identifier_clues(engine):
+    """Index complete local key+scope bindings; external source matches are not proof."""
+    buckets = defaultdict(dict)
+    for entity in engine.state.get("entities", {}).values():
+        binding = entity.get("identity_binding") or {}
+        card = engine.catalog.classes.get(entity.get("class_iri"))
+        if card is None:
+            continue
+        identity_properties = {p.iri for p in card.properties if p.identity_key}
+        identity_properties.update(p for group in card.identity_key_groups for p in group)
+        identifiers = defaultdict(list)
+        for item in binding.get("identifiers", []):
+            if item.get("quote") and item.get("value") == item["quote"]["text"]:
+                identifiers[item["property_iri"]].append(item)
+        work = engine.state.get("referent_work", {}).get(binding.get("group_id"), {})
+        for capability in work.get("key_context", {}).get("lookup_capabilities", []):
+            namespace = capability.get("identifier_namespace")
+            if not namespace or capability.get("class_iri") != entity.get("class_iri"):
+                continue
+            for group in capability.get("lookup_key_groups", []):
+                keys, scope = group["property_iris"], group["scope_property_iris"]
+                required = sorted(set(keys + scope))
+                if (
+                    not keys
+                    or not scope
+                    or not set(keys) <= identity_properties
+                    or any(len(identifiers[p]) != 1 for p in required)
+                ):
+                    continue
+                values = tuple((p, identifiers[p][0]["value"]) for p in required)
+                bucket = (namespace, tuple(sorted(keys)), tuple(sorted(scope)), values)
+                buckets[bucket][entity["id"]] = [identifiers[p][0]["quote"] for p in required]
+    return buckets.values()
+
+
+def plan_coreference_work(engine):
+    state, policy = engine.state, engine.execution_policy
+    cues = resolve_reference_cues(engine.ir, state, engine.source_index, policy)
+    pairs, observations = {}, {}
+
+    def add(left, right, refs):
+        if left == right or "document" in (left, right):
+            return
+        left, right = sorted((left, right))
+        key = (left, right)
+        pairs[key] = unique_refs([*pairs.get(key, []), *refs])
+
+    for cue in cues.values():
+        if cue.get("reference_targets_truncated"):
+            key = identity("coreference_scope", cue["id"])
+            observations[key] = {
+                "id": key,
+                "kind": "scope",
+                "label": "共指候选范围受限",
+                "reason": "引用目标超过当前配额", "candidate_scope_limited": True,
+                "evidence": cue["evidence"],
+            }
         if cue.get("relation_label") is not None or cue.get("ambiguous_subject_members"):
             continue
         for target in cue.get("target_ids", []):
-            if cue["subject_id"] == "document":
-                continue
-            row = make_work(
+            add(cue["subject_id"], target, cue["evidence"])
+    for bucket in scoped_identifier_clues(engine):
+        ordered = sorted(
+            bucket, key=lambda key: engine.source_index.position(state["entities"][key])
+        )
+        limit = policy["reference_targets_per_cue"]
+        for key in ordered:
+            targets = [target for target in ordered[:limit + 1] if target != key][:limit]
+            for target in targets:
+                add(key, target, [*bucket[key], *bucket[target]])
+            if len(ordered) - 1 > limit:
+                oid = identity("coreference_scope", key, bucket[key])
+                observations[oid] = {
+                    "id": oid,
+                    "kind": "scope",
+                    "label": "共指候选范围受限",
+                    "reason": "编号目标超过当前配额", "candidate_scope_limited": True,
+                    "evidence": bucket[key],
+                }
+    rows = []
+    for (left, right), refs in sorted(pairs.items()):
+        rows.append(
+            make_work(
                 "coreference_review",
-                {
-                    "left_mention_id": cue["subject_id"],
-                    "right_mention_id": target,
-                    "clue_refs": cue["evidence"],
-                },
+                {"left_mention_id": left, "right_mention_id": right, "clue_refs": refs},
                 state,
                 engine.catalog,
                 policy,
             )
-            if any(
-                state["entities"][key]["state"] != "accepted" for key in [cue["subject_id"], target]
-            ):
-                row.update(status="waiting", reason_code="type_or_constraint_unresolved")
-            changes["work"][row["id"]] = row
-    engine.commit(changes)
+        )
+    engine.commit(
+        {"work": upsert_work(state, rows), "reference_cues": cues, "observations": observations}
+    )
 
 
 def complete_work(changes, row, *, status="done", reason=None, outputs=()):
@@ -327,37 +420,26 @@ def work_context(engine, rows, base_window):
     )
     empty = Window(base_window.id if base_window else "work", [], [], [])
     window = context_window(engine.ir, empty, entities, engine.state.get("fields", {}), refs)
-    engine._call_window = window
-    engine._call_targets = [
-        {"domain": "work", "id": row["id"], "dependency_hash": row["dependency_hash"]}
-        for row in rows
-    ]
     return window
 
 
-def bounded_call(engine, stage, rows, window, payload, schema, base_window, handler):
+def bounded_call(
+    engine, stage, rows, window, payload, schema, base_window, handler, *, aliases=None
+):
     from .controller import request_size
 
     if request_size(stage, payload, schema) > engine.max_request_bytes:
         if len(rows) == 1:
             raise ValueError("HARNESS_EVIDENCE_CONTEXT_TOO_LARGE")
-        # Dispatch only the first half. The rest remains ready for the next turn.
         return handler(engine, rows[: len(rows) // 2], base_window)
-    engine._call_window = window
-    engine._call_targets = [
+    cursor = engine.state["cursor"]["main"]
+    if cursor["stage"] != stage:
+        engine.commit({"cursor": {"main": {**cursor, "stage": stage}}})
+    targets = [
         {"domain": "work", "id": row["id"], "dependency_hash": row["dependency_hash"]}
         for row in rows
     ]
-    cursor = engine.state["cursor"]["main"]
-    if cursor["stage"] != stage:
-        aliases = engine._call_aliases
-        engine.commit({"cursor": {"main": {**cursor, "stage": stage}}})
-        engine._call_aliases = aliases
-        engine._call_targets = [
-            {"domain": "work", "id": row["id"], "dependency_hash": row["dependency_hash"]}
-            for row in rows
-        ]
-    return engine.call(stage, payload, schema)
+    return engine.call(stage, payload, schema, window=window, targets=targets, aliases=aliases)
 
 
 def align_properties(engine, rows, base_window, selected_predicates=None):
@@ -415,11 +497,12 @@ def align_properties(engine, rows, base_window, selected_predicates=None):
             selected = {p["iri"] for p in card["properties"][: len(card["properties"]) // 2]}
             return align_properties(engine, rows, base_window, selected)
         raise ValueError("HARNESS_EVIDENCE_CONTEXT_TOO_LARGE")
-    answer = bounded_call(
+    response = bounded_call(
         engine, "property_alignment", rows, window, payload, schema, base_window, align_properties
     )
-    if answer is None:
+    if response is None:
         return
+    answer, batch_id = response
     for row in rows:
         field = engine.state["fields"][row["input"]["field_id"]]
         proposed = answer.properties[engine.field_alias(field["id"], window)]
@@ -522,13 +605,13 @@ def align_properties(engine, rows, base_window, selected_predicates=None):
             complete_work(changes, updated, outputs=output_ids)
         else:
             changes["work"][row["id"]] = {**updated, "status": "ready", "output_ids": output_ids}
-    engine.commit(dict(changes))
+    engine.commit(dict(changes), batch_id=batch_id)
 
 
 def align_relations(engine, rows, base_window):
     changes = defaultdict(dict)
     unresolved = []
-    active = engine.state["cursor"]["main"].get("active_batch")
+    active = next(iter(engine.state["cursor"]["main"].get("active_batches", {}).values()), None)
     for row in rows:
         proof = (
             None
@@ -599,11 +682,12 @@ def align_relations(engine, rows, base_window):
         source_ids=[s["source_id"] for s in window.sources],
         relation_items=payload["items"],
     )
-    answer = bounded_call(
+    response = bounded_call(
         engine, "relation_alignment", rows, window, payload, schema, base_window, align_relations
     )
-    if answer is None:
+    if response is None:
         return
+    answer, batch_id = response
     for row in rows:
         proposed = answer.proposals[row["id"]]
         if proposed.verdict != "proposed":
@@ -668,7 +752,7 @@ def align_relations(engine, rows, base_window):
             assertion["verification"] = old.get("verification")
         review_for(engine, changes, domain, assertion)
         complete_work(changes, row, outputs=[key])
-    engine.commit(dict(changes))
+    engine.commit(dict(changes), batch_id=batch_id)
 
 
 def expand_work(engine, row, changes):
@@ -756,9 +840,10 @@ def interpret_group(engine, rows, base_window):
     schema = stage_schema(
         "group_interpretation", source_ids=[s["source_id"] for s in window.sources]
     )
-    answer = bounded_call(
+    response = bounded_call(
         engine, "group_interpretation", [row], window, payload, schema, base_window, interpret_group
     )
+    answer, batch_id = response
     if answer.verdict == "supported":
         key = identity(
             "relation_group",
@@ -826,12 +911,12 @@ def interpret_group(engine, rows, base_window):
         complete_work(
             changes, row, status="waiting", reason="insufficient_context", outputs=[group["id"]]
         )
-    engine.commit(dict(changes))
+    engine.commit(dict(changes), batch_id=batch_id)
 
 
 def review_assertions(engine, rows, base_window):
     changes, semantic = defaultdict(dict), []
-    active = engine.state["cursor"]["main"].get("active_batch")
+    active = next(iter(engine.state["cursor"]["main"].get("active_batches", {}).values()), None)
     for work in rows:
         domain, key = work["input"]["domain"], work["input"]["assertion_id"]
         row = engine.state.get(domain, {}).get(key)
@@ -932,6 +1017,12 @@ def review_assertions(engine, rows, base_window):
                 engine.entity_input(engine.state["entities"][oid], window, typed=True)
                 for oid in row["object_ids"]
             ]
+        candidate["related_clues"] = [
+            {"evidence": [quote_for_reference(window, ref) for ref in hint.get("evidence", [])],
+             "polarity": hint.get("polarity", "uncertain"),
+             "conditions": hint.get("conditions", [])}
+            for hint in _related_hints(engine.state, row)
+        ]
         candidates.append(candidate)
         bindings[candidate["id"]] = (work, domain, row, False)
         if domain == "relation_groups" and row["timing"] != "unspecified":
@@ -944,18 +1035,27 @@ def review_assertions(engine, rows, base_window):
             candidates.append(timing)
             bindings[timing["id"]] = (work, domain, row, True)
     payload = {"sources": window.payload()["sources"], "candidates": candidates}
-    engine._call_aliases = {alias: row["id"] for alias, (_, _, row, _) in bindings.items()}
+    aliases = {alias: row["id"] for alias, (_, _, row, _) in bindings.items()}
     schema = stage_schema(
         "evidence_review",
         source_ids=[s["source_id"] for s in window.sources],
         candidate_ids=list(bindings),
         entity_ids=list(engine.entity_aliases(window).values()),
     )
-    answer = bounded_call(
-        engine, "evidence_review", rows, window, payload, schema, base_window, review_assertions
+    response = bounded_call(
+        engine,
+        "evidence_review",
+        rows,
+        window,
+        payload,
+        schema,
+        base_window,
+        review_assertions,
+        aliases=aliases,
     )
-    if answer is None:
+    if response is None:
         return
+    answer, batch_id = response
     for alias, judgment in answer.judgments.items():
         work, domain, row, timing = bindings[alias]
         refs = window.quotes(engine.ir, judgment.evidence)
@@ -1017,11 +1117,12 @@ def review_assertions(engine, rows, base_window):
             candidate_subject_ids=[aliases[concern.entity_id]],
         )
         changes["observations"][key] = item
-    engine.commit(dict(changes))
+    engine.commit(dict(changes), batch_id=batch_id)
 
 
 def drain_work(engine, base_window):
-    batch = engine.state["cursor"]["main"].get("active_batch")
+    cursor = engine.state["cursor"]["main"]
+    batch = next(iter(cursor.get("active_batches", {}).values()), None)
     if batch and any(t["domain"] == "work" for t in batch["targets"]):
         rows = [engine.state.get("work", {}).get(target["id"]) for target in batch["targets"]]
         if any(
@@ -1029,7 +1130,7 @@ def drain_work(engine, base_window):
             for row, target in zip(rows, batch["targets"])
         ):
             cursor = engine.state["cursor"]["main"]
-            engine.commit({"cursor": {"main": {**cursor, "active_batch": None}}})
+            engine.commit({}, batch_id=batch["batch_id"])
             return True
     else:
         local_entities = (
@@ -1045,6 +1146,7 @@ def drain_work(engine, base_window):
                 row
                 for row in engine.state.get("work", {}).values()
                 if row["status"] == "ready"
+                and (cursor.get("phase") != "coreference" or row["kind"] == "coreference_review")
                 and (
                     base_window is None
                     or local_entities.intersection(row["dependencies"]["entity_ids"])
@@ -1140,7 +1242,6 @@ def drain_work(engine, base_window):
                 for row in rows
             }
         }
-        engine._paid_ready = False
         engine.commit(changes)
         raise
     return True

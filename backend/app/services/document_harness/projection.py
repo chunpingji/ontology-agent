@@ -266,9 +266,11 @@ def graph_response(db, run):
         db, run, result.pop("task_seeds"),
     )
     reading = cursor.get("reading") or {
-        "total_characters": 0, "processed_characters": 0,
+        "total_characters": 0, "processed_characters": 0, "complete_characters": 0,
         "complete": cursor.get("scope_complete", False),
     }
+    if "complete_characters" not in reading:
+        raise HarnessError("HARNESS_NEW_RUN_REQUIRED", "该运行使用旧阅读协议，请新建运行")
     result.update({
         "protocol": ENGINE, "run_id": str(run.recognition_run_id), "revision": run.revision,
         "status": run.execution_status, "stage": cursor.get("stage", run.stage),
@@ -276,8 +278,10 @@ def graph_response(db, run):
             **{key: metrics[key] for key in ("completed_calls", "candidate_count", "fact_count",
                                             "work_counts", "rule_verified_count",
                                             "llm_verified_count")},
-            **{key: cursor.get(key, 0) for key in ("windows_total", "windows_discovered",
-                                                 "windows_reviewed")},
+            "phase": cursor.get("phase", "reading"),
+            "reading_windows": cursor.get("reading_windows", {
+                "total": 0, "saved": 0, "complete": 0, "incomplete": 0, "active": 0,
+            }),
             "scope_complete": reading["complete"], "reading": reading,
             "candidate_scope_limited": (metrics["limited_scope_count"] > 0
                                         or metrics["work_counts"]["pruned"] > 0),

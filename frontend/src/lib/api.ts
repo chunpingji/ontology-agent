@@ -2728,13 +2728,19 @@ export interface DocumentHarnessGraph {
     completed_calls: number;
     candidate_count: number;
     fact_count: number;
-    windows_total: number;
-    windows_discovered: number;
-    windows_reviewed: number;
+    phase: "reading" | "entities" | "coreference" | "graph" | "done";
+    reading_windows: {
+      total: number;
+      saved: number;
+      complete: number;
+      incomplete: number;
+      active: number;
+    };
     scope_complete: boolean;
     reading: {
       total_characters: number;
       processed_characters: number;
+      complete_characters: number;
       complete: boolean;
     };
     work_counts: Record<DocumentHarnessWorkStatus, number>;

@@ -44,16 +44,17 @@ class MemoryRepository:
                     current[key] = deepcopy(value)
 
     def prepare(self, stage, payload, schema, target):
-        assert self.state["cursor"]["main"].get("active_batch") is None
+        assert not self.state["cursor"]["main"].get("active_batches")
         key = digest({"stage": stage, "payload": payload, "schema": schema})
         batch = {"call_key": key, "stage": stage, **deepcopy(target)}
+        batch["batch_id"] = digest(batch)
         self.requests[key] = deepcopy({"payload": payload, "schema": schema})
         for row in target["targets"]:
             if row["domain"] == "work":
                 saved = self.state["work"][row["id"]]
                 assert saved["dependency_hash"] == row["dependency_hash"]
                 saved["last_call_key"] = key
-        self.state["cursor"]["main"]["active_batch"] = deepcopy(batch)
+        self.state["cursor"]["main"]["active_batches"] = {batch["batch_id"]: deepcopy(batch)}
         return batch
 
     def request(self, batch):
@@ -61,7 +62,7 @@ class MemoryRepository:
         return deepcopy(self.requests[batch["call_key"]])
 
     def invoke(self, batch):
-        assert self.state["cursor"]["main"]["active_batch"] == batch
+        assert self.state["cursor"]["main"]["active_batches"][batch["batch_id"]] == batch
         key = batch["call_key"]
         if key not in self.answers:
             request = self.request(batch)
@@ -77,8 +78,8 @@ class MemoryRepository:
 def initial(case):
     engine = create_engine(case, lambda *args: pytest.fail("unexpected direct model call"))
     engine.state["windows"] = {
-        window.id: {**Engine.window_row(window, [i]), "phase": "done",
-                    "discovery_attempted": True, "discovery_complete": True}
+        window.id: {**Engine.window_row(window, [i]), "entity_phase": "done",
+                    "reading_state": "complete"}
         for i, window in enumerate(engine.windows)
     }
     return engine
@@ -108,7 +109,7 @@ def test_paid_relation_alignment_resumes_exact_request_without_second_payment(ev
     key = add_alignment(engine, seed(engine))
     repo = MemoryRepository(engine.state, respond, pause_after="relation_alignment")
     paused = resume(evidence_case, repo)
-    batch = deepcopy(repo.state["cursor"]["main"]["active_batch"])
+    batch = deepcopy(next(iter(repo.state["cursor"]["main"]["active_batches"].values())))
     request = deepcopy(repo.requests[batch["call_key"]])
     assert not paused.state.get("relations")
     assert repo.state["work"][key]["status"] == "ready"
@@ -117,7 +118,7 @@ def test_paid_relation_alignment_resumes_exact_request_without_second_payment(ev
     assert repo.requests[batch["call_key"]] == request
     assert batch["call_key"] in repo.reads
     assert [stage for stage, _ in repo.paid] == ["relation_alignment", "evidence_review"]
-    assert finished.state["cursor"]["main"]["active_batch"] is None
+    assert not finished.state["cursor"]["main"]["active_batches"]
     assert len(finished.state["relations"]) == 1
     assert next(iter(finished.state["relations"].values()))["state"] == "accepted"
     assert finished.state["work"][key]["status"] == "done"
@@ -161,7 +162,7 @@ def test_property_menu_shard_is_replayed_then_remaining_menu_runs_once(evidence_
 
     repo = MemoryRepository(engine.state, model, pause_after="property_alignment")
     resume(case, repo, budget=250)
-    batch = deepcopy(repo.state["cursor"]["main"]["active_batch"])
+    batch = deepcopy(next(iter(repo.state["cursor"]["main"]["active_batches"].values())))
     paid_menu = repo.requests[batch["call_key"]]["payload"]["card"]["properties"]
     assert len(paid_menu) == 2 and not repo.state.get("properties")
     finished = resume(case, repo, budget=250)
@@ -220,7 +221,7 @@ def test_paid_answer_survives_apply_failure_and_reuses_current_batch_on_continue
     with pytest.raises(RuntimeError, match="application transaction"):
         resume(evidence_case, repo)
     assert repo.state["work"][key]["status"] == "failed"
-    assert repo.state["cursor"]["main"]["active_batch"] is not None
+    assert repo.state["cursor"]["main"]["active_batches"]
     assert not repo.state.get("relations")
     finished = resume(evidence_case, repo)
     assert finished.state["work"][key]["status"] == "done"
@@ -246,11 +247,14 @@ def test_discovery_capacity_splits_before_parent_expensive_work_and_reuses_entit
     calls = []
 
     def invoke(stage, payload, schema):
-        current = engine.state["cursor"]["main"]["active_window_id"]
+        current = engine.state["cursor"]["main"]["entity_window_id"]
         calls.append((stage, current, deepcopy(payload)))
         if stage == "discover":
             entities = []
+            primary = {r["source_id"] for r in payload["reading_scope"]}
             for source in payload["sources"]:
+                if source["source_id"] not in primary:
+                    continue
                 if not source["text"].startswith("Object E"):
                     continue
                 name = source["text"].split()[1]
@@ -280,6 +284,8 @@ def test_discovery_capacity_splits_before_parent_expensive_work_and_reuses_entit
         answer = review_answer(payload)
         if stage == "entity_review":
             answer.pop("type_concerns")
+            for candidate in payload["candidates"]:
+                answer["judgments"][candidate["id"]]["evidence"] = candidate["evidence"]
         return answer
 
     engine = Engine(ir=ir, catalog=catalog, state={}, invoke=invoke, save=lambda changes: None,
@@ -287,10 +293,10 @@ def test_discovery_capacity_splits_before_parent_expensive_work_and_reuses_entit
     parent = engine.windows[0].id
     engine.run()
     row = engine.state["windows"][parent]
-    assert len(row["children"]) == 2 and row["phase"] == "done"
-    assert calls[0][0] == "discover" and calls[0][1] == parent
-    assert calls[1][0] == "discover" and calls[1][1] in row["children"]
-    assert not any(stage != "discover" and window == parent for stage, window, _ in calls)
+    assert len(row["children"]) == 2 and row["entity_phase"] == "done"
+    assert [stage for stage, _, _ in calls[:3]] == ["discover"] * 3
+    # Parent discoveries retain ownership; children do not retype them.
+    assert row["reading_state"] == "split"
     assert len(engine.state["entities"]) == 13
     assert len(engine.state["fields"]) == 12
     assert len(engine.state["properties"]) == 12
@@ -300,6 +306,7 @@ def test_discovery_capacity_splits_before_parent_expensive_work_and_reuses_entit
     assert engine.state["cursor"]["main"]["reading"] == {
         "total_characters": sum(len(unit.text) for unit in ir.evidence_units),
         "processed_characters": sum(len(unit.text) for unit in ir.evidence_units),
+        "complete_characters": sum(len(unit.text) for unit in ir.evidence_units),
         "complete": True,
     }
 
@@ -321,7 +328,7 @@ def test_obsolete_prepared_target_does_not_apply_its_paid_answer(evidence_case, 
     key = add_alignment(engine, seed(engine))
     repo = MemoryRepository(engine.state, respond, pause_after="relation_alignment")
     resume(evidence_case, repo)
-    old_key = repo.state["cursor"]["main"]["active_batch"]["call_key"]
+    old_key = next(iter(repo.state["cursor"]["main"]["active_batches"].values()))["call_key"]
     if mutation == "delete":
         del repo.state["work"][key]
     else:
@@ -331,7 +338,7 @@ def test_obsolete_prepared_target_does_not_apply_its_paid_answer(evidence_case, 
         repo.respond = lambda stage, payload, schema: proposal(payload, verdict="no_relation")
     finished = resume(evidence_case, repo)
     assert not finished.state.get("relations")
-    assert finished.state["cursor"]["main"]["active_batch"] is None
+    assert not finished.state["cursor"]["main"]["active_batches"]
     assert len([row for row in repo.paid if row[0] == "relation_alignment"]) == (
         1 if mutation == "delete" else 2
     )

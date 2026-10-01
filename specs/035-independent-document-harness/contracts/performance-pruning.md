@@ -1,6 +1,28 @@
 # Harness v2 性能与剪枝契约
 
-详细消息、函数、批次、错误及前端字段采用
+## 2026-10-01 阅读效率补充契约
+
+新运行模型协议 document-harness-v6；本节替代 v5 发现/阅读计数字段。
+reading_scope 明示每个来源中的主区间；SourceAnchor 仅能指向含主区间的来源，解码再次校验具体区间。
+refine 用 replacement=null 复用付费草稿；有替换时完整替换并保留撤回字段观察。空候选不调用 refine，不把未执行/失败查询当作全文否定。
+reading 增加 complete_characters，processed_characters 计已处理区间（包括部分结果）；scope_complete 仍只取完整覆盖状态。
+不转换旧运行；缺少当前阅读契约时 GET 返回 HARNESS_NEW_RUN_REQUIRED（409，retryable=false），错误码属于公开 ApiError 枚举。
+
+
+## 2026-10-01 当前执行契约
+
+本节覆盖下方历史单批条款。模型协议 document-harness-v5，公开 engine 与路由保持。
+创建策略冻结 execution_policy.flow=local_reading、reading_concurrency=2（仅允许 1/2）。
+cursor.phase 与 active_batches 管理最多两个阅读请求，其余阶段最多一个；清理按 batch_id。
+精确 call_key 复用与目标 batch_id 分离，同请求只传输一次，各自使用冻结来源绑定应用。
+progress.phase 增加 reading/entities/coreference/graph/done；reading_windows 含 total/saved/complete/incomplete/active。
+叶窗口计数替换 windows_total/windows_discovered/windows_reviewed；saved=complete+incomplete<=total。
+reading/scope_complete、work_counts、成本和事实计数保持独立；局部保存不表示关系完成。
+详细函数/事务契约及 A01—A20 采用[独立方案](../../../docs/图谱分析阅读窗口并行与后置共指重构方案-20261001.md)。
+
+## 2026-09-30 历史契约（当前执行入口以上节为准）
+
+此前消息、函数、批次、错误及前端字段采用
 [已批准方案第 12—21 节](../../../docs/图谱分析性能与候选剪枝优化方案-20260930.md)。
 
 公开协议 document-harness-v2，模型协议 document-harness-v4；仅新运行，不转换旧制品。

@@ -1,5 +1,28 @@
 # 实施计划
 
+## 2026-10-01 阅读效率实施计划
+
+1. source/reading/protocols 明确主区间并核验 anchor；lookup 使用可选 replacement，空候选免 refine。
+2. OntologyEngine 在已有 schema mutation/load/close 边界清空目录缓存；freeze_catalog 在同一读锁内按根复用。
+3. reading_guidance 按相同完整语义共享关系/身份定义，使用保留并/交/限制的范围表达；装箱按实际投影计量。
+4. controller/projection/schema/UI 区分 processed_characters 和 complete_characters，保持 scope_complete 的严格含义。
+5. 定向失败模式测试、Harness/前端回归；先原文前两窗口，再全文阅读真实 GPT 实测，报告实际范围和未决。
+
+Constitution Check：不改 TTL/数据库/调度权限；已有 Spec Kit 035 内修正，契约先行。测试与原运行隔离，已付费回答保留；不新增依赖或运行快照。
+
+
+## 2026-10-01 阅读窗口并行（当前）
+
+详细实现采用[独立重构方案](../../docs/图谱分析阅读窗口并行与后置共指重构方案-20261001.md)。
+顺序：局部纯抽取/合并 → 显式批次与二路模型传输 → 阅读调度/续步/恢复 → 后置实体与共指 → 图谱规划/UI → 验收。
+新增 reading.py；calls.py 仅为独立执行/评测提供内存调用端口，在线执行使用 Repository 持久化账本。重构 controller/runtime/lookup，复用当前表、模型调度和原文/本体，无新增第三方依赖或迁移。
+运行内模型线程只处理不可变请求，协调者独占业务 Session；总 GPT 并发上限二，后续阶段一。
+一个 cursor 管理 active_batches，窗口发现状态与实体核验阶段分开；禁止保留双主循环和旧运行转换。
+
+Constitution Check（设计前/后）：用户需求与验收完整；契约先行；不写 T-Box、不增加隐式外网、
+历史快照、队列平台或新数据库结构；已有暂停/继续和付费结果复用保持。无需豁免。
+测试先覆盖稳定合并与请求重叠，再执行全 Harness、专用 PostgreSQL 和前端检查；真实模型单独记录。
+
 ## 2026-09-30 性能与候选剪枝实施
 
 活动分支 `038-harness-pruning`；需求见 spec.md 的 HP-FR-001—010。

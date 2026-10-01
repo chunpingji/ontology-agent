@@ -91,6 +91,10 @@ def test_same_text_in_different_positions_and_documents_has_different_ids(lookup
     catalogs = []
     for current in (ir, ir.model_copy(update={"document_hash": "f" * 64})):
         engine, window, calls = engine_fixture((current, *lookup_fixture[1:]))
+        # This collective draft includes both occurrences in its physical scope.
+        engine.state["entities"]["old"]["referent"] = window.resolve(
+            current, quote("Use A1/A2 objects; A1 appears again."),
+        )
         run_referent_alignment(engine, window)
         spans = [s for s in calls[0][1]["evidence_spans"] if s["text"] == "A1"]
         assert len(spans) == 2

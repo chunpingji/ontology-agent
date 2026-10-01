@@ -74,21 +74,17 @@ def engine_fixture(fixture, selected="members", invoke=None, save=None):
     state = {
         "cursor": {
             "main": {
-                "active_window_id": window.id,
-                "active_batch": None,
+                "entity_window_id": window.id,
+                "active_batches": {}, "phase": "entities",
                 "stage": "referent_alignment",
-                "windows_discovered": 1,
-                "windows_reviewed": 0,
-                "windows_total": 1,
                 "scope_complete": False,
             }
         },
         "windows": {
             window.id: {
                 **Engine.window_row(window, [0]),
-                "phase": "referent_alignment",
-                "discovery_complete": True,
-                "discovery_attempted": True,
+                "entity_phase": "referent_alignment",
+                "reading_state": "complete",
             }
         },
         "entities": {

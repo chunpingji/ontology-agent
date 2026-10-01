@@ -185,11 +185,15 @@ class Model:
 def execute(inputs, model, *, stop=lambda: False, state=None, windows=None, max_request_bytes=None):
     ir, catalog = inputs
     snapshots = []
+    from app.services.document_harness.calls import MemoryCalls
+
+    if state is None or not hasattr(model, "_call_ports"):
+        model._call_ports = MemoryCalls(model)
     engine = Engine(
         ir=ir,
         catalog=catalog,
         state=state or {},
-        invoke=model,
+        invoke=model, calls=model._call_ports,
         save=lambda changes: snapshots.append(deepcopy(changes)),
         should_stop=stop,
         max_request_bytes=max_request_bytes,
@@ -522,7 +526,7 @@ def test_discovery_oversized_input_splits_before_model_call(inputs, tmp_path):
     engine.run()
     assert any(row["children"] for row in engine.state["windows"].values())
     assert len(calls) > 1
-    assert engine.state["cursor"]["main"]["windows_reviewed"] == len(engine.state["windows"])
+    assert all(r["entity_phase"] == "done" for r in engine.state["windows"].values())
     assert engine.state["cursor"]["main"]["scope_complete"]
 
 
@@ -748,8 +752,9 @@ def test_explicit_cross_window_reference_preserves_endpoint_gate_without_name_me
 def test_pause_after_discovery_preserves_candidate_and_resumes_next_stage(inputs):
     model = Model()
     state, _ = execute(inputs, model, stop=lambda: len(model.calls) == 1)
-    assert state["cursor"]["main"]["stage"] == "type_alignment"
-    assert len(state["entities"]) == 3
+    assert state["cursor"]["main"]["phase"] == "reading"
+    assert len(state["cursor"]["main"]["active_batches"]) == 1
+    assert len(state["entities"]) == 1  # Paid answer awaits application on continue.
     continued, _ = execute(inputs, model, state=state)
     assert sum(stage == "discover" for stage, _, _ in model.calls) == 1
     assert continued["cursor"]["main"]["stage"] == "complete"

@@ -76,7 +76,7 @@ def test_unlabelled_value_has_explicit_ownership_and_never_invents_a_label_quote
         } for c in payload["candidates"]}}
 
     engine = Engine(ir=ir, catalog=catalog, state={}, invoke=invoke, save=lambda changes: None,
-                    should_stop=lambda: len(calls) == 1)
+                    should_stop=lambda: bool(engine.state.get("window_entities")))
     engine.run()
     if bad_label:
         assert not engine.state.get("properties")

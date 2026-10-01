@@ -96,6 +96,10 @@ def request(text):
 def runner(fixture, invoke, state=None, save=None, **kwargs):
     ir, catalog, lookup, *_ = fixture
     current = deepcopy(state or {})
+    from app.services.document_harness.calls import MemoryCalls
+
+    if state is None or not hasattr(invoke, "_call_ports"):
+        invoke._call_ports = MemoryCalls(invoke)
 
     def persist(changes):
         if save:
@@ -105,6 +109,7 @@ def runner(fixture, invoke, state=None, save=None, **kwargs):
 
     engine = Engine(
         ir=ir, catalog=catalog, state=current, invoke=invoke, save=persist,
+        calls=invoke._call_ports,
         should_stop=lambda: current.get("cursor", {}).get("main", {}).get("stage")
         not in (None, "discover"), lookup=lookup,
         rank=lambda *_: {"snapshot_id": catalog.snapshot_id, "selected_iris": [NS + "Object"]},
@@ -121,7 +126,7 @@ def responses(stage, payload, schema):
     else:
         rows = payload["lookup_feedback"]["results"]
         assert [r["outcome"] for r in rows] == ["no_match", "matches", "matches"]
-        result = {**discovery(["A1", "A2"]), "source_suggestions": [
+        result = {"replacement": discovery(["A1", "A2"]), "source_suggestions": [
             {"local_id": name, "candidate_ids": [row["candidates"][0]["candidate_id"]],
              "reason": "Possible source only"}
             for name, row in zip(("A1", "A2"), rows[1:], strict=True)
@@ -172,7 +177,7 @@ def test_invalid_values_do_not_query_and_valid_siblings_continue(lookup_fixture)
         feedback = payload["lookup_feedback"]
         assert [q["status"] for q in feedback["requests"]] == ["invalid", "invalid", "ready"]
         assert [q["query_id"] for q in feedback["results"]] == ["Q3"]
-        return {**discovery(["A1", "A2"]), "source_suggestions": []}
+        return {"replacement": discovery(["A1", "A2"]), "source_suggestions": []}
     engine, _ = runner(lookup_fixture, invoke)
     engine.run()
     assert len(lookup_fixture[3][-1][1]["queries"]) == 1
@@ -225,14 +230,18 @@ def test_no_hit_or_incomplete_query_does_not_delete_source_mentions(lookup_fixtu
                            complete=empty, truncated=not empty)
         return result
     fixture = (*lookup_fixture[:2], lookup, *lookup_fixture[3:])
+    paid = []
     def invoke(stage, payload, schema):
-        if payload["lookup_mode"] == "draft":
-            return {**discovery(["A1/A2"]), "lookup_requests": [request("A1/A2")]}
-        return {**discovery(["A1", "A2"]), "source_suggestions": []}
+        paid.append(payload["lookup_mode"])
+        assert payload["lookup_mode"] == "draft"
+        return {**discovery(["A1", "A2"]), "lookup_requests": [request("A1/A2")]}
     engine, _ = runner(fixture, invoke)
     engine.run()
     assert len(engine.state["entities"]) == 3
     assert not engine.state.get("source_candidates")
+    assert paid == ["draft"]
+    status = next(iter(engine.state["windows"].values()))["lookup"]
+    assert status["results"][0]["complete"] == empty
 
 
 def test_composite_identifier_is_not_split_by_matching_members(lookup_fixture):
@@ -240,7 +249,7 @@ def test_composite_identifier_is_not_split_by_matching_members(lookup_fixture):
         if payload["lookup_mode"] == "draft":
             return {**discovery(["A1/A2"]),
                     "lookup_requests": [request(x) for x in ("A1/A2", "A1", "A2")]}
-        return {**discovery(["A1/A2"]), "source_suggestions": []}
+        return {"replacement": None, "source_suggestions": []}
     engine, _ = runner(lookup_fixture, invoke)
     engine.run()
     assert [e["label"] for key, e in engine.state["entities"].items() if key != "document"] == [
@@ -253,14 +262,15 @@ def test_mapping_change_between_draft_and_query_is_not_a_no_match(lookup_fixture
         if payload["lookup_mode"] == "draft":
             lookup_fixture[5].version += 1
             db.commit()
-            return {**discovery(["A1/A2"]), "lookup_requests": [request("A1")]}
-        feedback = payload["lookup_feedback"]
-        assert feedback["issues"] == ["lookup_mapping_changed"]
-        assert feedback["results"] == []
-        return {**discovery(["A1", "A2"]), "source_suggestions": []}
+            return {**discovery(["A1", "A2"]), "lookup_requests": [request("A1")]}
+        raise AssertionError("No candidates must not trigger a second model call")
     engine, _ = runner(lookup_fixture, invoke)
     engine.run()
     assert len(engine.state["entities"]) == 3
+
+    status = next(iter(engine.state["windows"].values()))["lookup"]
+    assert status["issues"] == ["lookup_mapping_changed"]
+    assert status["results"] == []
 
 
 def test_oversized_feedback_retains_draft_without_silent_truncation(lookup_fixture):
@@ -288,11 +298,11 @@ def test_invented_candidate_reference_cannot_be_saved(lookup_fixture):
     def invoke(stage, payload, schema):
         if payload["lookup_mode"] == "draft":
             return {**discovery(["A1/A2"]), "lookup_requests": [request("A1")]}
-        return {**discovery(["A1", "A2"]), "source_suggestions": [
+        return {"replacement": discovery(["A1", "A2"]), "source_suggestions": [
             {"local_id": "A1", "candidate_ids": ["foreign"], "reason": "Unsupported proposal"},
         ]}
     engine, _ = runner(lookup_fixture, invoke)
-    engine.run()
+    with pytest.raises(ValueError, match="harness_output_schema_mismatch"):
+        engine.run()
     assert not engine.state.get("source_candidates")
-    assert any(o["reason"] == "lookup_invalid_source_suggestion"
-               for o in engine.state["observations"].values())
+    assert engine.state["cursor"]["main"]["active_batches"]  # Paid invalid answer stays visible.

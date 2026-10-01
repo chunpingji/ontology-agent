@@ -27,7 +27,7 @@ def test_duplicate_response_keys_fail_without_losing_paid_raw_answer(monkeypatch
 
     monkeypatch.setattr(model, "responses_create", respond)
     policy = {
-        "protocol": "document-harness-v4", "max_output_tokens": 16384,
+        "protocol": "document-harness-v6", "max_output_tokens": 16384,
         "model": model.settings.local_llm_model,
         "model_revision": model.settings.local_llm_model_revision,
         "max_request_bytes": 32768, "timeout_seconds": 10,
@@ -62,7 +62,7 @@ def test_current_output_contract_is_visible_in_prompt_as_well_as_decoding_gramma
 
     monkeypatch.setattr(model, "responses_create", respond)
     policy = {
-        "protocol": "document-harness-v4", "max_output_tokens": 16384,
+        "protocol": "document-harness-v6", "max_output_tokens": 16384,
         "model": model.settings.local_llm_model,
         "model_revision": model.settings.local_llm_model_revision,
         "max_request_bytes": 32768, "timeout_seconds": 10, "temperature": 0.1,
@@ -101,7 +101,7 @@ def test_gateway_schema_inlines_annotated_refs_and_requires_default_fields(monke
 
     monkeypatch.setattr(model, "responses_create", respond)
     policy = {
-        "protocol": "document-harness-v4", "max_output_tokens": 16384,
+        "protocol": "document-harness-v6", "max_output_tokens": 16384,
         "model": model.settings.local_llm_model,
         "model_revision": model.settings.local_llm_model_revision,
         "max_request_bytes": 32768, "timeout_seconds": 10, "temperature": 0.1,
@@ -126,7 +126,7 @@ def test_transport_does_not_apply_controller_request_byte_limit(monkeypatch):
 
     monkeypatch.setattr(model, "responses_create", respond)
     policy = {
-        "protocol": "document-harness-v4", "max_output_tokens": 16384,
+        "protocol": "document-harness-v6", "max_output_tokens": 16384,
         "model": model.settings.local_llm_model,
         "model_revision": model.settings.local_llm_model_revision,
         "max_request_bytes": 32768, "max_context_tokens": 65536,

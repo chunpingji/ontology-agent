@@ -226,7 +226,7 @@ def runner(inputs, model, *, state=None, stop=lambda: False, all_windows=False):
         state=state or {},
         invoke=model,
         save=lambda changes: None,
-        should_stop=stop,
+        should_stop=lambda: stop() and bool(engine.state.get("window_entities")),
     )
     engine.windows = windows if all_windows else windows[:1]
     engine.run()
@@ -288,6 +288,7 @@ def test_later_confirmation_consumes_saved_range_without_refinding_it(deep_input
     discoveries = sum(stage == "discover" for stage, _ in model.calls)
     # Apply the explicit endpoint-review result; mere later co-occurrence cannot confirm it.
     result.commit({"entities": {owner["id"]: {**owner, "state": "accepted"}}})
+    result.set_phase("graph", "planning")
     result.run()
     props = list(result.state["properties"].values())
     assert len(props) == 2 and all(p["state"] == "accepted" for p in props)
@@ -308,7 +309,7 @@ def test_invalid_owner_does_not_discard_exact_raw_observation(deep_input):
     assert not any(
         observation["field_id"] in e["field_ids"] for e in result.state["entities"].values()
     )
-    assert not result.state["windows"][observation["window_id"]]["discovery_complete"]
+    assert result.state["windows"][observation["window_id"]]["reading_state"] != "complete"
 
 
 def test_model_cannot_derive_bounds_for_an_unconfirmed_subject(deep_input):

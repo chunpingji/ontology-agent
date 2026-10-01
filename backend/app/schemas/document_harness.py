@@ -12,10 +12,21 @@ Count = Annotated[int, Field(ge=0)]
 Iri = Annotated[str, Field(pattern=r"^[A-Za-z][A-Za-z0-9+.-]*:[^\s]+$")]
 CandidateState = Literal["candidate", "accepted", "rejected", "unresolved"]
 Stage = Literal[
-    "ingest", "parse", "discover", "type_alignment", "referent_alignment",
-    "referent_candidates", "referent_selection", "entity_review", "planning",
-    "property_alignment", "relation_alignment", "group_interpretation",
-    "evidence_review", "coreference_review", "complete",
+    "ingest",
+    "parse",
+    "discover",
+    "type_alignment",
+    "referent_alignment",
+    "referent_candidates",
+    "referent_selection",
+    "entity_review",
+    "planning",
+    "property_alignment",
+    "relation_alignment",
+    "group_interpretation",
+    "evidence_review",
+    "coreference_review",
+    "complete",
 ]
 WorkStatus = Literal["ready", "waiting", "pruned", "done", "failed"]
 
@@ -202,11 +213,12 @@ class HarnessStageCost(HarnessModel):
 class HarnessReading(HarnessModel):
     total_characters: Count
     processed_characters: Count
+    complete_characters: Count
     complete: bool
 
     @model_validator(mode="after")
     def processed_within_source(self):
-        if self.processed_characters > self.total_characters:
+        if not self.complete_characters <= self.processed_characters <= self.total_characters:
             raise ValueError("reading_exceeds_source_length")
         return self
 
@@ -219,13 +231,28 @@ class HarnessWorkCounts(HarnessModel):
     failed: Count
 
 
+class HarnessReadingWindows(HarnessModel):
+    total: Count
+    saved: Count
+    complete: Count
+    incomplete: Count
+    active: Annotated[int, Field(ge=0, le=2)]
+
+    @model_validator(mode="after")
+    def consistent_counts(self):
+        if self.saved != self.complete + self.incomplete or self.saved > self.total:
+            raise ValueError("reading_window_counts_invalid")
+        if self.active > self.total - self.saved:
+            raise ValueError("reading_window_active_invalid")
+        return self
+
+
 class HarnessProgress(HarnessModel):
     completed_calls: Count
     candidate_count: Count
     fact_count: Count
-    windows_total: Count
-    windows_discovered: Count
-    windows_reviewed: Count
+    phase: Literal["reading", "entities", "coreference", "graph", "done"]
+    reading_windows: HarnessReadingWindows
     scope_complete: bool
     reading: HarnessReading
     work_counts: HarnessWorkCounts
@@ -236,6 +263,8 @@ class HarnessProgress(HarnessModel):
 
     @model_validator(mode="after")
     def scope_matches_reading(self):
+        if self.phase != "reading" and self.reading_windows.active:
+            raise ValueError("reading_windows_active_after_reading")
         if self.scope_complete != self.reading.complete:
             raise ValueError("reading_scope_mismatch")
         return self

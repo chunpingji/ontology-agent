@@ -36,9 +36,8 @@ const observation = (id, extra = {}) => ({ id, kind: "field", label: `原字段 
   value: "待对齐原值", candidate_subject_ids: [], object_id: null, reason: "合成观察独立保存",
   evidence: [source], discovery_cards: [], alignments: [], ...extra });
 const graph = { coreferences: [], relation_groups: [], candidate_work: [], interpretation_tasks: [], protocol: "document-harness-v2", run_id: runId, revision: 1, status: "paused", stage: "evidence_review",
-  progress: { completed_calls: 5, candidate_count: 20, fact_count: 8, windows_total: 10,
-    windows_discovered: 5, windows_reviewed: 2, scope_complete: false,
-    reading: { total_characters: 4000, processed_characters: 2000, complete: false },
+  progress: { completed_calls: 5, candidate_count: 20, fact_count: 8, phase: "graph", reading_windows: { total: 10, saved: 10, complete: 5, incomplete: 5, active: 0 }, scope_complete: false,
+    reading: { total_characters: 4000, processed_characters: 2000, complete_characters: 800, complete: false },
     work_counts: { ready: 0, waiting: 1, pruned: 2, done: 5, failed: 0 },
     candidate_scope_limited: true, rule_verified_count: 0, llm_verified_count: 8, stage_costs: [
       { stage: "discover", calls: 2, seconds: 30, input_tokens: null, output_tokens: null, unmeasured_attempts: 0 },
@@ -124,6 +123,8 @@ const screenshot = (name) => page.screenshot({ path: path.join(output, name), fu
 try {
   await page.goto(`${origin}/analysis?tab=graph-analysis&documentRun=${runId}&documentIri=${encodeURIComponent(documentIri)}`, { waitUntil: "domcontentloaded", timeout: 60000 });
   const panel = page.getByTestId("source-harness-v2");
+  await expect(panel.getByText("原文范围已处理 2,000 / 4,000 字符", { exact: true })).toBeVisible();
+  await expect(panel.getByText("完整覆盖 800 / 4,000 字符", { exact: true })).toBeVisible();
   const header = page.getByTestId("graph-analysis-header");
   const document = panel.getByRole("region", { name: "当前分析文档", exact: true });
   const tabs = panel.getByRole("tablist", { name: "图谱分析分区", exact: true });
@@ -248,6 +249,7 @@ try {
   graph.progress.scope_complete = true;
   graph.progress.reading.complete = true;
   graph.progress.reading.processed_characters = graph.progress.reading.total_characters;
+  graph.progress.reading.complete_characters = graph.progress.reading.total_characters;
   const refreshedGraph = page.waitForResponse((response) => response.url().endsWith("/harness-graph") && response.ok());
   await header.getByRole("button", { name: "刷新结果", exact: true }).click();
   await refreshedGraph;

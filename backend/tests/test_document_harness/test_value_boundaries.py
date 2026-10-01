@@ -195,10 +195,10 @@ def test_type_concern_preserves_subject_and_never_rewrites_assertion_verdict(inp
         },
         "cursor": {
             "main": {
-                "active_window_id": window.id,
-                "active_batch": None,
+                "entity_window_id": window.id,
+                "active_batches": {}, "phase": "entities",
                 "stage": "evidence_review",
-                "windows_reviewed": 0,
+
             }
         },
     }

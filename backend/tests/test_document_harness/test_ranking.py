@@ -103,13 +103,12 @@ def test_specific_types_still_enter_after_broad_coverage_and_selection_is_determ
 
 
 def test_unbudgeted_ranking_selects_cards_by_relevance_and_card_limit():
-    _, result, _ = ranked(budget=None)
+    cards, result, _ = ranked(budget=None)
     assert len(result["selected_iris"]) == 2
     assert result["card_budget_bytes"] is None
-    assert result["card_bytes_used"] == sum(
-        row["card_bytes"] for row in result["candidates"]
-        if row["iri"] in result["selected_iris"]
-    )
+    from app.services.document_harness.ranking import guidance_bytes
+
+    assert result["card_bytes_used"] == guidance_bytes(cards, result["selected_iris"])
     assert all(row["omission_reason"] != "card_exceeds_remaining_budget"
                for row in result["candidates"])
 

@@ -11,7 +11,7 @@ from app.services.document_harness.controller import Engine
 from app.services.document_harness.ontology import catalog_from_graph
 from app.services.document_harness.source import identity, make_window, reference
 from app.services.document_harness.work import make_work
-from app.services.document_harness.work_execution import drain_work, plan_work, review_for
+from app.services.document_harness.work_execution import drain_work, plan_graph_work, review_for
 from app.services.extraction.document_ir import build_document_ir
 from app.services.extraction.docx_structure import parse_docx_structure
 
@@ -103,15 +103,14 @@ def engine(
         "field_ids": list(root_fields),
         "window_id": None,
     }
+    for item in entities:
+        item["window_id"] = window.id
     state = {
         "cursor": {
             "main": {
-                "active_window_id": window.id,
-                "active_batch": None,
+                "entity_window_id": window.id,
+                "active_batches": {}, "phase": "entities",
                 "stage": stage,
-                "windows_total": 1,
-                "windows_discovered": 1,
-                "windows_reviewed": 0,
                 "scope_complete": False,
             }
         },
@@ -119,7 +118,7 @@ def engine(
         "fields": {field["id"]: field for field in fields.values()},
         "window_entities": {window.id: {"ids": [item["id"] for item in entities]}},
     }
-    state["windows"] = {window.id: {**Engine.window_row(window, [0]), "phase": stage}}
+    state["windows"] = {window.id: {**Engine.window_row(window, [0]), "entity_phase": stage}}
     runner = Engine(
         ir=ir,
         catalog=catalog.model_dump(mode="json"),
@@ -160,7 +159,8 @@ def test_discovery_cards_use_available_input_budget_before_optional_lookup(recor
     runner.rank = rank
     runner.lookup = lambda _operation, _catalog, _argument: {"capabilities": [], "issues": []}
 
-    runner.discover(window)
+    runner.state["cursor"]["main"]["phase"] = "reading"
+    runner.read_windows()
 
     assert budgets == [1900]
     assert runner.state["cursor"]["main"]["stage"] == "type_alignment"
@@ -436,7 +436,7 @@ def add_hints(runner, window, subject_id, objects, predicates):
 
 
 def execute_planned(runner, window):
-    plan_work(runner, window)
+    plan_graph_work(runner)
     for _ in range(100):
         if not drain_work(runner, window):
             return

@@ -71,10 +71,9 @@ def test_budget_accounts_for_the_actual_identity_payload_without_truncation():
         card = reading_card(cards.classes[row["iri"]],
                             annotation_contracts=cards.annotation_contracts)
         assert row["card_bytes"] == len(json.dumps(card, ensure_ascii=False).encode()) + 2
-    assert result["card_bytes_used"] == sum(
-        row["card_bytes"] for row in result["candidates"]
-        if row["iri"] in result["selected_iris"]
-    )
+    from app.services.document_harness.ranking import guidance_bytes
+
+    assert result["card_bytes_used"] == guidance_bytes(cards, result["selected_iris"])
 
 
 def test_entity_review_uses_actual_aligned_type_identity_metadata(inputs):
@@ -111,6 +110,7 @@ def test_shared_sentence_does_not_programmatically_prove_identifier_ownership(tm
         } for row in payload["candidates"]}}
     engine.invoke = accept_local_referent
     engine.should_stop = lambda: False
+    engine.state["cursor"]["main"]["entity_window_id"] = window.id
     engine.entity_review(window)
     assert engine.state["entities"][entity["id"]]["state"] == "accepted"
     assert not engine.state.get("properties")

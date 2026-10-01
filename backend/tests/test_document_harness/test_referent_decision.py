@@ -186,9 +186,9 @@ def test_referent_task_identity_does_not_depend_on_window_packaging(lookup_fixtu
                 original_id,
             )
             engine.state["windows"] = {window.id: {
-                **Engine.window_row(window, [0]), "phase": "referent_alignment",
+                **Engine.window_row(window, [0]), "entity_phase": "referent_alignment",
             }}
-            engine.state["cursor"]["main"]["active_window_id"] = window.id
+            engine.state["cursor"]["main"]["entity_window_id"] = window.id
 
         def pause(*args):
             raise Paused()
@@ -205,10 +205,10 @@ def test_every_referent_call_pins_physical_window_and_current_work(lookup_fixtur
     original = engine.invoke
 
     def invoke(stage, payload, schema):
-        assert engine._call_window is not None
-        assert engine._call_window.payload()["sources"] == payload["sources"]
-        assert len(engine._call_targets) == 1
-        target = engine._call_targets[0]
+        batch = next(iter(engine.state["cursor"]["main"]["active_batches"].values()))
+        assert set(batch["source_bindings"]) == {s["source_id"] for s in payload["sources"]}
+        assert len(batch["targets"]) == 1
+        target = batch["targets"][0]
         assert target["domain"] == "referent_work"
         assert target["id"] in engine.state["referent_work"]
         assert target["dependency_hash"]
