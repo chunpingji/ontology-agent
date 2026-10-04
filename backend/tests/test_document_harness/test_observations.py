@@ -14,35 +14,27 @@ from app.services.document_harness.source import make_window
 from app.services.extraction.word_analysis import analyze_word_core
 
 
-@pytest.mark.parametrize(
-    "raw,expected",
-    [
-        ("3.8- 6.6kg", ("3.8", "6.6", "kg")),
-        ("3.8–6.6 kg", ("3.8", "6.6", "kg")),
-        ("-6.6 至 -3.8 ℃", ("-6.6", "-3.8", "℃")),
-        ("2.0 kg to 5.0 kg", ("2.0", "5.0", "kg")),
-        ("N/A", None),
-        ("不少于3.8 kg", None),
-        ("3.8±0.2 kg", None),
-        ("6.6-3.8 kg", None),
-        ("3.8 g-6.6 kg", None),
-        ("3.8-6.6 kg / 2批", None),
-        ("2026-06-01", None),
-    ],
-)
-def test_range_projection_is_lossless_and_rejects_ambiguous_or_mixed_unit_values(raw, expected):
+@pytest.mark.parametrize("raw,expected", [
+    ("3.8- 6.6kg", ("3.8", "6.6")),
+    ("3.8–6.6 kg", ("3.8", "6.6")),
+    ("-6.6 至 -3.8 ℃", ("-6.6", "-3.8")),
+    ("2.0 kg to 5.0 kg", ("2.0", "5.0")),
+    ("6.6-3.8 kg", ("6.6", "3.8")),
+    ("3.8 g-6.6 kg", ("3.8", "6.6")),
+    ("N/A", None), ("不少于3.8 kg", None), ("3.8±0.2 kg", None),
+    ("3.8-6.6 kg / 2批", None), ("2026-06-01", None),
+])
+def test_range_components_only_select_original_spans_before_calibration(raw, expected):
     field = {"value": raw, "missing": raw == "N/A"}
-    assert value_components(field, confirmed=False) == {"whole": {"value": raw, "unit": None}}
-    values = value_components(field, confirmed=True)
+    values = value_components(field)
     assert values["whole"]["value"] == raw and field["value"] == raw
     if expected is None:
         assert set(values) == {"whole"}
     else:
-        assert (
-            values["lower"]["value"],
-            values["upper"]["value"],
-            values["lower"]["unit"],
-        ) == expected
+        assert (values["lower"]["value"], values["upper"]["value"]) == expected
+        for key in ("lower", "upper"):
+            assert raw[slice(*values[key]["span"])] == values[key]["value"]
+            assert values[key]["unit"] is None
 
 
 @pytest.fixture
@@ -115,7 +107,7 @@ class DeepModel:
             response = {
                 "entities": [
                     {
-                        "local_id": key,
+                        "candidate_class_iri": "urn:depth:" + key, "local_id": key,
                         "name": None,
                         "anchor": {**quote(payload, text), "text": "invalid"}
                         if key == "C" and self.invalid_owner else quote(payload, text),
@@ -165,7 +157,7 @@ class DeepModel:
                         "mappings": [
                             {
                                 "predicate_iri": "urn:depth:" + pred,
-                                "value_component": component, "value_quote": None,
+                                "value_component": component, "value_quote": None, "unit_quote": quote(payload, "kg"),
                                 "confidence": 0.96,
                             }
                             for pred, component in (("p", "lower"), ("q", "upper"))
@@ -181,7 +173,7 @@ class DeepModel:
             response = {"proposals": {item["candidate_id"]: {
                 "verdict": "proposed", "evidence": item["clue_sources"],
                 "polarity": item["polarity_hint"], "conditions": item["condition_hints"],
-                "participation": None, "selection": None, "timing": None,
+                "participation": None, "selection": None, "timing": None, "ordered_object_ids": None, "order_evidence": [],
                 "missing_context": "none", "reason": "按明确原文线索提出路径", "confidence": 0.96,
             } for item in payload["items"]}}
         else:
@@ -225,6 +217,8 @@ def runner(inputs, model, *, state=None, stop=lambda: False, all_windows=False):
         catalog=catalog,
         state=state or {},
         invoke=model,
+        rank=lambda *_: {"snapshot_id": catalog.snapshot_id,
+                         "selected_iris": ["urn:depth:" + key for key in "ABCD"]},
         save=lambda changes: None,
         should_stop=lambda: stop() and bool(engine.state.get("window_entities")),
     )
@@ -266,7 +260,7 @@ def test_observation_persists_before_confirmation_then_two_bounds_survive_unprov
     for _, request in model.calls:
         for subject in [request.get("subject", {})]:
             if any("lower" in f["value_components"] for f in subject.get("fields", [])):
-                assert subject["type_confirmed"] is True
+                assert subject["type_confirmed"] is False
 
 
 @pytest.mark.parametrize("endpoint", ["unresolved", "rejected"])
@@ -277,7 +271,9 @@ def test_unconfirmed_endpoint_preserves_value_and_owner_without_deriving_bounds(
     owner = next(e for e in result.state["entities"].values() if e["role"] == "C")
     assert owner["state"] == endpoint and owner["field_ids"]
     assert result.state["fields"][owner["field_ids"][0]]["value"] == "3.8- 6.6kg"
-    assert not result.state.get("properties")
+    assert result.state["properties"]
+    assert all(p["state"] == "unresolved" and p["calibration"]["literal"] is None
+               for p in result.state["properties"].values())
 
 
 def test_later_confirmation_consumes_saved_range_without_refinding_it(deep_input):
@@ -288,7 +284,7 @@ def test_later_confirmation_consumes_saved_range_without_refinding_it(deep_input
     discoveries = sum(stage == "discover" for stage, _ in model.calls)
     # Apply the explicit endpoint-review result; mere later co-occurrence cannot confirm it.
     result.commit({"entities": {owner["id"]: {**owner, "state": "accepted"}}})
-    result.set_phase("graph", "planning")
+    result.set_phase("semantic", "planning", semantic_step="assertions")
     result.run()
     props = list(result.state["properties"].values())
     assert len(props) == 2 and all(p["state"] == "accepted" for p in props)
@@ -312,14 +308,13 @@ def test_invalid_owner_does_not_discard_exact_raw_observation(deep_input):
     assert result.state["windows"][observation["window_id"]]["reading_state"] != "complete"
 
 
-def test_model_cannot_derive_bounds_for_an_unconfirmed_subject(deep_input):
+def test_candidate_bounds_survive_unconfirmed_subject_but_cannot_be_consumed(deep_input):
     model = DeepModel("unresolved", forged_component=True)
     result = runner(deep_input, model)
-    assert not result.state.get("properties")
-    assert not any(stage == "property_alignment" for stage, _ in model.calls)
-    work = [row for row in result.state["work"].values() if row["kind"] == "property_alignment"]
-    assert work and all(row["status"] == "waiting" for row in work)
-    assert all(row["reason_code"] == "type_or_constraint_unresolved" for row in work)
+    assert {p["value"] for p in result.state["properties"].values()} == {"3.8", "6.6"}
+    assert any(stage == "property_alignment" for stage, _ in model.calls)
+    assert all(p["state"] == "unresolved" and p["calibration"]["literal"] is None
+               for p in result.state["properties"].values())
 
 
 def test_range_cannot_become_two_unrelated_values_of_the_same_predicate(deep_input):
@@ -334,7 +329,9 @@ def test_range_cannot_become_two_unrelated_values_of_the_same_predicate(deep_inp
         return answer
 
     result = runner(deep_input, model)
-    assert not result.state.get("properties")
+    assert result.state["properties"]
+    assert all(p["predicate_iri"] is None and p["state"] != "accepted"
+               for p in result.state["properties"].values())
     assert any("同一属性不能同时承载" in o["reason"]
                for row in result.state["observations"].values()
                for o in row.get("alignment_outcomes", {}).values())

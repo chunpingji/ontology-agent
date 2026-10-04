@@ -74,8 +74,8 @@ def engine_fixture(fixture, selected="members", invoke=None, save=None):
     state = {
         "cursor": {
             "main": {
-                "entity_window_id": window.id,
-                "active_batches": {}, "phase": "entities",
+                "skeleton_window_id": window.id,
+                "active_batches": {}, "phase": "semantic", "semantic_step": "referents", "planned_steps": [],
                 "stage": "referent_alignment",
                 "scope_complete": False,
             }
@@ -83,7 +83,7 @@ def engine_fixture(fixture, selected="members", invoke=None, save=None):
         "windows": {
             window.id: {
                 **Engine.window_row(window, [0]),
-                "entity_phase": "referent_alignment",
+                "skeleton_step": "done",
                 "reading_state": "complete",
             }
         },
@@ -201,7 +201,7 @@ def test_online_refinement_queries_original_expressions_and_binds_members(
     if selected is None:
         assert engine.state["entities"]["old"]["referent_unresolved"]
     else:
-        assert "old" not in engine.state["entities"]
+        assert engine.state["entities"]["old"]["reason"] == "refined_into_members"
         assert all(e["state"] == "candidate" for e in entities)
 
 
@@ -226,17 +226,13 @@ def test_identifier_partition_keeps_uncovered_typed_mention_explicitly_unresolve
     }
     engine.state["window_entities"][window.id]["ids"].append("extra")
 
-    run_referent_alignment(engine, window)
-
-    assert [e["label"] for e in engine.entities(window) if e.get("identity_binding")] == [
-        "A1",
-        "A2",
-    ]
-    extra = engine.state["entities"]["extra"]
-    assert extra["state"] == "unresolved" and extra["referent_unresolved"] is True
-    assert "未覆盖该草案提及" in extra["reason"]
-    assert "extra" in engine.state["window_entities"][window.id]["ids"]
-    assert "old" not in engine.state["entities"]
+    with pytest.raises(ValueError, match="partition_omits_group_mention"):
+        run_referent_alignment(engine, window)
+    assert engine.state["entities"]["extra"]["state"] == "candidate"
+    assert not engine.state["entities"]["extra"].get("identity_binding")
+    assert engine.state["entities"]["old"]["reason"] == "refined_into_members"
+    assert {e["label"] for e in engine.entities(window) if e.get("identity_binding")} == {"A1", "A2"}
+    assert engine.state["referent_work"]
 
 
 def test_identifier_partition_disjoint_from_every_input_mention_creates_no_entity(
@@ -246,14 +242,11 @@ def test_identifier_partition_disjoint_from_every_input_mention_creates_no_entit
     ref = window.resolve(engine.ir, quote("trial"))
     engine.state["entities"]["old"].update(label="trial", name=ref, referent=ref, evidence=[ref])
 
-    run_referent_alignment(engine, window)
-
-    assert engine.state["entities"]["old"]["state"] == "unresolved"
-    assert engine.state["entities"]["old"]["referent_unresolved"] is True
+    with pytest.raises(ValueError, match="partition_omits_group_mention"):
+        run_referent_alignment(engine, window)
+    assert set(engine.state["entities"]) == {"document", "old"}
+    assert engine.state["entities"]["old"]["referent"] == ref
     assert not any(e.get("identity_binding") for e in engine.entities(window))
-    assert next(iter(engine.state["referent_work"].values()))["selection_issue"] == (
-        "no_input_mention_covered"
-    )
 
 
 @pytest.mark.parametrize("bad", ["omission", "overlap", "foreign", "duplicate"])
@@ -304,7 +297,7 @@ def test_bound_property_rejects_other_member_value(lookup_fixture):
     field = engine.state["fields"][entity["field_ids"][0]]
     mapping = PropertyMapping(
         predicate_iri=NS + "code", value_component="whole", value_quote=None, confidence=0.99
-    )
+    , unit_quote=None)
     validate_bound_property(entity, field, mapping, {"value": "A1"})
     with pytest.raises(ValueError, match="property_conflicts"):
         validate_bound_property(entity, field, mapping, {"value": "A2"})
@@ -328,6 +321,12 @@ def test_group_review_preserves_options_without_binary_edges(
 ):
     engine, window, _ = engine_fixture(lookup_fixture)
     run_referent_alignment(engine, window)
+    # Refinement now plans root searches as well. This test supplies its own
+    # fixed group work below, independently of automatic candidate collection.
+    automatic = [w for w in engine.state.get("work", {}).values()
+                 if w["kind"] == "relation_alignment"]
+    assert all(w["input"]["subject_id"] == "document" for w in automatic)
+    engine.commit({"work": {w["id"]: None for w in automatic}})
     objects = engine.entities(window)
     for obj in objects:
         obj["state"] = "accepted"
@@ -338,6 +337,7 @@ def test_group_review_preserves_options_without_binary_edges(
         "origin_ids": ["explicit-use"], "priority": "explicit", "polarity_hint": "positive",
         "condition_hints": [], "endpoint_hypothesis": False,
     }
+    engine.state["cursor"]["main"].update(phase="semantic", semantic_step="assertions")
     work = make_work(
         "relation_alignment", seed, engine.state, engine.catalog, engine.execution_policy,
     )
@@ -352,7 +352,9 @@ def test_group_review_preserves_options_without_binary_edges(
                 "participation": participation, "timing": timing, "selection": "unspecified",
                 "evidence": [source["source_id"] for source in payload["sources"]],
                 "confidence": 0.95, "reason": "Candidate group", "missing_context": "none",
-            } for item in payload["items"]}}
+             "ordered_object_ids": item["object_ids"] if timing == "sequential" else None,
+             "order_evidence": [quote("A1/A2")] if timing == "sequential" else []}
+                for item in payload["items"]}}
             jsonschema.validate(result, schema)
             return result
         assert stage == "evidence_review"
@@ -373,7 +375,9 @@ def test_group_review_preserves_options_without_binary_edges(
 
     engine.invoke = review
     for _ in range(4):
-        if not drain_work(engine, window):
+        if not (drain_work(engine, window, kind="relation_alignment")
+                or drain_work(engine, window, kind="group_interpretation")
+                or drain_work(engine, window, kind="evidence_review")):
             break
     else:
         pytest.fail("group work did not settle")
@@ -398,7 +402,7 @@ def test_relation_group_schema_does_not_allow_model_to_replace_fixed_endpoints()
         "conditions": [],
         "participation": "unknown",
         "selection": "unspecified",
-        "timing": "unspecified",
+        "timing": "unspecified", "ordered_object_ids": None, "order_evidence": [],
         "missing_context": "participation",
         "reason": "Slash membership is unresolved",
         "confidence": 0.9,
@@ -411,6 +415,11 @@ def test_relation_group_schema_does_not_allow_model_to_replace_fixed_endpoints()
 def test_group_with_out_of_range_member_is_retained_without_losing_valid_group(lookup_fixture):
     engine, window, _ = engine_fixture(lookup_fixture)
     run_referent_alignment(engine, window)
+    # Isolate the two assertion-review jobs created explicitly by this test.
+    automatic = [w for w in engine.state.get("work", {}).values()
+                 if w["kind"] == "relation_alignment"]
+    assert all(w["input"]["subject_id"] == "document" for w in automatic)
+    engine.commit({"work": {w["id"]: None for w in automatic}})
     objects = engine.entities(window)
     for obj in objects:
         obj["state"] = "accepted"
@@ -421,10 +430,11 @@ def test_group_with_out_of_range_member_is_retained_without_losing_valid_group(l
     groups = {key: {
         "id": key, "subject_id": "document", "object_ids": object_ids,
         "predicate_iri": NS + "uses", "alignment_class_iri": NS + "Report", "label": "uses",
-        "participation": "all", "selection": "unspecified", "timing": "unspecified",
+        "participation": "all", "selection": "unspecified", "timing": "unspecified", "ordered_object_ids": None, "order_evidence": [],
         "polarity": "positive", "conditions": [], "evidence": window.quotes(engine.ir, ["S1"]),
         "state": "candidate", "timing_state": "candidate", "reason": "Source group",
     } for key, object_ids in [("valid", members), ("invalid", [*members, invalid["id"]])]}
+    engine.state["cursor"]["main"].update(phase="semantic", semantic_step="assertions")
     state = {**engine.state, "relation_groups": groups}
     works = [make_work("evidence_review", {"domain": "relation_groups", "assertion_id": key},
                        state, engine.catalog, engine.execution_policy) for key in groups]
@@ -445,7 +455,9 @@ def test_group_with_out_of_range_member_is_retained_without_losing_valid_group(l
 
     engine.invoke = review
     for _ in range(4):
-        if not drain_work(engine, window):
+        if not (drain_work(engine, window, kind="relation_alignment")
+                or drain_work(engine, window, kind="group_interpretation")
+                or drain_work(engine, window, kind="evidence_review")):
             break
     else:
         pytest.fail("group work did not settle")
@@ -490,7 +502,7 @@ def test_local_identifier_review_never_confirms_source_identity_or_overrides_rej
                             {
                                 "predicate_iri": NS + "code",
                                 "value_component": "whole",
-                                "value_quote": None,
+                                "value_quote": None, "unit_quote": None,
                                 "confidence": 0.97,
                             }
                         ],
@@ -507,9 +519,9 @@ def test_local_identifier_review_never_confirms_source_identity_or_overrides_rej
                         "evidence": source_ids,
                         "polarity": "uncertain",
                         "conditions": [],
-                        "participation": "unknown",
-                        "selection": "unspecified",
-                        "timing": "unspecified",
+                        "participation": "unknown" if len(item["object_ids"]) > 1 else None,
+                        "selection": "unspecified" if len(item["object_ids"]) > 1 else None,
+                        "timing": "unspecified" if len(item["object_ids"]) > 1 else None, "ordered_object_ids": None, "order_evidence": [],
                         "missing_context": "participation",
                         "reason": "Slash leaves use open",
                         "confidence": 0.9,
@@ -522,7 +534,7 @@ def test_local_identifier_review_never_confirms_source_identity_or_overrides_rej
                 "verdict": "unresolved",
                 "participation": "unknown",
                 "selection": "unspecified",
-                "timing": "unspecified",
+                "timing": "unspecified", "ordered_object_ids": None, "order_evidence": [],
                 "evidence": source_ids,
                 "reason": "Slash leaves use open",
             }

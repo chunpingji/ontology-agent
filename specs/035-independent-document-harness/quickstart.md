@@ -1,5 +1,64 @@
 # 验证
 
+## 2026-10-02 文档根第一跳修复
+
+新建运行后检查每个发现请求的 `document.relation_guidance`，根关系和值域必须实际进入
+输入。根关系直接目标的类型摘要应在 `schema_guidance.classes` 和候选类型枚举中，
+不因局部排序漏掉计划、路线等对象；根本身不作为重复发现候选。
+正文明确描述对象但未逐字出现“描述”、根没有正文 anchor 时，仍应产生根主体的
+relation_alignment 请求。标题/目录、背景与他文引用不能自动采信；显式否定、条件与
+对象组保留。验收核对真实根出边和根可达实体，不能用内部关系数或 fact_count 代替。
+工程回归：`tests/test_document_harness/test_document_root_relations.py`。
+部署和同文档实测见[第一跳修复验证](../../docs/图谱分析文档根第一跳修复验证-20261002.md)。
+
+## 2026-10-02 本体范围与阅读吞吐修复
+
+当前新运行采用 `four_stage/document-harness-v10`。检查实际请求而非仅检查磁盘文件：
+发现容量为 48，包含 read_through_source_id；每个提及的 candidate_class_iri 必须是
+本轮卡片 IRI 或 null。普通属性卡包含定义、定义域及值域，纯字段不能创建匿名主体。
+部署和同文档实测见[修复验证记录](../../docs/图谱分析本体约束与吞吐修复验证-20261002.md)。
+
+## 2026-10-02 四阶段工程验证入口与结果
+
+场景详见[方案 FS01—FS19](../../docs/图谱分析四阶段顺序重构方案-20261002.md#12-可执行验收清单)。
+工程实现和隔离验证已执行，具体结果与尚未完成项见
+[validation-four-stages.md](validation-four-stages.md)。以下为当前复验入口。
+
+1. 新建分析确认默认 four_stage/v10；原文发现后进入候选骨架，属性/边已经可查看，编号/共指尚未调用。
+2. 在一处反复编号分组注入完整回答的覆盖遗漏，确认有限修正、局部 failed、其它图谱继续核对，原骨架仍可查看。
+3. 核对成员细分的字段/关系归属；表格行顺序不成为 nextStep，斜杠不成为并行或全部参与。
+4. 核对原值/规范值/换算记录；未知或缺单位不补造，SHACL 无 focus 不算成功，阶段四零模型调用。
+5. 四阶段各在付费回答和业务提交边界暂停/继续；GET/刷新/切换展示均零模型和零业务写入。
+6. 专用 PostgreSQL 验证事务/fencing/继续交错；缺少专用可销毁库须报告 skip。
+7. 独立真实新运行报告首条骨架属性/边时间、语义前骨架、阶段成本与最终事实质量，不重写历史制品。
+
+编码完成后在 backend/ 执行受影响检查：
+
+```bash
+.venv/bin/python -m pytest -p no:cacheprovider -q \
+  tests/test_document_harness/ \
+  tests/test_extraction/test_document_harness_runtime.py \
+  tests/test_extraction/test_literal_normalizer.py \
+  tests/test_extraction/test_tool_shacl.py \
+  tests/test_extraction/test_tool_engine_quantity.py \
+  tests/test_extraction/test_tool_metric.py \
+  tests/test_extraction/test_ontology_guided_boundaries.py --tb=short
+```
+
+共享 SHACL 的新测试位于 `tests/test_document_harness/test_shacl_core.py`；
+定向 Ruff 使用本次实际修改源码。
+前端在 frontend/ 执行：
+
+```bash
+node --test tests/source-harness.test.mjs tests/document-harness.test.mjs
+./node_modules/.bin/tsc --noEmit
+npm run lint -- src/lib/api.ts src/lib/source-harness.ts src/components/analysis/source-harness-panel.tsx
+```
+
+共享 SHACL 改动还应运行实际受影响的 metric/工具测试；浏览器检查须先核对配置，
+合成 API 与真实后端集成分别记录。通过必要检查后仅因新改动、失败或未解决问题扩大验证。
+旧章节部署和测试记录仅为基线，不能作为本轮通过证明。
+
 ## 2026-10-01 阅读效率修正（已实现、限额实测并部署）
 
 输入为运行 350ee463-a9ea-4fc7-af96-469967f49def 的固定 IR、本体和策略；新实测制品存放 evaluations/reading-efficiency-20261001/。

@@ -81,6 +81,84 @@ def _covers(pieces, target):
     return False
 
 
+def reading_prefix(window: Window, source_id: str) -> list[dict]:
+    """Resolve a reported fully read prefix; auxiliary sources cannot move the cursor."""
+    sources = [s for s in window.sources
+               if any(r["evidence_id"] == s["evidence_id"]
+                      and r["start"] < s["offset"] + len(s["text"])
+                      and r["end"] > s["offset"] for r in window.primary())]
+    ids = [s["source_id"] for s in sources]
+    if source_id not in ids or source_id == ids[-1]:
+        raise ValueError("reading_prefix_must_leave_unread_primary_sources")
+    prefix = sources[:ids.index(source_id) + 1]
+    if ({s["evidence_id"] for s in prefix}
+            & {s["evidence_id"] for s in sources[len(prefix):]}):
+        # Overlapping pieces of one paragraph must retain ownership on both
+        # sides, or a mention crossing their boundary could disappear.
+        raise ValueError("reading_prefix_splits_physical_source")
+    return [_range((s["evidence_id"], max(r["start"], s["offset"]),
+                   min(r["end"], s["offset"] + len(s["text"]))))
+            for s in prefix for r in window.primary()
+            if r["evidence_id"] == s["evidence_id"]
+            and r["start"] < s["offset"] + len(s["text"]) and r["end"] > s["offset"]]
+
+
+def remaining_reading_window(ir, window: Window, completed: list[dict]) -> Window:
+    """Continue only unread intervals, retaining original headers and local subject context."""
+    done = [(r["evidence_id"], r["start"], r["end"]) for r in completed]
+    primary = []
+    for evidence_id, start, end in _primary(ir, window):
+        remaining = [(start, end)]
+        for did, begin, stop in done:
+            if did != evidence_id:
+                continue
+            pieces = []
+            for left, right in remaining:
+                if stop <= left or begin >= right:
+                    pieces.append((left, right))
+                    continue
+                if left < begin:
+                    pieces.append((left, begin))
+                if stop < right:
+                    pieces.append((stop, right))
+            remaining = pieces
+        primary.extend((evidence_id, left, right) for left, right in remaining)
+    if not primary or primary == _primary(ir, window):
+        raise ValueError("reading_continuation_must_advance")
+    original = [_piece(source) for source in window.sources]
+    tables = {tuple(t["table_path"]): t for t in _tables(ir.tables)}
+    sections = {ir.unit(p[0]).section_node_id for p in primary}
+    rows = {(tuple(ir.unit(p[0]).table_path), ir.unit(p[0]).row_index) for p in primary
+            if ir.unit(p[0]).table_path}
+    selected_tables = {row[0] for row in rows}
+    needed, leads = [], set()
+    for piece in original:
+        unit = ir.unit(piece[0])
+        if unit.table_path:
+            table = tuple(unit.table_path)
+            if (table in selected_tables and unit.row_index is not None
+                    and unit.row_index < tables.get(table, {}).get("header_row_count", 0)):
+                needed.append(piece)
+            elif ((table, unit.row_index) in rows and unit.column_index == 0
+                  and piece[2] - piece[1] <= MAX_LEAD_CHARACTERS):
+                needed.append(piece)
+        elif (unit.section_node_id in sections
+              and piece[2] - piece[1] <= MAX_LEAD_CHARACTERS):
+            if unit.kind == "heading" or unit.section_node_id not in leads:
+                needed.append(piece)
+                if unit.kind != "heading":
+                    leads.add(unit.section_node_id)
+    child = make_window(ir, _ordered(ir, [*primary, *needed]),
+                        list(dict.fromkeys(p[0] for p in primary)))
+    original_fields = {f["id"] for f in window.fields}
+    child.fields = [f for f in child.fields if f["id"] in original_fields]
+    for index, field in enumerate(child.fields, 1):
+        field["alias"] = f"F{index}"
+    child.primary_ranges = [_range(p) for p in primary]
+    child.id = identity("reading-remainder", window.id, child.primary_ranges)
+    return child
+
+
 def split_reading_window(ir, window: Window) -> list[Window]:
     """Return exactly two smaller windows, or no safe split at the minimum.
 

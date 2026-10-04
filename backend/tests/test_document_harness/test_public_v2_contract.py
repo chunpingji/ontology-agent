@@ -15,7 +15,12 @@ from app.schemas.document_harness import (
 
 
 def progress():
+    from app.services.document_harness.accounting import empty_metrics
+
+    metrics = empty_metrics()
     return {
+        "phase_work_counts": {**metrics["phase_work_counts"], "semantic": {"ready": 0, "waiting": 1, "pruned": 2, "done": 3, "failed": 0}},
+        "calibration_counts": metrics["calibration_counts"],
         "completed_calls": 0,
         "candidate_count": 0,
         "fact_count": 0,
@@ -130,7 +135,7 @@ def test_public_verification_excludes_internal_fingerprint_and_permits_no_proof(
 def test_costs_require_missing_measurement_count_and_preserve_unknown_tokens():
     payload = progress()
     payload["stage_costs"] = [{
-        "stage": "relation_alignment", "calls": 2, "seconds": 1.5,
+        "phase": "skeleton", "stage": "relation_alignment", "calls": 2, "seconds": 1.5,
         "input_tokens": None, "output_tokens": 0,
     }]
     with pytest.raises(ValidationError):

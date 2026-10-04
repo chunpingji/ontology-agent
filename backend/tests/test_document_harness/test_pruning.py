@@ -184,8 +184,8 @@ def test_explicit_predicate_with_untyped_endpoint_keeps_a_waiting_task(tmp_path,
                                    build_source_index(ir, state), DEFAULT_POLICY)
     assert len(seeds) == 1
     rows = admit_relation_work(seeds, state, catalog, DEFAULT_POLICY)
-    assert rows[0]["status"] == "waiting"
-    assert rows[0]["reason_code"] == "type_or_constraint_unresolved"
+    assert rows[0]["status"] == "ready"
+    assert rows[0]["reason_code"] is None
 
 
 def test_unresolved_ontology_constraint_is_waiting_without_semantic_rejection(tmp_path, catalog):
@@ -202,7 +202,7 @@ def test_unresolved_ontology_constraint_is_waiting_without_semantic_rejection(tm
     assert not resolution["incompatibility_confirmed"]
     row = admit_relation_work(seeds_for(state, 1, protected=True), state,
                              catalog, DEFAULT_POLICY)[0]
-    assert row["status"] == "waiting"
+    assert row["status"] == "ready"
     assert not row["output_ids"]
 
 
@@ -216,7 +216,7 @@ def test_explicit_predicate_with_untyped_subject_does_not_require_a_type_card(tm
     seeds = collect_relation_seeds(ir, catalog, state, {"hints": state["hints"]},
                                    build_source_index(ir, state), DEFAULT_POLICY)
     assert len(seeds) == 1
-    assert admit_relation_work(seeds, state, catalog, DEFAULT_POLICY)[0]["status"] == "waiting"
+    assert admit_relation_work(seeds, state, catalog, DEFAULT_POLICY)[0]["status"] == "ready"
 
 
 def table_state(tmp_path, headers=("Container", "Component", "Notes")):

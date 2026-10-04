@@ -12,7 +12,7 @@ def ref(source="s1", text="Alpha"):
 
 
 def fixture_state():
-    return {"entities": {
+    return {"cursor": {"main": {"phase": "semantic", "semantic_step": "assertions"}}, "entities": {
         key: {"id": key, "referent": ref(key, key), "class_iri": "urn:Thing",
               "state": "accepted", "type_evidence": [ref(key, key)]}
         for key in ("a", "b", "unrelated")
@@ -84,7 +84,7 @@ def test_confirmed_endpoints_release_stored_proof_without_new_work():
     state["work"][original["id"]] = original
     proof = {"method": "llm", "semantic_verdict": "accepted", "dependency_hash": "semantic"}
     state["relations"] = {"fact": {
-        "id": "fact", "subject_id": "a", "object_id": "b", "state": "unresolved",
+        "id": "fact", "subject_id": "a", "object_id": "b", "predicate_iri": "urn:uses", "state": "unresolved",
         "verification": proof,
     }}
     changes = {"entities": {"a": {**state["entities"]["a"], "state": "accepted"}}}

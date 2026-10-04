@@ -105,12 +105,12 @@ def runner(case, invoke, *, state=None, stop=lambda: False, budget=32768, save=N
                     save=save or (lambda changes: None), should_stop=stop, max_request_bytes=budget)
     if not engine.state.get("windows"):
         engine.state["windows"] = {
-            window.id: {**Engine.window_row(window, [i]), "entity_phase": "done",
+            window.id: {**Engine.window_row(window, [i]), "skeleton_step": "done",
                         "reading_state": "complete"}
             for i, window in enumerate(engine.windows)
         }
     engine.state.setdefault("cursor", {"main": {
-        "stage": "planning", "entity_window_id": None, "active_batches": {}, "phase": "coreference",
+        "stage": "planning", "skeleton_window_id": None, "active_batches": {}, "phase": "semantic", "semantic_step": "coreference", "planned_steps": [],
         "scope_complete": False,
     }})
     return engine
@@ -142,7 +142,8 @@ def test_explicit_cross_section_alias_work_and_exact_proof(case):
         return result
     engine = runner(case, invoke, state=state)
     engine.run()
-    assert engine.state["entities"] == before["entities"]
+    assert {key: {k: v for k, v in row.items() if k != "calibration"}
+            for key, row in engine.state["entities"].items()} == before["entities"]
     assert engine.state["cursor"]["main"]["stage"] == "complete"
     decision = next(iter(engine.state["coreferences"].values()))
     assert decision["verdict"] == "same" and decision["proof"]
@@ -307,8 +308,11 @@ def test_pair_schema_rejects_foreign_ids_and_controller_rejects_missing_answers(
     schema = stage_schema("coreference_review", source_ids=["S1"], candidate_ids=["P1"])
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate({"judgments": {}}, schema)
-    with pytest.raises(ValueError, match="pair_set_mismatch"):
-        runner(case, lambda *args: {"judgments": {}}, state=two(case)).run()
+    engine = runner(case, lambda *args: {"judgments": {}}, state=two(case))
+    engine.run()
+    work = [w for w in engine.state["work"].values() if w["kind"] == "coreference_review"]
+    assert work and all(w["status"] == "failed" and not w["retryable"] for w in work)
+    assert all("pair_set_mismatch" in w["reason_code"] for w in work)
 
 
 def test_alias_decoding_cannot_quote_both_names_from_the_first_endpoint():

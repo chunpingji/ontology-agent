@@ -9,7 +9,8 @@ def test_scoring_checks_all_quotes_not_only_the_identifier_value(tmp_path):
     text = "设备编号A7。"
     ir, window = fixture(tmp_path, "quote-check", [text, "另一台设备编号B9。"])
     output = {
-        "entities": [{"local_id": "a", "anchor": {"source_id": "S1", "text": "A7"},
+        "entities": [{"candidate_class_iri": "urn:test:Equipment",
+                      "local_id": "a", "anchor": {"source_id": "S1", "text": "A7"},
                       "name": None, "role": "设备", "evidence": ["S1"], "field_ids": [],
                       "source_fields": [{"label": None,
                                          "value": {"source_id": "S1", "text": "A7"}}]}],

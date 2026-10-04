@@ -57,7 +57,7 @@ def require_current_flow(db, run):
     require_harness(db, run)
     policy = source_payload(db, run).get("policy", {})
     execution = policy.get("execution_policy", {})
-    if (policy.get("protocol") != PROTOCOL or execution.get("flow") != "local_reading"
+    if (policy.get("protocol") != PROTOCOL or execution.get("flow") != "four_stage"
             or type(execution.get("reading_concurrency")) is not int
             or execution["reading_concurrency"] not in (1, 2)):
         raise HarnessError("HARNESS_NEW_RUN_REQUIRED", "该运行使用旧执行策略，请新建运行")
@@ -98,7 +98,7 @@ async def create_run(
                 raise HarnessError("IDEMPOTENCY_CONFLICT", "相同 request_key 已用于不同输入")
             if existing.deletion_state == "deleted":
                 raise HarnessError("RUN_DELETED", "该运行已删除", status_code=410)
-            require_harness(db, existing)
+            require_current_flow(db, existing)
             storage.discard_run(run_id)
             return existing, False
         from app.services.document_harness.model import freeze_policy

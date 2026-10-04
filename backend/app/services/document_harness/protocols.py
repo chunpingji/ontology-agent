@@ -12,8 +12,10 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-PROTOCOL = "document-harness-v6"
+PROTOCOL = "document-harness-v10"
 OUTPUT_TOKENS = 16384
+DISCOVERY_MENTIONS = 48
+DISCOVERY_FIELDS = 64
 
 
 class Message(BaseModel):
@@ -47,7 +49,10 @@ class SourceAnchor(Message):
         max_length=1200,
         description="整来源定位省略或填null；仅定位来源中的局部对象时填写逐字引文",
     )
-    occurrence: int | None = Field(default=None, ge=0)
+    occurrence: int | None = Field(
+        default=None, ge=0,
+        description=Quote.model_fields["occurrence"].description,
+    )
 
     @model_validator(mode="after")
     def occurrence_requires_text(self):
@@ -58,12 +63,16 @@ class SourceAnchor(Message):
 
 class Mention(Message):
     local_id: str = Field(min_length=1, max_length=32)
+    candidate_class_iri: str | None = Field(
+        description="本轮schema_guidance.classes中有原文支持的候选类型IRI；不是类型确认。"
+        "没有合适卡片时填null，保留为待对齐原文观察，不进入实体候选。"
+    )
     name: Quote | None = None
     anchor: SourceAnchor = Field(description="每个对象必须提供原文定位，不能用role或evidence替代")
     role: str = Field(min_length=1, max_length=120)
     evidence: list[str] = Field(min_length=1, max_length=8)
-    field_ids: list[str] = Field(max_length=32)
-    source_fields: list[SourceField] = Field(max_length=8)
+    field_ids: list[str] = Field(max_length=128)
+    source_fields: list[SourceField] = Field(max_length=16)
 
 
 class RelationHint(Message):
@@ -88,16 +97,21 @@ class ReferenceCue(Message):
 
 class Discovery(Message):
     entities: list[Mention] = Field(
-        max_length=12,
+        max_length=DISCOVERY_MENTIONS,
         description="逐处登记具体对象提及及其原字段；并列成员各自定位，标识归属按本体定义"
         "和原文解释；同一对象在不同段落再次出现也分别登记anchor",
     )
-    document_field_ids: list[str] = Field(max_length=32)
-    document_source_fields: list[SourceField] = Field(max_length=8)
-    unowned_fields: list[SourceField] = Field(max_length=16)
-    relation_hints: list[RelationHint] = Field(max_length=16)
-    reference_cues: list[ReferenceCue] = Field(default_factory=list, max_length=8)
+    document_field_ids: list[str] = Field(max_length=128)
+    document_source_fields: list[SourceField] = Field(max_length=32)
+    unowned_fields: list[SourceField] = Field(max_length=DISCOVERY_FIELDS)
+    relation_hints: list[RelationHint] = Field(max_length=64)
+    reference_cues: list[ReferenceCue] = Field(default_factory=list, max_length=32)
     complete: bool
+    read_through_source_id: str | None = Field(
+        default=None,
+        description="未读完时按reading_scope顺序最后一个完整登记的主来源ID；"
+        "没有完整前缀或已读完填null。",
+    )
 
 
 class LookupFilter(Message):
@@ -115,6 +129,11 @@ class LookupRequest(Message):
 
 class DiscoveryDraft(Discovery):
     lookup_requests: list[LookupRequest] = Field(max_length=8)
+    lookup_refinement_required: bool = Field(
+        default=False,
+        description="只有来源反馈可能改变原文提及边界、对象数量或字段归属时为true；"
+        "清楚的单个对象仅召回来源候选不需要修订，留给语义阶段查询。",
+    )
 
 
 class SourceSuggestion(Message):
@@ -142,7 +161,9 @@ class TypeChoice(Message):
 
 
 class TypeAlignment(Message):
-    entities: dict[str, TypeChoice] = Field(max_length=12)
+    # Cardinality is the exact target set in stage_schema/validate_paid_output.
+    # A static cap would reject complete answers to larger, budgeted requests.
+    entities: dict[str, TypeChoice]
 
 
 class PropertyMapping(Message):
@@ -151,6 +172,7 @@ class PropertyMapping(Message):
     value_quote: Quote | None = Field(
         description="span时引用原字段值内的完整属性值；其他组件填null，不改写或借用其他字段"
     )
+    unit_quote: Quote | None = Field(description="仅引用原文单位；无明确单位引文填null")
     confidence: float = Field(ge=0, le=1)
 
     @model_validator(mode="after")
@@ -175,7 +197,6 @@ class ReferentMember(Message):
     id: str = Field(min_length=1, max_length=32)
     expression_ids: list[str] = Field(
         min_length=1,
-        max_length=6,
         description="属于这个对象的完整编号表达ID；单个复合编号引用整体表达，改号可引用多个表达",
     )
 
@@ -184,7 +205,6 @@ class ReferentPartition(Message):
     id: str = Field(min_length=1, max_length=32)
     members: list[ReferentMember] = Field(
         min_length=1,
-        max_length=6,
         description="一种覆盖整组提及的完整解释中的全部对象；多个明确对象必须在同一分组内",
     )
     reason: str = Field(min_length=1, max_length=320)
@@ -199,7 +219,6 @@ class ReferentCandidates(Message):
         "本轮只申请补充，程序定位并返回ID后再提交分组，不得自行给新片段编ID",
     )
     expressions: list[IdentifierExpression] = Field(
-        max_length=12,
         description="存在整体/成员歧义时同时定位整体原串和各成员原串",
     )
     partitions: list[ReferentPartition] = Field(
@@ -232,7 +251,16 @@ class ReferentSelection(Message):
 
 
 class PropertyAlignment(Message):
-    properties: dict[str, PropertyChoice] = Field(max_length=32)
+    properties: dict[str, PropertyChoice]
+
+
+def validate_order(value):
+    if value.timing == "sequential":
+        if (not value.ordered_object_ids or not value.order_evidence
+                or len(set(value.ordered_object_ids)) != len(value.ordered_object_ids)):
+            raise ValueError("sequential_requires_order_and_evidence")
+    elif value.ordered_object_ids is not None or value.order_evidence:
+        raise ValueError("order_without_sequential_timing")
 
 
 class RelationProposal(Message):
@@ -243,6 +271,8 @@ class RelationProposal(Message):
     participation: Literal["all", "options", "unknown"] | None
     selection: Literal["exactly_one", "unspecified"] | None
     timing: Literal["parallel", "sequential", "unspecified"] | None
+    ordered_object_ids: list[str] | None
+    order_evidence: list[Quote] = Field(max_length=8)
     missing_context: Literal["none", "subject", "object", "participation", "condition"]
     reason: str = Field(min_length=1, max_length=320)
     confidence: float = Field(ge=0, le=1)
@@ -255,11 +285,12 @@ class RelationProposal(Message):
             raise ValueError("exclusive_selection_without_options")
         if self.timing not in (None, "unspecified") and self.participation != "all":
             raise ValueError("timing_without_joint_participation")
+        validate_order(self)
         return self
 
 
 class RelationAlignment(Message):
-    proposals: dict[str, RelationProposal] = Field(max_length=6)
+    proposals: dict[str, RelationProposal]
 
 
 class GroupInterpretation(Message):
@@ -267,6 +298,8 @@ class GroupInterpretation(Message):
     participation: Literal["all", "options", "unknown"]
     selection: Literal["exactly_one", "unspecified"]
     timing: Literal["parallel", "sequential", "unspecified"]
+    ordered_object_ids: list[str] | None
+    order_evidence: list[Quote] = Field(max_length=8)
     evidence: list[str] = Field(max_length=8)
     reason: str = Field(min_length=1, max_length=320)
 
@@ -278,6 +311,7 @@ class GroupInterpretation(Message):
             raise ValueError("timing_without_joint_participation")
         if self.verdict == "supported" and (not self.evidence or self.participation == "unknown"):
             raise ValueError("group_interpretation_requires_evidence")
+        validate_order(self)
         return self
 
 
@@ -289,7 +323,7 @@ class Judgment(Message):
 
 
 class EntityReview(Message):
-    judgments: dict[str, Judgment] = Field(max_length=12)
+    judgments: dict[str, Judgment]
 
 
 class TypeConcern(Message):
@@ -331,7 +365,7 @@ class CoreferenceJudgment(Message):
 
 
 class CoreferenceReview(Message):
-    judgments: dict[str, CoreferenceJudgment] = Field(max_length=6)
+    judgments: dict[str, CoreferenceJudgment]
 
 
 STAGES = {
@@ -359,71 +393,51 @@ COMMON = (
     "未知不是否定。证据不足如实保留，不强行填满数组。"
 )
 INSTRUCTIONS = {
-    "discover": COMMON
-    + (
-        "任务输出原文物理提及列表，不是去重后的对象列表，不判定本体类型或事实成立。"
-        "围绕每一处原文真实指称组织字段："
-        "schema_guidance提供相关类型的阅读卡以帮助理解对象和字段语义；它不是原文证据，"
-        "不能因卡片靠前或具有某属性就判定类型，不能为了匹配卡片而改变原文指称。"
-        "entities/document_field_ids/document_source_fields/unowned_fields/relation_hints必须逐类回答，"
-        "没有结果也显式返回空数组。逐个对象同时回答field_ids和source_fields："
-        "前者归集输入字段，后者保存该对象叙述中的原标签和完整原值，不得省略任务。"
-        "每个对象必须提供anchor={source_id}定位原文，source_id只选本窗口来源。"
-        "表格优先选择指称该对象的名称或编号所在来源，程序按来源ID还原表格、行列及"
-        "物理单元格位置，不必抄写文字或自行数坐标。来源是单元格内的段落；多段分别定位。"
-        "若对象只占来源的一部分（如一格多个对象），anchor再补text逐字引文及必要的"
-        "occurrence。整行是上下文，不能仅因不同对象位于同一行就将其合成一个实体。"
-        "阅读卡的identity_properties提供标识属性定义，identity_key_groups保留完整键组；"
-        "结合其含义、对象层级、作用域及原文建立指称与编号的对应，缺少标记不否定局部提及。"
-        "区分一个完整标识、一个对象的多个标识、多个对象各自的标识及复合键的不同组成；"
-        "不得以标点、数字个数或属性名字决定对象数量。别名、改号或多系统编号不制造新对象。"
-        "原文列举多个对象时逐项登记，anchor精确定位本项指称，evidence保留共享上下文。"
-        "标识可直接充当本项anchor；不要因省略共享称谓而漏项，也不补写原文不存在的名称。"
-        "各项编号按原值放在对应source_fields或field_ids；整段并列值不能替代各成员的编号。"
-        "没有显式字段标签时label=null，不把本体属性标签伪装成原文。复合编号保留完整原值；"
-        "一个对象的多个标识分别保存字段，复合键组件不能被拆成实体或随意组合。"
-        "身份标记不授予全局唯一性，缺少作用域不可归并。未确定归属的编号保留unowned_fields。"
-        "各成员字段和关系分别核对，集合总量不复制到每项；保留否定、备选及条件。"
-        "有明确名称可用name引用名称；name可以省略，anchor始终必填。role只说明对象角色，"
-        "不能替代名称来源或指称定位。定位存在不证明类型、身份或字段归属。"
-        "只要原文描述了具体对象即可提出，不要求单独文档或正式名称；抽象标题不能造实例。"
-        "无正式名称但有具体指称的对象也应登记；原文通过内容、时间或关联关系明确指称"
-        "该对象时，用原句作anchor并将name设为null，保留实际或拟发生的语义。"
-        "不能用与该对象相关的其他对象替代其自身，也不能仅凭阅读卡创造原文未提及的对象。"
-        "关系线索的两端须对应各自已登记的原文提及；无名称的主体也应先登记，"
-        "不能把关系接到相邻但语义角色不同的对象上。"
-        "一个对象的多个字段用field_ids引用。"
-        "field_ids仅用给出的fields，值由程序保留，不抄写。属于文档自身的原字段放"
-        "document_field_ids；未预提取而属于文档本身的字段放document_source_fields，"
-        "包括结合封面、页眉或段落上下文可判断语义的独立文本。document.property_guidance"
-        "是根节点的合法属性语义提示，不代表原文存在这些值。文档根不等于正文对象。"
-        "没有显式字段标签时label=null，value仍逐字引用完整原值；属性含义由上下文"
-        "和Schema对齐，不把推定的字段名伪装成引文，不用标题为每个字段另造实体。"
-        "不能从文档类型、文件名中的数字或空白字段推定原文未给出的属性值。"
-        "未预提取的表格/叙述字段放到"
-        "对应实体的source_fields，label/value均逐字引用。不把叙述中的字段只留在"
-        "anchor里：检查anchor及evidence，把其数量、范围等单独保存在source_fields。"
-        "逐段检查叙述中明确表达的属性及其完整原值，不能只读冒号字段或表格。"
-        "一个范围保留包含两端和单位的完整原值，发现时不拆分数值。"
-        "字段不是段落摘要：label引用短的原属性提示词，value引用其具体原值，"
-        "二者不能相同；一段有多个属性时分别保存。"
-        "每个字段分别定位其原标签和完整原值；不能以整句同时充当label和value，"
-        "也不在这里把范围拆成两个字段。"
-        "主体类型或关系尚未确认也必须保存有依据的字段和候选归属；没有明确归属放"
-        "unowned_fields。含文档根在内所有对象合计最多补充16个原字段，超出时complete=false。"
-        "不要重复给出的fields，不把推测的属性名当原文字段标签。不要把每个属性、布尔回答、"
-        "章节标题各造一个实体。文档根已登记，文档的标题、编号、日期和导航文字不另造"
-        "主体；无法归属的字段由程序保留观察，不要为装载单个字段虚构主体。"
-        "本阶段每项只登记一处物理提及；同一个对象在不同段落/章节再次出现，必须分别"
-        "给出local_id和各自anchor。即使原文已明确简称或回指，也不能在发现时合并；"
-        "不同来源的提及交给后续共指核验。把第二处文字仅放进第一处的evidence，不能"
-        "代替登记第二处提及。各提及只归集其原文支持的字段，不跨章节搬移属性。"
-        "保留不同物理提及，不按名称合并。relation_hints记录"
-        "原文具体关系标签和方向，端点只用本轮local_id，不生成IRI。未发现类型不影响"
-        "保存提及。达到容量而没有读完时complete=false。"
-        "提交前逐个reading_scope主区间检查：后文简称或回指如果有自己的物理位置，必须有自己的"
-        "entities项和anchor；它指向已有对象也不能省略，不能把所有章节的引用只挂在"
-        "第一处提及的evidence下。是否共指由后续阶段处理，发现阶段不执行合并。"
+    "discover": COMMON + (
+        "在本轮本体卡限定的对象范围内发现原文物理提及、原字段及关系表达，"
+        "提出候选类型但不确认类型、身份或事实成立。"
+        "schema_guidance是本体阅读提示，不是原文证据；不能因卡片或某属性而造对象。"
+        "逐处登记具体对象，同对象在不同段落的名称、简称、回指分别给local_id及anchor；"
+        "不得按名称合并，也不能只在第一处的evidence里放第二处提及。"
+        "每项anchor={source_id}；一来源多个对象时补text逐字定位及必要的occurrence。"
+        "quote_fragments提供原文片段位置选项；优先选能唯一定位对象的片段source_id，"
+        "名称和字段也可引用片段ID。片段仅用于定位，所属完整来源仍决定上下文、否定及条件。"
+        "片段仍含多个相同字串时必须给occurrence；不得拼写、改写原文或默认选第一次。"
+        "片段菜单有容量限制，不是完整对象清单；未列出的片段仍从sources逐字引用并明确位置。"
+        "evidence和read_through_source_id继续选择完整来源ID，不用片段ID推进阅读。"
+        "表格按指称名称/编号的来源定位，行列由程序还原；同一行不证明同一主体。"
+        "有原文名称时name逐字引用，否则null；role只说明角色，不能替代指称。"
+        "具体对象不要求正式名称或独立文档；用可定位原句保留实际、拟发生及条件语义。"
+        "标题、属性、布尔值、缺失标记不能各造实体；文档根已登记。"
+        "每个实体用candidate_class_iri引用本轮classes中的类型卡，逐项核对对象层级、"
+        "定义和否定限定；卡片命中或属性标签相似不构成类型依据。没有合适类型填null。"
+        "properties给出各类属性的定义、值域及适用类；标签和值整体只是字段，不能"
+        "改称为'该属性所描述的对象'并以name=null创建主体。属性省略主体时，归集到"
+        "上下文中有真实指称的主体；本窗口无法定位主体则放unowned_fields。"
+        "否定属性仍保存原值，不创建被否定类别的对象。名称、编号可定位对象；状态、"
+        "类别、布尔判断和其他属性值不能当作对象名称。事件等匿名对象仍须有独立原文指称。"
+        "按identity_properties定义、完整identity_key_groups及原文区分整体标识、多个成员、"
+        "同对象多个编号、改号、别名与复合键组件；标点、数字数目、同号都不是判定依据。"
+        "原文明列多个对象时逐项定位，共享称谓可作evidence但不得补造名称；"
+        "共享称谓与某编号不连续时，anchor.text直接引用该编号，不得将编号与称谓拼接；"
+        "name、字段value也必须是来源中实际存在的连续字串，不能补全省略的称谓。"
+        "难以区分整体与成员时保留完整可定位提及，交语义阶段细分。缺少范围不可归并。"
+        "逐段核对叙述和表格字段，不能只读冒号或把属性仅留在anchor中。"
+        "输入fields用field_ids归集，不重抄；未预提取的原字段用source_fields补充。"
+        "label只引用显式原标签，没有则null；value逐字引用单个完整原值，"
+        "包含范围两端、单位、否定和条件，不抄标签/整段或与label重复，不拆范围。"
+        "本体属性名不能伪装成原标签；集合总量不复制给每项，不能跨对象或章节搬字段。"
+        "根自身字段用document_field_ids/document_source_fields；无法归属用unowned_fields。"
+        "根property_guidance只提示属性语义，不从文档类型、文件名数字或空白推定值。"
+        "实体/类型/关系尚未确认也要保存有依据的字段，不为装载字段造主体。"
+        "relation_hints保留原文关系标签、方向、极性和条件，端点用本轮local_id或document；"
+        "无名称端点也先登记，不能借相邻角色不同的对象。不生成IRI或认定关系成立。"
+        "entities/document_field_ids/document_source_fields/unowned_fields/relation_hints"
+        "逐类回答，无结果返回[]。每项同时回答field_ids/source_fields，无则[]。"
+        "最多48个提及、合计64个补充字段。只有未读完主区间时complete=false；"
+        "恰好达到数组容量但已读完仍为true，不强行填满。未读完时按来源顺序先完成前缀，"
+        "read_through_source_id选择最后一个已完整登记的主来源；来源中仍有遗漏就选前一个，"
+        "没有完整前缀或complete=true时填null。不要跳过中间来源再推进进度。"
     ),
     "type_alignment": COMMON
     + (
@@ -464,7 +478,8 @@ INSTRUCTIONS = {
         "span须核对value_quote与source_value，不能删掉属于属性值的单位、否定、条件或"
         "限定词；whole含有字段标签不自动否定其原文支持，但不能误当另一主体的值。"
         "派生属性还需核对source_value的完整范围、value_component上下限、source_unit"
-        "和谓词定义单位一致；原范围不是两个无关数量，不能把预期值当作已发生的事实值或隐式换算。"
+        "的原文归属；标准单位与原单位不同不否定事实，单位换算留到确定性阶段。"
+        "原范围不是两个无关数量，不能把预期值当作已发生的事实值或隐式换算。"
         "入边/出边未采信不否定该主体自身的属性。关系结合两端原文属性、"
         "谓词定义、方向、对象角色、否定和条件，可复用组合原文，不要求单句三元组。"
         "事实支持充分且高置信为accepted，缺证为unresolved，明确错配为rejected。"
@@ -532,7 +547,9 @@ INSTRUCTIONS["coreference_review"] = COMMON + (
 
 INSTRUCTIONS["discover"] += (
     "若lookup_mode=draft，lookup_capabilities是只读查询能力，不是文档事实或对象列表。"
-    "在lookup_requests提出有原文依据且可帮助解释指称的查询；无需要时返回[]。"
+    "只有来源反馈可能改变提及边界、对象数量或字段归属时lookup_refinement_required=true，"
+    "并在lookup_requests提出有原文依据的竞争查询；清楚的单个对象不要为了来源匹配"
+    "另作修订，lookup_refinement_required=false、lookup_requests=[]，语义阶段再查询。"
     "先回答lookup_requests，再回答实体草案。查询用于检验不同解释，不能仅复述草案的名称。"
     "指称可能是完整标识或多个成员时，分别查询完整标识及有独立原文定位的各成员标识，"
     "不能只查完整串而让并列解释没有得到检验；查询这些假设不等于采信多个对象。"
@@ -651,6 +668,7 @@ def stage_schema(
     pair_sources=None,
     discovery_mode=None,
     primary_source_ids=None,
+    quote_fragments=None,
     lookup_capabilities=(),
     lookup_candidates=(),
     partition_ids=(),
@@ -663,7 +681,9 @@ def stage_schema(
     definitions = schema.get("$defs", {})
     for name in ("Quote", "SourceAnchor"):
         if name in definitions:
-            definitions[name]["properties"]["source_id"]["enum"] = list(source_ids)
+            definitions[name]["properties"]["source_id"]["enum"] = [
+                *source_ids, *(quote_fragments or {}),
+            ]
     for definition in definitions.values():
         evidence = definition.get("properties", {}).get("evidence")
         if evidence:
@@ -686,9 +706,20 @@ def stage_schema(
         }
 
     if stage == "discover":
+        enum("Mention", "candidate_class_iri", list(class_iris), nullable=True)
         if primary_source_ids is not None:
-            enum("SourceAnchor", "source_id", list(dict.fromkeys(primary_source_ids)))
+            enum("SourceAnchor", "source_id", list(dict.fromkeys([
+                *primary_source_ids,
+                *(key for key, parent in (quote_fragments or {}).items()
+                  if parent in primary_source_ids),
+            ])))
         discovery_schema = definitions["Discovery"] if discovery_mode == "refine" else schema
+        discovery_schema["properties"]["read_through_source_id"] = {
+            "anyOf": [{"type": "string", "enum": list(dict.fromkeys(
+                primary_source_ids if primary_source_ids is not None else source_ids
+            )) or ["__unavailable__"]}, {"type": "null"}],
+            "description": Discovery.model_fields["read_through_source_id"].description,
+        }
         if discovery_mode == "draft":
             # Ask for competing query hypotheses before a draft object grouping
             # can anchor the model to a single, already-selected interpretation.
@@ -712,13 +743,15 @@ def stage_schema(
             }
             if not lookup_candidates:
                 schema["properties"]["source_suggestions"]["maxItems"] = 0
+        definitions["FieldId"] = {"type": "string",
+                                  "enum": list(field_ids) or ["__unavailable__"]}
         definitions["Mention"]["properties"]["field_ids"]["items"] = {
-            "enum": list(field_ids) or ["__unavailable__"],
+            "$ref": "#/$defs/FieldId",
         }
         if not field_ids:
             definitions["Mention"]["properties"]["field_ids"]["maxItems"] = 0
         discovery_schema["properties"]["document_field_ids"]["items"] = {
-            "enum": list(field_ids) or ["__unavailable__"],
+            "$ref": "#/$defs/FieldId",
         }
         if not field_ids:
             discovery_schema["properties"]["document_field_ids"]["maxItems"] = 0
@@ -736,6 +769,12 @@ def stage_schema(
             "anyOf": [*([typed] if legal_classes else []), unmatched],
         }
     elif stage == "referent_candidates":
+        capacity = len(span_ids)
+        schema["properties"]["expressions"]["maxItems"] = capacity
+        definitions["ReferentPartition"]["properties"]["members"]["maxItems"] = capacity
+        definitions["ReferentMember"]["properties"]["expression_ids"]["maxItems"] = capacity
+        if not capacity or not property_iris:
+            schema["properties"]["partitions"]["maxItems"] = 0
         enum("IdentifierExpression", "property_iri", property_iris)
         enum("IdentifierExpression", "span_id", span_ids)
         if not span_ids or not property_iris:
@@ -763,11 +802,11 @@ def stage_schema(
     elif stage == "relation_alignment":
         fixed_answers("proposals", "RelationProposal", [r["candidate_id"] for r in relation_items])
         proposal = definitions.pop("RelationProposal")
-        for row in relation_items:
+        for index, row in enumerate(relation_items):
             if not row["object_ids"]:
                 raise ValueError("relation_requires_object")
             grouped = len(row["object_ids"]) > 1
-            name = "GroupRelationProposal" if grouped else "SingleRelationProposal"
+            name = f"GroupRelationProposal{index}" if grouped else "SingleRelationProposal"
             if name not in definitions:
                 if grouped:
                     variants = []
@@ -783,17 +822,46 @@ def stage_schema(
                             ["parallel", "sequential", "unspecified"] if participation == "all"
                             else ["unspecified"]
                         )}
+                        if participation == "all":
+                            sequential = deepcopy(variant)
+                            sequential["properties"]["timing"] = {"const": "sequential"}
+                            sequential["properties"]["ordered_object_ids"] = {
+                                "type": "array", "minItems": len(row["object_ids"]),
+                                "maxItems": len(row["object_ids"]),
+                                "uniqueItems": True,
+                                "items": {"type": "string", "enum": row["object_ids"]},
+                            }
+                            sequential["properties"]["order_evidence"]["minItems"] = 1
+                            variants.append(sequential)
+                            fields["timing"] = {"enum": ["parallel", "unspecified"]}
+                        fields["ordered_object_ids"] = {"type": "null"}
+                        fields["order_evidence"]["maxItems"] = 0
                         variants.append(variant)
                     definitions[name] = {"anyOf": variants}
                 else:
                     single = deepcopy(proposal)
-                    for field in ("participation", "selection", "timing"):
+                    for field in ("participation", "selection", "timing", "ordered_object_ids"):
                         single["properties"][field] = {"type": "null"}
+                    single["properties"]["order_evidence"]["maxItems"] = 0
                     definitions[name] = single
             schema["properties"]["proposals"]["properties"][row["candidate_id"]] = {
                 "$ref": f"#/$defs/{name}",
             }
     elif stage == "group_interpretation":
+        sequential = deepcopy(schema)
+        sequential["properties"]["timing"] = {"const": "sequential"}
+        sequential["properties"]["participation"] = {"const": "all"}
+        sequential["properties"]["ordered_object_ids"] = {
+            "type": "array", "minItems": len(entity_ids), "maxItems": len(entity_ids),
+            "uniqueItems": True,
+            "items": {"type": "string", "enum": list(entity_ids)},
+        }
+        sequential["properties"]["order_evidence"]["minItems"] = 1
+        other = deepcopy(schema)
+        other["properties"]["timing"] = {"enum": ["parallel", "unspecified"]}
+        other["properties"]["ordered_object_ids"] = {"type": "null"}
+        other["properties"]["order_evidence"]["maxItems"] = 0
+        schema["anyOf"] = [sequential, other]
         schema["properties"]["evidence"]["items"] = {"enum": list(source_ids)}
     elif stage == "coreference_review":
         fixed_answers("judgments", "CoreferenceJudgment", candidate_ids)
@@ -862,8 +930,23 @@ INSTRUCTIONS["group_interpretation"] = COMMON + (
 INSTRUCTIONS["discover"] += (
     "reference_cues用于跨段引用：local_subject_id选本批实体或document；reference精确定位"
     "引用表达，relation_label无明确关系时null，direction为outgoing/incoming。"
-    "relation_hints.subject_id也允许document，但须原文明示根关系，不按类型自动连接。"
+    "document是用户指定的当前文档根；relation_guidance给出根的合法关系和完整值域。"
+    "按这些关系及schema_guidance.classes中的目标类型查找正文对象，包括有原文内容的"
+    "计划、路线、过程和评估；不能只发现其步骤、设备和字段。没有独立名称可用正文内容作anchor。"
+    "不得重建文档根，根与同名药物等正文对象仍是不同实体。"
+    "relation_hints.subject_id允许document，保留有正文依据的根关系供后续核验。"
+    "直接目标卡保证搜索范围可见，不代表原文一定存在这些对象，不为填满卡片造实体。"
 )
+
+DOCUMENT_RELATION_RULE = (
+    "document_root是当前文档本身，由用户指定，无须正文重复文档标题或提供根的文字anchor。"
+    "若谓词定义为文档描述/记载正文对象，可由正文中对该真实对象的实质描述及内容归属证明，"
+    "不要求逐字出现‘描述’或谓词标签。仍须按当前谓词定义核对对象角色、方向、层级、极性和条件。"
+    "只有标题或目录、引用他文、背景提及、同名、同报告共现或值域合法，均不能证明根关系。"
+    "这条规则不证明使用、组成等其他语义；如谓词要求使用/投入，必须有相应原文陈述。"
+)
+for _stage in ("discover", "relation_alignment", "evidence_review"):
+    INSTRUCTIONS[_stage] += DOCUMENT_RELATION_RULE
 
 
 def validate_paid_output(stage, payload, output, schema=None):
@@ -889,6 +972,9 @@ def validate_paid_output(stage, payload, output, schema=None):
                 raise ValueError("single_relation_has_group_semantics")
             if len(row["object_ids"]) > 1 and any(v is None for v in group_fields):
                 raise ValueError("group_relation_requires_complete_semantics")
+            if (proposed.timing == "sequential"
+                    and set(proposed.ordered_object_ids) != set(row["object_ids"])):
+                raise ValueError("sequential_object_set_mismatch")
     elif stage in {"entity_review", "evidence_review", "coreference_review"}:
         expected = (
             {row["pair_id"] for row in payload["pairs"]}
@@ -967,4 +1053,23 @@ INSTRUCTIONS["discover"] += (
     "complete仅表示主区间是否读完，与上下文是否逐项登记、实体身份/类型是否核验无关。"
     "schema_guidance的relations和identity_properties按class_iris指定适用类，共享定义只提供一次；"
     "range保留本体并集、交集、限制等原义，不枚举后代也不改变合法范围。"
+)
+
+INSTRUCTIONS["property_alignment"] += (
+    "本次只构建候选骨架，主体不必已采信，不核对全局身份。unit_quote仅选原文明确单位，"
+    "没有依据填null；标准单位声明不能替代原单位。lower/upper仅选原范围中的精确片段。"
+)
+for _stage in ("relation_alignment", "group_interpretation", "evidence_review"):
+    INSTRUCTIONS[_stage] += (
+        "表格行号、编号排序、斜杠和对象数量不证明工艺先后或并行。一般先于不证明紧邻nextStep。"
+        "nextStep必须有紧邻后继依据；同时发生须独立于共同参与核对。"
+    )
+for _stage in ("relation_alignment", "group_interpretation"):
+    INSTRUCTIONS[_stage] += (
+        "sequential须给出全部对象别名的完整无重复ordered_object_ids及逐字order_evidence；"
+        "parallel/unspecified的ordered_object_ids=null、order_evidence=[]。"
+    )
+INSTRUCTIONS["evidence_review"] += (
+    "独立核对候选ordered_object_ids与order_evidence是否证明完整顺序；不修改候选成员或顺序。"
+    "participation成立不自动采信timing；时间候选有自己的独立judgment。"
 )

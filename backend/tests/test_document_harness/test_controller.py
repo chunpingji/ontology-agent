@@ -78,7 +78,7 @@ class Model:
                 "unowned_fields": [],
                 "entities": [
                     {
-                        "local_id": "a",
+                        "candidate_class_iri": "urn:test:Thing", "local_id": "a",
                         "name": quote(sources, "Alpha"),
                         "anchor": quote(sources, "Alpha"),
                         "role": "container",
@@ -87,7 +87,7 @@ class Model:
                         "source_fields": [],
                     },
                     {
-                        "local_id": "b",
+                        "candidate_class_iri": "urn:test:Thing", "local_id": "b",
                         "name": quote(sources, "Beta"),
                         "anchor": quote(sources, "Beta"),
                         "role": "component",
@@ -133,7 +133,7 @@ class Model:
                             {
                                 "confidence": 0.95,
                                 "value_component": "whole",
-                                "value_quote": None,
+                                "value_quote": None, "unit_quote": None,
                                 "predicate_iri": "urn:test:foreign"
                                 if self.foreign_property
                                 else "urn:test:color",
@@ -151,7 +151,7 @@ class Model:
                         "conditions": item["condition_hints"],
                         "participation": None,
                         "selection": None,
-                        "timing": None,
+                        "timing": None, "ordered_object_ids": None, "order_evidence": [],
                         "missing_context": "none",
                         "evidence": item["clue_sources"],
                         "reason": "Source relation",
@@ -182,7 +182,8 @@ class Model:
         }
 
 
-def execute(inputs, model, *, stop=lambda: False, state=None, windows=None, max_request_bytes=None):
+def execute(inputs, model, *, stop=lambda: False, state=None, windows=None, max_request_bytes=None,
+            rank=None):
     ir, catalog = inputs
     snapshots = []
     from app.services.document_harness.calls import MemoryCalls
@@ -197,6 +198,7 @@ def execute(inputs, model, *, stop=lambda: False, state=None, windows=None, max_
         save=lambda changes: snapshots.append(deepcopy(changes)),
         should_stop=stop,
         max_request_bytes=max_request_bytes,
+        rank=rank,
     )
     if windows is not None:
         engine.windows = windows
@@ -225,7 +227,7 @@ def test_full_new_pipeline_preserves_sources_and_exposes_dashed_before_review(in
     assert any(
         r["state"] == "candidate" for s in snapshots for r in s.get("relations", {}).values()
     )
-    assert [p["value"] for p in state["properties"].values()] == ["red"]
+    assert [p["value"] for p in state["properties"].values() if p["predicate_iri"]] == ["red"]
     assert any(o["reason"] == "missing_source_value" for o in state["observations"].values())
     assert state["cursor"]["main"]["scope_complete"]
     ir, _ = inputs
@@ -260,7 +262,9 @@ def test_real_but_unrelated_review_quote_cannot_accept_claim(inputs):
 
 def test_illegal_current_card_property_is_retained_as_observation(inputs):
     state, _ = execute(inputs, Model(foreign_property=True))
-    assert not state.get("properties")
+    assert state["properties"] and all(p["predicate_iri"] is None
+                                     and p["state"] != "accepted"
+                                     for p in state["properties"].values())
     assert any(
         "property_outside_current_card_or_missing_value: urn:test:foreign" == o["reason"]
         for row in state["observations"].values()
@@ -296,7 +300,7 @@ def test_shared_field_preserves_separate_subject_card_outcomes_and_actual_mappin
     assert len({o["subject_id"] for o in mapped}) == 2
     assert all(o["class_iri"] == "urn:test:Thing" for o in mapped)
     assert all(o["predicate_iris"] == ["urn:test:color"] for o in mapped)
-    properties = list(state["properties"].values())
+    properties = [p for p in state["properties"].values() if p["predicate_iri"]]
     assert len(properties) == 2
     assert all(
         p["alignment_class_iri"] == "urn:test:Thing"
@@ -351,7 +355,7 @@ def test_split_property_menus_do_not_turn_one_unmatched_menu_into_global_rejecti
     assert outcomes[("urn:test:size",)]["state"] == "unmatched"
     assert outcomes[("urn:test:size",)]["reason"] == "尺寸菜单不匹配颜色"
     assert outcomes[("urn:test:color",)]["state"] == "mapped"
-    assert next(iter(state["properties"].values()))["state"] == "accepted"
+    assert next(p for p in state["properties"].values() if p["predicate_iri"])["state"] == "accepted"
 
 
 @pytest.mark.parametrize("change", ["omit", "extra"])
@@ -373,8 +377,11 @@ def test_controller_rejects_inexact_property_keys_even_if_model_skips_dynamic_sc
                 }
         return response
 
-    with pytest.raises(ValueError, match="property_alignment_field_set_mismatch"):
-        execute(inputs, model)
+    state, _ = execute(inputs, model)
+    assert any(w["status"] == "failed" and not w["retryable"]
+               and w["reason_code"] == "property_alignment_field_set_mismatch"
+               for w in state["work"].values())
+    assert state["properties"]
 
 
 def test_explicit_null_property_mapping_retains_each_original_field_and_reason(inputs):
@@ -394,7 +401,9 @@ def test_explicit_null_property_mapping_retains_each_original_field_and_reason(i
         return response
 
     state, _ = execute(inputs, model)
-    assert not state.get("properties")
+    assert state["properties"] and all(p["predicate_iri"] is None
+                                     and p["state"] != "accepted"
+                                     for p in state["properties"].values())
     observations = {
         row["label"]: row
         for row in state["observations"].values()
@@ -456,7 +465,7 @@ def test_document_fields_are_aligned_without_body_entities(inputs):
                                 "predicate_iri": "urn:test:color",
                                 "confidence": 0.99,
                                 "value_component": "whole",
-                                "value_quote": None,
+                                "value_quote": None, "unit_quote": None,
                             }
                         ],
                         "reason": "原字段",
@@ -479,7 +488,7 @@ def test_document_fields_are_aligned_without_body_entities(inputs):
 
     state, _ = execute((ir, catalog), model)
     assert calls == ["discover", "property_alignment", "evidence_review"]
-    assert [p["value"] for p in state["properties"].values()] == ["red"]
+    assert [p["value"] for p in state["properties"].values() if p["predicate_iri"]] == ["red"]
     assert all(p["state"] == "accepted" for p in state["properties"].values())
 
 
@@ -526,7 +535,7 @@ def test_discovery_oversized_input_splits_before_model_call(inputs, tmp_path):
     engine.run()
     assert any(row["children"] for row in engine.state["windows"].values())
     assert len(calls) > 1
-    assert all(r["entity_phase"] == "done" for r in engine.state["windows"].values())
+    assert all(r["skeleton_step"] == "done" for r in engine.state["windows"].values())
     assert engine.state["cursor"]["main"]["scope_complete"]
 
 
@@ -686,7 +695,7 @@ def test_explicit_cross_window_reference_preserves_endpoint_gate_without_name_me
                 "unowned_fields": [],
                 "entities": [
                     {
-                        "local_id": "e",
+                        "candidate_class_iri": "urn:test:Thing", "local_id": "e",
                         "name": quote(payload["sources"], name),
                         "anchor": quote(payload["sources"], name),
                         "role": "container" if name == "Alpha" else "component",
@@ -724,7 +733,9 @@ def test_explicit_cross_window_reference_preserves_endpoint_gate_without_name_me
 
     windows = build_windows(ir, max_sources=3)
     assert len(windows) == 2  # Explicit budget boundary, not a section-per-call assumption.
-    state, _ = execute((ir, catalog), model, windows=windows)
+    state, _ = execute((ir, catalog), model, windows=windows,
+                       rank=lambda *_: {"snapshot_id": catalog.snapshot_id,
+                                        "selected_iris": ["urn:test:Thing"]})
     assert len([e for e in state["entities"].values() if e["role"] != "document_root"]) == 2
     alpha = next(e for e in state["entities"].values() if e["label"] == "Alpha")
     assert alpha["state"] == "unresolved"
@@ -752,7 +763,7 @@ def test_explicit_cross_window_reference_preserves_endpoint_gate_without_name_me
 def test_pause_after_discovery_preserves_candidate_and_resumes_next_stage(inputs):
     model = Model()
     state, _ = execute(inputs, model, stop=lambda: len(model.calls) == 1)
-    assert state["cursor"]["main"]["phase"] == "reading"
+    assert state["cursor"]["main"]["phase"] == "discovery"
     assert len(state["cursor"]["main"]["active_batches"]) == 1
     assert len(state["entities"]) == 1  # Paid answer awaits application on continue.
     continued, _ = execute(inputs, model, state=state)
@@ -807,8 +818,13 @@ def test_fixed_answer_set_is_also_checked_after_model_transport(inputs, target_s
             answer[field].pop(next(iter(answer[field])))
         return answer
 
-    with pytest.raises(ValueError, match=error):
-        execute(inputs, model)
+    if target_stage == "evidence_review":
+        state, _ = execute(inputs, model)
+        assert any(w["status"] == "failed" and error in w["reason_code"]
+                   for w in state["work"].values())
+    else:
+        with pytest.raises(ValueError, match=error):
+            execute(inputs, model)
 
 
 def test_fixed_answer_objects_do_not_depend_on_answer_key_order(inputs):
@@ -831,5 +847,5 @@ def test_fixed_answer_objects_do_not_depend_on_answer_key_order(inputs):
 
     state, _ = execute(inputs, model)
     assert all(row["state"] == "accepted" for row in state["entities"].values())
-    assert all(row["state"] == "accepted" for row in state["properties"].values())
+    assert all(row["state"] == "accepted" for row in state["properties"].values() if row["predicate_iri"])
     assert all(row["state"] == "accepted" for row in state["relations"].values())

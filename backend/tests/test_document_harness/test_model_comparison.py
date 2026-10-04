@@ -114,7 +114,7 @@ def state_fixture():
     state["relation_groups"]["g"] = {
         "subject_id": "root", "object_ids": ["644", "642"],
         "predicate_iri": development + "producedInArea", "participation": "all",
-        "selection": "unspecified", "timing": "parallel", "state": "accepted",
+        "selection": "unspecified", "timing": "parallel", "ordered_object_ids": None, "order_evidence": [], "state": "accepted",
         "timing_state": "accepted",
     }
     return state, SimpleNamespace(model_dump=lambda **_: {"classes": {}})

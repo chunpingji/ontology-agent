@@ -235,6 +235,8 @@ def project_coreferences(result, decisions, classes):
         row["object_mention_ids"] = list(row["object_ids"])
         row["subject_id"] = aliases.get(row["subject_id"], row["subject_id"])
         row["object_ids"] = list(dict.fromkeys(aliases.get(k, k) for k in row["object_ids"]))
+        if row.get("ordered_object_ids"):
+            row["ordered_object_ids"] = [aliases.get(k, k) for k in row["ordered_object_ids"]]
         if len(row["object_ids"]) != len(row["object_mention_ids"]):
             row.update(state="unresolved", timing_state="unresolved",
                        reason="共指结果改变关系成员数量，关系组保留未决")

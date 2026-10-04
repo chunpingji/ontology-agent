@@ -19,7 +19,12 @@ from app.services.document_analysis.run_store import (
     content_hash,
 )
 from app.services.document_harness.accounting import stage_costs
-from app.services.document_harness.application import ENGINE, HarnessError, require_harness
+from app.services.document_harness.application import (
+    ENGINE,
+    HarnessError,
+    require_current_flow,
+    require_harness,
+)
 from app.services.document_harness.coreference import project_coreferences
 from app.services.document_harness.interpretations import _candidates, attach_interpretation_answers
 from app.services.document_harness.runtime import read_rows
@@ -159,6 +164,17 @@ def build_graph_base(state, catalog):
                 if ref not in evidence:
                     evidence.append(ref)
             item["evidence"] = evidence
+            if kind in {"entities", "properties", "relations", "relation_groups"}:
+                item["calibration"] = row.get("calibration")
+                item["verification"] = {name: (row.get("verification") or {}).get(name)
+                                        for name in ("method", "rule_id", "rule_version",
+                                                     "semantic_verdict")}
+            if kind == "entities":
+                item["parent_mention_id"] = row.get("parent_mention_id")
+                item["refined_member_ids"] = row.get("refined_member_ids", [])
+            if kind == "relation_groups":
+                item["ordered_object_ids"] = row.get("ordered_object_ids")
+                item["order_evidence"] = row.get("order_evidence", [])
             if kind in {"properties", "relations", "relation_groups"}:
                 item["card"] = card_ref(classes, row.get("alignment_class_iri"))
                 item["verification"] = {name: (row.get("verification") or {}).get(name)
@@ -172,6 +188,7 @@ def build_graph_base(state, catalog):
                 # have this field. Absence means no saved value-specific quote;
                 # it must not become JSON null or inherit broader claim evidence.
                 item["value_evidence"] = row.get("value_evidence") or []
+                item["source_unit_evidence"] = row.get("source_unit_evidence", [])
             if kind == "observations":
                 item.update(observation_context(
                     row, state, catalog, properties_by_field, owners_by_field,
@@ -259,7 +276,7 @@ def read_graph_bundle(db, run_id, owner_id):
 
 
 def graph_response(db, run):
-    require_harness(db, run)
+    require_current_flow(db, run)
     run, metrics, base, cursor = read_graph_bundle(db, run.recognition_run_id, run.owner_id)
     result = deepcopy(base)
     result["interpretation_tasks"] = attach_interpretation_answers(
@@ -277,8 +294,9 @@ def graph_response(db, run):
         "progress": {
             **{key: metrics[key] for key in ("completed_calls", "candidate_count", "fact_count",
                                             "work_counts", "rule_verified_count",
-                                            "llm_verified_count")},
-            "phase": cursor.get("phase", "reading"),
+                                            "llm_verified_count", "phase_work_counts",
+                                            "calibration_counts")},
+            "phase": cursor.get("phase", "discovery"),
             "reading_windows": cursor.get("reading_windows", {
                 "total": 0, "saved": 0, "complete": 0, "incomplete": 0, "active": 0,
             }),

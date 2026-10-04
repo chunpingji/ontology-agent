@@ -34,7 +34,8 @@ def test_paid_coreference_resume_and_owned_read_only_projection(
         root_class_label="报告", ontology_snapshot_hash=content_hash(payload),
         source_artifact_id="source:" + key, source_storage_uri="original.docx",
         source_media_type="application/docx", source_size_bytes=1,
-        source_payload={"engine": ENGINE, "policy": {"max_request_bytes": 32768}},
+        source_payload={"engine": ENGINE, "policy": {"max_request_bytes": 32768, "protocol": "document-harness-v10",
+            "execution_policy": {"flow": "four_stage", "reading_concurrency": 2}}},
         ontology_artifact_id="ontology:" + key, ontology_payload=payload,
         progress={"engine": ENGINE},
     )
@@ -62,8 +63,8 @@ def test_paid_coreference_resume_and_owned_read_only_projection(
         "clue_refs": [initial["entities"]["0"]["referent"]],
     }, initial, catalog, DEFAULT_POLICY)
     initial["work"] = {work["id"]: work}
-    initial["cursor"] = {"main": {"stage": "coreference_review", "entity_window_id": None,
-                                  "active_batches": {}, "phase": "coreference",
+    initial["cursor"] = {"main": {"stage": "coreference_review", "skeleton_window_id": None,
+                                  "active_batches": {}, "phase": "semantic", "semantic_step": "coreference", "planned_steps": [],
                                   "scope_complete": False}}
     repo.save(initial)
     calls, pause = [], {"value": False}

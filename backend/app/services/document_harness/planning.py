@@ -88,7 +88,7 @@ class SourceIndex:
         for key, row in changes.items():
             old = self.rows.pop(key, None)
             for current, add in ((old, False), (row, True)):
-                if not current:
+                if not current or current.get("refined_member_ids"):
                     continue
                 values = [(self.by_field, field) for field in current.get("field_ids", [])]
                 group = (current.get("identity_binding") or {}).get("group_id")
@@ -203,7 +203,7 @@ def resolve_reference_cues(ir, state, index, policy):
     return changes
 
 
-def collect_relation_seeds(ir, catalog, state, delta, index, policy):
+def collect_relation_seeds(ir, catalog, state, delta, index, policy, *, include_references=True):
     """Only source-supported neighborhoods are enumerated, with early weak limits."""
     entities = state.get("entities", {})
     seeds = {}
@@ -272,6 +272,9 @@ def collect_relation_seeds(ir, catalog, state, delta, index, policy):
                 seed["origin_ids"] = sorted(set([*seeds[key]["origin_ids"], origin]))
                 if seeds[key]["priority"] == "explicit":
                     seed["priority"] = "explicit"
+                    if not protected:
+                        seed["polarity_hint"] = seeds[key]["polarity_hint"]
+                        seed["condition_hints"] = seeds[key]["condition_hints"]
             seeds[key] = seed
 
     changed = set(delta.get("entities", {}))
@@ -294,7 +297,8 @@ def collect_relation_seeds(ir, catalog, state, delta, index, policy):
             conditions=hint.get("conditions", []),
         )
 
-    index.cue_changes = resolve_reference_cues(ir, state, index, policy)
+    index.cue_changes = (resolve_reference_cues(ir, state, index, policy)
+                         if include_references else {})
     for cue in index.cue_changes.values():
         ordered = cue["target_ids"]
         if cue.get("relation_label") is None:
@@ -335,6 +339,39 @@ def collect_relation_seeds(ir, catalog, state, delta, index, policy):
         record = index.record(unit.evidence_id)
         if record in records:
             units_by_record[record].append(unit)
+
+    # The user-selected document root has no physical mention and therefore
+    # cannot occur in by_record. Its legal direct targets still need explicit
+    # source review, even when the text does not repeat the report title or verb.
+    # These are bounded search candidates, never inferred positive relations.
+    root = entities.get("document")
+    if root and root.get("role") == "document_root":
+        card = catalog.classes.get(root.get("class_iri"))
+        for object_id in sorted(changed, key=lambda key: index.position(entities[key])
+                                if entities.get(key) else (-1, 0, key)):
+            obj = entities.get(object_id)
+            if (not obj or not obj.get("referent") or obj.get("refined_member_ids")
+                    or obj.get("state") in {"rejected", "invalid"}):
+                continue
+            unit = ir.unit(obj["referent"]["source_id"])
+            if unit.kind == "heading" or unit.navigation_role:
+                continue
+            units = units_by_record.get(index.record(unit.evidence_id), [unit])
+            refs = [reference(ir, u.evidence_id, 0, len(u.text)) for u in units
+                    if u.text.strip() and not u.navigation_role]
+            for rel in card.relations if card else ():
+                if not legal_relation(catalog, card.iri, rel.iri, obj.get("class_iri")):
+                    continue
+                if any(seed["subject_id"] == root["id"]
+                       and seed["predicate_iri"] == rel.iri
+                       and object_id in seed["object_ids"]
+                       and seed["priority"] == "explicit" for seed in seeds.values()):
+                    # An explicit group/condition is not a license to propose
+                    # independent unconditional edges for each of its members.
+                    continue
+                add(root["id"], index.members(object_id), rel.label, refs,
+                    origin=identity("document_target", object_id, rel.iri),
+                    protected=False, predicate=rel.iri)
 
     # An approved mapping identifies a pair of physical cells. It remains a
     # candidate until evidence_gate proves the frozen contract or reviews it.
@@ -505,7 +542,7 @@ def admit_relation_work(seeds, state, catalog, policy, rank_pairs=None):
                 catalog, card.iri, relation.iri, obj["class_iri"],
             ) for obj in objects
         )
-        if not legal:
+        if not legal and seed["priority"] != "explicit":
             confirmed_incompatible = (card is not None and relation is not None
                 and relation.constraint_status == "resolved"
                 and all(obj.get("class_iri") for obj in objects)
@@ -658,6 +695,10 @@ def context_window(
                 "column": unit.column_index,
             }
         )
+    # Dependency and entity traversal order is not document order. In particular,
+    # a cited operation must not appear before its original step heading.
+    source_order = {unit.evidence_id: index for index, unit in enumerate(ir.evidence_units)}
+    sources.sort(key=lambda source: (source_order[source["evidence_id"]], source["offset"]))
     for index, source in enumerate(sources, 1):
         source["source_id"] = f"S{index}"
     for index, field in enumerate(fields.values(), 1):

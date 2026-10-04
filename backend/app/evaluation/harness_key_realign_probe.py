@@ -88,9 +88,10 @@ class KeyRealignment(Discovery):
     interpretations: dict[str, IdentifierDecision]
 
 
-def review_schema(window, entity_ids, candidate_ids):
+def review_schema(window, entity_ids, candidate_ids, class_iris):
     schema = stage_schema(
         "discover", discovery_mode="refine", lookup_candidates=candidate_ids,
+        class_iris=class_iris,
         source_ids=[s["source_id"] for s in window.sources],
         field_ids=[f["alias"] for f in window.fields],
     )
@@ -258,7 +259,8 @@ class ProbeEngine(Engine):
             "lookup_capabilities": capabilities, "key_candidates": candidates,
             "source_status": source_status,
         }
-        schema = review_schema(window, [aliases[e["id"]] for e in entities], list(registry))
+        schema = review_schema(window, [aliases[e["id"]] for e in entities], list(registry),
+                               [c["iri"] for c in payload["types"]])
         if (self.max_request_bytes is not None
                 and request_size(REVIEW_STAGE, payload, schema) > self.max_request_bytes):
             raise ValueError("key_realignment_input_budget_exceeded")

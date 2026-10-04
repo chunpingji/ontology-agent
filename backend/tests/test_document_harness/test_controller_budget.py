@@ -108,8 +108,8 @@ def engine(
     state = {
         "cursor": {
             "main": {
-                "entity_window_id": window.id,
-                "active_batches": {}, "phase": "entities",
+                "skeleton_window_id": window.id,
+                "active_batches": {}, "phase": "skeleton", "semantic_step": None, "planned_steps": [],
                 "stage": stage,
                 "scope_complete": False,
             }
@@ -118,7 +118,7 @@ def engine(
         "fields": {field["id"]: field for field in fields.values()},
         "window_entities": {window.id: {"ids": [item["id"] for item in entities]}},
     }
-    state["windows"] = {window.id: {**Engine.window_row(window, [0]), "entity_phase": stage}}
+    state["windows"] = {window.id: {**Engine.window_row(window, [0]), "skeleton_step": stage}}
     runner = Engine(
         ir=ir,
         catalog=catalog.model_dump(mode="json"),
@@ -159,11 +159,11 @@ def test_discovery_cards_use_available_input_budget_before_optional_lookup(recor
     runner.rank = rank
     runner.lookup = lambda _operation, _catalog, _argument: {"capabilities": [], "issues": []}
 
-    runner.state["cursor"]["main"]["phase"] = "reading"
+    runner.state["cursor"]["main"]["phase"] = "discovery"
     runner.read_windows()
 
     assert budgets == [1900]
-    assert runner.state["cursor"]["main"]["stage"] == "type_alignment"
+    assert runner.state["cursor"]["main"]["phase"] == "skeleton"
 
 
 def test_guidance_stays_together_on_overflow_and_unselected_types_remain_available(
@@ -328,7 +328,7 @@ def test_conflicting_type_shards_require_joint_choice_instead_of_highest_self_co
             units["Name: Alpha"].evidence_id,
         }
     else:
-        assert saved["state"] == "unresolved"
+        assert saved["state"] == "candidate"
         assert saved["class_label"] is None and not saved["type_evidence"]
         assert "confidence" not in saved
 
@@ -372,7 +372,7 @@ def test_joint_type_comparison_over_budget_never_resplits_its_candidate_menu(rec
         runner.type_alignment(window)
     assert len(calls) == 2
     assert runner.state["entities"]["a"]["class_iri"] is None
-    assert runner.state["cursor"]["main"]["stage"] == "type_alignment"
+    assert runner.state["cursor"]["main"]["phase"] == "skeleton"
 
 
 def checked_review(payload):
@@ -400,7 +400,7 @@ def relation_proposal(payload, *, verdict="no_relation", **changes):
                 "conditions": [],
                 "participation": None,
                 "selection": None,
-                "timing": None,
+                "timing": None, "ordered_object_ids": None, "order_evidence": [],
                 "missing_context": "none",
                 "reason": "original relation clue",
                 "confidence": 0.99,
@@ -472,7 +472,7 @@ def test_object_batches_keep_multiple_predicates_and_only_one_current_property_t
                             {
                                 "predicate_iri": "urn:budget:value",
                                 "value_component": "whole",
-                                "value_quote": None,
+                                "value_quote": None, "unit_quote": None,
                                 "confidence": 0.99,
                             }
                         ],
@@ -535,6 +535,9 @@ def test_object_batches_keep_multiple_predicates_and_only_one_current_property_t
     execute_planned(runner, window)
     property_calls = [p for stage, p in calls if stage == "property_alignment"]
     relation_calls = [p for stage, p in calls if stage == "relation_alignment"]
+    root_calls = [p for p in relation_calls if p["items"][0]["subject_id"] == "E0"]
+    relation_calls = [p for p in relation_calls if p["items"][0]["subject_id"] != "E0"]
+    assert len(root_calls) == 5  # The report can describe the five body objects.
     assert len(property_calls) == 1 and len(relation_calls) == 8
     assert all(not call["card"]["relations"] for call in property_calls)
     assert {item["predicate_iri"] for call in relation_calls for item in call["items"]} == {
@@ -633,8 +636,7 @@ def test_contradictory_group_proposal_fails_without_repair_or_new_facts(
             }
         }
     )
-    with pytest.raises(ValueError):
-        execute_planned(runner, window)
+    execute_planned(runner, window)
     assert len(calls) == 1 and "proposal_feedback" not in calls[0]
     assert not runner.state.get("relations") and not runner.state.get("relation_groups")
     assert any(row["status"] == "failed" for row in runner.state["work"].values())
@@ -679,6 +681,7 @@ def test_root_review_keeps_required_field_but_excludes_unrelated_history(records
         "confidence": 0.99,
         "window_id": window.id,
     }
+    runner.state["cursor"]["main"].update(phase="semantic", semantic_step="assertions")
     changes = {}
     review_for(runner, changes, "properties", assertion)
     runner.commit(changes)
@@ -736,7 +739,7 @@ def test_property_field_batches_cover_all_fields_without_repeating_relation_task
                                 "predicate_iri": "urn:budget:value",
                                 "confidence": 0.99,
                                 "value_component": "whole",
-                                "value_quote": None,
+                                "value_quote": None, "unit_quote": None,
                             }
                         ],
                         "reason": "matching original meaning",
@@ -776,9 +779,12 @@ def test_property_field_batches_cover_all_fields_without_repeating_relation_task
     assert {item["predicate_iri"] for call in relation_calls for item in call["items"]} == {
         "urn:budget:uses",
         "urn:budget:contains",
+        "urn:budget:describes",
     }
-    assert sum(len(call["items"]) for call in relation_calls) == 2
-    assert len(runner.state["relations"]) == 2
+    assert sum(len(call["items"]) for call in relation_calls) == 4
+    assert len(runner.state["relations"]) == 4
+    assert len([r for r in runner.state["relations"].values()
+                if r["subject_id"] == "document"]) == 2
     assert all(not call["card"]["relations"] for call in property_calls)
 
 

@@ -7,8 +7,11 @@ import json
 import re
 from collections import defaultdict
 from dataclasses import dataclass
+from functools import cached_property
 
 from app.services.extraction.document_ir import DocumentIR
+
+QUOTE_FRAGMENT_BYTES = 8192
 
 
 def identity(*parts) -> str:
@@ -81,6 +84,46 @@ class Window:
     entity_ids: list[str] | None = None
     primary_ranges: list[dict] | None = None
 
+    @cached_property
+    def quote_fragments(self):
+        """Citation choices only; punctuation never changes ownership or source context."""
+        fragments = {}
+        used = 2
+        for source in self.sources:
+            spans = list(re.finditer(r"[^，,。！？!?；;\n]+[，,。！？!?；;\n]*", source["text"]))
+            if len(spans) < 2:
+                continue
+            for match in spans:
+                if not match.group().strip():
+                    continue
+                start, end = source["offset"] + match.start(), source["offset"] + match.end()
+                key = "Q" + identity("quote-fragment", source["evidence_id"], start, end)
+                fragment = {
+                    "source_id": key, "parent_source_id": source["source_id"],
+                    "evidence_id": source["evidence_id"], "offset": start,
+                    "text": match.group(), "start": match.start(), "end": match.end(),
+                }
+                cost = len(json.dumps({k: v for k, v in fragment.items()
+                                       if k not in {"evidence_id", "offset"}},
+                                      ensure_ascii=False).encode()) + 2
+                if used + cost <= QUOTE_FRAGMENT_BYTES:
+                    fragments[key] = fragment
+                    used += cost
+        return fragments
+
+    def citation_source(self, source_id):
+        source = next((s for s in self.sources if s["source_id"] == source_id), None)
+        return source if source is not None else self.quote_fragments.get(source_id)
+
+    def discovery_payload(self):
+        return {**self.payload(), "quote_fragments": [
+            {k: fragment[k] for k in ("source_id", "parent_source_id", "start", "end", "text")}
+            for fragment in self.quote_fragments.values()
+        ]}
+
+    def citation_choices(self):
+        return {key: value["parent_source_id"] for key, value in self.quote_fragments.items()}
+
     def primary(self):
         if self.primary_ranges is not None:
             return self.primary_ranges
@@ -119,10 +162,10 @@ class Window:
             ],
         }
 
-    def resolve(self, ir, quote):
+    def resolve(self, ir, quote, *, within=None):
         if hasattr(quote, "model_dump"):
             quote = quote.model_dump()
-        source = next((s for s in self.sources if s["source_id"] == quote["source_id"]), None)
+        source = self.citation_source(quote["source_id"])
         if source is None:
             raise ValueError("source_outside_reading_window")
         text = quote["text"]
@@ -133,7 +176,13 @@ class Window:
             raise ValueError("source_quote_mismatch")
         occurrence = quote.get("occurrence")
         if len(occurrences) != 1 and occurrence is None:
-            raise ValueError("source_quote_ambiguous")
+            scoped = [index for index, offset in enumerate(occurrences)
+                      if within and within["source_id"] == source["evidence_id"]
+                      and within["start"] <= source["offset"] + offset
+                      and source["offset"] + offset + len(text) <= within["end"]]
+            if len(scoped) != 1:
+                raise ValueError("source_quote_ambiguous")
+            occurrence = scoped[0]
         occurrence = 0 if occurrence is None else occurrence
         if type(occurrence) is not int or not 0 <= occurrence < len(occurrences):
             raise ValueError("source_occurrence_invalid")
@@ -156,7 +205,7 @@ class Window:
     def quotes(self, ir, values):
         result = []
         for value in values:
-            source = next((s for s in self.sources if s["source_id"] == value), None)
+            source = self.citation_source(value)
             if source is None:
                 raise ValueError("source_outside_reading_window")
             ref = reference(
@@ -386,7 +435,7 @@ def make_window(ir, pieces, primary_ids):
     )
 
 
-def build_windows(ir: DocumentIR, *, max_chars=4800, max_sources=40):
+def build_windows(ir: DocumentIR, *, max_chars=4800, max_sources=192):
     """Batch adjacent small sections; large sections retain lead-ins and headers.
 
     Budget boundaries do not assign entities, merge identities or restrict the
@@ -436,26 +485,45 @@ def build_windows(ir: DocumentIR, *, max_chars=4800, max_sources=40):
                 pending.clear()
                 primary.clear()
 
+        groups = []
+        row_key = None
         for unit in units:
-            headers = [
-                (u.evidence_id, 0, len(u.text))
-                for u in units
-                if unit.table_path
-                and u.table_path == unit.table_path
-                and u.row_index is not None
-                and u.row_index < tables.get(tuple(unit.table_path), {}).get("header_row_count", 0)
-            ]
-            for start in range(0, len(unit.text), 1600):
-                piece = (unit.evidence_id, start, min(start + 1800, len(unit.text)))
-                proposed = list(dict.fromkeys([*lead, *pending, *headers, piece]))
-                if pending and (
-                    sum(end - begin for _, begin, end in proposed) > max_chars
-                    or len(proposed) > max_sources
-                ):
-                    flush()
-                pending.extend(item for item in [*headers, piece] if item not in pending)
-                if unit.evidence_id not in primary:
-                    primary.append(unit.evidence_id)
+            key = (tuple(unit.table_path), unit.row_index) if unit.table_path else None
+            pieces = [(unit.evidence_id, start, min(start + 1800, len(unit.text)))
+                      for start in range(0, len(unit.text), 1600)]
+            if key is not None and key == row_key:
+                groups[-1].extend(pieces)
+            elif key is not None:
+                groups.append(pieces)
+            else:
+                groups.extend([[piece] for piece in pieces])
+            row_key = key
+
+        headers_by_table = {}
+        for unit in units:
+            if (unit.table_path and unit.row_index is not None
+                    and unit.row_index < tables.get(
+                        tuple(unit.table_path), {},
+                    ).get("header_row_count", 0)):
+                headers_by_table.setdefault(tuple(unit.table_path), []).append(
+                    (unit.evidence_id, 0, len(unit.text))
+                )
+        for group in groups:
+            unit = ir.unit(group[0][0])
+            headers = headers_by_table.get(tuple(unit.table_path or ()), [])
+            proposed = list(dict.fromkeys([*lead, *pending, *headers, *group]))
+            if pending and (
+                sum(end - begin for _, begin, end in proposed) > max_chars
+                or len(proposed) > max_sources
+            ):
+                flush()
+            # Keep one physical row intact. An oversized row is handled by the
+            # existing request-budget split, rather than separating its subject
+            # cell from the values during initial packing.
+            pending.extend(item for item in [*headers, *group] if item not in pending)
+            for evidence_id, _, _ in group:
+                if evidence_id not in primary:
+                    primary.append(evidence_id)
         flush()
     flush_small()
     return windows

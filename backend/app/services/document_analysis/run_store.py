@@ -1595,9 +1595,12 @@ class DocumentAnalysisRunStore:
             bool,
         ]
     ):
-        """Apply lifecycle/budget controls with a run or control-version CAS."""
+        """Apply pause intent or version-checked lifecycle/budget controls."""
 
-        if expected_revision is None and expected_version is None:
+        if action == "pause":
+            # Progress commits cannot invalidate an operator's pause intent.
+            expected_revision = expected_version = None
+        elif expected_revision is None and expected_version is None:
             raise ValueError("an expected run or control version is required")
         if request_key is not None and (not request_key or len(request_key) > 200):
             raise ValueError("control request_key must contain 1-200 characters")

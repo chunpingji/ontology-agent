@@ -23,6 +23,11 @@ def empty_metrics():
         "limited_scope_count": 0, "stages": {},
         "work_counts": dict.fromkeys(WORK_STATUSES, 0),
         "rule_verified_count": 0, "llm_verified_count": 0,
+        "phase_work_counts": {phase: dict.fromkeys(WORK_STATUSES, 0)
+                              for phase in ("discovery", "skeleton", "semantic", "deterministic")},
+        "calibration_counts": {key: dict.fromkeys(
+            ("not_run", "passed", "invalid", "incomplete", "not_applicable", "error"), 0)
+            for key in ("identifier", "datatype", "unit", "shacl")},
     }
 
 
@@ -35,6 +40,7 @@ def call_accounting(row):
             value = value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
             value = value.isoformat()
         result[name] = value
+    result["phase"] = row.payload["value"].get("execution_phase", "discovery")
     return result
 
 
@@ -51,7 +57,10 @@ def update_call_metrics(metrics, before, after):
         if not call:
             continue
         values = contribution(call)
-        totals = result["stages"].setdefault(call["stage"], dict.fromkeys(TOTAL_FIELDS, 0))
+        phase = call.get("phase", "discovery")
+        totals = result["stages"].setdefault(phase + ":" + call["stage"],
+                                             {**dict.fromkeys(TOTAL_FIELDS, 0),
+                                              "phase": phase, "stage": call["stage"]})
         for name, value in values.items():
             totals[name] += sign * value
         result["completed_calls"] += sign * values["completed_calls"]
@@ -68,8 +77,13 @@ def business_contribution(domain, row):
         method = (row.get("verification") or {}).get("method")
         if domain in PROOF_DOMAINS and row.get("state") == "accepted" and method in {"rule", "llm"}:
             result[method + "_verified_count"] = 1
+    if domain in CANDIDATE_DOMAINS:
+        checks = (row.get("calibration") or {}).get("checks", {})
+        for key in ("identifier", "datatype", "unit", "shacl"):
+            result["check:" + key + ":" + checks.get(key, {}).get("status", "not_run")] = 1
     if domain == "work" and row.get("status") in WORK_STATUSES:
         result["work:" + row["status"]] = 1
+        result["phase_work:" + row["phase"] + ":" + row["status"]] = 1
     if domain in {"observations", "reference_cues"}:
         result["limited_scope_count"] = int(bool(
             row.get("truncated") or row.get("candidate_scope_limited")
@@ -84,6 +98,12 @@ def update_business_metrics(metrics, domain, before, after):
         for name, value in business_contribution(domain, row).items():
             if name.startswith("work:"):
                 result["work_counts"][name[5:]] += sign * value
+            elif name.startswith("phase_work:"):
+                _, phase, status = name.split(":")
+                result["phase_work_counts"][phase][status] += sign * value
+            elif name.startswith("check:"):
+                _, key, status = name.split(":")
+                result["calibration_counts"][key][status] += sign * value
             else:
                 result[name] += sign * value
     return result
@@ -91,7 +111,7 @@ def update_business_metrics(metrics, domain, before, after):
 
 def stage_costs(metrics):
     return [{
-        "stage": stage, "calls": value["attempts"],
+        "phase": value["phase"], "stage": value["stage"], "calls": value["attempts"],
         "seconds": value["duration_us"] / 1_000_000,
         "unmeasured_attempts": value["unmeasured_attempts"],
         "input_tokens": None if value["unknown_input"] else value["input_tokens"],

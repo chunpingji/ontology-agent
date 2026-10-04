@@ -7,16 +7,11 @@ import { Button } from "@/components/ui/button";
 import type { DocumentHarnessEntity, DocumentHarnessGraph, DocumentHarnessRelation } from "@/lib/api";
 import { rootedCircleLayout } from "@/lib/source-harness-graph-layout";
 import {
-  buildHarnessHierarchy, harnessAncestorPredicateGroupIds, harnessPredicateGroupId,
-  HARNESS_STATES, relationQualifier,
+  buildHarnessHierarchy, harnessAncestorPredicateGroupIds,
+  HARNESS_STATES, relationQualifier, type HarnessPredicateGroup,
 } from "@/lib/source-harness";
 
-type RelationGroup = {
-  id: string;
-  subjectId: string;
-  predicateIri: string;
-  label: string;
-  relations: DocumentHarnessRelation[];
+type RelationGroup = HarnessPredicateGroup & {
   open: boolean;
 };
 type GraphNode = { id: string; x: number; y: number; size: number; label: string; color: string };
@@ -59,21 +54,17 @@ export function HarnessRelationCanvas({ graph, subject, onSelectEntity, visible,
 
   const display = useMemo(() => {
     const selectedPath = harnessAncestorPredicateGroupIds(hierarchy, subject?.id);
-    const eligible = graph.entities.filter((entity) => (!visible || visible.has(entity.id))
+    const eligible = graph.entities.filter((entity) => !entity.refined_member_ids.length
+      && (!visible || visible.has(entity.id))
       && (hierarchy.depth.get(entity.id) ?? 0) <= maxDepth);
     const ordered = [...eligible].sort((a, b) => (hierarchy.depth.get(a.id) ?? Infinity)
       - (hierarchy.depth.get(b.id) ?? Infinity));
     const eligibleIds = new Set(ordered.map((entity) => entity.id));
     const byId = new Map<string, RelationGroup>();
-    for (const relation of graph.relations) {
-      if (!eligibleIds.has(relation.subject_id) || !eligibleIds.has(relation.object_id)) continue;
-      const id = harnessPredicateGroupId(relation.subject_id, relation.predicate_iri);
-      const group = byId.get(id) ?? {
-        id, subjectId: relation.subject_id, predicateIri: relation.predicate_iri,
-        label: relation.label, relations: [], open: false,
-      };
-      group.relations.push(relation);
-      byId.set(id, group);
+    for (const group of hierarchy.predicateGroups) {
+      if (!eligibleIds.has(group.subjectId)) continue;
+      const relations = group.relations.filter((relation) => eligibleIds.has(relation.object_id));
+      if (relations.length) byId.set(group.id, { ...group, relations, open: false });
     }
     const groupsBySubject = new Map<string, RelationGroup[]>();
     for (const group of byId.values()) {
@@ -144,7 +135,7 @@ export function HarnessRelationCanvas({ graph, subject, onSelectEntity, visible,
           if (!shown.has(relation.object_id)) continue;
           edges.push({ id: `relation:${relation.id}`, source: id,
             target: `entity:${relation.object_id}`,
-            label: `${relation.label} · ${HARNESS_STATES[relation.state]}`,
+            label: `${relation.label} · ${HARNESS_STATES[relation.state]}${relation.predicate_iri ? "" : " · 谓词待对齐"}`,
             color: relationColor(relation), size: relation.state === "accepted" ? 2.5 : 1.7 });
         }
       });
@@ -153,7 +144,7 @@ export function HarnessRelationCanvas({ graph, subject, onSelectEntity, visible,
       rootId: hierarchy.roots.find((entity) => shown.has(entity.id))?.id,
       entityById: new Map(entities.map((entity) => [`entity:${entity.id}`, entity])),
       groupById: new Map(groups.map((group) => [`group:${group.id}`, group])),
-      relationById: new Map(graph.relations.map((relation) => [`relation:${relation.id}`, relation])),
+      relationById: new Map(hierarchy.relations.map((relation) => [`relation:${relation.id}`, relation])),
     };
   }, [graph, hierarchy, visible, maxDepth, collapsedGroups, subject, revealGroups]);
 
@@ -274,6 +265,7 @@ export function HarnessRelationCanvas({ graph, subject, onSelectEntity, visible,
           aria-expanded={group.open} onClick={() => toggleGroup.current(group.id)}
           className="rounded border px-2 py-1 text-left text-violet-700 hover:bg-muted dark:text-violet-300">
           {group.open ? "收起" : "展开"}{group.label}（{group.relations.length}）
+          {group.relations.some((relation) => !relation.predicate_iri) && ` · ${group.relations.filter((relation) => !relation.predicate_iri).length} 项待对齐`}
         </button>)}
         {display.entities.map((entity) => <button key={entity.id} type="button"
           data-entity-id={entity.id} aria-pressed={entity.id === subject?.id}
@@ -288,7 +280,7 @@ export function HarnessRelationCanvas({ graph, subject, onSelectEntity, visible,
           return <span key={edge.id} data-relation-id={edge.id} data-state={relation.state}
             data-polarity={relation.polarity} className="rounded border px-2 py-1"
             style={{ color: relationColor(relation) }}>
-            {relation.label} · {HARNESS_STATES[relation.state]}{relationQualifier(relation) && ` · ${relationQualifier(relation)}`}
+            {relation.label} · {HARNESS_STATES[relation.state]}{!relation.predicate_iri && " · 谓词待对齐"}{relationQualifier(relation) && ` · ${relationQualifier(relation)}`}
           </span>;
         })}
       </div>

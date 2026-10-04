@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from urllib.parse import quote
 
-from rdflib import RDF, RDFS, SH, XSD, BNode, Graph, Literal, Namespace, URIRef
+from rdflib import RDF, SH, XSD, BNode, Graph, Literal, Namespace, URIRef
 from rdflib.collection import Collection
 
 from app.services.extraction.literal_normalizer import canonical_unit
@@ -22,17 +22,13 @@ from app.services.extraction.ontology_guided.tool_contracts import (
     ShaclIssue,
 )
 from app.services.extraction.ontology_guided.value_constraints import NUMERIC_DATATYPES
+from app.services.extraction.shacl_core import VALIDATION_OPTIONS, run_local_shacl
 
 PROFILE_VERSION = "metric-representation-v1"
 QUANTITY_PROFILE_VERSION = "quantity-representation-v2"
 METRIC = Namespace("urn:ontology-agent:metric:")
 PROFILE = Namespace(f"urn:ontology-agent:shapes:{PROFILE_VERSION}:")
 QUANTITY_PROFILE = Namespace(f"urn:ontology-agent:shapes:{QUANTITY_PROFILE_VERSION}:")
-VALIDATION_OPTIONS = {
-    "inference": "none", "advanced": False, "js": False, "inplace": False,
-    "do_owl_imports": False, "meta_shacl": False, "abort_on_first": False,
-    "allow_infos": False, "allow_warnings": False,
-}
 
 
 def claim_node(candidate_id: str) -> URIRef:
@@ -229,24 +225,6 @@ def unevaluated_shacl(reason: str) -> dict:
     }
 
 
-def _report_rows(report_graph: Graph) -> list[dict]:
-    fields = (
-        "focusNode", "resultPath", "value", "sourceShape",
-        "sourceConstraintComponent", "resultSeverity",
-    )
-    rows = []
-    for node in report_graph.subjects(RDF.type, SH.ValidationResult):
-        row = {
-            name: str(value) if (value := report_graph.value(node, SH[name])) is not None else None
-            for name in fields
-        }
-        row["message"] = sorted(str(message) for message in report_graph.objects(
-            node, SH.resultMessage,
-        ))
-        rows.append(row)
-    return sorted(rows, key=lambda row: tuple(str(row[key]) for key in fields))
-
-
 def validate_graph(
     data_graph: Graph, *, slot: SlotSpec, expected_focus_nodes: list[str],
     quantity_policy: QuantityPolicy | None = None, source_unit: str | None = None,
@@ -260,37 +238,24 @@ def validate_graph(
     if quantity_policy is not None:
         result["profile"] = QUANTITY_PROFILE_VERSION
     expected = set(expected_focus_nodes)
-    # SHACL targetClass includes explicit subclasses without enabling inference.
-    target_class = METRIC.QuantityClaim if quantity_policy is not None else METRIC.LiteralClaim
-    classes = {target_class}
-    pending = [target_class]
-    while pending:
-        for subclass in data_graph.subjects(RDFS.subClassOf, pending.pop()):
-            if subclass not in classes:
-                classes.add(subclass)
-                pending.append(subclass)
-    actual = {str(node) for cls in classes for node in data_graph.subjects(RDF.type, cls)}
-    coverage = result["coverage"]
-    coverage.update(
-        expected_focus_nodes=sorted(expected), actual_focus_nodes=sorted(actual),
-        missing_focus_nodes=sorted(expected - actual),
-        unexpected_focus_nodes=sorted(actual - expected),
-        complete=bool(expected) and actual == expected,
-    )
     try:
-        from pyshacl import validate
-
         shapes = (_quantity_profile(slot, quantity_policy, source_unit)
                   if quantity_policy is not None else _profile(slot))
-        conforms, report_graph, report_text = validate(
-            data_graph, shacl_graph=shapes, **VALIDATION_OPTIONS,
-        )
-        if not isinstance(report_graph, Graph):
-            raise RuntimeError(f"SHACL validation failure: {report_graph}")
+        execution = run_local_shacl(data_graph, shapes, expected_focus_nodes=expected_focus_nodes)
     except Exception as exc:
         result.update(execution_status="failed", issues=[f"{type(exc).__name__}: {exc}"])
         return result
-    rows = _report_rows(report_graph)
+    result.update({k: execution[k] for k in ("execution_status", "evaluated", "conforms",
+                                            "report", "report_text", "issues")})
+    coverage = result["coverage"]
+    coverage.update(execution["coverage"])
+    actual = set(coverage["actual_focus_nodes"])
+    coverage.update(missing_focus_nodes=sorted(expected - actual),
+                    unexpected_focus_nodes=sorted(actual - expected))
+    if execution["execution_status"] != "completed":
+        return result
+    rows, conforms, report_text = (
+        execution["report"], execution["conforms"], execution["report_text"])
     root = QUANTITY_PROFILE.Claim if quantity_policy is not None else PROFILE.Claim
     coverage["executed_shapes"] = sorted(str(shape) for shape in (
         {root, *shapes.objects(root, SH.property)} if actual else set()

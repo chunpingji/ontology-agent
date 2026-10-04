@@ -156,11 +156,14 @@ def apply_bindings(engine, window, answer, registry, allowed_properties):
                 identifiers.append({"property_iri": item.property_iri, "reference": value,
                                     "source_candidates": candidates})
             local = f"{alias}_{index + 1}"
-            mentions.append({"local_id": local, "anchor": member.anchor.model_dump(),
+            mentions.append({"local_id": local,
+                             "candidate_class_iri": original[alias].get("class_iri"),
+                             "anchor": member.anchor.model_dump(),
                              "role": member.role, "evidence": member.evidence, "field_ids": [],
                              "source_fields": [{"label": None, "value": i.quote.model_dump()}
                                                for i in member.identifiers]})
-            key = identity("mention", anchor, member.role)
+            key = identity("mention", engine.ir.document_hash, anchor["source_id"],
+                           anchor["start"], anchor["end"])
             if key in bindings:
                 raise ValueError("binding_duplicate_member")
             bindings[key] = {"grouping": group.grouping, "reason": group.reason,

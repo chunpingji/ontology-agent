@@ -38,18 +38,66 @@ const exports = loadModule(componentPath);
 const helpers = loadModule(path.join(srcRoot, "lib/source-harness.ts"));
 const { rootedCircleLayout } = loadModule(path.join(srcRoot, "lib/source-harness-graph-layout.ts"));
 
+test("canonical duplicate relations display once and retain original assertions and sources", () => {
+  const value = graph();
+  value.entities.push({ ...entity, id: "root", role: "document_root", label: "报告" });
+  const first = { id: "r1", subject_id: "root", object_id: entity.id,
+    subject_mention_id: "root", object_mention_id: "mention-a", predicate_iri: "urn:describes",
+    label: "描述", state: "candidate", reason: "第一处关系依据", polarity: "positive", conditions: [],
+    verification, calibration: null, card: null, predicate: null, evidence: [source] };
+  const secondSource = { ...source, source_id: "s2", text: "另一处原文依据" };
+  const second = { ...first, id: "r2", object_mention_id: "mention-b", reason: "第二处关系依据",
+    evidence: [secondSource, source] };
+  value.relations = [second, first];
+  const before = JSON.stringify(value);
+  const hierarchy = helpers.buildHarnessHierarchy(value);
+  assert.equal(hierarchy.relations.length, 1);
+  assert.equal(hierarchy.outgoing.get("root").length, 1);
+  const combined = hierarchy.relations[0];
+  assert.equal(combined.assertions.length, 2);
+  assert.deepEqual(Array.from(combined.assertions, (row) => row.object_mention_id), ["mention-a", "mention-b"]);
+  assert.deepEqual(Array.from(combined.evidence, (ref) => ref.source_id), [source.source_id, "s2"]);
+  const rows = helpers.harnessTreeRows(hierarchy, new Set(value.entities.map((item) => item.id)),
+    2, new Map(), true).rows.filter((row) => row.kind === "entity" && row.relation);
+  assert.equal(rows.length, 1);
+  const html = render(exports.HarnessCandidates, { graph: value, selectedEntity: entity.id,
+    onSelectEntity() {}, onSource() {} });
+  assert.match(html, /原始关系依据（2 条）/);
+  assert.match(html, /第一处关系依据/);
+  assert.match(html, /第二处关系依据/);
+  assert.match(html, /另一处原文依据/);
+  assert.equal(JSON.stringify(value), before);
+});
+
+test("relation grouping preserves polarity, conditions, verdicts, predicates and distinct mentions", () => {
+  const base = { id: "r", subject_id: "document", object_id: "a", predicate_iri: "urn:uses",
+    label: "使用", state: "accepted", polarity: "positive", conditions: [], evidence: [source] };
+  const different = [
+    { polarity: "negative" }, { polarity: "uncertain" }, { conditions: ["条件一"] },
+    { conditions: ["条件二"] }, { state: "candidate" }, { state: "rejected" },
+    { state: "unresolved" }, { object_id: "b" }, { subject_id: "another-subject" },
+    { predicate_iri: "urn:contains" }, { predicate_iri: null }, { predicate_iri: null },
+  ];
+  const rows = [base, ...different.map((change, i) => ({ ...base, id: `r${i}`, ...change }))];
+  const grouped = helpers.groupHarnessRelations(rows);
+  assert.equal(grouped.length, rows.length);
+  assert.ok(grouped.every((item) => item.assertions.length === 1));
+});
+
 const verification = { method: null, rule_id: null, rule_version: null, semantic_verdict: null };
 const source = { source_id: "source:one", text: "样品甲", start: 0, end: 3, page: 2, section_id: "s1", block_id: "b1" };
-const mention = { id: "object:1", label: "样品甲", role: "样品", class_iri: null, class_label: null, state: "unresolved", reason: "原文指称已定位，类型限定不足", evidence: [source] };
+const mention = { parent_mention_id: null, refined_member_ids: [], calibration: null, verification, id: "object:1", label: "样品甲", role: "样品", class_iri: null, class_label: null, state: "unresolved", reason: "原文指称已定位，类型限定不足", evidence: [source] };
 const entity = { ...mention, mentions: [mention] };
 function graph() {
   return {
     protocol: "document-harness-v2", run_id: "run", revision: 1, status: "running", stage: "discover",
-    progress: { completed_calls: 7, candidate_count: 4, fact_count: 0, phase: "reading", reading_windows: { total: 10, saved: 2, complete: 1, incomplete: 1, active: 2 }, scope_complete: false,
+    progress: { completed_calls: 7, candidate_count: 4, fact_count: 0, phase: "discovery", reading_windows: { total: 10, saved: 2, complete: 1, incomplete: 1, active: 2 }, scope_complete: false,
       reading: { total_characters: 4000, processed_characters: 800, complete_characters: 300, complete: false },
       work_counts: { ready: 2, waiting: 3, pruned: 4, done: 5, failed: 0 },
       candidate_scope_limited: true, rule_verified_count: 0, llm_verified_count: 0,
-      stage_costs: [{ stage: "discover", calls: 5, seconds: 123.4, input_tokens: 4000, output_tokens: 2000, unmeasured_attempts: 0 }] },
+      phase_work_counts: Object.fromEntries(["discovery", "skeleton", "semantic", "deterministic"].map((phase) => [phase, { ready: 0, waiting: 0, pruned: 0, done: 0, failed: 0 }])),
+      calibration_counts: Object.fromEntries(["identifier", "datatype", "unit", "shacl"].map((name) => [name, { not_run: 0, passed: 0, invalid: 0, incomplete: 0, not_applicable: 0, error: 0 }])),
+      stage_costs: [{ phase: "discovery", stage: "discover", calls: 5, seconds: 123.4, input_tokens: 4000, output_tokens: 2000, unmeasured_attempts: 0 }] },
     entities: [entity], coreferences: [], properties: [], relations: [], relation_groups: [], candidate_work: [], interpretation_tasks: [], observations: [], targets: [],
   };
 }
@@ -68,7 +116,7 @@ test("options remain a visible group with a separate unresolved timing judgment"
     id: "g", subject_id: entity.id, object_ids: [entity.id, "other"],
     predicate_iri: "urn:uses", label: "使用对象", card: null, predicate: null,
     participation: "options", selection: "exactly_one", timing: "unspecified",
-    timing_state: "unresolved", timing_reason: "原文未说明时间", state: "accepted",
+    ordered_object_ids: null, order_evidence: [], calibration: null, timing_state: "unresolved", timing_reason: "原文未说明时间", state: "accepted",
     reason: "两个对象是候选选项", polarity: "positive", conditions: [], evidence: [source],
   });
   const html = render(exports.HarnessCandidates, {
@@ -82,7 +130,7 @@ test("options remain a visible group with a separate unresolved timing judgment"
 
 test("untyped referents retain fields, reasons and exact source text without forcing an ontology identity", () => {
   const value = graph();
-  value.properties = [{ verification, id: "field:1", subject_id: entity.id, predicate_iri: null, label: "样品编号", value: "N/A", source_value: "N/A", source_unit: null, value_component: "whole", state: "unresolved", reason: "缺失标记保留为观察", evidence: [{ ...source, text: "样品编号：N/A" }] }];
+  value.properties = [{ verification, id: "field:1", subject_id: entity.id, predicate_iri: null, label: "样品编号", value: "N/A", source_value: "N/A", calibration: null, source_unit_evidence: [], source_unit: null, value_component: "whole", state: "unresolved", reason: "缺失标记保留为观察", evidence: [{ ...source, text: "样品编号：N/A" }] }];
   value.observations = [observation({ id: "observation:1", kind: "relation", label: "原文关系措辞", field_id: null, value: null, reason: "当前卡没有匹配的合法谓词" })];
   const html = render(exports.HarnessCandidates, { graph: value, selectedEntity: entity.id, onSelectEntity() {}, onSource() {} });
   assert.match(html, /类型限定不足/);
@@ -113,7 +161,7 @@ function mixedObservationGraph() {
     { ...entity, id: "material", label: "物料甲", class_iri: card.iri, class_label: card.label, state: "accepted" }];
   value.properties = [{ verification, id: "p", field_id: "f", subject_id: "material", card, predicate,
     predicate_iri: predicate.iri, label: predicate.label, value: "ABC", source_value: "ABC",
-    source_unit: null, value_component: "whole", value_evidence: [source], state: "accepted", reason: "原文标识已核对", evidence: [source] }];
+    calibration: null, source_unit_evidence: [], source_unit: null, value_component: "whole", value_evidence: [source], state: "accepted", reason: "原文标识已核对", evidence: [source] }];
   value.observations = [observation({ id: "mixed", label: "物料编号", value: "ABC",
     candidate_subject_ids: ["report", "material"], discovery_cards: [
       { iri: "urn:schema:Report", label: "报告", role: "document_properties" }, { ...card, role: "reading" },
@@ -207,7 +255,7 @@ test("an incomplete observation response does not crash or hide other entity res
 
 test("a derived bound displays its original full range and unit", () => {
   const value = graph();
-  value.properties = [{ verification, id: "p", subject_id: entity.id, predicate_iri: "urn:bound", label: "负载下限", value: "3.8", source_value: "3.8–6.6 kg", source_unit: "kg", value_component: "lower", state: "candidate", reason: "待核对", evidence: [source] }];
+  value.properties = [{ verification, id: "p", subject_id: entity.id, predicate_iri: "urn:bound", label: "负载下限", value: "3.8", source_value: "3.8–6.6 kg", calibration: null, source_unit_evidence: [source], source_unit: "kg", value_component: "lower", state: "candidate", reason: "待核对", evidence: [source] }];
   const html = render(exports.HarnessCandidates, { graph: value, selectedEntity: entity.id, onSelectEntity() {}, onSource() {} });
   assert.match(html, /原值：3.8–6.6 kg/);
   assert.match(html, /下限（kg）/);
@@ -217,7 +265,7 @@ test("a selected property value retains the full observation and its own exact s
   const value = graph();
   const original = { ...source, text: "管理标识： AX-07", start: 0, end: 11 };
   const selected = { ...original, text: "AX-07", start: 6, end: 11 };
-  value.properties = [{ verification, id: "p-span", subject_id: entity.id, predicate_iri: "urn:code", label: "管理标识", value: "AX-07", source_value: original.text, source_unit: null, value_component: "span", value_evidence: [selected], state: "accepted", reason: "原文值与主体归属已核对", evidence: [original] }];
+  value.properties = [{ verification, id: "p-span", subject_id: entity.id, predicate_iri: "urn:code", label: "管理标识", value: "AX-07", source_value: original.text, calibration: null, source_unit_evidence: [], source_unit: null, value_component: "span", value_evidence: [selected], state: "accepted", reason: "原文值与主体归属已核对", evidence: [original] }];
   const html = render(exports.HarnessCandidates, { graph: value, selectedEntity: entity.id, onSelectEntity() {}, onSource() {} });
   assert.match(html, /管理标识：AX-07/);
   assert.match(html, /原值：管理标识： AX-07/);
@@ -273,7 +321,7 @@ test("calls and candidates do not appear as accepted facts or document completen
   assert.match(html, /原文范围已处理 800 \/ 4,000 字符/);
   assert.match(html, /完整覆盖 300 \/ 4,000 字符/);
   assert.match(html, /已保存 2 \/ 10，处理中 2，覆盖完整 1，覆盖不完整 1/);
-  assert.match(html, /当前阶段：局部阅读/);
+  assert.match(html, /当前阶段：原文发现/);
   assert.doesNotMatch(html, /父子批次|已发现/);
   assert.match(html, /已处理任务/);
   assert.match(html, /等待条件或补证/);
@@ -286,14 +334,14 @@ test("finished reading preserves unresolved work and does not claim fact complet
   value.status = "finished";
   value.progress.reading = { total_characters: 4000, processed_characters: 4000, complete_characters: 4000, complete: true };
   value.progress.scope_complete = true;
-  assert.equal(helpers.harnessCompletionMessage(value), "本轮选定范围已处理；仍有未核对或未决项");
+  assert.equal(helpers.harnessCompletionMessage(value), "本轮选定范围已处理；仍有未决或检查问题");
   value.progress.work_counts = { ready: 0, waiting: 0, pruned: 0, done: 50, failed: 0 };
   value.progress.candidate_scope_limited = false;
-  assert.equal(helpers.harnessCompletionMessage(value), "本轮选定范围已处理；仍有未核对或未决项");
+  assert.equal(helpers.harnessCompletionMessage(value), "本轮选定范围已处理；仍有未决或检查问题");
   value.entities = [];
   assert.equal(helpers.harnessCompletionMessage(value), "本轮选定范围已处理");
   value.progress.candidate_scope_limited = true;
-  assert.equal(helpers.harnessCompletionMessage(value), "本轮选定范围已处理；仍有未核对或未决项");
+  assert.equal(helpers.harnessCompletionMessage(value), "本轮选定范围已处理；仍有未决或检查问题");
   value.progress.reading.complete = false;
   value.progress.scope_complete = false;
   assert.equal(helpers.harnessCompletionMessage(value), "原文范围尚未处理完成");
@@ -490,7 +538,7 @@ test("rooted circular layout centers the document root and separates connected a
 test("root selection never guesses the first entity and root attributes remain accessible", () => {
   const value = hierarchyGraph();
   value.properties = [{ verification, id: "root-p", subject_id: "root", label: "文档编号", predicate_iri: null, card: null, predicate: null,
-    value: "ROOT-1", source_value: "ROOT-1", source_unit: null, value_component: "whole", value_evidence: [],
+    value: "ROOT-1", source_value: "ROOT-1", calibration: null, source_unit_evidence: [], source_unit: null, value_component: "whole", value_evidence: [],
     state: "candidate", reason: "待核对", evidence: [] }];
   const html = render(exports.HarnessCandidates, { graph: value, selectedEntity: null, onSelectEntity() {}, onSource() {} });
   assert.match(html, /data-entity-id="root" aria-pressed="true"/);
@@ -629,7 +677,7 @@ test("missing coreference data does not prevent opening or searching entity deta
   for (const missing of ["all", "selected-mentions", "other-mentions", "coreferences"]) {
     const value = graph();
     value.entities = [{ ...entity }, { ...entity, id: "other", mentions: [{ ...mention, id: "other" }] }];
-    value.properties = [{ verification, id: "field:1", subject_id: entity.id, predicate_iri: null, label: "样品编号", value: "AX-07", source_value: "AX-07", source_unit: null, value_component: "whole", state: "unresolved", reason: "主体归属待核对", evidence: [source] }];
+    value.properties = [{ verification, id: "field:1", subject_id: entity.id, predicate_iri: null, label: "样品编号", value: "AX-07", source_value: "AX-07", calibration: null, source_unit_evidence: [], source_unit: null, value_component: "whole", state: "unresolved", reason: "主体归属待核对", evidence: [source] }];
     if (missing === "all") for (const item of value.entities) delete item.mentions;
     if (missing === "selected-mentions") delete value.entities[0].mentions;
     if (missing === "other-mentions") delete value.entities[1].mentions;
@@ -664,4 +712,133 @@ test("merged entity retains aliases, same/different/unresolved reasons and sourc
   value.coreferences[0].applied = false;
   const conflict = render(exports.HarnessCandidates, { graph: value, selectedEntity: entity.id, onSelectEntity() {}, onSource() {} });
   assert.match(conflict, /组内存在未决、缺失或冲突判定/);
+});
+
+
+test("four phases expose separate work and calibration progress", () => {
+  const value = graph();
+  value.progress.phase_work_counts.semantic.failed = 1;
+  value.progress.calibration_counts.unit.incomplete = 2;
+  for (const [phase, label] of Object.entries(helpers.HARNESS_PHASES)) {
+    value.progress.phase = phase;
+    const html = render(exports.HarnessProgress, { graph: value });
+    assert.match(html, new RegExp(`当前阶段：${label}`));
+    assert.match(html, /语义校准：已处理 0 · 待处理 0 · 未决\/剪枝 0 · 失败 1/);
+    assert.match(html, /单位：通过 0 · 待检查 0 · 不符合 0 · 输入不足 2/);
+  }
+  value.status = "failed";
+  assert.equal(helpers.harnessCompletionMessage(value), "处理失败；已保存图谱和检查结果可查看");
+});
+
+test("different unaligned labels keep independent navigation groups", () => {
+  const value = hierarchyGraph();
+  value.relations = value.relations.slice(0, 2).map((row) => ({ ...row, predicate_iri: null }));
+  const hierarchy = helpers.buildHarnessHierarchy(value);
+  const rows = helpers.harnessTreeRows(hierarchy, new Set(value.entities.map((e) => e.id)), Infinity, new Map(), false).rows;
+  const groups = rows.filter((row) => row.kind === "predicate");
+  assert.equal(groups.length, 2);
+  assert.equal(new Set(groups.map((row) => row.id)).size, 2);
+  assert.ok(groups.every((row) => row.predicateIri === null));
+});
+
+test("same-label unaligned relations share one folder without merging assertions", () => {
+  const value = hierarchyGraph();
+  value.relations = value.relations.slice(0, 2).map((row) => ({
+    ...row, predicate_iri: null, label: "使用设备", state: "candidate",
+  }));
+  const snapshot = JSON.stringify(value);
+  const hierarchy = helpers.buildHarnessHierarchy(value);
+  const visible = new Set(value.entities.map((item) => item.id));
+  const rows = helpers.harnessTreeRows(hierarchy, visible, Infinity, new Map(), false).rows;
+  const groups = rows.filter((row) => row.kind === "predicate");
+  assert.equal(groups.length, 1);
+  assert.equal(groups[0].pendingCount, 2);
+  assert.equal(groups[0].predicateIri, null);
+  assert.equal(hierarchy.relations.length, 2);
+  assert.ok(hierarchy.relations.every((row) => row.predicate_iri === null && row.assertions.length === 1));
+  const collapsed = helpers.harnessTreeRows(hierarchy, visible, Infinity, new Map([[groups[0].id, false]]), false).rows;
+  assert.equal(collapsed.filter((row) => row.kind === "entity").length, 1);
+  assert.equal(JSON.stringify(value), snapshot);
+});
+
+test("unaligned equipment joins the unique same-label folder with independent status and stable navigation", () => {
+  const value = hierarchyGraph();
+  const relation = (id, subject_id, object_id, predicate_iri, extra = {}) => ({
+    verification, id, subject_id, object_id, predicate_iri, label: "使用设备", state: "candidate",
+    polarity: "positive", conditions: [], evidence: [source], ...extra,
+  });
+  value.relations = [relation("00", "root", "a", null),
+    relation("01", "root", "b", "urn:usesEquipment", { state: "accepted" }),
+    relation("02", "root", "c", null, { state: "unresolved" }),
+    relation("03", "root", "d", null, { label: "设备需求" }),
+    relation("04", "a", "detached", null),
+    relation("05", "root", "negative", null, { polarity: "negative" }),
+    relation("06", "root", "conditional", null, { conditions: ["清洗时"] })];
+  const snapshot = JSON.stringify(value);
+  const hierarchy = helpers.buildHarnessHierarchy(value);
+  const visible = new Set(value.entities.map((item) => item.id));
+  const rows = helpers.harnessTreeRows(hierarchy, visible, Infinity, new Map(), false).rows;
+  const group = rows.find((row) => row.kind === "predicate" && row.subjectId === "root" && row.label === "使用设备");
+  assert.equal(rows.filter((row) => row.kind === "predicate" && row.subjectId === "root" && row.label === "使用设备").length, 1);
+  assert.equal(group.predicateIri, "urn:usesEquipment");
+  assert.equal(group.pendingCount, 2);
+  assert.equal(rows.find((row) => row.kind === "entity" && row.entity.id === "a").relation.predicate_iri, null);
+  assert.equal(rows.find((row) => row.kind === "entity" && row.entity.id === "b").relation.state, "accepted");
+  assert.equal(rows.find((row) => row.kind === "entity" && row.entity.id === "c").relation.state, "unresolved");
+  assert.ok(!rows.some((row) => row.kind === "entity" && ["negative", "conditional"].includes(row.entity.id)));
+  assert.ok(helpers.harnessAncestorPredicateGroupIds(hierarchy, "a").has(group.id));
+  assert.equal(helpers.harnessAncestorPredicateGroupIds(hierarchy, "detached").size, 2);
+  const collapsed = helpers.harnessTreeRows(hierarchy, visible, Infinity, new Map([[group.id, false]]), false).rows;
+  assert.deepEqual(Array.from(collapsed.filter((row) => row.kind === "entity"), (row) => row.entity.id), ["root", "d"]);
+  const html = render(exports.HarnessCandidates, { graph: value, selectedEntity: "root", onSelectEntity() {}, onSource() {} });
+  const tree = html.match(/<ul[^>]*aria-label="分层实体列表"[^>]*>(.*?)<\/ul>/s)[1];
+  assert.equal((tree.match(/data-predicate-iri="urn:usesEquipment" data-subject-id="root"/g) ?? []).length, 1);
+  assert.match(tree, /2.*项待对齐/);
+  assert.match(tree, /谓词待对齐/);
+  const canvas = render(exports.HarnessRelationCanvas, { graph: value, subject: value.entities.find((e) => e.id === "root"), onSelectEntity() {} });
+  assert.equal((canvas.match(/data-predicate-iri="urn:usesEquipment" data-subject-id="root"/g) ?? []).length, 1);
+  assert.match(canvas, /data-relation-id="relation:05"[^>]*data-polarity="negative"/);
+  assert.match(canvas, /清洗时/);
+  assert.equal(JSON.stringify(value), snapshot);
+});
+
+test("ambiguous same-label ontology predicates and different subjects remain separate", () => {
+  const value = predicateGroupGraph();
+  value.relations.push({ ...value.relations[0], id: "06", object_id: "negative", predicate_iri: null });
+  const hierarchy = helpers.buildHarnessHierarchy(value);
+  const groups = hierarchy.predicateGroups.filter((group) => group.subjectId === "root" && group.label === "使用物料");
+  assert.equal(groups.length, 3, "two ontology predicates and one unaligned folder");
+  assert.equal(groups.find((group) => group.predicateIri === null).relations[0].id, "06");
+  assert.notEqual(hierarchy.predicateGroupByRelation.get("05").id, hierarchy.predicateGroupByRelation.get("01").id);
+});
+
+test("calibration shows original and exact canonical value with unit evidence", () => {
+  const value = graph();
+  value.properties = [{ verification, id: "mass", subject_id: entity.id,
+    predicate_iri: "urn:mass", label: "质量", value: "500 g", source_value: "500 g",
+    source_unit: "g", source_unit_evidence: [source], value_component: "whole", value_evidence: [source],
+    state: "accepted", reason: "原文获证", evidence: [source],
+    calibration: { input_hash: "hash", checks: Object.fromEntries(["identifier", "datatype", "unit", "shacl"].map((key) => [key, { status: "passed", reason_code: null, details: {} }])),
+      literal: { kind: "number", normalized_value: "0.5", canonical_unit: "kg", operator: "eq", conversion_record: { factor: "0.001", offset: "0" } } } }];
+  const html = render(exports.HarnessPropertyDetail, { item: value.properties[0], onSource() {} });
+  assert.match(html, /500 g/);
+  assert.match(html, /规范值：0.5 kg/);
+  assert.match(html, /换算因子：0.001 · 偏移：0/);
+  assert.match(html, /SHACL：通过/);
+  value.properties[0].calibration.literal = {
+    kind: "range", raw_value: "500–1000 g", normalized_value: null,
+    lower: "0.5", upper: "1", lower_inclusive: true, upper_inclusive: false,
+    canonical_unit: "kg", operator: "eq", conversion_record: {},
+  };
+  const range = render(exports.HarnessPropertyDetail, { item: value.properties[0], onSource() {} });
+  assert.match(range, /规范值：\[0\.5, 1\) kg/);
+  value.properties[0].calibration.literal.lower_inclusive = false;
+  value.properties[0].calibration.literal.upper_inclusive = true;
+  const oppositeBounds = render(exports.HarnessPropertyDetail, { item: value.properties[0], onSource() {} });
+  assert.match(oppositeBounds, /规范值：\(0\.5, 1\] kg/);
+  value.properties[0].calibration.literal = null;
+  value.properties[0].calibration.checks.unit.status = "incomplete";
+  const incomplete = render(exports.HarnessPropertyDetail, { item: value.properties[0], onSource() {} });
+  assert.match(incomplete, /单位：输入不足/);
+  assert.doesNotMatch(incomplete, /规范值/);
 });

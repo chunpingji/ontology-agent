@@ -103,7 +103,7 @@ def test_value_selection_keeps_original_observation_and_does_not_block_other_fie
                             "value_component": "span" if chosen else "whole",
                             "value_quote": chosen,
                             "confidence": 0.99,
-                        }
+                         "unit_quote": None}
                     ],
                     "reason": "按属性含义选取值，完整观察不变",
                 }
@@ -195,8 +195,8 @@ def test_type_concern_preserves_subject_and_never_rewrites_assertion_verdict(inp
         },
         "cursor": {
             "main": {
-                "entity_window_id": window.id,
-                "active_batches": {}, "phase": "entities",
+                "skeleton_window_id": window.id,
+                "active_batches": {}, "phase": "semantic", "semantic_step": "assertions", "planned_steps": [],
                 "stage": "evidence_review",
 
             }
@@ -275,9 +275,9 @@ def test_span_does_not_borrow_another_occurrence_or_turn_a_missing_marker_into_v
         value_component="span",
         value_quote={"source_id": source["source_id"], "text": value, "occurrence": occurrence},
         confidence=0.99,
-    )
+     unit_quote=None)
     with pytest.raises(ValueError, match=error):
-        property_value(field, mapping, window=window, ir=ir, confirmed=True)
+        property_value(field, mapping, window=window, ir=ir)
 
 
 def test_span_contract_requires_exact_quote_and_type_concerns_require_real_endpoint_support():
@@ -292,7 +292,7 @@ def test_span_contract_requires_exact_quote_and_type_concerns_require_real_endpo
         "value_component": "span",
         "value_quote": {"source_id": "S1", "text": "A"},
         "confidence": 0.9,
-    }
+     "unit_quote": None}
     answer = {"properties": {"F1": {"mappings": [mapping], "reason": "原文取值"}}}
     jsonschema.validate(answer, schema)
     for change in ({"value_quote": None}, {"value_component": "whole"}):

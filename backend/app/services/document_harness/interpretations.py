@@ -58,6 +58,8 @@ def _candidates(run, state):
     candidates = {}
     accepted = set()
     for group in state.get("relation_groups", {}).values():
+        if not group.get("predicate_iri"):
+            continue
         base = (group["subject_id"], group["predicate_iri"],
                 tuple(sorted(group["object_ids"])))
         if group["state"] == "accepted":

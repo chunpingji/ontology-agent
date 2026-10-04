@@ -56,6 +56,7 @@ class PropertyCard(FrozenCard):
     domain: tuple[ClassExpression, ...] = ()
     range: tuple[ClassExpression, ...] = ()
     datatype_iris: tuple[str, ...] = ()
+    canonical_unit: str | None = None
     identity_key: bool = False
     annotations: tuple[AnnotationValue, ...] = ()
     constraint_status: TypingLiteral["resolved", "unresolved"] = "resolved"
@@ -418,12 +419,17 @@ def catalog_from_graph(
                     reasons = (() if datatypes else ("missing_or_unsatisfied_datatype_range",))
                     if unresolved:
                         reasons += ("unresolved_datatype_constraint",)
+                    units = {str(value) for predicate, value in graph.predicate_objects(ref)
+                             if str(predicate) == "https://ontology.pharma-gmp.cn/slpra/integration/canonicalUnit"}
+                    if len(units) > 1:
+                        reasons += ("canonical_unit_conflict",)
                     groups = (
                         group for ancestor in ancestors[class_iri]
                         for group in key_groups.get(ancestor, ())
                     )
                     properties[class_iri].append(PropertyCard(
                         **common, datatype_iris=datatypes,
+                        canonical_unit=next(iter(units)) if len(units) == 1 else None,
                         identity_key=(
                             str(ref) in identity or any(str(ref) in group for group in groups)
                         ),

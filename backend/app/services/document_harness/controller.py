@@ -6,7 +6,12 @@ from collections import defaultdict
 from copy import deepcopy
 
 from .calls import MemoryCalls
-from .continuation import restore_window_plan, serialize_window_plan, split_reading_window
+from .continuation import (
+    remaining_reading_window,
+    restore_window_plan,
+    serialize_window_plan,
+    split_reading_window,
+)
 from .lookup import finish_discovery, next_discovery
 from .model import request_size
 from .observations import value_components
@@ -18,7 +23,7 @@ from .protocols import (
     stage_schema,
     validate_paid_output,
 )
-from .ranking import CardRanker, reading_guidance
+from .ranking import CardRanker, discovery_guidance, reading_card
 from .reading import decode_local_discovery, merge_local_discovery
 from .referents import binding_input, run_referent_alignment
 from .source import build_windows, identity, quote_for_reference, references_cover
@@ -86,7 +91,7 @@ class Engine:
         self.submit_prepared, self.collect_prepared = submit_prepared, collect_prepared
         self.settle_prepared, self.call_result = settle_prepared, call_result
         if (
-            self.execution_policy["flow"] != "local_reading"
+            self.execution_policy["flow"] != "four_stage"
             or type(self.execution_policy["reading_concurrency"]) is not int
             or self.execution_policy["reading_concurrency"] not in (1, 2)
         ):
@@ -100,7 +105,7 @@ class Engine:
                 )
             ]
             if self.state.get("windows")
-            else build_windows(ir, max_chars=4800, max_sources=40)
+            else build_windows(ir)
         )
         self.source_index = build_source_index(ir, self.state)
         self.work_index = WorkIndex(self.state)
@@ -169,6 +174,9 @@ class Engine:
         if request_size(stage, payload, schema) > self.max_request_bytes:
             raise ValueError("HARNESS_EVIDENCE_CONTEXT_TOO_LARGE")
         cursor = self.state.get("cursor", {}).get("main", {})
+        payload = {**payload, "execution_phase": cursor.get("phase", "discovery")}
+        if cursor.get("phase") == "deterministic":
+            raise ValueError("harness_deterministic_model_call_forbidden")
         target = {
             "window_id": window.id if window else None,
             "step": step or stage,
@@ -244,23 +252,18 @@ class Engine:
         return response_model.model_validate(output), batch["batch_id"]
 
     def run(self):
-        # A new Engine is entered only for the initial run or explicit continue.
-        # Keep the prepared batch and paid answer, but make failed work eligible.
-        failed = {
-            key: {**row, "status": "ready", "reason_code": None}
-            for key, row in self.state.get("work", {}).items()
-            if row["status"] == "failed"
-        }
-        if failed:
-            self.commit({"work": failed})
+        self.resume_failed_work()
         if not self.state.get("cursor"):
             root = self.catalog.classes[self.catalog.root_class_iri]
             self.commit(
                 {
                     "cursor": {
                         "main": {
-                            "phase": "reading",
-                            "entity_window_id": None,
+                            "phase": "discovery",
+                            "skeleton_window_id": None,
+                            "semantic_step": None,
+                            "semantic_window_id": None,
+                            "planned_steps": [],
                             "active_batches": {},
                             "stage": "discover",
                             "scope_complete": False,
@@ -290,52 +293,22 @@ class Engine:
                 }
             )
             self.update_reading()
-        planned = set()
         try:
             while not self.should_stop():
                 cursor = self.state["cursor"]["main"]
                 phase = cursor["phase"]
-                if phase == "reading":
+                if phase == "discovery":
                     self.read_windows()
-                elif phase == "entities":
-                    available = [
-                        row
-                        for row in self.state["windows"].values()
-                        if row["entity_phase"] != "done"
-                    ]
-                    if not available:
-                        self.set_phase("coreference", "coreference_review")
-                        continue
-                    key = cursor.get("entity_window_id")
-                    if key is None:
-                        row = min(available, key=lambda row: (row["order"], row["plan"]["id"]))
-                        key = row["plan"]["id"]
-                        self.commit(
-                            {
-                                "cursor": {
-                                    "main": {
-                                        **cursor,
-                                        "entity_window_id": key,
-                                        "stage": row["entity_phase"],
-                                    }
-                                }
-                            }
-                        )
-                    window = next(w for w in self.windows if w.id == key)
-                    getattr(self, self.state["windows"][key]["entity_phase"])(window)
-                elif phase in {"coreference", "graph"}:
-                    from .work_execution import plan_coreference_work, plan_graph_work
+                elif phase == "skeleton":
+                    self.run_skeleton()
+                elif phase == "semantic":
+                    self.run_semantic()
+                elif phase == "deterministic":
+                    from .work_execution import plan_calibration_work
 
-                    if phase not in planned:
-                        (plan_coreference_work if phase == "coreference" else plan_graph_work)(self)
-                        planned.add(phase)
-                    if self.drain_work(None):
-                        continue
-                    if any(w["status"] == "failed" for w in self.state.get("work", {}).values()):
-                        raise ValueError("harness_work_failed")
-                    self.set_phase("graph", "planning") if phase == "coreference" else (
+                    self.plan_once("deterministic", plan_calibration_work)
+                    if not self.drain_work(None):
                         self.set_phase("done", "complete")
-                    )
                 elif phase == "done":
                     self.update_reading(stage="complete")
                     return
@@ -349,14 +322,101 @@ class Engine:
             if self._memory_calls:
                 self._memory_calls.close()
 
-    def set_phase(self, phase, stage):
+    def resume_failed_work(self):
+        failed = [row for row in self.state.get("work", {}).values()
+                  if row["status"] == "failed" and row.get("retryable", False)]
+        if not failed:
+            return
+        phases = ("skeleton", "semantic", "deterministic")
+        phase = min((row["phase"] for row in failed), key=phases.index)
+        steps = {"referent_alignment": "referents", "entity_review": "entities",
+                 "coreference_review": "coreference"}
+        semantic_step = min((steps.get(row["kind"], "assertions") for row in failed
+                             if row["phase"] == "semantic"),
+                            key=("referents", "entities", "coreference", "assertions").index,
+                            default="assertions")
+        cursor = self.state["cursor"]["main"]
+        self.commit({"work": {row["id"]: {**row, "status": "ready", "reason_code": None}
+                              for row in failed},
+                     "cursor": {"main": {**cursor, "phase": phase,
+                                          "semantic_step": semantic_step,
+                                          "stage": "planning"}}})
+
+    def plan_once(self, marker, planner):
+        cursor = self.state["cursor"]["main"]
+        if marker in cursor["planned_steps"]:
+            return
+        changes = planner(self, commit=False)
+        current = changes.get("cursor", {}).get("main", cursor)
+        changes["cursor"] = {"main": {**current,
+                                      "planned_steps": [*current["planned_steps"], marker]}}
+        self.commit(changes)
+
+    def run_skeleton(self):
+        from .work_execution import materialize_skeleton, plan_skeleton_work
+
+        self.plan_once("skeleton:materialize", materialize_skeleton)
+        cursor = self.state["cursor"]["main"]
+        available = [row for row in self.state["windows"].values()
+                     if row["skeleton_step"] != "done"]
+        if not available:
+            self.plan_once("skeleton:references", plan_skeleton_work)
+            if not self.drain_work(None):
+                self.set_phase("semantic", "referent_alignment", semantic_step="referents")
+            return
+        key = cursor.get("skeleton_window_id")
+        if key is None:
+            row = min(available, key=lambda row: (row["order"], row["plan"]["id"]))
+            key = row["plan"]["id"]
+            self.commit({"cursor": {"main": {**cursor, "skeleton_window_id": key,
+                                             "stage": row["skeleton_step"]}}})
+        window = next(w for w in self.windows if w.id == key)
+        step = self.state["windows"][key]["skeleton_step"]
+        if step == "type_alignment":
+            self.type_alignment(window)
+        else:
+            ids = set(self.state.get("window_entities", {}).get(key, {}).get("ids", []))
+            ids.update(entity["id"] for entity in self.state["entities"].values()
+                       if entity.get("window_id") == key)
+            delta = {"entities": {eid: self.state["entities"][eid] for eid in ids},
+                     "hints": {hid: hint for hid, hint in self.state.get("hints", {}).items()
+                               if hint.get("window_id") == key}}
+            root = self.state["entities"]["document"]
+            root_fields = [fid for fid in root.get("field_ids", [])
+                           if self.field_visible(fid, window)]
+            if root_fields:
+                delta["entities"]["document"] = {**root, "field_ids": root_fields}
+            self.plan_once("skeleton:window:" + key + ":" + step,
+                           lambda engine, commit: plan_skeleton_work(
+                               engine, commit=commit, delta=delta, kind=step,
+                               include_references=False))
+            if not self.drain_work(window, kind=step):
+                self.advance("relation_alignment" if step == "property_alignment" else "done")
+
+    def run_semantic(self):
+        from .work_execution import plan_semantic_work
+
+        step = self.state["cursor"]["main"]["semantic_step"]
+        self.plan_once("semantic:" + step,
+                       lambda engine, commit: plan_semantic_work(engine, step, commit=commit))
+        if self.drain_work(None):
+            return
+        steps = ("referents", "entities", "coreference", "assertions")
+        index = steps.index(step)
+        if index == len(steps) - 1:
+            self.set_phase("deterministic", "planning")
+        else:
+            self.set_phase("semantic", "planning", semantic_step=steps[index + 1])
+
+    def set_phase(self, phase, stage, *, semantic_step=None):
         cursor = self.state["cursor"]["main"]
         if cursor["active_batches"]:
             raise ValueError("harness_phase_has_pending_batches")
         self.commit(
             {
                 "cursor": {
-                    "main": {**cursor, "phase": phase, "stage": stage, "entity_window_id": None}
+                    "main": {**cursor, "phase": phase, "stage": stage, "skeleton_window_id": None,
+                             "semantic_step": semantic_step, "semantic_window_id": None}
                 }
             }
         )
@@ -370,12 +430,14 @@ class Engine:
             "order": order,
             "depth": depth,
             "reading_state": "pending",
-            "entity_phase": "type_alignment",
+            "skeleton_step": "type_alignment",
         }
 
     def update_reading(self, *, stage=None):
         by_source, processed, total = defaultdict(list), defaultdict(list), defaultdict(list)
         for row in self.state["windows"].values():
+            for ref in row.get("completed_ranges", []):
+                by_source[ref["evidence_id"]].append((ref["start"], ref["end"]))
             for ref in row["plan"]["primary_ranges"]:
                 unit = self.ir.unit(ref["evidence_id"])
                 if unit.navigation_role or not unit.text.strip():
@@ -423,20 +485,20 @@ class Engine:
     def advance(self, stage, *, changes=None):
         changes = changes or {}
         cursor = dict(self.state["cursor"]["main"])
-        key = cursor["entity_window_id"]
+        key = cursor["skeleton_window_id"]
         row = dict(changes.get("windows", {}).get(key, self.state["windows"][key]))
-        row["entity_phase"] = "done" if stage == "planning" else stage
-        cursor["stage"] = "entity_review" if stage == "planning" else stage
-        if row["entity_phase"] == "done":
-            cursor["entity_window_id"] = None
+        row["skeleton_step"] = stage
+        cursor["stage"] = "planning" if stage == "done" else stage
+        if row["skeleton_step"] == "done":
+            cursor["skeleton_window_id"] = None
         changes.setdefault("windows", {})[key] = row
         changes["cursor"] = {"main": cursor}
         self.commit(changes)
 
-    def drain_work(self, window):
+    def drain_work(self, window, *, kind=None):
         from .work_execution import drain_work
 
-        return drain_work(self, window)
+        return drain_work(self, window, kind=kind)
 
     def observation(self, window, label, reason, evidence=(), *, kind="validation", **context):
         key = identity("observation", window.id, label, reason, evidence, kind, context)
@@ -516,23 +578,31 @@ class Engine:
         ]
 
     def discovery_input(self, window):
-        payload = window.payload()
+        payload = {**window.discovery_payload(), "execution_phase": "discovery"}
         payload["document"] = {
+            "entity_id": "document",
+            "role": "document_root",
             "label": self.state["entities"]["document"]["label"],
             "type": self.catalog.classes[self.catalog.root_class_iri].label,
+            "class_iri": self.catalog.root_class_iri,
+            "relation_guidance": reading_card(
+                self.catalog.classes[self.catalog.root_class_iri]
+            )["relations"],
             "property_guidance": [
                 {"label": prop.label, "description": prop.description}
                 for prop in self.catalog.classes[self.catalog.root_class_iri].properties
                 if prop.constraint_status == "resolved"
             ],
         }
+        payload["schema_guidance"] = discovery_guidance(self.catalog, [])
         schema = stage_schema(
             "discover",
+            class_iris=[c["iri"] for c in payload["schema_guidance"]["classes"]],
             source_ids=[s["source_id"] for s in window.sources],
             field_ids=[f["alias"] for f in window.fields],
             primary_source_ids=[r["source_id"] for r in payload["reading_scope"]],
+            quote_fragments=window.citation_choices(),
         )
-        payload["schema_guidance"] = reading_guidance(self.catalog, [])
         if request_size("discover", payload, schema) > self.max_request_bytes:
             key, item = self.observation(
                 window, "阅读输入超出预算", "调用前拆分阅读范围", kind="scope"
@@ -540,7 +610,7 @@ class Engine:
             self.finish_window(window, {"observations": {key: item}}, complete=False)
             return None
         info = self.state["windows"][window.id]
-        guidance = info.get("guidance_class_iris")
+        guidance = info.get("ranked_class_iris")
         if guidance is None:
             ranked = self.rank(
                 self.catalog,
@@ -554,18 +624,36 @@ class Engine:
                 or not set(guidance) <= set(self.catalog.reachable_class_iris)
             ):
                 raise ValueError("harness_ranking_catalog_mismatch")
-            self.commit({"windows": {window.id: {**info, "guidance_class_iris": guidance}}})
-        payload["schema_guidance"] = reading_guidance(self.catalog, guidance)
+        payload["schema_guidance"] = discovery_guidance(self.catalog, guidance)
+        class_iris = [c["iri"] for c in payload["schema_guidance"]["classes"]]
+        self.commit({"windows": {window.id: {
+            **info, "ranked_class_iris": guidance, "guidance_class_iris": class_iris,
+        }}})
+        schema = stage_schema(
+            "discover", class_iris=class_iris,
+            source_ids=[s["source_id"] for s in window.sources],
+            field_ids=[f["alias"] for f in window.fields],
+            primary_source_ids=[r["source_id"] for r in payload["reading_scope"]],
+            quote_fragments=window.citation_choices(),
+        )
+        if request_size("discover", payload, schema) > self.max_request_bytes:
+            key, item = self.observation(
+                window, "阅读输入超出预算", "调用前拆分阅读范围", kind="scope"
+            )
+            self.finish_window(window, {"observations": {key: item}}, complete=False)
+            return None
         return payload, schema
 
     def finish_window(self, window, changes, *, complete, batch_id=None):
         row = {**self.state["windows"][window.id], **changes.get("windows", {}).get(window.id, {})}
         row.pop("lookup_work", None)
-        children = (
-            split_reading_window(self.ir, window)
-            if (not complete and row["depth"] < self.execution_policy["reading_split_depth"])
-            else []
-        )
+        continued = not complete and bool(row.get("completed_ranges"))
+        if continued:
+            children = [remaining_reading_window(self.ir, window, row["completed_ranges"])]
+        elif not complete and row["depth"] < self.execution_policy["reading_split_depth"]:
+            children = split_reading_window(self.ir, window)
+        else:
+            children = []
         row["reading_state"] = "split" if children else "complete" if complete else "incomplete"
         row["children"] = [w.id for w in children]
         for i, child in enumerate(children):
@@ -573,7 +661,7 @@ class Engine:
                 child,
                 [*row["order"], i],
                 window.id,
-                row["depth"] + 1,
+                row["depth"] + int(not continued),
             )
             self.windows.append(child)
         changes.setdefault("windows", {})[window.id] = row
@@ -582,7 +670,8 @@ class Engine:
 
     def register_discovery(self, window, answer, lookup_info, *, batch_id=None):
         delta = decode_local_discovery(
-            self.ir, window, answer, lookup_info, self.state["entities"]["document"]
+            self.ir, window, answer, lookup_info, self.state["entities"]["document"],
+            class_iris=self.state["windows"][window.id].get("guidance_class_iris", []),
         )
         changes = merge_local_discovery(
             self.state,
@@ -590,6 +679,7 @@ class Engine:
             {key: row["order"] for key, row in self.state["windows"].items()},
         )
         changes.setdefault("windows", {}).setdefault(window.id, {})["result_saved"] = True
+        changes["windows"][window.id]["completed_ranges"] = delta["completed_ranges"]
         self.finish_window(window, changes, complete=delta["complete"], batch_id=batch_id)
 
     def reading_request(self, batch):
@@ -649,7 +739,7 @@ class Engine:
                         row["reading_state"] == "pending" for row in self.state["windows"].values()
                     ):
                         continue
-                    self.set_phase("entities", "type_alignment")
+                    self.set_phase("skeleton", "planning")
                     return
                 completed = self.collect_prepared(active)
                 if self.should_stop():
@@ -683,7 +773,7 @@ class Engine:
             if key in self.state["entities"]
             and (
                 window.entity_ids is not None
-                or self.state.get("cursor", {}).get("main", {}).get("phase") != "entities"
+                or self.state.get("cursor", {}).get("main", {}).get("phase") != "skeleton"
                 or self.state["entities"][key].get("window_id") == window.id
             )
         ]
@@ -762,10 +852,7 @@ class Engine:
                     "label": f["label"],
                     "value": f["value"],
                     "missing": f["missing"],
-                    "value_components": value_components(
-                        f,
-                        confirmed=entity["state"] == "accepted",
-                    ),
+                    "value_components": value_components(f),
                     "sources": list(
                         dict.fromkeys(
                             q["source_id"]
@@ -813,7 +900,7 @@ class Engine:
             if e["state"] != "accepted" and e.get("type_input_hash") != input_hash(e)
         ]
         if not entities:
-            self.advance("referent_alignment")
+            self.advance("property_alignment")
             return
         classes = [
             {
@@ -830,7 +917,7 @@ class Engine:
         ]
         choices = defaultdict(list)
 
-        def batch(items, selected_entities, *, compare=False):
+        def batch_input(items, selected_entities):
             window = context_window(
                 self.ir,
                 base_window,
@@ -850,10 +937,27 @@ class Engine:
                 entity_ids=list(ids),
                 class_iris=[c["iri"] for c in items],
             )
+            return window, ids, payload, schema
+
+        def batch(items, selected_entities, *, compare=False):
+            window, ids, payload, schema = batch_input(items, selected_entities)
             if (
                 self.max_request_bytes is not None
                 and request_size("type_alignment", payload, schema) > self.max_request_bytes
             ):
+                # Prefer two entity batches with complete competing menus. Do
+                # not recursively multiply a large catalog across tiny batches
+                # when two halves still cannot fit; shard that menu instead.
+                if len(selected_entities) >= 2:
+                    middle = len(selected_entities) // 2
+                    halves = (selected_entities[:middle], selected_entities[middle:])
+                    if compare or all(
+                        request_size("type_alignment", part[2], part[3]) <= self.max_request_bytes
+                        for part in (batch_input(items, half) for half in halves)
+                    ):
+                        for half in halves:
+                            batch(items, half, compare=compare)
+                        return
                 if compare:
                     # Splitting this menu would recreate incomparable shard choices.
                     raise ValueError("harness_single_type_comparison_input_too_large")
@@ -920,8 +1024,8 @@ class Engine:
         by_iri = {card["iri"]: card for card in classes}
         preferred = [by_iri[iri] for iri in guidance if iri in by_iri]
         remainder = [card for card in classes if card["iri"] not in guidance]
-        # Keep a single call when everything fits. On overflow batch() keeps the
-        # guided alternatives together before visiting the rest of the catalog.
+        # Prefer the complete menu when it fits in at most two entity batches;
+        # otherwise retain guided alternatives together in the card shards.
         batch([*preferred, *remainder], entities)
         proposals = {
             entity["id"]: {
@@ -931,6 +1035,7 @@ class Engine:
             }
             for entity in entities
         }
+        comparisons = []
         for entity in entities:
             proposed_iris = proposals[entity["id"]]
             if not proposed_iris:
@@ -947,11 +1052,15 @@ class Engine:
                 # Shard confidence is not a calibrated ranking. Re-read the
                 # referent against its entire candidate menu without treating
                 # earlier proposal scores or rationales as source evidence.
-                batch(
-                    [card for card in classes if card["iri"] in proposed_iris],
-                    [entity],
-                    compare=True,
-                )
+                group = next((group for menu, group in comparisons if menu == proposed_iris
+                              and all(not overlapping_referents(entity, other)
+                                      for other in group)), None)
+                if group is None:
+                    group = []
+                    comparisons.append((proposed_iris, group))
+                group.append(entity)
+        for menu, group in comparisons:
+            batch([card for card in classes if card["iri"] in menu], group, compare=True)
         changes = {
             "entities": {},
             "type_work": {key: None for key in self.state.get("type_work", {})},
@@ -970,7 +1079,7 @@ class Engine:
             entity["type_input_hash"] = input_hash(entity)
             if selected is None:
                 entity.update(
-                    state="unresolved",
+                    state="candidate",
                     reason="；".join(item[2] or item[0].reason for item in options[:2]),
                     class_iri=None,
                     class_label=None,
@@ -989,17 +1098,19 @@ class Engine:
                     confidence=choice.confidence,
                 )
             changes["entities"][entity["id"]] = entity
-        self.advance("referent_alignment", changes=changes)
+        self.advance("property_alignment", changes=changes)
 
     def referent_alignment(self, window):
         run_referent_alignment(self, window)
 
-    def entity_review(self, window):
+    def entity_review(self, window, work_rows=None):
         base_window = window
         candidates = [
             entity
             for entity in self.entities(window)
             if entity["state"] == "candidate" and entity.get("class_iri")
+            and not entity.get("refined_member_ids")
+            and (work_rows is None or entity["id"] in {r["input"]["entity_id"] for r in work_rows})
         ]
 
         def batch(items):
@@ -1094,7 +1205,17 @@ class Engine:
                     "source_verdict": verdict,
                     "source_reason": reason,
                 }
-            self.commit({"entities": changes}, batch_id=batch_id)
+            from .work_execution import complete_work
+
+            updates = {"entities": changes}
+            for work in work_rows or []:
+                if work["input"]["entity_id"] in changes:
+                    complete_work(updates, work, outputs=[work["input"]["entity_id"]])
+            for row in changes.values():
+                row["verification"] = {"method": "llm", "semantic_verdict": row["state"],
+                                       "rule_id": None, "rule_version": None}
+                row["calibration"] = None
+            self.commit(updates, batch_id=batch_id)
 
         groups = []
         for entity in candidates:
@@ -1112,7 +1233,7 @@ class Engine:
             group.append(entity)
         for group in groups:
             batch(group)
-        self.advance("planning")
+
 
     def review_sources_cover(self, domain, candidate, support):
         """Exact claim anchors, without the former facet/composition proof graph."""

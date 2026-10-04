@@ -120,7 +120,7 @@ def test_saved_overlap_can_be_corrected_once_without_merging_repeated_mentions(
     run_referent_alignment(engine, window)
     assert calls == ["referent_candidates", "referent_selection"]
     work = engine.state["referent_work"][task_id]
-    assert work["done"] and work["proposal_corrected"]
+    assert work["selected_partition_id"] is not None and work["proposal_corrected"]
     bound = [e for e in engine.entities(window) if e.get("identity_binding")]
     assert sorted(e["label"] for e in bound) == ["A1", "A1", "A2"]
     assert len({e["referent"]["start"] for e in bound}) == 3
@@ -216,7 +216,7 @@ def test_seven_disjoint_mentions_in_one_source_have_independent_complete_partiti
     engine.invoke = invoke
     run_referent_alignment(engine, window)
     work = engine.state["referent_work"]
-    assert len(work) == 7 and all(w["done"] for w in work.values())
+    assert len(work) == 7 and all(w["selected_partition_id"] is not None for w in work.values())
     bound = [e for e in engine.entities(window) if e.get("identity_binding")]
     assert len(bound) == 8
     assert len({e["referent"]["start"] for e in bound}) == 8
@@ -224,3 +224,52 @@ def test_seven_disjoint_mentions_in_one_source_have_independent_complete_partiti
     count = len(calls)
     run_referent_alignment(engine, window)
     assert len(calls) == count
+
+
+def test_thirteen_members_use_span_capacity_and_keep_complete_group(lookup_fixture, tmp_path):
+    names = [f"A{i}" for i in range(1, 14)]
+    raw = "/".join(names)
+    doc = Document()
+    doc.add_paragraph("Use " + raw + " objects")
+    path = tmp_path / "thirteen.docx"
+    doc.save(path)
+    ir = build_document_ir(path, parse_docx_structure(path))
+    engine, window, _ = engine_fixture((ir, *lookup_fixture[1:]))
+    engine.lookup = None
+    ref = window.resolve(ir, {"source_id": "S1", "text": raw, "occurrence": None})
+    old = engine.state["entities"]["old"]
+    old.update(label=raw, name=ref, referent=ref, evidence=[ref], field_ids=names)
+    start = ref["start"]
+    from app.services.document_harness.source import reference
+
+    for name in names:
+        value = reference(ir, ref["source_id"], start, start + len(name))
+        engine.state["fields"][name] = {"id": name, "label": "", "value": name,
+            "missing": False, "value_evidence": [value], "evidence": [value]}
+        start += len(name) + 1
+
+    def invoke(stage, payload, schema):
+        if stage == "referent_candidates":
+            spans = [s for s in payload["evidence_spans"] if s["identifier_candidate"]]
+            assert len(spans) == 13
+            assert schema["properties"]["expressions"]["maxItems"] >= 13
+            result = {"new_spans": [], "expressions": [
+                {"id": str(i), "property_iri": NS + "code", "span_id": s["span_id"]}
+                for i, s in enumerate(spans)], "partitions": [{
+                    "id": "members", "members": [
+                        {"id": str(i), "expression_ids": [str(i)]} for i in range(13)],
+                    "reason": "Thirteen separately located original identifiers",
+                }]}
+        else:
+            assert stage == "referent_selection"
+            largest = max(payload["evidence_spans"], key=lambda s: len(s["text"]))
+            result = {"verdict": "supported", "selected_partition_id": "members",
+                      "confidence": .95, "evidence_span_ids": [largest["span_id"]],
+                      "reason": "All members grounded in the complete original expression"}
+        jsonschema.validate(result, schema)
+        return result
+
+    engine.invoke = invoke
+    run_referent_alignment(engine, window)
+    assert {e["label"] for e in engine.entities(window)} == set(names)
+    assert len(engine.state["entities"]["old"]["refined_member_ids"]) == 13

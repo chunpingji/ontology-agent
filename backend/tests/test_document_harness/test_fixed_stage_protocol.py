@@ -47,7 +47,7 @@ def property_choice(**changes):
                 "predicate_iri": predicate,
                 "confidence": 0.9,
                 "value_component": "whole",
-                "value_quote": None,
+                "value_quote": None, "unit_quote": None,
             }
         ]
         if predicate
@@ -92,7 +92,7 @@ def test_discovery_mention_field_assignment_must_be_explicit_even_when_empty(fie
     valid = {
         "entities": [
             {
-                "local_id": "e",
+                "candidate_class_iri": None, "local_id": "e",
                 "role": "object",
                 "evidence": ["S1"],
                 "anchor": {"source_id": "S1"},
@@ -261,13 +261,13 @@ def test_a_range_field_can_map_to_two_legal_predicates_without_model_generated_v
             {
                 "predicate_iri": "urn:test:p",
                 "value_component": "lower",
-                "value_quote": None,
+                "value_quote": None, "unit_quote": None,
                 "confidence": 0.95,
             },
             {
                 "predicate_iri": "urn:test:q",
                 "value_component": "upper",
-                "value_quote": None,
+                "value_quote": None, "unit_quote": None,
                 "confidence": 0.95,
             },
         ],
@@ -307,7 +307,7 @@ def relation_proposal(**changes):
         "conditions": [],
         "participation": None,
         "selection": None,
-        "timing": None,
+        "timing": None, "ordered_object_ids": None, "order_evidence": [],
         "missing_context": "none",
         "reason": "explicit original relation",
         "confidence": 0.95,
@@ -540,7 +540,7 @@ def test_group_interpretation_requires_evidence_and_consistent_participation():
         "verdict": "supported",
         "participation": "all",
         "selection": "unspecified",
-        "timing": "parallel",
+        "timing": "parallel", "ordered_object_ids": None, "order_evidence": [],
         "evidence": ["S1"],
         "reason": "explicit joint statement",
     }
@@ -605,6 +605,9 @@ def test_mixed_relation_schema_constrains_each_frozen_candidate(
     output["proposals"][target].update(
         verdict=verdict, participation=participation, selection=selection, timing=timing,
     )
+    if timing == "sequential" and valid:
+        output["proposals"][target].update(ordered_object_ids=["E2", "E1"],
+            order_evidence=[{"source_id": "S1", "text": "乙之后执行甲", "occurrence": None}])
     for contract in (schema, gateway_schema(schema)):
         if valid:
             jsonschema.validate(output, contract)

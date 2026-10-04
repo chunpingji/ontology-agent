@@ -131,7 +131,8 @@ def test_refinement_rebinds_collective_object_hints_without_flattening(
     engine.state["hints"] = {"h": deepcopy(hint)}
     engine.state["reference_cues"] = {"c": {
         "id": "c", "subject_id": "document", "target_ids": ["old"],
-        "target_expression": evidence[0], "evidence": evidence,
+        "reference": evidence[0], "kind": "explicit", "relation_label": None,
+        "direction": "outgoing", "evidence": evidence,
         "polarity": "uncertain", "conditions": ["If approved"],
     }}
     run_referent_alignment(engine, window)
@@ -156,7 +157,8 @@ def test_refinement_retains_ambiguous_subjects_and_waiting_observation(lookup_fi
     }}
     engine.state["reference_cues"] = {"c": {
         "id": "c", "subject_id": "old", "target_ids": ["document"],
-        "target_expression": evidence[0], "evidence": evidence,
+        "reference": evidence[0], "kind": "explicit", "relation_label": None,
+        "direction": "outgoing", "evidence": evidence,
     }}
     run_referent_alignment(engine, window)
     members = next(iter(engine.state["referent_work"].values()))["member_ids"]
@@ -186,9 +188,9 @@ def test_referent_task_identity_does_not_depend_on_window_packaging(lookup_fixtu
                 original_id,
             )
             engine.state["windows"] = {window.id: {
-                **Engine.window_row(window, [0]), "entity_phase": "referent_alignment",
+                **Engine.window_row(window, [0]), "skeleton_step": "referent_alignment",
             }}
-            engine.state["cursor"]["main"]["entity_window_id"] = window.id
+            engine.state["cursor"]["main"]["skeleton_window_id"] = window.id
 
         def pause(*args):
             raise Paused()

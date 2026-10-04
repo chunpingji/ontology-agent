@@ -145,7 +145,7 @@ def test_long_source_is_added_as_exact_spans_and_extra_review_evidence_is_availa
     root = entity("root", EX.Root, role="document_root", state="accepted")
     expanded = context_window(ir, base, [root], {}, extra_refs=[ref])
     assert expanded.entity_ids == []
-    assert [s["text"] for s in expanded.sources] == ["当前记录", "真实主体Alpha"]
+    assert [s["text"] for s in expanded.sources] == ["真实主体Alpha", "当前记录"]
     quote = quote_for_reference(expanded, ref)
     assert expanded.resolve(ir, quote) == ref
 

@@ -110,7 +110,7 @@ def test_shared_sentence_does_not_programmatically_prove_identifier_ownership(tm
         } for row in payload["candidates"]}}
     engine.invoke = accept_local_referent
     engine.should_stop = lambda: False
-    engine.state["cursor"]["main"]["entity_window_id"] = window.id
+    engine.state["cursor"]["main"]["skeleton_window_id"] = window.id
     engine.entity_review(window)
     assert engine.state["entities"][entity["id"]]["state"] == "accepted"
     assert not engine.state.get("properties")

@@ -84,6 +84,9 @@ class HarnessCallFailed(RuntimeError):
 
 def failure_reason(exc):
     value = str(exc)
+    # Preserve an already sanitized cause when a saved call failure is wrapped.
+    if isinstance(exc, HarnessCallFailed) and re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{1,100}", value):
+        return value
     return value if re.fullmatch(r"[a-z][a-z0-9_]{1,100}", value) else type(exc).__name__
 
 
@@ -485,7 +488,8 @@ class Repository:
         row = self._call_row(key)
         if row is not None:
             return row
-        value = {"id": key, "payload": deepcopy(payload), "schema": deepcopy(schema),
+        value = {"id": key, "execution_phase": payload.get("execution_phase", "discovery"),
+                 "payload": deepcopy(payload), "schema": deepcopy(schema),
                  "model": policy.get("model"), "model_revision": policy.get("model_revision"),
                  "max_output_tokens": policy.get("max_output_tokens")}
         row = DocumentRunRequest(
@@ -527,7 +531,7 @@ class Repository:
                 return batch
             limit = (
                 policy["execution_policy"]["reading_concurrency"]
-                if (cursor.get("phase") == "reading")
+                if (cursor.get("phase") == "discovery")
                 else 1
             )
             if len(active) >= limit:
@@ -622,7 +626,8 @@ class Repository:
         flight = self._flights.pop(key)
         result, error, measured_us = flight["future"].result()
         request = flight["request"]
-        if not result.get("error") and isinstance(result.get("output"), dict):
+        if (flight["stage"] in {"discover", "type_alignment"}
+                and not result.get("error") and isinstance(result.get("output"), dict)):
             try:
                 validate_paid_output(
                     flight["stage"], request["payload"], result["output"], schema=request["schema"]
@@ -786,7 +791,8 @@ class Repository:
             }, round((monotonic() - started) * 1_000_000))
             raise
         measured_us = round((monotonic() - started) * 1_000_000)
-        if not result.get("error") and isinstance(result.get("output"), dict):
+        if (stage in {"discover", "type_alignment"}
+                and not result.get("error") and isinstance(result.get("output"), dict)):
             try:
                 validate_paid_output(stage, payload, result["output"], schema=schema)
             except (ValueError, TypeError, KeyError) as exc:
@@ -909,6 +915,11 @@ def execute_claimed(db, run, token):
                 cursor = repo.load().get("cursor", {}).get("main", {})
                 if cursor.get("stage") != "complete":
                     raise ValueError("harness_execution_incomplete")
+                failed = [w for w in repo.load().get("work", {}).values()
+                          if w["status"] == "failed"]
+                if failed:
+                    raise HarnessError("HARNESS_ITEMS_FAILED", "局部处理失败；已保存图谱和检查结果",
+                                       retryable=any(w.get("retryable") for w in failed))
                 repo.progress(
                     stage="complete", status="finished",
                     stop_reason=None if cursor.get("scope_complete") else "incomplete_scope",

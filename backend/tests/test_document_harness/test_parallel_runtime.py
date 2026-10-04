@@ -27,7 +27,7 @@ def prepare(repo, window, text):
 def repository(db):
     run, token = _run(db)
     repo = Repository(db, run, token)
-    repo.save({"cursor": {"main": {"phase": "reading", "active_batches": {},
+    repo.save({"cursor": {"main": {"phase": "discovery", "active_batches": {},
                                     "stage": "discover"}}})
     return repo
 
@@ -243,7 +243,7 @@ def test_graph_get_during_two_running_calls_is_read_only(db, client, analyst_hea
             response = client.get(endpoint, headers=analyst_headers)
             assert response.status_code == 200, response.text
             assert response.json()["progress"]["reading_windows"]["active"] == 2
-            assert response.json()["progress"]["phase"] == "reading"
+            assert response.json()["progress"]["phase"] == "discovery"
         assert repo.current().revision == version and len(calls) == 2
         repo.db.commit()
     finally:

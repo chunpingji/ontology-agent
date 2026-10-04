@@ -6,9 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { DocumentHarnessEntity, DocumentHarnessGraph, DocumentHarnessProperty, DocumentHarnessRelation, DocumentHarnessSourceRef } from "@/lib/api";
+import type { DocumentHarnessCalibration, DocumentHarnessEntity, DocumentHarnessGraph, DocumentHarnessProperty, DocumentHarnessRelation, DocumentHarnessSourceRef } from "@/lib/api";
 import { buildHarnessHierarchy, displayValue, filterHarnessEntities, harnessTreeRows,
-  HARNESS_STATES, hasObservationContext, observationSubjects, type HarnessHierarchy } from "@/lib/source-harness";
+  HARNESS_PHASES, HARNESS_STATES, hasObservationContext, observationSubjects, type HarnessHierarchy } from "@/lib/source-harness";
 import { cn } from "@/lib/utils";
 import { HarnessRelationCanvas } from "./source-harness-relation-graph";
 import { EvidenceList, HarnessOntologyContext, HarnessVerificationLabel, StateBadge } from "./source-harness-shared";
@@ -56,12 +56,13 @@ export function HarnessCandidates({ graph, selectedEntity, onSelectEntity, onSou
       <span className="mt-1 block break-words text-xs text-muted-foreground">{item.class_label || "类型尚未对齐"} · {counts.get(item.id) ?? 0} 项属性</span>
       <span className="mt-1 flex flex-wrap items-center gap-1.5"><StateBadge state={item.state} />
         {relation && <span className="text-[11px] text-muted-foreground"><span aria-hidden="true">{relation.state === "accepted" ? "━" : "┄"} </span>关系{HARNESS_STATES[relation.state]}</span>}
+        {relation && !relation.predicate_iri && <span className="text-[11px] text-muted-foreground">谓词待对齐</span>}
         {reference && <span className="rounded bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">引用 · 不重复展开</span>}</span>
     </span>{level != null && <span className="shrink-0 rounded bg-muted px-1 text-[11px] text-muted-foreground">L{level}</span>}
   </button>;
 
   return <section className="min-w-0 space-y-4" aria-label="实体图谱与属性">
-    <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-lg font-semibold">实体图谱与属性</h3><p className="text-xs text-muted-foreground">实体 {graph.entities.length} · 属性 {graph.properties.length} · 关系 {graph.relations.length} · 关系组 {graph.relation_groups?.length ?? 0}</p></div>
+    <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-lg font-semibold">实体图谱与属性</h3><p className="text-xs text-muted-foreground">实体 {graph.entities.length} · 属性 {graph.properties.length} · 关系 {hierarchy.relations.length} · 关系组 {graph.relation_groups?.length ?? 0}</p></div>
     <div className="flex flex-wrap items-center gap-2">
       <div className="flex rounded-md bg-muted p-1" aria-label="图谱视图">
         <Button size="sm" variant={mode === "tree" ? "secondary" : "ghost"} aria-pressed={mode === "tree"} onClick={() => setMode("tree")}><ListTree className="size-4" />层级树</Button>
@@ -85,11 +86,12 @@ export function HarnessCandidates({ graph, selectedEntity, onSelectEntity, onSou
         {graph.entities.length > 0 && !hierarchy.roots.length && <p className="mb-3 text-xs text-muted-foreground">尚无文档根，已保存实体列在未连接分组。</p>}
         {filtering && !matched.size && <p role="status" className="py-4 text-sm text-muted-foreground">没有符合筛选条件的实体或属性。</p>}
         <ul className="max-h-[680px] space-y-1 overflow-auto pr-1" aria-label="分层实体列表">
-          {rows.map((row) => row.kind === "predicate" ? <li key={row.id} data-predicate-iri={row.predicateIri} data-subject-id={row.subjectId} style={{ paddingLeft: Math.min(row.level, 6) * 28 - 14 }}>
+          {rows.map((row) => row.kind === "predicate" ? <li key={row.id} data-predicate-iri={row.predicateIri ?? undefined} data-subject-id={row.subjectId} style={{ paddingLeft: Math.min(row.level, 6) * 28 - 14 }}>
             <button type="button" disabled={filtering} aria-label={`${row.expanded ? "收起" : "展开"}${row.label}关系分组`} aria-expanded={row.expanded}
-              title={row.predicateIri} onClick={() => toggle(row.id, row.expanded)}
+              title={row.predicateIri ?? "谓词待对齐"} onClick={() => toggle(row.id, row.expanded)}
               className="flex w-full items-center gap-1.5 rounded-md py-2 pr-2 text-left text-xs text-muted-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50">
               {row.expanded ? <ChevronDown className="size-4 shrink-0" /> : <ChevronRight className="size-4 shrink-0" />}<span className="break-words">{row.label}</span>
+              {row.pendingCount > 0 && <span className="shrink-0">（{row.pendingCount} 项待对齐）</span>}
             </button>
           </li> : <li key={row.id} style={{ paddingLeft: Math.min(row.level, 6) * 28 }}>
             <div className="flex items-start rounded-md border border-transparent">
@@ -100,7 +102,7 @@ export function HarnessCandidates({ graph, selectedEntity, onSelectEntity, onSou
         </ul>
         {truncated && <Button variant="outline" size="sm" className="mt-3" onClick={() => setLimit((current) => current + 200)}>再显示 200 项</Button>}
         {disconnected.length > 0 && <details className="mt-4 border-t pt-3" open={filtering || !hierarchy.roots.length || Boolean(entity && !hierarchy.depth.has(entity.id))}>
-          <summary className="cursor-pointer text-sm">未连接到文档根（{disconnected.length}）</summary><p className="my-2 text-xs text-muted-foreground">没有可用于分层的根路径，属性与原文仍可查看。</p>
+          <summary className="cursor-pointer text-sm">未连接到文档根（{disconnected.length}）</summary><p className="my-2 text-xs text-muted-foreground">当前阶段：{HARNESS_PHASES[graph.progress.phase]}。语义任务已处理 {graph.progress.phase_work_counts.semantic.done} 项，确定性任务已处理 {graph.progress.phase_work_counts.deterministic.done} 项。现有属性与原文仍可查看。</p>
           <ul className="max-h-96 overflow-auto">{disconnected.slice(0, limit).map((item) => <li key={item.id}>{entityButton(item, undefined)}</li>)}</ul>
           {disconnected.length > limit && <Button variant="ghost" size="sm" onClick={() => setLimit((current) => current + 200)}>显示更多未连接实体</Button>}
         </details>}
@@ -119,12 +121,25 @@ export function HarnessCandidates({ graph, selectedEntity, onSelectEntity, onSou
   </section>;
 }
 
+function CalibrationDetail({ calibration }: { calibration: DocumentHarnessCalibration | null }) {
+  if (!calibration) return <p className="text-xs text-muted-foreground">待语义核对 / 待确定性检查</p>;
+  const labels = { not_run: "待检查", passed: "通过", invalid: "不符合", incomplete: "输入不足", not_applicable: "不适用", error: "工具失败" };
+  const names = { identifier: "编号", datatype: "类型表示", unit: "单位", shacl: "SHACL" };
+  const literal = calibration.literal;
+  return <div className="space-y-1 text-xs"><p>{Object.entries(calibration.checks).map(([name, check]) => `${names[name as keyof typeof names]}：${labels[check.status]}${check.reason_code ? `（${check.reason_code}）` : ""}`).join(" · ")}</p>
+    {literal && <p>规范值：{literal.kind === "range" ? `${literal.lower_inclusive ? "[" : "("}${literal.lower}, ${literal.upper}${literal.upper_inclusive ? "]" : ")"}` : `${literal.operator !== "eq" ? literal.operator + " " : ""}${displayValue(literal.normalized_value)}`} {literal.canonical_unit ?? ""}</p>}
+    {literal && Object.keys(literal.conversion_record).length > 0 && <p>换算因子：{displayValue(literal.conversion_record.factor)} · 偏移：{displayValue(literal.conversion_record.offset)}</p>}
+  </div>;
+}
+
 export function HarnessPropertyDetail({ item, onSource }: { item: DocumentHarnessProperty; onSource: SelectionProps["onSource"] }) {
   return <div className="space-y-3 rounded-md bg-muted/30 p-4 text-sm">
     <div className="flex flex-wrap items-center gap-2"><h5 className="font-medium">{item.label}：{displayValue(item.value)}</h5><StateBadge state={item.state} /><HarnessVerificationLabel verification={item.verification} />{!item.predicate_iri && <Badge variant="outline">尚未匹配合法属性</Badge>}</div>
     <p className="whitespace-pre-wrap break-words text-xs">属性核对原因：{item.reason}</p>
     <HarnessOntologyContext card={item.card} predicate={item.predicate} />
     <p className="whitespace-pre-wrap break-words text-xs text-muted-foreground">原值：{item.source_value}{item.value_component !== "whole" && <> · {item.value_component === "span" ? "原文中的属性值" : item.value_component === "lower" ? "下限" : "上限"}{item.source_unit ? `（${item.source_unit}）` : ""}</>}</p>
+    <CalibrationDetail calibration={item.calibration} />
+    {item.source_unit_evidence.length > 0 && <div><p className="text-xs">单位原文：{item.source_unit}</p><EvidenceList evidence={item.source_unit_evidence} onSource={onSource} /></div>}
     {item.value_evidence?.length > 0 && <div className="space-y-1"><p className="text-xs text-muted-foreground">取值位置</p><EvidenceList evidence={item.value_evidence} onSource={onSource} /></div>}
     <div className="space-y-1"><p className="text-xs text-muted-foreground">原文依据</p><EvidenceList evidence={item.evidence} onSource={onSource} />{!item.evidence.length && <p className="text-xs text-muted-foreground">未记录原文引用。</p>}</div>
   </div>;
@@ -135,7 +150,8 @@ function HarnessEntityDetail({ graph, entity, hierarchy, onSelectEntity, onSourc
   const [propertyId, setPropertyId] = useState<string | null>(null);
   const properties = graph.properties.filter((item) => item.subject_id === entity.id);
   const selected = properties.find((item) => item.id === propertyId) ?? properties[0];
-  const relations = graph.relations.filter((item) => item.subject_id === entity.id || item.object_id === entity.id);
+  const relations = hierarchy.relations.filter((item) => item.subject_id === entity.id || item.object_id === entity.id);
+  const mentions = new Map(graph.entities.flatMap((item) => item.mentions ?? []).map((item) => [item.id, item]));
   const groups = (graph.relation_groups ?? []).filter((item) => item.subject_id === entity.id || item.object_ids.includes(entity.id));
   const targets = graph.targets.filter((item) => item.subject_id === entity.id);
   const observationContext = graph.observations.every(hasObservationContext);
@@ -148,6 +164,9 @@ function HarnessEntityDetail({ graph, entity, hierarchy, onSelectEntity, onSourc
     <nav aria-label="所选实体路径" className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">{path.map((item, index) => <span key={item.id} className="flex items-center gap-1">{index > 0 && <ChevronRight className="size-3" />}<button type="button" className="break-words text-left hover:text-primary hover:underline" onClick={() => onSelectEntity(item.id)}>{item.label}</button></span>)}</nav>
     <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0 space-y-1"><h4 className="break-words text-xl font-semibold">{entity.label}</h4><p className="text-xs text-muted-foreground">{entity.role === "document_root" ? "L0 · 文档根 · 类型由任务指定" : depth == null ? "未连接到文档根" : `L${depth} · 距文档根 ${depth} 跳`} · <span className="break-all">{entity.id}</span></p></div><StateBadge state={entity.state} /></div>
     <div className="space-y-2 rounded-md bg-muted/40 p-3 text-xs"><p>主体当前类型：{entity.class_label || "尚未对齐"}<code className="ml-2 break-all text-muted-foreground">{entity.class_iri}</code></p><p className="whitespace-pre-wrap break-words text-muted-foreground">{entity.reason}</p><details><summary className="cursor-pointer">实体原文依据（{entity.evidence.length}）</summary><EvidenceList evidence={entity.evidence} onSource={onSource} /></details></div>
+    <CalibrationDetail calibration={entity.calibration} />
+    {entity.parent_mention_id && <button type="button" className="text-xs text-primary hover:underline" onClick={() => onSelectEntity(entity.parent_mention_id!)}>查看原提及及原文</button>}
+    {entity.refined_member_ids.length > 0 && <div className="flex flex-wrap gap-2 text-xs"><span>已细分成员：</span>{entity.refined_member_ids.map((id) => <button type="button" key={id} className="text-primary hover:underline" onClick={() => onSelectEntity(id)}>{hierarchy.entities.get(id)?.label ?? id}</button>)}</div>}
     {entity.role !== "document_root" && <HarnessCoreferences graph={graph} entity={entity} onSource={onSource} />}
     <Tabs value={tab} onValueChange={setTab}>
       <TabsList className="h-auto max-w-full flex-wrap justify-start"><TabsTrigger value="properties">实体属性 {properties.length}</TabsTrigger><TabsTrigger value="relations">关联关系 {relations.length + groups.length}</TabsTrigger><TabsTrigger value="observations">关联观察 {observations.length}</TabsTrigger></TabsList>
@@ -170,13 +189,27 @@ function HarnessEntityDetail({ graph, entity, hierarchy, onSelectEntity, onSourc
           <p className="text-sm">{{ options: "备选对象组", all: "所有成员均参与", unknown: "参与方式未决" }[group.participation]}{group.selection === "exactly_one" && " · 择一"}：{group.object_ids.map((id, index) => <span key={id}>{index > 0 && "、"}<button type="button" className="text-primary hover:underline" onClick={() => onSelectEntity(id)}>{hierarchy.entities.get(id)?.label ?? id}</button></span>)}</p>
           <p className="text-xs text-muted-foreground">极性：{{ positive: "肯定", negative: "否定", uncertain: "未确定" }[group.polarity]}{group.conditions.length > 0 && ` · 条件：${group.conditions.join("；")}`}</p>
           <p className="whitespace-pre-wrap break-words text-xs">{group.reason}</p>
+          <CalibrationDetail calibration={group.calibration} />
+          {group.ordered_object_ids && <p className="text-xs">获证顺序：{group.ordered_object_ids.map((id) => hierarchy.entities.get(id)?.label ?? id).join(" → ")}</p>}
+          {group.order_evidence.length > 0 && <EvidenceList evidence={group.order_evidence} onSource={onSource} />}
           <div className="flex flex-wrap items-center gap-2 text-xs"><span>时间：{{ parallel: "并行", sequential: "先后", unspecified: "未说明" }[group.timing]}</span><StateBadge state={group.timing_state} /><span>{group.timing_reason}</span></div>
           <HarnessOntologyContext card={group.card} predicate={group.predicate} /><EvidenceList evidence={group.evidence} onSource={onSource} />
         </div>)}
         {relations.map((relation) => <div key={relation.id} className="space-y-3 rounded-md border p-3"><div className="flex flex-wrap items-center gap-2 text-sm">
-          {[relation.subject_id, relation.object_id].map((id, index) => <span key={`${index}:${id}`} className="contents">{index > 0 && <span title={relation.predicate_iri}>→ {relation.label} →</span>}<button type="button" className="break-words text-primary hover:underline" onClick={() => onSelectEntity(id)}>{hierarchy.entities.get(id)?.label ?? id}</button></span>)}<StateBadge state={relation.state} /><HarnessVerificationLabel verification={relation.verification} /></div>
+          {[relation.subject_id, relation.object_id].map((id, index) => <span key={`${index}:${id}`} className="contents">{index > 0 && <span title={relation.predicate_iri ?? "谓词待对齐"}>→ {relation.label} →</span>}<button type="button" className="break-words text-primary hover:underline" onClick={() => onSelectEntity(id)}>{hierarchy.entities.get(id)?.label ?? id}</button></span>)}<StateBadge state={relation.state} />{relation.assertions.length === 1 && <HarnessVerificationLabel verification={relation.verification} />}</div>
           <p className="text-xs text-muted-foreground">极性：{relation.polarity === "positive" ? "肯定" : relation.polarity === "negative" ? "否定" : "未确定"}{relation.conditions.length > 0 && ` · 条件：${relation.conditions.join("；")}`}</p>
-          <p className="whitespace-pre-wrap break-words text-xs">{relation.reason}</p><HarnessOntologyContext card={relation.card} predicate={relation.predicate} /><EvidenceList evidence={relation.evidence} onSource={onSource} />
+          <p className="whitespace-pre-wrap break-words text-xs">{relation.assertions.length > 1 ? `汇集 ${relation.assertions.length} 条原始关系依据，逐条核验结果见下方。` : relation.reason}</p><HarnessOntologyContext card={relation.card} predicate={relation.predicate} /><EvidenceList evidence={relation.evidence} onSource={onSource} />
+          {relation.assertions.length > 1 && <details className="space-y-2 text-xs">
+            <summary className="cursor-pointer">原始关系依据（{relation.assertions.length} 条）</summary>
+            {relation.assertions.map((assertion) => <div key={assertion.id} className="space-y-2 border-l pl-3">
+              <p>原文主体：{mentions.get(assertion.subject_mention_id)?.label ?? assertion.subject_mention_id} · 原文对象：{mentions.get(assertion.object_mention_id)?.label ?? assertion.object_mention_id}</p>
+              <StateBadge state={assertion.state} /><HarnessVerificationLabel verification={assertion.verification} />
+              <p className="whitespace-pre-wrap break-words">{assertion.reason}</p>
+              <CalibrationDetail calibration={assertion.calibration} />
+              <HarnessOntologyContext card={assertion.card} predicate={assertion.predicate} />
+              <EvidenceList evidence={assertion.evidence} onSource={onSource} />
+            </div>)}
+          </details>}
         </div>)}
       </TabsContent>
       <TabsContent value="observations" className="space-y-3 pt-2"><p className="text-sm text-muted-foreground">{!observationContext ? "观察上下文暂不可用，请稍后刷新。" : observations.length ? `有 ${observations.length} 条关联原文观察。参考卡和实际对齐结果在观察详情分别展示。` : "尚无关联原文观察。"}</p>{onObservations && <Button variant="outline" size="sm" onClick={() => onObservations(entity.id)}>查看该实体的原文观察</Button>}</TabsContent>

@@ -1,5 +1,21 @@
 # 当前 Harness 性能数据模型
 
+## 2026-10-02 四阶段数据契约（已实施）
+
+当前源码仍为下方已实施数据基线；四阶段目标以
+[four-stages 契约](contracts/four-stages.md)和
+[方案第 4、8、9 节](../../docs/图谱分析四阶段顺序重构方案-20261002.md#4-当前数据id-与状态契约)为准。
+
+- 复用当前分区业务行、一个 cursor、一个 display 和独立账本，无新增数据库表/列或全图副本。
+- phase 替换为 discovery/skeleton/semantic/deterministic/done，新增当前骨架窗口、语义子步骤及计划标记。
+- 候选属性/关系允许空谓词；有真实端点及原文才能物化，语义采信要求合法非空谓词及独立证明。
+- 局部细分保留 parent_mention_id/refined_member_ids，受影响断言更新和失效同事务提交。
+- WorkItem 增加 phase/retryable；实体核对、局部分组、实体校准和断言校准复用该任务存储。
+- Calibration 附属当前实体/断言，分编号/datatype/unit/SHACL 检查及 LiteralValue；没有第二份规范图。
+- 顺序成员及精确顺序证据独立保存；原始字段和值/单位证据不因换算覆盖。
+- metrics 按 phase 工作、检查状态和 phase+stage 调用聚合差量更新；请求归属存于既有 payload。
+- semantic/verdict 与校准诊断分开；范围不足、执行失败、未决和否定事实不能互换。
+
 ## 2026-10-01 阅读效率契约
 
 模型协议升级 document-harness-v6。Window.payload.reading_scope 使用本请求 source_id 和相对字符区间；辅助来源可作证据，不能替代主区间的提及。

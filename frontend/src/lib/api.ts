@@ -2556,9 +2556,24 @@ export type DocumentHarnessState = "candidate" | "accepted" | "rejected" | "unre
 export type DocumentHarnessStage = "ingest" | "parse" | "discover" | "type_alignment"
   | "referent_alignment" | "referent_candidates" | "referent_selection" | "entity_review"
   | "planning" | "property_alignment" | "relation_alignment" | "group_interpretation"
-  | "evidence_review" | "coreference_review" | "complete";
+  | "evidence_review" | "coreference_review" | "identifier_check"
+  | "literal_normalization" | "shacl_check" | "complete";
 export type DocumentHarnessWorkStatus = "ready" | "waiting" | "pruned" | "done" | "failed";
 
+export type DocumentHarnessPhase = "discovery" | "skeleton" | "semantic" | "deterministic" | "done";
+export type DocumentHarnessCheckStatus = "not_run" | "passed" | "invalid" | "incomplete" | "not_applicable" | "error";
+export interface DocumentHarnessCalibration {
+  input_hash: string;
+  checks: Record<"identifier" | "datatype" | "unit" | "shacl", {
+    status: DocumentHarnessCheckStatus; reason_code: string | null; details: Record<string, unknown>;
+  }>;
+  literal: {
+    kind: string; raw_value: string; normalized_value: string | boolean | null;
+    lower: string | null; upper: string | null; operator: string;
+    lower_inclusive: boolean; upper_inclusive: boolean;
+    canonical_unit: string | null; conversion_record: Record<string, unknown>;
+  } | null;
+}
 export interface DocumentHarnessVerification {
   method: "rule" | "llm" | null;
   rule_id: string | null;
@@ -2590,6 +2605,10 @@ export interface DocumentHarnessMention {
   id: string;
   label: string;
   role: string;
+  parent_mention_id: string | null;
+  refined_member_ids: string[];
+  verification: DocumentHarnessVerification;
+  calibration: DocumentHarnessCalibration | null;
   class_iri: string | null;
   class_label: string | null;
   state: DocumentHarnessState;
@@ -2658,12 +2677,14 @@ export interface DocumentHarnessProperty {
   value: unknown;
   source_value: string;
   source_unit: string | null;
+  source_unit_evidence: DocumentHarnessSourceRef[];
   value_component: "whole" | "span" | "lower" | "upper";
   value_evidence: DocumentHarnessSourceRef[];
   state: DocumentHarnessState;
   reason: string;
   evidence: DocumentHarnessSourceRef[];
   verification: DocumentHarnessVerification;
+  calibration: DocumentHarnessCalibration | null;
 }
 
 export interface DocumentHarnessRelation {
@@ -2674,7 +2695,7 @@ export interface DocumentHarnessRelation {
   object_id: string;
   subject_mention_id: string;
   object_mention_id: string;
-  predicate_iri: string;
+  predicate_iri: string | null;
   label: string;
   state: DocumentHarnessState;
   reason: string;
@@ -2682,6 +2703,7 @@ export interface DocumentHarnessRelation {
   polarity: "positive" | "negative" | "uncertain";
   conditions: string[];
   verification: DocumentHarnessVerification;
+  calibration: DocumentHarnessCalibration | null;
 }
 
 export interface DocumentHarnessRelationGroup extends Omit<DocumentHarnessRelation, "object_id" | "object_mention_id"> {
@@ -2692,6 +2714,8 @@ export interface DocumentHarnessRelationGroup extends Omit<DocumentHarnessRelati
   timing: "parallel" | "sequential" | "unspecified";
   timing_state: DocumentHarnessState;
   timing_reason: string;
+  ordered_object_ids: string[] | null;
+  order_evidence: DocumentHarnessSourceRef[];
 }
 
 export type DocumentInterpretationMeaning = "alternatives" | "parallel" | "joint_unspecified" | "unresolved";
@@ -2728,7 +2752,9 @@ export interface DocumentHarnessGraph {
     completed_calls: number;
     candidate_count: number;
     fact_count: number;
-    phase: "reading" | "entities" | "coreference" | "graph" | "done";
+    phase: DocumentHarnessPhase;
+    phase_work_counts: Record<Exclude<DocumentHarnessPhase, "done">, Record<DocumentHarnessWorkStatus, number>>;
+    calibration_counts: Record<"identifier" | "datatype" | "unit" | "shacl", Record<DocumentHarnessCheckStatus, number>>;
     reading_windows: {
       total: number;
       saved: number;
@@ -2748,6 +2774,7 @@ export interface DocumentHarnessGraph {
     rule_verified_count: number;
     llm_verified_count: number;
     stage_costs: Array<{
+      phase: DocumentHarnessPhase;
       stage: DocumentHarnessStage;
       calls: number;
       seconds: number;
@@ -2943,7 +2970,7 @@ export const controlDocumentAnalysisRun = (
   return fetchAPI<DocumentAnalysisRunControl>(`${documentRunPath(recognitionRunId)}/${operationPath}`, {
     method: "POST",
     body: JSON.stringify({
-      expected_revision: expectedRevision,
+      ...(action === "pause" ? {} : { expected_revision: expectedRevision }),
       request_key: requestKey,
       reason,
     }),

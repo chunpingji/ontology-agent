@@ -18,7 +18,8 @@ from app.services.extraction.docx_structure import parse_docx_structure
 
 def discovery(anchor):
     return {
-        "entities": [{"local_id": "E1", "role": "object", "anchor": anchor,
+        "entities": [{"candidate_class_iri": "urn:anchor:Object",
+                      "local_id": "E1", "role": "object", "anchor": anchor,
                       "evidence": ["S1"], "field_ids": [], "source_fields": []}],
         "document_field_ids": [], "document_source_fields": [], "unowned_fields": [],
         "relation_hints": [], "complete": True,
@@ -30,7 +31,7 @@ def test_missing_or_null_anchor_cannot_pass_discovery_contract(invalid):
     answer = discovery(invalid)
     if invalid == "omitted":
         del answer["entities"][0]["anchor"]
-    schema = stage_schema("discover", source_ids=["S1"])
+    schema = stage_schema("discover", source_ids=["S1"], class_iris=["urn:anchor:Object"])
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(answer, schema)
     with pytest.raises(ValidationError):
@@ -38,7 +39,7 @@ def test_missing_or_null_anchor_cannot_pass_discovery_contract(invalid):
 
 
 def test_source_selection_is_sufficient_but_foreign_ids_are_not_in_schema():
-    schema = stage_schema("discover", source_ids=["S1"])
+    schema = stage_schema("discover", source_ids=["S1"], class_iris=["urn:anchor:Object"])
     answer = discovery({"source_id": "S1"})
     jsonschema.validate(answer, schema)
     assert Discovery.model_validate(answer).entities[0].anchor.text is None
@@ -140,7 +141,8 @@ def test_registration_uses_source_anchor_without_name_and_accounts_for_failures(
     engine = Engine(ir=ir, catalog=catalog, state={}, invoke=invoke,
                     save=lambda changes: None,
                     should_stop=lambda: bool(engine.state.get("window_entities")),
-                    rank=lambda *_: {"snapshot_id": catalog.snapshot_id, "selected_iris": []})
+                    rank=lambda *_: {"snapshot_id": catalog.snapshot_id,
+                                     "selected_iris": ["urn:anchor:Object"]})
     engine.windows = [window]
     engine.run()
     entities = [e for e in engine.state["entities"].values() if e["id"] != "document"]
@@ -166,7 +168,8 @@ def test_invalid_anchor_cannot_finish_an_unsplittable_window(table_input):
 
     engine = Engine(ir=ir, catalog=catalog, state={}, invoke=invoke,
                     save=lambda changes: None, should_stop=lambda: False,
-                    rank=lambda *_: {"snapshot_id": catalog.snapshot_id, "selected_iris": []})
+                    rank=lambda *_: {"snapshot_id": catalog.snapshot_id,
+                                     "selected_iris": ["urn:anchor:Object"]})
     engine.windows = [window]
     engine.run()
     assert engine.state["cursor"]["main"]["stage"] == "complete"

@@ -14,7 +14,7 @@ from .protocols import INSTRUCTIONS, OUTPUT_TOKENS, PROTOCOL
 from .ranking import freeze_ranking_policy
 
 
-def gateway_schema(schema):
+def gateway_schema(schema, *, inline_annotated_refs=True):
     """Express the current contract in the gateway's strict JSON Schema subset."""
     definitions = schema.get("$defs", {})
 
@@ -24,12 +24,13 @@ def gateway_schema(schema):
         if not isinstance(value, dict):
             return value
         value = deepcopy(value)
-        if "$ref" in value and len(value) > 1:
+        if inline_annotated_refs and "$ref" in value and len(value) > 1:
             ref = value.pop("$ref")
             if not ref.startswith("#/$defs/"):
                 raise ValueError("unsupported_nonlocal_schema_reference")
             value = {**deepcopy(definitions[ref.rsplit("/", 1)[1]]), **value}
-        result = {key: visit(item) for key, item in value.items() if key != "default"}
+        result = {key: visit(item) for key, item in value.items()
+                  if key not in {"default", "title"}}
         if result.get("type") == "object" and "properties" in result:
             result["required"] = list(result["properties"])
             result["additionalProperties"] = False
@@ -46,6 +47,11 @@ def gateway_schema(schema):
         return result
 
     return visit(schema)
+
+
+def prompt_schema(stage, schema):
+    """Read shared definitions once; the gateway still receives its strict schema."""
+    return gateway_schema(schema, inline_annotated_refs=stage != "discover")
 
 
 def freeze_policy() -> dict:
@@ -78,7 +84,7 @@ def request_size(stage, payload, schema):
         len(
             json.dumps(
                 {"instructions": INSTRUCTIONS[stage], "input": payload,
-                 "schema": gateway_schema(schema)},
+                 "schema": prompt_schema(stage, schema)},
                 ensure_ascii=False,
             ).encode()
         )
@@ -118,7 +124,7 @@ def call_model(stage, payload, schema, policy):
                         # field meanings to the model. Send the same current
                         # contract as readable input; request_size already counts it.
                         "text": json.dumps(
-                            {"input": payload, "schema": wire},
+                            {"input": payload, "schema": prompt_schema(stage, schema)},
                             ensure_ascii=False, separators=(",", ":"),
                         ),
                     }

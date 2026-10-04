@@ -1154,7 +1154,7 @@ class DocumentAnalysisApplication:
         run: DocumentAnalysisRun,
         *,
         action: str,
-        expected_revision: int,
+        expected_revision: int | None,
         request_key: str,
         reason: str | None,
         role: str,

@@ -95,7 +95,8 @@ def _endpoint_ids(assertion):
 
 def _refs(row):
     result = []
-    for key in ("evidence", "value_evidence", "type_evidence"):
+    for key in ("evidence", "value_evidence", "type_evidence",
+                "source_unit_evidence", "order_evidence"):
         result.extend(row.get(key, []))
     for key in ("name", "referent", "quote"):
         if isinstance(row.get(key), dict):
@@ -161,7 +162,8 @@ judgment; changing a class, anchor, identity interpretation or source cannot.
     claim_keys = (
         "subject_id", "object_id", "object_ids", "predicate_iri", "alignment_class_iri",
         "polarity", "conditions", "participation", "selection", "timing", "field_id",
-        "value", "source_value", "source_unit", "value_component", "value_evidence", "evidence",
+        "value", "source_value", "source_unit", "source_unit_evidence",
+        "ordered_object_ids", "order_evidence", "value_component", "value_evidence", "evidence",
     )
     endpoints = [state.get("entities", {}).get(key, {}) for key in _endpoint_ids(assertion)]
     field = state.get("fields", {}).get(assertion.get("field_id"), {})
@@ -198,6 +200,8 @@ def _group_valid(assertion):
         and timing in {"parallel", "sequential", "unspecified"}
         and (selection != "exactly_one" or participation == "options")
         and (timing == "unspecified" or participation == "all")
+        and (timing == "sequential" or (
+            assertion.get("ordered_object_ids") is None and not assertion.get("order_evidence")))
     )
 
 
@@ -257,19 +261,15 @@ def _property_error(subject, field, assertion):
             return "value_outside_field"
     else:
         # Component existence is a syntactic check; confirmation remains a gate.
-        expected = value_components(field, confirmed=True).get(component)
+        expected = value_components(field).get(component)
         if (expected is None or assertion.get("value") != expected["value"]
-                or assertion.get("source_unit") != expected["unit"]):
+):
             return "bound_value_changed"
-    bindings = (subject.get("identity_binding") or {}).get("identifiers", [])
-    bound = [item for item in bindings if item.get("field_id") == field["id"]]
-    if bound and not any(item.get("property_iri") == assertion.get("predicate_iri")
-                         and item.get("value") == assertion.get("value") for item in bound):
-        return "bound_value_changed"
     return None
 
 
-def _structural_gate(ir, catalog, state, assertion):
+def check_candidate_structure(ir, catalog, state, assertion):
+    """Check source locations and closed identifiers without deciding semantics."""
     endpoints = [state.get("entities", {}).get(key) for key in _endpoint_ids(assertion)]
     if not endpoints or any(row is None for row in endpoints):
         return _gate("invalid", "missing_endpoint")
@@ -283,11 +283,19 @@ def _structural_gate(ir, catalog, state, assertion):
             refs.extend(_refs(binding))
     if any(not _valid_reference(ir, ref) for ref in refs):
         return _gate("invalid", "invalid_reference")
-    if not _group_valid(assertion) or not _complete_referent_group(state, assertion):
+    if not _group_valid(assertion):
         return _gate("invalid", "invalid_group_contract", refs)
-    decision = _ontology_gate(catalog, endpoints, assertion)
-    if decision:
-        return _gate(*decision, refs)
+    if assertion.get("timing") == "sequential":
+        ordered = assertion.get("ordered_object_ids") or []
+        if (len(ordered) != len(set(ordered)) or set(ordered) != set(assertion["object_ids"])
+                or not assertion.get("order_evidence")
+                or any(not _valid_reference(ir, ref) for ref in assertion["order_evidence"])):
+            return _gate("invalid", "invalid_group_order", refs)
+    iri = assertion.get("predicate_iri")
+    menus = [prop.iri for card in catalog.classes.values()
+             for prop in (card.properties if "field_id" in assertion else card.relations)]
+    if iri and iri not in menus:
+        return _gate("invalid", "predicate_outside_catalog", refs)
     if "field_id" in assertion:
         error = _property_error(endpoints[0], field, assertion)
         if error:
@@ -295,12 +303,26 @@ def _structural_gate(ir, catalog, state, assertion):
     return None
 
 
-def precheck_assertion(ir, catalog, state, assertion) -> dict:
+def route_semantic_review(ir, catalog, state, assertion, policy=None) -> dict:
     """Route a proposal without ever converting lack of proof to a negative fact."""
     catalog = SchemaCatalog.model_validate(catalog)
-    failure = _structural_gate(ir, catalog, state, assertion)
+    if not assertion.get("predicate_iri"):
+        return _gate("waiting", "predicate_unmapped")
+    failure = check_candidate_structure(ir, catalog, state, assertion)
     if failure:
         return failure
+    if not _complete_referent_group(state, assertion):
+        return _gate("invalid", "invalid_group_contract", assertion.get("evidence", []))
+    endpoints = [state["entities"][key] for key in _endpoint_ids(assertion)]
+    decision = _ontology_gate(catalog, endpoints, assertion)
+    if decision:
+        return _gate(*decision, assertion.get("evidence", []))
+    if "field_id" in assertion:
+        bound = [item for item in (endpoints[0].get("identity_binding") or {}).get(
+            "identifiers", []) if item.get("field_id") == assertion["field_id"]]
+        if bound and not any(item.get("property_iri") == assertion["predicate_iri"]
+                             and item.get("value") == assertion.get("value") for item in bound):
+            return _gate("invalid", "bound_value_changed", assertion.get("evidence", []))
     refs = assertion.get("evidence", [])
     verification = assertion.get("verification") or {}
     if (verification.get("method") in {"llm", "rule"}
@@ -310,7 +332,7 @@ def precheck_assertion(ir, catalog, state, assertion) -> dict:
             )):
         return _gate("reuse", "exact_dependency_reuse", refs, reused=verification)
     proof = prove_table_relation(
-        ir, catalog, state, assertion, _policy(state).get("table_relation_rules", []),
+        ir, catalog, state, assertion, (policy or _policy(state)).get("table_relation_rules", []),
     )
     if proof:
         return _gate("proven", "exact_table_relation", refs, proof=proof)
@@ -319,6 +341,19 @@ def precheck_assertion(ir, catalog, state, assertion) -> dict:
             or assertion.get("missing_context")):
         return _gate("waiting", "insufficient_context", refs)
     return _gate("semantic", "semantic_proof_required", refs)
+
+
+def semantic_acceptance(state, row, verdict):
+    if verdict != "accepted":
+        return verdict
+    if not row.get("predicate_iri"):
+        return "unresolved"
+    if any(state.get("entities", {}).get(key, {}).get("state") != "accepted"
+           for key in _endpoint_ids(row)):
+        return "unresolved"
+    if "object_ids" in row and row.get("participation") == "unknown":
+        return "unresolved"
+    return "accepted"
 
 
 def table_scope_hash(ir, rule) -> str:
@@ -416,7 +451,10 @@ def prove_table_relation(ir, catalog, state, assertion, frozen_rules) -> dict | 
     if (not frozen_rules or "field_id" in assertion or "object_ids" in assertion
             or assertion.get("polarity") != "positive" or assertion.get("conditions") != []):
         return None
-    if _structural_gate(ir, catalog, state, assertion):
+    if check_candidate_structure(ir, catalog, state, assertion):
+        return None
+    if _ontology_gate(catalog, [state["entities"][key] for key in _endpoint_ids(assertion)],
+                      assertion):
         return None
     subject = state["entities"][assertion["subject_id"]]
     obj = state["entities"][assertion["object_id"]]

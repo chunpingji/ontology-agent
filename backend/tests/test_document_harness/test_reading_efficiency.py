@@ -118,13 +118,15 @@ def test_entity_anchor_cannot_cross_from_primary_into_context(inputs):
                               "end": source["offset"] + start + 3}]
     anchor = {"source_id": source["source_id"], "text": "Alpha", "occurrence": None}
     answer = Discovery.model_validate({
-        "entities": [{"local_id": "a", "name": anchor, "anchor": anchor,
+        "entities": [{"candidate_class_iri": "urn:test:Thing",
+                      "local_id": "a", "name": anchor, "anchor": anchor,
                       "role": "object", "evidence": [source["source_id"]],
                       "field_ids": [], "source_fields": []}],
         "document_field_ids": [], "document_source_fields": [], "unowned_fields": [],
         "relation_hints": [], "complete": True,
     })
-    delta = decode_local_discovery(ir, window, answer, {}, {"id": "document"})
+    delta = decode_local_discovery(ir, window, answer, {}, {"id": "document"},
+    class_iris=["urn:test:Thing"])
     changes = delta["changes"]
     assert not delta["complete"]
     assert set(changes["entities"]) == {"document"}

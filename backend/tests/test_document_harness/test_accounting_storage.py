@@ -31,6 +31,29 @@ def call(repo, payload=None):
     return key, repo.begin_attempt(key, "discover", payload, {}, policy)
 
 
+def test_phase_and_check_counters_replace_current_values_without_accumulating():
+    metrics = empty_metrics()
+    row = {"id": "p", "state": "accepted", "calibration": None}
+    metrics = update_business_metrics(metrics, "properties", None, row)
+    for counts in metrics["calibration_counts"].values():
+        assert counts["not_run"] == 1
+    checked = {**row, "calibration": {"checks": {
+        key: {"status": "passed"} for key in ("identifier", "datatype", "unit", "shacl")}}}
+    metrics = update_business_metrics(metrics, "properties", row, checked)
+    for counts in metrics["calibration_counts"].values():
+        assert counts["not_run"] == 0 and counts["passed"] == 1 and sum(counts.values()) == 1
+    metrics = update_business_metrics(metrics, "properties", checked, row)
+    metrics = update_business_metrics(metrics, "properties", row, None)
+    assert metrics["candidate_count"] == metrics["fact_count"] == 0
+    assert all(sum(counts.values()) == 0 for counts in metrics["calibration_counts"].values())
+    work = {"id": "w", "kind": "evidence_review", "status": "ready", "phase": "semantic"}
+    metrics = update_business_metrics(metrics, "work", None, work)
+    metrics = update_business_metrics(metrics, "work", work, {**work, "status": "failed"})
+    for status, count in metrics["work_counts"].items():
+        assert sum(p[status] for p in metrics["phase_work_counts"].values()) == count
+    assert metrics["phase_work_counts"]["semantic"]["failed"] == 1
+
+
 def answer(usage=None):
     return {"output": {}, "raw_response": {"id": "paid"}, "usage": usage or {}, "error": None}
 
@@ -60,7 +83,7 @@ def test_retry_keeps_earlier_unknown_usage_and_counts_measured_failed_duration(d
     _, next_attempt = call(repo)
     repo.finish_attempt(key, next_attempt, answer({"input_tokens": 7, "output_tokens": 3}), 500000)
     assert graph_response(db, run)["progress"]["stage_costs"][0] == {
-        "stage": "discover", "calls": 2, "seconds": 2.5, "input_tokens": None,
+        "phase": "discovery", "stage": "discover", "calls": 2, "seconds": 2.5, "input_tokens": None,
         "output_tokens": None, "unmeasured_attempts": 0,
     }
     assert not graph_response(db, run)["observations"]
@@ -128,7 +151,7 @@ def test_prepared_batch_persists_exact_members_and_cached_answer_without_dispatc
     run, token = _run(db)
     repo = Repository(db, run, token)
     repo.save({"work": {"w": {"id": "w", "kind": "property_alignment", "status": "ready",
-                              "dependency_hash": "h"}}})
+                              "dependency_hash": "h", "phase": "semantic", "retryable": True}}})
     target = {"window_id": "window", "step": "property_alignment",
               "targets": [{"domain": "work", "id": "w", "dependency_hash": "h"}],
               "alias_bindings": {"C1": "w"}, "source_bindings": {"S1": ["source", 0, 4]}}
@@ -222,9 +245,10 @@ def test_call_checksum_detects_accounting_tamper_and_stale_worker_cannot_finish(
         Repository(db, run, "wrong-token").finish_attempt(key, attempt, answer(), 1)
 
 
-def test_paid_batch_missing_judgment_is_saved_as_failed_without_redispatch(db, monkeypatch):
+def test_paid_batch_missing_judgment_is_saved_for_local_validation_without_redispatch(
+    db, monkeypatch,
+):
     from app.services.document_harness import model
-    from app.services.document_harness.runtime import HarnessCallFailed
 
     run, token = _run(db)
     calls = []
@@ -235,11 +259,10 @@ def test_paid_batch_missing_judgment_is_saved_as_failed_without_redispatch(db, m
     repo = Repository(db, run, token)
     payload = {"candidates": [{"id": "R1"}, {"id": "T1"}]}
     for _ in range(2):
-        with pytest.raises(HarnessCallFailed, match="evidence_review_answer_set_mismatch"):
-            repo.invoke("evidence_review", payload, {})
-    assert calls == [1] and repo.metrics()["completed_calls"] == 0
-    assert (graph_response(db, run)["observations"][0]["reason"]
-            == "evidence_review_answer_set_mismatch")
+        result = repo.invoke("evidence_review", payload, {})
+        assert result["judgments"] == {}
+    assert calls == [1] and repo.metrics()["completed_calls"] == 1
+    assert not repo.load().get("relations")
 
 
 def test_limited_regions_and_work_quota_counters_are_current_not_cumulative(db):
@@ -247,7 +270,8 @@ def test_limited_regions_and_work_quota_counters_are_current_not_cumulative(db):
     repo = Repository(db, run, token)
     observation = {"id": "region", "label": "区域", "reason": "候选范围受限",
                    "weak_pool_truncated": True, "evidence": []}
-    work = {"id": "w", "kind": "property_alignment", "status": "pruned"}
+    work = {"id": "w", "kind": "property_alignment", "status": "pruned",
+            "phase": "semantic", "retryable": True}
     repo.save({"observations": {"region": observation}, "work": {"w": work}})
     assert graph_response(db, run)["progress"]["candidate_scope_limited"]
     repo.save({"observations": {"region": {**observation, "weak_pool_truncated": False}},
@@ -338,10 +362,9 @@ def test_pair_ranking_reuses_independent_result_and_never_inflates_llm_costs(db,
     repo.close()
 
 
-def test_foreign_source_in_paid_output_is_failed_and_never_applied_or_reissued(db, monkeypatch):
+def test_foreign_source_in_complete_paid_output_is_never_applied_by_transport(db, monkeypatch):
     from app.services.document_harness import model
     from app.services.document_harness.protocols import stage_schema
-    from app.services.document_harness.runtime import HarnessCallFailed
 
     run, token = _run(db)
     count = []
@@ -354,9 +377,9 @@ def test_foreign_source_in_paid_output_is_failed_and_never_applied_or_reissued(d
     schema = stage_schema("evidence_review", source_ids=["S1"], candidate_ids=["R1"])
     repo = Repository(db, run, token)
     for _ in range(2):
-        with pytest.raises(HarnessCallFailed, match="harness_output_schema_mismatch"):
-            repo.invoke("evidence_review", {"candidates": [{"id": "R1"}]}, schema)
-    assert count == [1] and repo.metrics()["completed_calls"] == 0
+        result = repo.invoke("evidence_review", {"candidates": [{"id": "R1"}]}, schema)
+        assert result["judgments"]["R1"]["evidence"] == ["S9"]
+    assert count == [1] and repo.metrics()["completed_calls"] == 1
     assert not repo.load().get("relations")
 
 
@@ -444,8 +467,8 @@ def test_postgresql_model_wait_releases_fence_and_duplicate_finish_is_noop(pg_en
                 db.commit()
                 _, metrics, _, _ = read_graph_bundle(db, run_id, owner_id)
                 assert metrics["completed_calls"] == 0
-                assert metrics["stages"]["discover"]["attempts"] == 1
-                assert metrics["stages"]["discover"]["unknown_input"] == 1
+                assert metrics["stages"]["discovery:discover"]["attempts"] == 1
+                assert metrics["stages"]["discovery:discover"]["unknown_input"] == 1
         finally:
             release.set()
         future.result(timeout=5)
@@ -458,7 +481,7 @@ def test_postgresql_model_wait_releases_fence_and_duplicate_finish_is_noop(pg_en
         repo.finish_attempt(key, 1, answer({"input_tokens": 1000}), 1000000)
         assert repo.metrics() == before and run.request_version == version
         assert before["completed_calls"] == 1
-        assert before["stages"]["discover"]["input_tokens"] == 8
+        assert before["stages"]["discovery:discover"]["input_tokens"] == 8
         assert repo.get_call_record(key)["status"] == "completed"
     assert calls == [1]
 
@@ -492,5 +515,5 @@ def test_postgresql_concurrent_finish_accounts_one_attempt_once(pg_engine):
         metrics = Repository(db, run, token).metrics()
         assert run.request_version == request_version + 1
         assert metrics["completed_calls"] == 1
-        assert metrics["stages"]["discover"]["duration_us"] == 200
-        assert metrics["stages"]["discover"]["input_tokens"] == 5
+        assert metrics["stages"]["discovery:discover"]["duration_us"] == 200
+        assert metrics["stages"]["discovery:discover"]["input_tokens"] == 5

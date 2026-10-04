@@ -98,7 +98,7 @@ def test_member_refinement_rebinds_all_window_memberships_and_observations(looku
         "reason": "归属待定", "kind": "entity", "candidate_subject_ids": [old], "evidence": []}}
     run_referent_alignment(engine, window)
     members = engine.state["window_entities"][window.id]["ids"]
-    assert len(members) == 2 and old not in engine.state["entities"]
+    assert len(members) == 2 and set(engine.state["entities"][old]["refined_member_ids"]) == set(members)
     assert engine.state["window_entities"]["overlap"]["ids"] == members
     assert engine.state["observations"]["shared"]["candidate_subject_ids"] == members
 

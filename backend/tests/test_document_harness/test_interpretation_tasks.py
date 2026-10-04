@@ -34,7 +34,7 @@ def seed_run(db, fixture, *, owner="analyst", document_hash=None, two_tasks=Fals
         root_class_label="报告", ontology_snapshot_hash=content_hash(payload),
         source_artifact_id="source:" + run_key, source_storage_uri="original.docx",
         source_media_type="application/docx", source_size_bytes=1,
-        source_payload={"engine": ENGINE, "policy": {}},
+        source_payload={"engine": ENGINE, "policy": {"protocol": "document-harness-v10", "execution_policy": {"flow": "four_stage", "reading_concurrency": 2}}},
         ontology_artifact_id="ontology:" + run_key, ontology_payload=payload,
         progress={"engine": ENGINE},
     )
@@ -65,7 +65,7 @@ def seed_run(db, fixture, *, owner="analyst", document_hash=None, two_tasks=Fals
             "evidence": [ref] if slash else [{**ref, "text": "A1", "end": ref["start"] + 2}],
             "polarity": "positive", "conditions": [],
             "participation": "unknown" if slash else "options",
-            "selection": "unspecified", "timing": "unspecified",
+            "selection": "unspecified", "timing": "unspecified", "ordered_object_ids": None, "order_evidence": [],
             "timing_state": "unresolved", "timing_reason": "时间未决",
         })
     from app.services.document_harness.accounting import empty_metrics, update_business_metrics

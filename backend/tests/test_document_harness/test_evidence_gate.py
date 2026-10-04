@@ -10,8 +10,8 @@ from rdflib import Graph
 from app.services.document_harness.evidence_gate import (
     assertion_dependency_hash,
     normalize_table_rules,
-    precheck_assertion,
     prove_table_relation,
+    route_semantic_review,
     table_scope_hash,
     try_rule_seed,
 )
@@ -102,7 +102,7 @@ def test_exact_quotes_and_legal_classes_are_not_relation_proof(tmp_path, catalog
     """V01/V04: two sibling items and a plausible predicate still need semantics."""
     ir = document(tmp_path)
     state, claim = state_and_claim(ir)
-    assert precheck_assertion(ir, catalog, state, claim)["action"] == "semantic"
+    assert route_semantic_review(ir, catalog, state, claim)["action"] == "semantic"
     assert prove_table_relation(ir, catalog, state, claim, []) is None
     assert try_rule_seed(ir, catalog, state, claim, []) is None
 
@@ -121,7 +121,7 @@ def test_frozen_table_proves_seed_before_alignment_and_locates_all_support(tmp_p
     assert proof["dependency_hash"] == assertion_dependency_hash(ir, catalog, state, assertion)
     quoted = [reference(ir, *key)["text"] for key in proof["evidence_refs"]]
     assert {"Alpha", "Beta", "Container", "Component", "Declared composition"} <= set(quoted)
-    assert precheck_assertion(ir, catalog, state, assertion)["action"] == "proven"
+    assert route_semantic_review(ir, catalog, state, assertion)["action"] == "proven"
 
 
 def test_rule_seed_uses_physical_clue_references_from_work_contract(tmp_path, catalog):
@@ -211,11 +211,11 @@ def test_bound_identifier_is_precheck_not_semantic_proof(tmp_path, catalog):
     """V05: matching an identifier does not prove what that identifier means."""
     ir = document(tmp_path)
     state, claim = property_claim(ir)
-    result = precheck_assertion(ir, catalog, state, claim)
+    result = route_semantic_review(ir, catalog, state, claim)
     assert result["action"] == "semantic"
     assert result["proof"] is None
     changed = {**claim, "value": "Beta"}
-    assert precheck_assertion(ir, catalog, state, changed)["reason_code"] == "bound_value_changed"
+    assert route_semantic_review(ir, catalog, state, changed)["reason_code"] == "bound_value_changed"
 
 
 def test_value_quote_outside_owned_field_is_invalid(tmp_path, catalog):
@@ -223,7 +223,7 @@ def test_value_quote_outside_owned_field_is_invalid(tmp_path, catalog):
     state, claim = property_claim(ir)
     claim.update(value_component="span", value="Beta",
                  value_evidence=[state["entities"]["b"]["referent"]])
-    assert precheck_assertion(ir, catalog, state, claim)["reason_code"] == "value_outside_field"
+    assert route_semantic_review(ir, catalog, state, claim)["reason_code"] == "value_outside_field"
 
 
 @pytest.mark.parametrize("verdict", ["accepted", "rejected", "unresolved"])
@@ -236,7 +236,7 @@ def test_exact_reuse_preserves_llm_verdict_and_method(tmp_path, catalog, verdict
         "dependency_hash": assertion_dependency_hash(ir, catalog, state, claim),
         "rule_id": None, "rule_version": None, "rule_hash": None,
     }
-    result = precheck_assertion(ir, catalog, state, claim)
+    result = route_semantic_review(ir, catalog, state, claim)
     assert result["action"] == "reuse"
     assert result["reused_verification"] == claim["verification"]
     assert result["proof"] is None
@@ -252,9 +252,9 @@ def test_confirmation_is_gate_only_but_changed_meaning_invalidates_proof(tmp_pat
     }
     for status in ("candidate", "accepted", "unresolved"):
         state["entities"]["b"]["state"] = status
-        assert precheck_assertion(ir, catalog, state, claim)["action"] == "reuse"
+        assert route_semantic_review(ir, catalog, state, claim)["action"] == "reuse"
     state["entities"]["b"]["role"] = "alternative"
-    assert precheck_assertion(ir, catalog, state, claim)["action"] == "semantic"
+    assert route_semantic_review(ir, catalog, state, claim)["action"] == "semantic"
 
 
 def test_new_negation_evidence_invalidates_old_proof(tmp_path, catalog):
@@ -266,7 +266,7 @@ def test_new_negation_evidence_invalidates_old_proof(tmp_path, catalog):
     }
     state["hints"] = {"h": {"subject_id": "a", "object_id": "b", "evidence": claim["evidence"],
                             "polarity": "negative", "conditions": []}}
-    assert precheck_assertion(ir, catalog, state, claim)["action"] == "semantic"
+    assert route_semantic_review(ir, catalog, state, claim)["action"] == "semantic"
 
 
 def test_unused_new_field_does_not_invalidate_relation_proof(tmp_path, catalog):
@@ -300,7 +300,7 @@ def test_invalid_references_precede_reuse(tmp_path, catalog):
         "method": "llm", "semantic_verdict": "accepted",
         "dependency_hash": assertion_dependency_hash(ir, catalog, state, claim),
     }
-    result = precheck_assertion(ir, catalog, state, claim)
+    result = route_semantic_review(ir, catalog, state, claim)
     assert (result["action"], result["reason_code"]) == ("invalid", "invalid_reference")
 
 
@@ -318,7 +318,7 @@ def test_invalid_group_contract_never_reaches_semantics(
     claim.update(
         object_ids=members, participation=participation, selection=selection, timing=timing,
     )
-    assert precheck_assertion(ir, catalog, state, claim)["reason_code"] == "invalid_group_contract"
+    assert route_semantic_review(ir, catalog, state, claim)["reason_code"] == "invalid_group_contract"
 
 
 def test_unknown_participation_waits_without_flattening_members(tmp_path, catalog):
@@ -327,7 +327,7 @@ def test_unknown_participation_waits_without_flattening_members(tmp_path, catalo
     claim.pop("object_id")
     claim.update(object_ids=["a", "b"], participation="unknown",
                  selection="unspecified", timing="unspecified")
-    result = precheck_assertion(ir, catalog, state, claim)
+    result = route_semantic_review(ir, catalog, state, claim)
     assert result["action"] == "waiting"
     assert claim["object_ids"] == ["a", "b"]
 
@@ -337,28 +337,28 @@ def test_single_edge_cannot_bypass_whole_referent_group(tmp_path, catalog):
     state, claim = state_and_claim(ir)
     state["entities"]["b"]["identity_binding"] = {"group_id": "options", "identifiers": []}
     state["entities"]["b2"] = {**state["entities"]["b"], "id": "b2"}
-    assert precheck_assertion(ir, catalog, state, claim)["reason_code"] == "invalid_group_contract"
+    assert route_semantic_review(ir, catalog, state, claim)["reason_code"] == "invalid_group_contract"
 
 
 def test_hypothesis_type_can_be_reviewed_but_missing_type_waits(tmp_path, catalog):
     ir = document(tmp_path)
     state, claim = state_and_claim(ir)
     state["entities"]["a"]["state"] = "candidate"
-    assert precheck_assertion(ir, catalog, state, claim)["action"] == "semantic"
+    assert route_semantic_review(ir, catalog, state, claim)["action"] == "semantic"
     state["entities"]["a"]["class_iri"] = None
-    assert precheck_assertion(ir, catalog, state, claim)["action"] == "waiting"
+    assert route_semantic_review(ir, catalog, state, claim)["action"] == "waiting"
 
 
 def test_known_illegal_predicate_is_invalid_but_unresolved_constraint_waits(tmp_path, catalog):
     ir = document(tmp_path)
     state, claim = state_and_claim(ir)
     illegal = {**claim, "predicate_iri": "urn:gate:unrelated"}
-    assert precheck_assertion(ir, catalog, state, illegal)["action"] == "invalid"
+    assert route_semantic_review(ir, catalog, state, illegal)["action"] == "invalid"
     data = catalog.model_dump(mode="json")
     relation = next(row for row in data["classes"]["urn:gate:Thing"]["relations"]
                     if row["iri"] == "urn:gate:contains")
     relation["constraint_status"] = "unresolved"
-    assert precheck_assertion(ir, data, state, claim)["reason_code"] == "ontology_unresolved"
+    assert route_semantic_review(ir, data, state, claim)["reason_code"] == "ontology_unresolved"
 
 
 @pytest.mark.parametrize("mutation", [

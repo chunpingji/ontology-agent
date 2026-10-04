@@ -22,12 +22,12 @@ const valueSource = { ...source, text: "AX-07", start: 7, end: 12 };
 const card = { iri: "urn:schema:Material", label: "中间体" };
 const predicate = { iri: "https://example.test/material/identifier", label: "中间体标识",
   namespace: "https://example.test/material/", domain_text: "物料 <urn:schema:Material>" };
-const entity = (id, label, extra = {}) => ({ id, label, role: "entity", class_iri: card.iri, class_label: card.label,
+const entity = (id, label, extra = {}) => ({ parent_mention_id: null, refined_member_ids: [], calibration: null, verification: {method:null,rule_id:null,rule_version:null,semantic_verdict:null}, id, label, role: "entity", class_iri: card.iri, class_label: card.label,
   state: "accepted", reason: "合成验收：原文指称与类型已核对", evidence: [source], ...extra });
 const verification = { method: "llm", rule_id: null, rule_version: null, semantic_verdict: "accepted" };
 const property = (id, subject_id, label, value, extra = {}) => ({ verification, id, subject_id, field_id: "field:1",
   card, predicate: { ...predicate, label }, predicate_iri: predicate.iri, label, value,
-  source_value: source.text, source_unit: null, value_component: "span", value_evidence: [valueSource],
+  source_value: source.text, source_unit_evidence: [], calibration: null, source_unit: null, value_component: "span", value_evidence: [valueSource],
   state: "accepted", reason: "原文值与主体归属已核对", evidence: [source], ...extra });
 const relation = (id, subject_id, object_id, extra = {}) => ({ verification, id, subject_id, object_id, label: "关联对象",
   predicate_iri: "urn:related", card, predicate: null, state: "accepted", polarity: "positive", conditions: [],
@@ -36,18 +36,21 @@ const observation = (id, extra = {}) => ({ id, kind: "field", label: `原字段 
   value: "待对齐原值", candidate_subject_ids: [], object_id: null, reason: "合成观察独立保存",
   evidence: [source], discovery_cards: [], alignments: [], ...extra });
 const graph = { coreferences: [], relation_groups: [], candidate_work: [], interpretation_tasks: [], protocol: "document-harness-v2", run_id: runId, revision: 1, status: "paused", stage: "evidence_review",
-  progress: { completed_calls: 5, candidate_count: 20, fact_count: 8, phase: "graph", reading_windows: { total: 10, saved: 10, complete: 5, incomplete: 5, active: 0 }, scope_complete: false,
+  progress: { completed_calls: 5, candidate_count: 20, fact_count: 8, phase: "semantic", reading_windows: { total: 10, saved: 10, complete: 5, incomplete: 5, active: 0 }, scope_complete: false,
     reading: { total_characters: 4000, processed_characters: 2000, complete_characters: 800, complete: false },
     work_counts: { ready: 0, waiting: 1, pruned: 2, done: 5, failed: 0 },
+    phase_work_counts: Object.fromEntries(["discovery", "skeleton", "semantic", "deterministic"].map((phase) => [phase, {ready:0, waiting:0, pruned:0, done:0, failed:0}])),
+    calibration_counts: Object.fromEntries(["identifier", "datatype", "unit", "shacl"].map((name) => [name, {not_run:0, passed:0, invalid:0, incomplete:0, not_applicable:0, error:0}])),
     candidate_scope_limited: true, rule_verified_count: 0, llm_verified_count: 8, stage_costs: [
-      { stage: "discover", calls: 2, seconds: 30, input_tokens: null, output_tokens: null, unmeasured_attempts: 0 },
-      { stage: "type_alignment", calls: 3, seconds: 10, input_tokens: 0, output_tokens: 23, unmeasured_attempts: 0 },
+      { phase: "discovery", stage: "discover", calls: 2, seconds: 30, input_tokens: null, output_tokens: null, unmeasured_attempts: 0 },
+      { phase: "skeleton", stage: "type_alignment", calls: 3, seconds: 10, input_tokens: 0, output_tokens: 23, unmeasured_attempts: 0 },
     ] },
   // Root deliberately not first; d is four hops away and material has multiple parents.
   entities: [entity("material", "物料甲"), entity("root", "报告根", { role: "document_root", class_iri: "urn:schema:Report", class_label: "报告" }),
     entity("plan", "生产计划"), entity("workshop", "车间甲"), entity("d", "深层设备"),
     entity("detached", "未连接样品", { state: "unresolved" }), entity("negative", "否定关联对象"),
-    entity("material-2", "02002668"), entity("material-3", "丙酮")],
+    entity("material-2", "02002668"), entity("material-3", "丙酮"),
+    entity("equipment-1", "设备甲"), entity("equipment-2", "设备乙"), entity("equipment-3", "设备丙")],
   properties: [property("root-p", "root", "文档编号", "DOC-001"), property("p", "material", "中间体标识", "AX-07"),
     property("p-bound", "material", "含量下限", "3.8", { source_value: "3.8–6.6 kg", source_unit: "kg", value_component: "lower", state: "unresolved", value_evidence: [] }),
     property("deep-p", "d", "设备编号", "DEEP-04")],
@@ -56,6 +59,9 @@ const graph = { coreferences: [], relation_groups: [], candidate_work: [], inter
     relation("05", "workshop", "material"), relation("06", "d", "plan"),
     relation("07", "root", "material-2", { predicate_iri: "urn:uses", label: "使用物料" }),
     relation("08", "root", "material-3", { predicate_iri: "urn:uses", label: "使用物料", state: "unresolved" }),
+    relation("equipment-1", "root", "equipment-1", { predicate_iri: "urn:usesEquipment", label: "使用设备" }),
+    relation("equipment-2", "root", "equipment-2", { predicate_iri: null, label: "使用设备", state: "candidate" }),
+    relation("equipment-3", "root", "equipment-3", { predicate_iri: null, label: "使用设备", state: "unresolved" }),
     relation("negative-edge", "root", "negative", { polarity: "negative", conditions: ["特定条件下"] })],
   targets: [{ id: "target", subject_id: "material", kind: "relation", label: "待发现成分", predicate_iri: "urn:component", range_labels: ["成分"], state: "pending" }],
   observations: [observation("mixed", { label: "物料编号", value: "AX-07", candidate_subject_ids: ["root", "material"],
@@ -75,7 +81,7 @@ graph.relation_groups.push({
   predicate_iri: "urn:area-options", label: "生产区域选项", card, predicate: null,
   state: "accepted", reason: "确认候选地点集合，尚未选择实际地点", evidence: [source],
   polarity: "positive", conditions: [], participation: "options", selection: "exactly_one",
-  timing: "unspecified", timing_state: "unresolved", timing_reason: "原文未说明时间关系",
+  ordered_object_ids: null, order_evidence: [], calibration: null, timing: "unspecified", timing_state: "unresolved", timing_reason: "原文未说明时间关系",
 });
 const material = graph.entities.find((item) => item.id === "material");
 material.mentions.push({ ...material.mentions[0], id: "material-later", label: "甲号物料" });
@@ -159,6 +165,19 @@ try {
   await expect(observations).toHaveCount(0);
   await expect(panel.locator('a[href*="-entities"], a[href*="-costs"], a[href*="-observations"]')).toHaveCount(0);
   await expect(workspace.getByRole("heading", { name: "文档编号：DOC-001" })).toBeVisible();
+  const equipmentGroup = tree.locator('[data-predicate-iri="urn:usesEquipment"][data-subject-id="root"]');
+  await expect(equipmentGroup).toHaveCount(1);
+  await expect(tree.getByText("使用设备", { exact: true })).toHaveCount(1);
+  await expect(equipmentGroup).toContainText("2 项待对齐");
+  await expect(tree.locator('[data-entity-id="equipment-2"]')).toContainText("谓词待对齐");
+  await expect(tree.locator('[data-entity-id="equipment-3"]')).toContainText("关系未决");
+  await equipmentGroup.getByRole("button").click();
+  for (const id of ["equipment-1", "equipment-2", "equipment-3"]) await expect(tree.locator(`[data-entity-id="${id}"]`)).toHaveCount(0);
+  await equipmentGroup.getByRole("button").press("Enter");
+  await tree.locator('[data-entity-id="equipment-2"]').click();
+  await expect(workspace.getByRole("heading", { name: "设备乙", exact: true })).toBeVisible();
+  await tree.locator('[data-entity-id="root"]').click();
+  checks.push("aligned and unaligned equipment share one folder, retain pending labels and collapse together");
   const materialGroup = tree.locator('[data-predicate-iri="urn:uses"][data-subject-id="root"]');
   await expect(materialGroup).toHaveCount(1);
   await expect(tree.getByText("使用物料", { exact: true })).toHaveCount(1);
@@ -199,6 +218,10 @@ try {
   await controls.locator("summary").click();
   const graphNodes = controls.getByLabel("图中节点列表");
   const graphRelations = controls.getByLabel("图中关系列表");
+  const graphEquipmentGroup = graphNodes.locator('[data-predicate-iri="urn:usesEquipment"][data-subject-id="root"]');
+  await expect(graphEquipmentGroup).toHaveCount(1);
+  await expect(graphEquipmentGroup).toContainText("2 项待对齐");
+  await expect(graphRelations.locator('[data-relation-id="relation:equipment-2"]')).toContainText("谓词待对齐");
   await expect(graphNodes.locator('[data-entity-id="d"]')).toHaveAttribute("aria-pressed", "true");
   const graphMaterialGroup = graphNodes.locator('[data-predicate-iri="urn:uses"][data-subject-id="root"]');
   await expect(graphMaterialGroup).toHaveCount(1);

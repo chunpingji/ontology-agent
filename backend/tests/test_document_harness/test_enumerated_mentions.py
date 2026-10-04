@@ -34,6 +34,7 @@ def fixture(tmp_path, text):
 def mention(number, *, occurrence=None):
     member = {"source_id": "S1", "text": number, "occurrence": occurrence}
     return {
+        "candidate_class_iri": "urn:enumeration:Area",
         "local_id": "E" + number, "name": None, "anchor": member,
         "role": "生产车间", "evidence": ["S1"], "field_ids": [],
         "source_fields": [{"label": None, "value": member}],
@@ -57,7 +58,8 @@ def discover(ir, catalog, window, entities):
     engine = Engine(
         ir=ir, catalog=catalog, state={}, invoke=invoke, save=lambda changes: saved.append(changes),
         should_stop=lambda: any(c.get("window_entities") for c in saved),
-        rank=lambda *_: {"snapshot_id": catalog.snapshot_id, "selected_iris": []},
+        rank=lambda *_: {"snapshot_id": catalog.snapshot_id,
+                         "selected_iris": ["urn:enumeration:Area"]},
     )
     engine.windows = [window]
     engine.run()

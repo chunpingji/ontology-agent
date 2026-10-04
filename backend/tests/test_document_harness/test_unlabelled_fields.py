@@ -3,6 +3,7 @@
 import pytest
 from docx import Document
 from rdflib import Graph
+from test_controller_budget import relation_proposal
 
 from app.services.document_harness.controller import Engine
 from app.services.document_harness.ontology import catalog_from_graph
@@ -47,6 +48,7 @@ def test_unlabelled_value_has_explicit_ownership_and_never_invents_a_label_quote
             name_source = next(s for s in payload["sources"] if "Alpha" in s["text"])
             return {"entities": [{
                 # Local mention IDs do not share the internal root namespace.
+                "candidate_class_iri": "urn:unlabelled:Thing",
                 "local_id": "document", "name": {"source_id": name_source["source_id"],
                 "text": "Alpha", "occurrence": 0}, "role": "body_object",
                 "anchor": {"source_id": name_source["source_id"], "text": "Alpha"},
@@ -64,9 +66,12 @@ def test_unlabelled_value_has_explicit_ownership_and_never_invents_a_label_quote
             assert all(fields[f]["label"] == "" for f in payload["property_field_ids"])
             return {"properties": {f: {
                 "mappings": [{"predicate_iri": "urn:unlabelled:audience",
-                              "value_component": "whole", "value_quote": None, "confidence": 0.99}],
+                              "value_component": "whole", "value_quote": None, "unit_quote": None, "confidence": 0.99}],
                 "reason": "由原值和上下文判断属性含义，属性名来自卡片",
             } for f in payload["property_field_ids"]}}
+        if stage == "relation_alignment":
+            assert all(item["subject_id"] == "E0" for item in payload["items"])
+            return relation_proposal(payload)
         assert stage in {"entity_review", "evidence_review"}
         return {**({"type_concerns": []} if stage == "evidence_review" else {}),
                 "judgments": {c["id"]: {

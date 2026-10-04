@@ -63,7 +63,7 @@ def create_engine(case, invoke, *, state=None, policy=None, budget=None):
         policy={"execution_policy": policy or {}}, max_request_bytes=budget,
     )
     engine.state.setdefault("cursor", {"main": {
-        "entity_window_id": None, "active_batches": {}, "phase": "graph", "stage": "planning",
+        "skeleton_window_id": None, "active_batches": {}, "phase": "semantic", "semantic_step": "assertions", "planned_steps": [], "stage": "planning",
     }})
     return engine
 
@@ -126,7 +126,7 @@ def proposal(payload, *, verdict="proposed", polarity="positive", conditions=Non
     return {"proposals": {row["candidate_id"]: {
         "verdict": verdict, "polarity": polarity, "conditions": conditions or [],
         "evidence": [source["source_id"] for source in payload["sources"]],
-        "participation": None, "selection": None, "timing": None,
+        "participation": None, "selection": None, "timing": None, "ordered_object_ids": None, "order_evidence": [],
         "missing_context": missing_context, "reason": "Source proposal", "confidence": 0.99,
     } for row in payload["items"]}}
 
@@ -325,11 +325,11 @@ def test_group_missing_one_judgment_never_partially_commits(evidence_case, omit)
 
     engine = create_engine(evidence_case, invoke)
     key = add_review(engine, relation(engine, group=True), domain="relation_groups")
-    with pytest.raises(ValueError, match="evidence_review_answer_set_mismatch"):
-        drain_work(engine, None)
+    assert drain_work(engine, None)
     row = engine.state["relation_groups"]["r"]
     assert row["state"] != "accepted" and row["timing_state"] != "accepted"
     assert engine.state["work"][key]["status"] == "failed"
+    assert not engine.state["work"][key]["retryable"]
 
 
 def test_group_r_and_t_are_not_split_to_fit_byte_budget(evidence_case, monkeypatch):
@@ -414,7 +414,7 @@ def test_group_interpretation_once_then_independent_review_preserves_all_members
             assert len(payload["group"]["objects"]) == 2
             return {
                 "verdict": "supported", "participation": "options", "selection": "exactly_one",
-                "timing": "unspecified", "reason": "Explicit alternate participation",
+                "timing": "unspecified", "ordered_object_ids": None, "order_evidence": [], "reason": "Explicit alternate participation",
                 "evidence": [row["source_id"] for row in payload["sources"]],
             }
         assert stage == "evidence_review"

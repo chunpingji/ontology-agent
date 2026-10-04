@@ -87,7 +87,7 @@ def test_identical_binding_fields_with_and_without_downstream_context(
         assert ("binding_review_policy" in payload) == carry
         assert payload["subject"]["fields"][0]["value"] == "A1"
         return {"properties": {alias: {"mappings": [{"predicate_iri": NS + "code",
-                "value_component": "whole", "value_quote": None, "confidence": 0.9}],
+                "value_component": "whole", "value_quote": None, "unit_quote": None, "confidence": 0.9}],
                 "reason": "This member's exact original ID"}}}
     engine.invoke = invoke
     engine.call("property_alignment", {"subject": subject, "property_field_ids": [alias]}, {})
@@ -220,7 +220,7 @@ def test_alignment_cannot_reintroduce_aggregate_span(lookup_fixture, monkeypatch
     alias = subject["fields"][0]["field_id"]
     result = STAGES["property_alignment"].model_validate({
         "properties": {alias: {"mappings": [{"predicate_iri": NS + "code",
-            "value_component": "span", "value_quote": quote("A1/A2"), "confidence": 1}],
+            "value_component": "span", "value_quote": quote("A1/A2"), "unit_quote": None, "confidence": 1}],
             "reason": "Conflicting aggregate value"}},
     })
     with pytest.raises(ValueError, match="downstream_value_conflict"):

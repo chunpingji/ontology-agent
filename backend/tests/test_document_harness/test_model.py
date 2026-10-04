@@ -27,7 +27,7 @@ def test_duplicate_response_keys_fail_without_losing_paid_raw_answer(monkeypatch
 
     monkeypatch.setattr(model, "responses_create", respond)
     policy = {
-        "protocol": "document-harness-v6", "max_output_tokens": 16384,
+        "protocol": "document-harness-v10", "max_output_tokens": 16384,
         "model": model.settings.local_llm_model,
         "model_revision": model.settings.local_llm_model_revision,
         "max_request_bytes": 32768, "timeout_seconds": 10,
@@ -62,7 +62,7 @@ def test_current_output_contract_is_visible_in_prompt_as_well_as_decoding_gramma
 
     monkeypatch.setattr(model, "responses_create", respond)
     policy = {
-        "protocol": "document-harness-v6", "max_output_tokens": 16384,
+        "protocol": "document-harness-v10", "max_output_tokens": 16384,
         "model": model.settings.local_llm_model,
         "model_revision": model.settings.local_llm_model_revision,
         "max_request_bytes": 32768, "timeout_seconds": 10, "temperature": 0.1,
@@ -87,7 +87,11 @@ def test_gateway_schema_inlines_annotated_refs_and_requires_default_fields(monke
 
     def respond(_client, **kwargs):
         adapted = kwargs["text_format"]["schema"]
-        assert json.loads(kwargs["input_items"][0]["content"][0]["text"])["schema"] == adapted
+        readable = json.loads(kwargs["input_items"][0]["content"][0]["text"])["schema"]
+        assert readable["properties"]["anchor"]["$ref"] == "#/$defs/Anchor"
+        assert readable["properties"]["anchor"]["description"] == "原文位置"
+        assert readable["$defs"]["Anchor"]["required"] == ["text", "occurrence"]
+        assert model.gateway_schema(readable) == adapted
         anchor = adapted["properties"]["anchor"]
         assert "$ref" not in anchor
         assert anchor["description"] == "原文位置"
@@ -101,7 +105,7 @@ def test_gateway_schema_inlines_annotated_refs_and_requires_default_fields(monke
 
     monkeypatch.setattr(model, "responses_create", respond)
     policy = {
-        "protocol": "document-harness-v6", "max_output_tokens": 16384,
+        "protocol": "document-harness-v10", "max_output_tokens": 16384,
         "model": model.settings.local_llm_model,
         "model_revision": model.settings.local_llm_model_revision,
         "max_request_bytes": 32768, "timeout_seconds": 10, "temperature": 0.1,
@@ -126,7 +130,7 @@ def test_transport_does_not_apply_controller_request_byte_limit(monkeypatch):
 
     monkeypatch.setattr(model, "responses_create", respond)
     policy = {
-        "protocol": "document-harness-v6", "max_output_tokens": 16384,
+        "protocol": "document-harness-v10", "max_output_tokens": 16384,
         "model": model.settings.local_llm_model,
         "model_revision": model.settings.local_llm_model_revision,
         "max_request_bytes": 32768, "max_context_tokens": 65536,

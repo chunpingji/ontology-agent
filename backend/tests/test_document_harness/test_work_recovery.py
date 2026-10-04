@@ -4,6 +4,7 @@ from copy import deepcopy
 
 import pytest
 from docx import Document
+from test_controller_budget import relation_proposal
 from test_work_evidence import (
     add_alignment,
     add_interpretation,
@@ -78,7 +79,7 @@ class MemoryRepository:
 def initial(case):
     engine = create_engine(case, lambda *args: pytest.fail("unexpected direct model call"))
     engine.state["windows"] = {
-        window.id: {**Engine.window_row(window, [i]), "entity_phase": "done",
+        window.id: {**Engine.window_row(window, [i]), "skeleton_step": "done",
                     "reading_state": "complete"}
         for i, window in enumerate(engine.windows)
     }
@@ -153,7 +154,7 @@ def test_property_menu_shard_is_replayed_then_remaining_menu_runs_once(evidence_
         if stage == "property_alignment":
             return {"properties": {key: {
                 "mappings": [{"predicate_iri": p["iri"], "value_component": "whole",
-                              "value_quote": None, "confidence": 0.99}
+                              "value_quote": None, "unit_quote": None, "confidence": 0.99}
                              for p in payload["card"]["properties"]],
                 "reason": "Literal properties",
             } for key in payload["property_field_ids"]}}
@@ -183,7 +184,7 @@ def test_paid_group_interpretation_resumes_before_independent_review(evidence_ca
     def model(stage, payload, schema):
         if stage == "group_interpretation":
             return {"verdict": "supported", "participation": "all", "selection": "unspecified",
-                    "timing": "parallel", "reason": "Explicit participation",
+                    "timing": "parallel", "ordered_object_ids": None, "order_evidence": [], "reason": "Explicit participation",
                     "evidence": [source["source_id"] for source in payload["sources"]]}
         assert stage == "evidence_review"
         return review_answer(payload)
@@ -228,7 +229,7 @@ def test_paid_answer_survives_apply_failure_and_reuses_current_batch_on_continue
     assert [stage for stage, _ in repo.paid] == ["relation_alignment", "evidence_review"]
 
 
-def test_discovery_capacity_splits_before_parent_expensive_work_and_reuses_entities(
+def test_twelve_complete_mentions_are_not_reread_and_each_is_typed_once(
     tmp_path, evidence_case,
 ):
     doc = Document()
@@ -247,7 +248,7 @@ def test_discovery_capacity_splits_before_parent_expensive_work_and_reuses_entit
     calls = []
 
     def invoke(stage, payload, schema):
-        current = engine.state["cursor"]["main"]["entity_window_id"]
+        current = engine.state["cursor"]["main"]["skeleton_window_id"]
         calls.append((stage, current, deepcopy(payload)))
         if stage == "discover":
             entities = []
@@ -264,6 +265,7 @@ def test_discovery_capacity_splits_before_parent_expensive_work_and_reuses_entit
                     return {"source_id": source["source_id"], "text": text, "occurrence": 0}
 
                 entities.append({
+                    "candidate_class_iri": card.iri,
                     "local_id": name, "name": quote(name), "anchor": quote(name),
                     "role": "object", "evidence": [source["source_id"]], "field_ids": [],
                     "source_fields": [{"label": quote("value"), "value": quote(value)}],
@@ -278,8 +280,11 @@ def test_discovery_capacity_splits_before_parent_expensive_work_and_reuses_entit
         if stage == "property_alignment":
             return {"properties": {key: {"mappings": [{
                 "predicate_iri": "urn:gate:value", "value_component": "whole",
-                "value_quote": None, "confidence": 0.99,
+                "value_quote": None, "unit_quote": None, "confidence": 0.99,
             }], "reason": "Exact value"} for key in payload["property_field_ids"]}}
+        if stage == "relation_alignment":
+            assert all(item["subject_id"] == "E0" for item in payload["items"])
+            return relation_proposal(payload)
         assert stage in {"entity_review", "evidence_review"}
         answer = review_answer(payload)
         if stage == "entity_review":
@@ -293,10 +298,9 @@ def test_discovery_capacity_splits_before_parent_expensive_work_and_reuses_entit
     parent = engine.windows[0].id
     engine.run()
     row = engine.state["windows"][parent]
-    assert len(row["children"]) == 2 and row["entity_phase"] == "done"
-    assert [stage for stage, _, _ in calls[:3]] == ["discover"] * 3
-    # Parent discoveries retain ownership; children do not retype them.
-    assert row["reading_state"] == "split"
+    assert row["children"] == [] and row["skeleton_step"] == "done"
+    assert [stage for stage, _, _ in calls].count("discover") == 1
+    assert row["reading_state"] == "complete"
     assert len(engine.state["entities"]) == 13
     assert len(engine.state["fields"]) == 12
     assert len(engine.state["properties"]) == 12

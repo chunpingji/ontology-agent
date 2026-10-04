@@ -76,7 +76,8 @@ def quote(text):
 
 
 def mention(name):
-    return {"local_id": name, "name": None, "anchor": quote(name), "role": "object",
+    return {"candidate_class_iri": NS + "Object",
+            "local_id": name, "name": None, "anchor": quote(name), "role": "object",
             "evidence": ["S1"], "field_ids": [],
             "source_fields": [{"label": None, "value": quote(name)}]}
 
@@ -121,7 +122,7 @@ def runner(fixture, invoke, state=None, save=None, **kwargs):
 def responses(stage, payload, schema):
     assert stage == "discover"
     if payload["lookup_mode"] == "draft":
-        result = {**discovery(["A1/A2"]),
+        result = {**discovery(["A1/A2"]), "lookup_refinement_required": True,
                   "lookup_requests": [request(x) for x in ("A1/A2", "A1", "A2")]}
     else:
         rows = payload["lookup_feedback"]["results"]
@@ -154,6 +155,26 @@ def test_query_feedback_replaces_whole_mention_without_old_edges_or_source_ident
     assert [c[0] for c in lookup_fixture[3]] == ["capabilities", "query"]
 
 
+def test_clear_mention_defers_lookup_to_semantics_without_feedback_call(lookup_fixture):
+    paid = []
+
+    def invoke(stage, payload, schema):
+        paid.append(payload["lookup_mode"])
+        assert payload["lookup_mode"] == "draft"
+        return {**discovery(["A1"]), "lookup_requests": [],
+                "lookup_refinement_required": False}
+
+    engine, _ = runner(lookup_fixture, invoke)
+    engine.run()
+    assert paid == ["draft"]
+    assert [c[0] for c in lookup_fixture[3]] == ["capabilities"]
+    assert next(iter(engine.state["windows"].values()))["lookup"]["status"] == (
+        "deferred_to_semantic"
+    )
+    assert [e["label"] for key, e in engine.state["entities"].items()
+            if key != "document"] == ["A1"]
+
+
 def test_capability_metadata_reads_no_mock_rows(lookup_fixture, db):
     _, catalog, lookup, *_ = lookup_fixture
     statements = []
@@ -172,7 +193,7 @@ def test_capability_metadata_reads_no_mock_rows(lookup_fixture, db):
 def test_invalid_values_do_not_query_and_valid_siblings_continue(lookup_fixture):
     def invoke(stage, payload, schema):
         if payload["lookup_mode"] == "draft":
-            return {**discovery(["A1/A2"]),
+            return {**discovery(["A1/A2"]), "lookup_refinement_required": True,
                     "lookup_requests": [request("invented"), request("5"), request("A1")]}
         feedback = payload["lookup_feedback"]
         assert [q["status"] for q in feedback["requests"]] == ["invalid", "invalid", "ready"]
@@ -234,7 +255,8 @@ def test_no_hit_or_incomplete_query_does_not_delete_source_mentions(lookup_fixtu
     def invoke(stage, payload, schema):
         paid.append(payload["lookup_mode"])
         assert payload["lookup_mode"] == "draft"
-        return {**discovery(["A1", "A2"]), "lookup_requests": [request("A1/A2")]}
+        return {**discovery(["A1", "A2"]), "lookup_refinement_required": True,
+                    "lookup_requests": [request("A1/A2")]}
     engine, _ = runner(fixture, invoke)
     engine.run()
     assert len(engine.state["entities"]) == 3
@@ -247,7 +269,7 @@ def test_no_hit_or_incomplete_query_does_not_delete_source_mentions(lookup_fixtu
 def test_composite_identifier_is_not_split_by_matching_members(lookup_fixture):
     def invoke(stage, payload, schema):
         if payload["lookup_mode"] == "draft":
-            return {**discovery(["A1/A2"]),
+            return {**discovery(["A1/A2"]), "lookup_refinement_required": True,
                     "lookup_requests": [request(x) for x in ("A1/A2", "A1", "A2")]}
         return {"replacement": None, "source_suggestions": []}
     engine, _ = runner(lookup_fixture, invoke)
@@ -262,7 +284,8 @@ def test_mapping_change_between_draft_and_query_is_not_a_no_match(lookup_fixture
         if payload["lookup_mode"] == "draft":
             lookup_fixture[5].version += 1
             db.commit()
-            return {**discovery(["A1", "A2"]), "lookup_requests": [request("A1")]}
+            return {**discovery(["A1", "A2"]), "lookup_refinement_required": True,
+                    "lookup_requests": [request("A1")]}
         raise AssertionError("No candidates must not trigger a second model call")
     engine, _ = runner(lookup_fixture, invoke)
     engine.run()
@@ -285,7 +308,8 @@ def test_oversized_feedback_retains_draft_without_silent_truncation(lookup_fixtu
     def invoke(stage, payload, schema):
         calls.append(payload["lookup_mode"])
         assert payload["lookup_mode"] == "draft"
-        return {**discovery(["A1/A2"]), "lookup_requests": [request("A1")]}
+        return {**discovery(["A1/A2"]), "lookup_refinement_required": True,
+                    "lookup_requests": [request("A1")]}
     engine, _ = runner(fixture, invoke, max_request_bytes=32768)
     engine.run()
     assert calls == ["draft"]
@@ -297,7 +321,8 @@ def test_oversized_feedback_retains_draft_without_silent_truncation(lookup_fixtu
 def test_invented_candidate_reference_cannot_be_saved(lookup_fixture):
     def invoke(stage, payload, schema):
         if payload["lookup_mode"] == "draft":
-            return {**discovery(["A1/A2"]), "lookup_requests": [request("A1")]}
+            return {**discovery(["A1/A2"]), "lookup_refinement_required": True,
+                    "lookup_requests": [request("A1")]}
         return {"replacement": discovery(["A1", "A2"]), "source_suggestions": [
             {"local_id": "A1", "candidate_ids": ["foreign"], "reason": "Unsupported proposal"},
         ]}

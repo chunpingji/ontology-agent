@@ -218,7 +218,7 @@ def test_other_source_identifier_gets_one_scoped_correction_without_binding(
 
     work = next(iter(engine.state["referent_work"].values()))
     assert len(calls) == 2
-    assert work["done"] and work["proposal_corrected"]
+    assert work["proposal_corrected"] and work["proposal"]["expressions"] == []
     assert not work.get("spans_extended")
     assert not any(e.get("identity_binding") for e in engine.entities(window))
     run_referent_alignment(resume(engine), window)
@@ -251,7 +251,7 @@ def test_extended_catalog_still_requires_valid_complete_partitions(lookup_fixtur
         run_referent_alignment(engine, window)
     with pytest.raises(ValueError, match=error):
         run_referent_alignment(resume(engine), window)
-    assert len(calls) == 2
+    assert len(calls) == (3 if kind == "coverage" else 2)
     assert "old" in engine.state["entities"]
 
 

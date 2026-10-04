@@ -1,8 +1,9 @@
 """Pure window-local discovery decoding and order-independent current-state merging."""
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 from copy import deepcopy
 
+from .continuation import reading_prefix
 from .source import identity, missing
 from .work import digest, unique_refs
 
@@ -15,6 +16,12 @@ def merge_mention(old, new, window_order):
     result["evidence"] = unique_refs([*old.get("evidence", []), *new.get("evidence", [])])
     if new["id"] == "document":
         return {**old, "field_ids": result["field_ids"], "evidence": result["evidence"]}
+    roles = sorted(set(old.get("role_candidates", [])) | set(new["role_candidates"]))
+    result["role_candidates"] = roles
+    result["role"] = "；".join(roles)
+    result["discovery_class_iris"] = sorted(
+        set(old.get("discovery_class_iris", [])) | set(new["discovery_class_iris"])
+    )
     names = unique_refs([*old.get("name_candidates", []), *new.get("name_candidates", [])])
     result["name_candidates"] = names
     result["name"] = names[0] if len({q["text"] for q in names}) == 1 else None
@@ -52,7 +59,35 @@ def field_observation(window, field, reason):
     }
 
 
-def decode_local_discovery(ir, window, answer, lookup_info, document):
+def _attribute_anchor(anchor, name, fields):
+    """A label/value observation cannot supply an otherwise absent referent.
+
+    Named objects inside a field (for example an explicit name or identifier)
+    remain valid. This check uses located field spans, never domain keywords.
+    """
+    for field in fields:
+        refs = field["evidence"]
+        if not field.get("label") or not refs:
+            continue
+        if any(ref["source_id"] != anchor["source_id"] for ref in refs):
+            continue
+        start, end = min(ref["start"] for ref in refs), max(ref["end"] for ref in refs)
+        if anchor["start"] >= start and anchor["end"] <= end:
+            # Keep a separately located non-boolean value as a possible name or
+            # identifier; reject the label itself and the complete field wrapper.
+            if any(anchor["start"] < ref["end"] and anchor["end"] > ref["start"]
+                   for ref in refs if ref not in field.get("value_evidence", [])):
+                if name and any(
+                    name["source_id"] == ref["source_id"]
+                    and ref["start"] <= name["start"] < name["end"] <= ref["end"]
+                    for ref in field.get("value_evidence", [])
+                ):
+                    continue
+                return True
+    return False
+
+
+def decode_local_discovery(ir, window, answer, lookup_info, document, *, class_iris=()):
     """Decode against only fixed source and root metadata, never another window's output."""
     state = {
         "entities": {"document": {**deepcopy(document), "field_ids": []}},
@@ -62,20 +97,58 @@ def decode_local_discovery(ir, window, answer, lookup_info, document):
     fields = {f["alias"]: {**deepcopy(f), "alias": "", "source_aliases": []}
               for f in window.fields}
     local = {}
-    discovery_valid = True
+    local_counts = Counter(m.local_id for m in answer.entities)
+    deferred = set()
+    observation_reasons = {
+        "attribute_is_not_entity", "entity_type_outside_reading_cards",
+        "entity_type_not_proposed", "missing_or_boolean_value_is_not_entity_name",
+        "whole_field_is_not_entity_name",
+    }
+    failed_sources = set()
+    unlocated_failure = False
+    primary_sources = {r["evidence_id"] for r in window.primary()}
+
+    def fail(label, exc, quotes=(), refs=(), *, kind="validation", **context):
+        """Keep a failed proposal visible and withhold only its attributable source coverage."""
+        nonlocal unlocated_failure
+        located = []
+        for quote in quotes:
+            source_id = quote if isinstance(quote, str) else quote.source_id if quote else None
+            if source_id and window.citation_source(source_id) is not None:
+                located.extend(window.quotes(ir, [source_id]))
+        affected = {ref["source_id"] for ref in located} & primary_sources
+        if not affected:
+            affected = {ref["source_id"] for ref in refs} & primary_sources
+        failed_sources.update(affected)
+        if not affected:
+            unlocated_failure = True
+        key, item = observation(window, label, str(exc), unique_refs([*refs, *located]),
+                                kind=kind, **context)
+        changes["observations"][key] = item
+
     for mention in answer.entities:
         evidence = []
         try:
-            if mention.local_id in local:
+            if local_counts[mention.local_id] != 1:
                 raise ValueError("duplicate_local_entity_id")
-            evidence = window.quotes(ir, mention.evidence)
-            name = window.resolve(ir, mention.name) if mention.name else None
             anchor = window.resolve_anchor(ir, mention.anchor)
             if not window.owns(anchor):
                 raise ValueError("entity_anchor_outside_primary_range")
-            if name and (
-                missing(name["text"])
-                or name["text"].strip().casefold()
+            evidence = [anchor]
+            for source_id in mention.evidence:
+                try:
+                    evidence.extend(window.quotes(ir, [source_id]))
+                except ValueError as exc:
+                    fail(mention.role, exc, [source_id], [anchor], kind="entity")
+            name = None
+            if mention.name:
+                try:
+                    name = window.resolve(ir, mention.name, within=anchor)
+                except ValueError as exc:
+                    fail("实体名称引用待核对", exc, [mention.name], [anchor], kind="entity")
+            if (
+                missing((name or anchor)["text"])
+                or (name or anchor)["text"].strip().casefold()
                 in {
                     "是",
                     "否",
@@ -90,9 +163,34 @@ def decode_local_discovery(ir, window, answer, lookup_info, document):
                 evidence.insert(0, name)
             if anchor not in evidence:
                 evidence.insert(0, anchor)
-            assigned = [fields[f] for f in mention.field_ids]
-            # Reject a whole field masquerading as a named object. A record
-            # hypothesis without a name remains possible, pending review.
+            assigned = []
+            for alias in mention.field_ids:
+                if alias in fields:
+                    assigned.append(fields[alias])
+                else:
+                    fail("实体字段引用待核对", "unknown_field_id", refs=[anchor], kind="field")
+            boundary_fields = list(fields.values())
+            for proposed in mention.source_fields:
+                if proposed.label:
+                    try:
+                        label = window.resolve(ir, proposed.label)
+                        value = window.resolve(ir, proposed.value)
+                    except ValueError:
+                        # The independent field pass records and localizes the error.
+                        # An uncertain field boundary must not manufacture an entity.
+                        source = window.citation_source(proposed.label.source_id)
+                        if (name is None and source
+                                and source["evidence_id"] == anchor["source_id"]
+                                and (proposed.label.text in anchor["text"]
+                                     or anchor["text"] in proposed.label.text)):
+                            raise ValueError("entity_boundary_requires_valid_field_quote") from None
+                        continue
+                    boundary_fields.append({"label": label["text"],
+                                            "evidence": [label, value],
+                                            "value_evidence": [value]})
+            if _attribute_anchor(anchor, name, boundary_fields):
+                raise ValueError("attribute_is_not_entity")
+            # Also reject a named object that copies its complete source field.
             if (
                 name
                 and any(
@@ -109,11 +207,15 @@ def decode_local_discovery(ir, window, answer, lookup_info, document):
                 )
             ):
                 raise ValueError("whole_field_is_not_entity_name")
-            key = identity("mention", anchor, mention.role)
-            local[mention.local_id] = key
+            if mention.candidate_class_iri is None:
+                raise ValueError("entity_type_not_proposed")
+            if mention.candidate_class_iri not in class_iris:
+                raise ValueError("entity_type_outside_reading_cards")
+            key = identity("mention", ir.document_hash, anchor["source_id"],
+                           anchor["start"], anchor["end"])
             existing = changes["entities"].get(key)
-            # Only exact same physical referent and role reuses an ID.
-            # A second mention with the same spelling never resolves identity.
+            # A physical mention survives role/type paraphrases and rereading.
+            # Separate source positions still require proven coreference.
             entity = existing or {
                 "id": key,
                 "label": name["text"] if name else anchor["text"],
@@ -132,16 +234,23 @@ def decode_local_discovery(ir, window, answer, lookup_info, document):
                 existing,
                 {
                     **entity,
+                    "role_candidates": [mention.role],
+                    "discovery_class_iris": [mention.candidate_class_iri],
                     "name_candidates": [name] if name else [],
                     "evidence": evidence,
                     "field_ids": [f["id"] for f in assigned],
                 },
                 {window.id: [0]},
             )
+            local[mention.local_id] = key
             for field in assigned:
                 changes["fields"][field["id"]] = field
         except (ValueError, KeyError) as exc:
-            discovery_valid = False
+            if str(exc) in observation_reasons:
+                deferred.add(mention.local_id)
+            else:
+                fail(mention.role, exc, [mention.anchor], evidence, kind="entity")
+                continue
             key, item = observation(
                 window,
                 mention.role,
@@ -163,7 +272,8 @@ def decode_local_discovery(ir, window, answer, lookup_info, document):
     root = deepcopy(state["entities"]["document"])
     for alias in answer.document_field_ids:
         if alias not in fields:
-            raise ValueError("document_field_outside_reading_window")
+            fail("文档字段引用待核对", "document_field_outside_reading_window", kind="field")
+            continue
         if not any(window.owns(ref) for ref in fields[alias].get(
             "value_evidence", fields[alias]["evidence"],
         )):
@@ -219,15 +329,22 @@ def decode_local_discovery(ir, window, answer, lookup_info, document):
             )
             changes["observations"][obs_id] = item
         except (ValueError, KeyError) as exc:
-            key, item = observation(
-                window,
+            fail(
                 proposed.label.text if proposed.label else "独立原文",
-                str(exc),
+                exc, [proposed.label, proposed.value],
+                [owner["referent"]] if owner and owner.get("referent") else [],
                 kind="field",
             )
-            changes["observations"][key] = item
     for hint in answer.relation_hints:
         try:
+            if hint.subject_id in deferred or hint.object_id in deferred:
+                key, item = observation(
+                    window, hint.label, "关系端点仍为原文观察，尚未进入实体候选",
+                    window.quotes(ir, hint.evidence), kind="relation",
+                    polarity=hint.polarity, conditions=hint.conditions,
+                )
+                changes["observations"][key] = item
+                continue
             subject = "document" if hint.subject_id == "document" else local[hint.subject_id]
             obj = local[hint.object_id]
             evidence = window.quotes(ir, hint.evidence)
@@ -257,14 +374,22 @@ def decode_local_discovery(ir, window, answer, lookup_info, document):
             )
             changes["observations"][obs_id] = item
         except (KeyError, ValueError) as exc:
-            key, item = observation(window, hint.label, str(exc), kind="relation")
-            changes["observations"][key] = item
+            fail(hint.label, exc, hint.evidence, kind="relation",
+                 polarity=hint.polarity, conditions=hint.conditions)
     for cue in answer.reference_cues:
         try:
+            ref = window.resolve(ir, cue.reference)
+            if cue.local_subject_id in deferred:
+                key, item = observation(
+                    window, ref["text"], "引用主体仍为原文观察，尚未进入实体候选",
+                    [ref, *window.quotes(ir, cue.evidence)], kind="entity",
+                    polarity=cue.polarity, conditions=cue.conditions, direction=cue.direction,
+                )
+                changes["observations"][key] = item
+                continue
             subject = (
                 "document" if cue.local_subject_id == "document" else local[cue.local_subject_id]
             )
-            ref = window.resolve(ir, cue.reference)
             refs = window.quotes(ir, cue.evidence)
             key = identity(
                 "reference_cue",
@@ -286,8 +411,9 @@ def decode_local_discovery(ir, window, answer, lookup_info, document):
                 "polarity": cue.polarity,
                 "conditions": cue.conditions,
             }
-        except (KeyError, ValueError):
-            discovery_valid = False
+        except (KeyError, ValueError) as exc:
+            fail("原文回指引用待核对", exc, [cue.reference, *cue.evidence], kind="relation",
+                 polarity=cue.polarity, conditions=cue.conditions, direction=cue.direction)
     changes["window_entities"][window.id] = {"ids": list(dict.fromkeys(local.values()))}
     if lookup_info:
         current = dict(state["windows"][window.id])
@@ -321,19 +447,21 @@ def decode_local_discovery(ir, window, answer, lookup_info, document):
         for issue in lookup_info.get("issues", []):
             key, item = observation(window, "来源查询未完成", issue)
             changes["observations"][key] = item
-    capacity = (
-        len(answer.entities) == 12
-        or len(answer.relation_hints) == 16
-        or len(answer.reference_cues) == 8
-        or (len(answer.document_source_fields) + len(answer.unowned_fields)
-            + sum(len(mention.source_fields) for mention in answer.entities)) >= 16
-        or len(answer.document_source_fields) == 8
-        or any(len(mention.source_fields) == 8 for mention in answer.entities)
-    )
+    completed = window.primary() if answer.complete else []
+    if not answer.complete and answer.read_through_source_id is not None:
+        try:
+            completed = reading_prefix(window, answer.read_through_source_id)
+        except ValueError as exc:
+            key, item = observation(window, "阅读进度无效", str(exc), kind="scope")
+            changes["observations"][key] = item
+    completed = ([] if unlocated_failure else
+                 [ref for ref in completed if ref["evidence_id"] not in failed_sources])
+    complete = answer.complete and not failed_sources and not unlocated_failure
     return {
         "window_id": window.id,
         "changes": dict(changes),
-        "complete": answer.complete and not capacity and discovery_valid,
+        "complete": complete,
+        "completed_ranges": [] if complete else completed,
     }
 
 

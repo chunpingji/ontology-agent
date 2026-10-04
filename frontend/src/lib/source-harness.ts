@@ -10,8 +10,10 @@ export const HARNESS_STAGES: Record<DocumentHarnessStage, string> = {
   referent_alignment: "核对编号指称", referent_candidates: "提出编号分组", referent_selection: "核对指称分组",
   planning: "筛选候选任务", property_alignment: "对齐属性", relation_alignment: "对齐关系",
   group_interpretation: "解释关系组", evidence_review: "核对原文依据",
+  identifier_check: "编号表示检查", literal_normalization: "字面量与单位校准", shacl_check: "SHACL 表示检查",
   coreference_review: "核对文档内共指", complete: "本轮结束",
 };
+export const HARNESS_PHASES = { discovery: "原文发现", skeleton: "实体、属性、关系骨架", semantic: "语义校准", deterministic: "确定性校准", done: "本轮结束" };
 export const HARNESS_WORK_STATES: Record<DocumentHarnessWorkStatus, string> = {
   ready: "待处理", waiting: "等待条件或补证", pruned: "本轮剪枝未处理",
   done: "已处理任务", failed: "处理失败",
@@ -25,6 +27,7 @@ export const HARNESS_WORK_REASONS: Record<string, string> = {
 };
 
 export function harnessCompletionMessage(graph: DocumentHarnessGraph) {
+  if (graph.status === "failed") return "处理失败；已保存图谱和检查结果可查看";
   if (!graph.progress.reading.complete) return "原文范围尚未处理完成";
   if (graph.status !== "finished") return "原文阅读范围已处理；候选任务仍按当前状态执行";
   const counts = graph.progress.work_counts;
@@ -34,7 +37,8 @@ export function harnessCompletionMessage(graph: DocumentHarnessGraph) {
       .some((item) => item.state === "candidate" || item.state === "unresolved")
     || graph.relation_groups.some((item) => item.timing_state === "candidate" || item.timing_state === "unresolved")
     || graph.interpretation_tasks.some((item) => !item.answer);
-  return unresolved ? "本轮选定范围已处理；仍有未核对或未决项" : "本轮选定范围已处理";
+  const issues = Object.values(graph.progress.calibration_counts ?? {}).some((counts) => counts.invalid + counts.incomplete + counts.error > 0);
+  return unresolved || issues ? "本轮选定范围已处理；仍有未决或检查问题" : "本轮选定范围已处理";
 }
 export const OBSERVATION_KINDS = {
   field: "原字段", entity: "实体提及", relation: "关系线索", scope: "范围提示",
@@ -56,15 +60,75 @@ export function isHierarchyRelation(relation: DocumentHarnessRelation) {
   return relation.state !== "rejected" && relation.polarity === "positive" && !relation.conditions.length;
 }
 
+export interface HarnessDisplayRelation extends DocumentHarnessRelation {
+  assertions: DocumentHarnessRelation[];
+}
+
+/** Aggregate only canonical endpoints and identical semantics, retaining every source judgment. */
+export function groupHarnessRelations(relations: DocumentHarnessRelation[]): HarnessDisplayRelation[] {
+  const groups = new Map<string, HarnessDisplayRelation>();
+  for (const relation of [...relations].sort((a, b) => a.id.localeCompare(b.id))) {
+    const key = JSON.stringify([relation.subject_id, relation.predicate_iri ?? relation.id,
+      relation.object_id, relation.polarity, relation.conditions, relation.state]);
+    const group = groups.get(key);
+    if (!group) {
+      groups.set(key, { ...relation, evidence: [...relation.evidence], assertions: [relation] });
+      continue;
+    }
+    group.assertions.push(relation);
+    for (const ref of relation.evidence) if (!group.evidence.some((item) => item.source_id === ref.source_id
+      && item.start === ref.start && item.end === ref.end)) group.evidence.push(ref);
+  }
+  return [...groups.values()];
+}
+
+export interface HarnessPredicateGroup {
+  id: string;
+  subjectId: string;
+  predicateIri: string | null;
+  label: string;
+  relations: HarnessDisplayRelation[];
+}
+
+/** Navigation folders only: an unaligned member never inherits the folder's predicate. */
+function groupHarnessPredicates(relations: HarnessDisplayRelation[]): HarnessPredicateGroup[] {
+  const predicatesByLabel = new Map<string, Set<string>>();
+  for (const relation of relations) {
+    if (!relation.predicate_iri || !relation.label.trim()) continue;
+    const key = JSON.stringify([relation.subject_id, relation.label.trim()]);
+    const predicates = predicatesByLabel.get(key) ?? new Set<string>();
+    predicates.add(relation.predicate_iri);
+    predicatesByLabel.set(key, predicates);
+  }
+  const groups = new Map<string, HarnessPredicateGroup>();
+  for (const relation of relations) {
+    const label = relation.label.trim();
+    const matches = predicatesByLabel.get(JSON.stringify([relation.subject_id, label]));
+    const predicateIri = relation.predicate_iri ?? (matches?.size === 1 ? [...matches][0] : null);
+    const id = JSON.stringify(["predicate", relation.subject_id,
+      predicateIri ? ["iri", predicateIri] : label ? ["label", label] : ["candidate", relation.id]]);
+    const group: HarnessPredicateGroup = groups.get(id) ?? {
+      id, subjectId: relation.subject_id, predicateIri, label: label || "谓词待对齐", relations: [],
+    };
+    group.relations.push(relation);
+    groups.set(id, group);
+  }
+  return [...groups.values()];
+}
+
 /** A display index only. Membership and graph reachability never change fact acceptance. */
 export function buildHarnessHierarchy(graph: DocumentHarnessGraph) {
   const entities = new Map(graph.entities.map((entity) => [entity.id, entity]));
   const roots = graph.entities.filter((entity) => entity.role === "document_root");
-  const outgoing = new Map<string, DocumentHarnessRelation[]>();
-  const incoming = new Map<string, DocumentHarnessRelation[]>();
+  const relations = groupHarnessRelations(graph.relations);
+  const predicateGroups = groupHarnessPredicates(relations);
+  const predicateGroupByRelation = new Map(predicateGroups.flatMap((group) =>
+    group.relations.map((relation) => [relation.id, group] as const)));
+  const outgoing = new Map<string, HarnessDisplayRelation[]>();
+  const incoming = new Map<string, HarnessDisplayRelation[]>();
   const depth = new Map<string, number>();
   const parent = new Map<string, DocumentHarnessRelation>();
-  for (const relation of [...graph.relations].sort((a, b) => a.id.localeCompare(b.id))) {
+  for (const relation of relations) {
     if (!entities.has(relation.subject_id) || !entities.has(relation.object_id)) continue;
     incoming.set(relation.object_id, [...incoming.get(relation.object_id) ?? [], relation]);
     if (isHierarchyRelation(relation)) outgoing.set(relation.subject_id, [...outgoing.get(relation.subject_id) ?? [], relation]);
@@ -80,21 +144,17 @@ export function buildHarnessHierarchy(graph: DocumentHarnessGraph) {
       queue.push(relation.object_id);
     }
   }
-  return { entities, roots, outgoing, incoming, depth, parent,
-    disconnected: graph.entities.filter((entity) => !depth.has(entity.id)) };
+  return { entities, roots, relations, predicateGroups, predicateGroupByRelation, outgoing, incoming, depth, parent,
+    disconnected: graph.entities.filter((entity) => !entity.refined_member_ids?.length && !depth.has(entity.id)) };
 }
 export type HarnessHierarchy = ReturnType<typeof buildHarnessHierarchy>;
-
-export function harnessPredicateGroupId(subjectId: string, predicateIri: string) {
-  return JSON.stringify(["predicate", subjectId, predicateIri]);
-}
 
 export function harnessAncestorPredicateGroupIds(hierarchy: HarnessHierarchy, entityId?: string) {
   const ids = new Set<string>();
   let current = entityId ?? "";
   while (hierarchy.parent.has(current)) {
     const relation = hierarchy.parent.get(current)!;
-    ids.add(harnessPredicateGroupId(relation.subject_id, relation.predicate_iri));
+    ids.add(hierarchy.predicateGroupByRelation.get(relation.id)!.id);
     current = relation.subject_id;
   }
   return ids;
@@ -135,8 +195,9 @@ interface HarnessPredicateTreeRow {
   kind: "predicate";
   id: string;
   subjectId: string;
-  predicateIri: string;
+  predicateIri: string | null;
   label: string;
+  pendingCount: number;
   level: number;
   expanded: boolean;
 }
@@ -170,15 +231,19 @@ export function harnessTreeRows(hierarchy: HarnessHierarchy, visible: Set<string
     if (open) {
       const groups = new Map<string, DocumentHarnessRelation[]>();
       for (const relation of children) {
-        const group = groups.get(relation.predicate_iri) ?? [];
+        const id = hierarchy.predicateGroupByRelation.get(relation.id)!.id;
+        const group = groups.get(id) ?? [];
         group.push(relation);
-        groups.set(relation.predicate_iri, group);
+        groups.set(id, group);
       }
-      for (const [predicateIri, relations] of [...groups].reverse()) stack.push({
-        kind: "predicate", id: harnessPredicateGroupId(row.entity.id, predicateIri),
-        subjectId: row.entity.id, predicateIri, label: relations[0].label,
-        level: row.level + 1, relations,
-      });
+      for (const [id, relations] of [...groups].reverse()) {
+        const group = hierarchy.predicateGroupByRelation.get(relations[0].id)!;
+        stack.push({
+          kind: "predicate", id, subjectId: row.entity.id, predicateIri: group.predicateIri, label: group.label,
+          pendingCount: relations.filter((relation) => !relation.predicate_iri).length,
+          level: row.level + 1, relations,
+        });
+      }
     }
   }
   return { rows, truncated: stack.length > 0 };

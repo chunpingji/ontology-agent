@@ -118,11 +118,13 @@ def next_discovery(engine, window):
             draft_payload = {**payload, "lookup_mode": "draft", "lookup_capabilities": capabilities}
             draft_schema = stage_schema(
                 "discover",
+                class_iris=[c["iri"] for c in payload["schema_guidance"]["classes"]],
                 discovery_mode="draft",
                 lookup_capabilities=capabilities,
                 source_ids=[s["source_id"] for s in window.sources],
                 field_ids=[f["alias"] for f in window.fields],
                 primary_source_ids=[r["source_id"] for r in payload["reading_scope"]],
+                quote_fragments=window.citation_choices(),
             )
             if request_size("discover", draft_payload, draft_schema) <= engine.max_request_bytes:
                 return draft_payload, draft_schema, "draft"
@@ -142,6 +144,11 @@ def next_discovery(engine, window):
             )
         return payload, schema, "plain"
     request, draft = draft_request(engine, work)
+    if not draft.lookup_refinement_required:
+        engine.register_discovery(window, base_discovery(draft), {
+            "status": "deferred_to_semantic", "queries": 0,
+        })
+        return None
     capabilities = request["payload"]["lookup_capabilities"]
     if "feedback" not in work:
         queries, records = prepare_queries(engine, window, draft, capabilities)
@@ -178,11 +185,13 @@ def next_discovery(engine, window):
     }
     schema = stage_schema(
         "discover",
+        class_iris=[c["iri"] for c in payload["schema_guidance"]["classes"]],
         discovery_mode="refine",
         lookup_candidates=list(candidates),
         source_ids=[s["source_id"] for s in window.sources],
         field_ids=[f["alias"] for f in window.fields],
         primary_source_ids=[r["source_id"] for r in payload["reading_scope"]],
+        quote_fragments=window.citation_choices(),
     )
     if request_size("discover", payload, schema) > engine.max_request_bytes:
         engine.register_discovery(
@@ -206,11 +215,12 @@ def finish_discovery(engine, window, batch, answer):
         )
         return
     if batch["step"] == "draft":
-        if not answer.lookup_requests:
+        if not answer.lookup_requests or not answer.lookup_refinement_required:
             engine.register_discovery(
                 window,
                 base_discovery(answer),
-                {"status": "not_requested"},
+                {"status": ("not_requested" if answer.lookup_refinement_required
+                            else "deferred_to_semantic")},
                 batch_id=batch["batch_id"],
             )
         else:

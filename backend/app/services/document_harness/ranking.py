@@ -17,7 +17,8 @@ from .ontology import SchemaCatalog, identity_guidance
 
 PROTOCOL = "harness-card-ranking-v2"
 GUIDANCE_RULE = (
-    "这些本体卡仅用于理解可能的对象、字段归属和关系；排名或属性匹配不证明类型成立。"
+    "实体候选须在这些本体卡的对象范围内，并以candidate_class_iri引用对应类型；"
+    "没有适用卡片的提及保留为待对齐观察。排名或属性匹配不证明类型成立。"
     "仍只从原文发现对象，不为每张卡造实体；否定分类、缺失值和身份边界按原文处理。"
     "未提供的类型不代表被否定，后续类型对齐仍检查其余目录。"
 )
@@ -80,6 +81,14 @@ def reading_card(card, *, annotation_contracts=()):
         "property_labels": sorted({
             prop.label for prop in card.properties if prop.constraint_status == "resolved"
         }),
+        "properties": [
+            {"iri": prop.iri, "label": prop.label, "aliases": list(prop.aliases),
+             "description": prop.description,
+             "domain": [item.model_dump(mode="json", exclude_none=True) for item in prop.domain],
+             "range": [item.model_dump(mode="json", exclude_none=True) for item in prop.range],
+             "datatype_iris": list(prop.datatype_iris)}
+            for prop in card.properties if prop.constraint_status == "resolved"
+        ],
         **identity_guidance(card, annotation_contracts=annotation_contracts),
         "relations": [
             {"iri": rel.iri, "label": rel.label, "description": rel.description,
@@ -92,7 +101,9 @@ def reading_card(card, *, annotation_contracts=()):
 
 def reading_guidance(catalog, iris):
     """Share identical definitions, retaining class-specific constraints and complete keys."""
-    classes, definitions, contracts = [], {"relations": {}, "identity_properties": {}}, {}
+    classes, definitions, contracts = [], {
+        "relations": {}, "identity_properties": {}, "properties": {},
+    }, {}
     identity_rule = None
     for iri in iris:
         card = reading_card(catalog.classes[iri], annotation_contracts=catalog.annotation_contracts)
@@ -111,6 +122,42 @@ def reading_guidance(catalog, iris):
         "identity_rule": identity_rule,
         "annotation_contracts": [contracts[k] for k in sorted(contracts)],
     }
+
+
+def root_target_iris(catalog):
+    """Keep the broadest legal direct targets, without enumerating every subtype."""
+    targets = set()
+    for rel in catalog.classes[catalog.root_class_iri].relations:
+        if rel.constraint_status != "resolved":
+            continue
+        allowed = (set(rel.range_class_iris) & set(catalog.reachable_class_iris)
+                   - {catalog.root_class_iri})
+        ancestry = {iri: _ancestors(catalog, iri, set(catalog.classes)) for iri in allowed}
+        # Equivalent/cyclic classes keep a stable representative instead of
+        # eliminating every member. Multiple ranges retain their compiled meaning.
+        targets.update(iri for iri in allowed if not any(
+            parent in allowed and (iri not in ancestry[parent] or parent < iri)
+            for parent in ancestry[iri]
+        ))
+    return sorted(targets)
+
+
+def discovery_guidance(catalog, ranked_iris):
+    """Always expose first-hop type semantics; ranking adds detailed local cards.
+
+    Direct-target summaries retain definitions and attribute labels. Full property,
+    identity and relation menus remain source-ranked here and complete at alignment.
+    This avoids repeating the entire reachable ontology in every reading window.
+    """
+    guidance = reading_guidance(catalog, ranked_iris)
+    for iri in root_target_iris(catalog):
+        if iri in ranked_iris:
+            continue
+        card = reading_card(catalog.classes[iri])
+        guidance["classes"].append({key: card[key] for key in (
+            "iri", "label", "aliases", "description", "definition", "property_labels",
+        )})
+    return guidance
 
 
 def guidance_bytes(catalog, iris):

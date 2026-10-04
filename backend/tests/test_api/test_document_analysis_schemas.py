@@ -534,10 +534,21 @@ def test_source_response_returns_selection_and_authorized_word_viewer_anchors():
 
 
 def test_control_request_delete_query_and_response_use_exact_fields():
-    request = schema.RunControlRequest(
-        expected_revision=8,
+    pause = schema.PauseRunRequest(
         request_key="pause-op-key",
         reason="用户请求暂停以检查当前结果",
+    )
+    assert set(pause.model_dump()) == {"request_key", "reason"}
+    with pytest.raises(ValidationError):
+        schema.PauseRunRequest(
+            expected_revision=8,
+            request_key="pause-op-key",
+            reason="暂停不提交进度版本",
+        )
+    request = schema.RunControlRequest(
+        expected_revision=8,
+        request_key="resume-op-key",
+        reason="用户请求继续运行",
     )
     assert set(request.model_dump()) == {"expected_revision", "request_key", "reason"}
     delete = schema.DeleteRunRequest(expected_revision=9, request_key="delete-op-key")

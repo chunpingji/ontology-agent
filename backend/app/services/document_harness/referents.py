@@ -143,7 +143,7 @@ def resolve_span(spans, key):
     return spans[key]
 
 
-def validate_partitions(answer, spans, ir, properties, identifier_span_ids):
+def validate_partitions(answer, spans, ir, properties, identifier_span_ids, mentions=()):
     if answer.new_spans:
         raise ValueError("identifier_spans_not_registered")
     if not answer.expressions:
@@ -166,7 +166,8 @@ def validate_partitions(answer, spans, ir, properties, identifier_span_ids):
     if len({p.id for p in answer.partitions}) != len(answer.partitions):
         raise ValueError("duplicate_partition_id")
     leaves = [r for r in refs.values() if not any(
-        other != r and references_cover(other, [r]) for other in refs.values()
+        other != r and other["source_id"] == r["source_id"]
+        and r["start"] <= other["start"] and other["end"] <= r["end"] for other in refs.values()
     )]
     signatures = set()
     for partition in answer.partitions:
@@ -177,7 +178,9 @@ def validate_partitions(answer, spans, ir, properties, identifier_span_ids):
             raise ValueError("unknown_expression_reference")
         if len(flat) != len(set(flat)):
             raise ValueError("expression_assigned_to_multiple_members")
-        if any(not references_cover(leaf, [refs[key] for key in flat]) for leaf in leaves):
+        if (any(not references_cover(leaf, [refs[key] for key in flat]) for leaf in leaves)
+                or any(not any(overlap(mention["referent"], refs[key]) for key in flat)
+                       for mention in mentions)):
             raise ValueError("partition_omits_group_mention")
         signature = tuple(sorted(tuple(sorted(m.expression_ids)) for m in partition.members))
         if signature in signatures:
@@ -296,10 +299,11 @@ def rebind_clues(engine, window, replacements, changes):
                 changes["observations"][oid] = observation
 
 
-def run_referent_alignment(engine, base_window):
+def referent_groups(engine, base_window):
     buckets = defaultdict(list)
     for entity in engine.entities(base_window):
-        if entity.get("identity_binding") or entity.get("referent_unresolved"):
+        if (entity.get("identity_binding") or entity.get("referent_unresolved")
+                or entity.get("refined_member_ids")):
             continue
         card = engine.catalog.classes.get(entity.get("class_iri"))
         if (card is None or not entity.get("referent") or entity["state"] == "accepted"
@@ -314,7 +318,23 @@ def run_referent_alignment(engine, base_window):
             (e["referent"]["source_id"], e["referent"]["start"], e["referent"]["end"])
             for e in entities
         ))
-        if engine.state.get("referent_work", {}).get(task_id, {}).get("done"):
+        yield task_id, class_iri, entities
+
+
+def run_referent_alignment(engine, base_window, work_row=None):
+    from .work_execution import complete_work
+
+    def finish(changes, batch_id=None):
+        if work_row:
+            complete_work(changes, work_row)
+        engine.commit(changes, batch_id=batch_id)
+
+    groups = ([(work_row["input"]["group_id"],
+                engine.state["entities"][work_row["input"]["mention_ids"][0]]["class_iri"],
+                [engine.state["entities"][key] for key in work_row["input"]["mention_ids"]])]
+              if work_row else referent_groups(engine, base_window))
+    for task_id, class_iri, entities in groups:
+        if work_row and task_id != work_row["input"]["group_id"]:
             continue
         card = engine.catalog.classes[class_iri]
         guidance = identity_guidance(card, annotation_contracts=engine.catalog.annotation_contracts)
@@ -390,9 +410,12 @@ def run_referent_alignment(engine, base_window):
             answer = ReferentCandidates.model_validate(work["proposal"])
             if not answer.new_spans:
                 try:
-                    refs = validate_partitions(answer, spans, engine.ir, properties, identifiers)
+                    refs = validate_partitions(
+                        answer, spans, engine.ir, properties, identifiers, entities)
                 except ValueError as exc:
-                    if (str(exc) != "overlapping_members_in_same_partition"
+                    if (str(exc) not in {"partition_omits_group_mention",
+                                         "overlapping_members_in_same_partition",
+                                         "expression_assigned_to_multiple_members"}
                             or work.get("proposal_corrected")):
                         raise
                     # Preserve the rejected answer as feedback, not as the next answer
@@ -401,6 +424,7 @@ def run_referent_alignment(engine, base_window):
                     work["proposal_feedback"] = {
                         "issue": str(exc),
                         "rejected_proposal": work.pop("proposal"),
+                        "mention_locations": [e["referent"] for e in entities],
                     }
                     engine.commit({"referent_work": {task_id: work}})
                     continue
@@ -437,7 +461,7 @@ def run_referent_alignment(engine, base_window):
             work.pop("proposal")
             engine.commit({"referent_work": {task_id: work}})
         if not refs:
-            engine.commit({"referent_work": {task_id: {**work, "done": True}}})
+            finish({"referent_work": {task_id: work}})
             continue
         # A refinement may change object count, but cannot silently omit a disjoint mention.
         anchor = reference(engine.ir, next(iter(refs.values()))["source_id"],
@@ -447,13 +471,13 @@ def run_referent_alignment(engine, base_window):
             overlap(e["referent"], ref) for ref in refs.values()
         )}
         if not covered_ids:
-            engine.commit({
+            finish({
                 "entities": {e["id"]: {
                     **e, "state": "unresolved", "referent_unresolved": True,
                     "reason": "编号分组未覆盖该草案提及，不能建立编号归属",
                 } for e in entities},
                 "referent_work": {task_id: {
-                    **work, "done": True, "selection_issue": "no_input_mention_covered",
+                    **work, "selection_issue": "no_input_mention_covered",
                 }},
             })
             continue
@@ -542,7 +566,10 @@ def run_referent_alignment(engine, base_window):
                         for eref in refs.values()
                     ))
                 changes["entities"][key] = {
-                    "id": key, "label": ref["text"], "name": ref, "referent": ref,
+                    "id": key, "parent_mention_id": next((e["id"] for e in entities
+                        if overlap(e["referent"], ref)), None), "refined_member_ids": [],
+                    "verification": None, "calibration": None, "label": ref["text"],
+                    "name": ref, "referent": ref,
                     "role": entities[0]["role"], "class_iri": class_iri,
                     "class_label": card.label, "state": "candidate", "reason": selection.reason,
                     "evidence": [ref, *support], "type_evidence": support,
@@ -552,7 +579,12 @@ def run_referent_alignment(engine, base_window):
                 }
             replaced = covered_ids
             for eid in replaced:
-                changes["entities"][eid] = None
+                changes["entities"][eid] = {**engine.state["entities"][eid],
+                    "state": "unresolved", "reason": "refined_into_members",
+                    "refined_member_ids": [key for key in member_ids if overlap(
+                        engine.state["entities"][eid]["referent"],
+                        changes["entities"][key]["referent"])],
+                    "verification": None, "calibration": None}
                 changes["source_candidates"][eid] = None
             replacements = {
                 old["id"]: [key for key in member_ids if overlap(
@@ -560,6 +592,7 @@ def run_referent_alignment(engine, base_window):
                 )] for old in entities if old["id"] in replaced
             }
             rebind_clues(engine, base_window, replacements, changes)
+            rebind_current_claims(engine, replacements, changes)
             for wid, membership in engine.state.get("window_entities", {}).items():
                 if replaced.intersection(membership["ids"]):
                     changes["window_entities"][wid] = {
@@ -607,12 +640,11 @@ def run_referent_alignment(engine, base_window):
         )
         changes["observations"][oid] = observation
         changes["referent_work"][task_id] = {
-            **work, "done": True, "selection": selection.model_dump(mode="json"),
+            **work, "selection": selection.model_dump(mode="json"),
             "selected_partition_id": selected.id if selected else None,
             "selection_issue": selection_issue, "member_ids": member_ids,
         }
-        engine.commit(dict(changes), batch_id=batch_id)
-    engine.advance("entity_review")
+        finish(dict(changes), batch_id=batch_id)
 
 
 def binding_input(entity, window):
@@ -632,3 +664,91 @@ def validate_bound_property(subject, field, mapping, component):
     if bound and not any(i["property_iri"] == mapping.predicate_iri
                          and i["value"] == component["value"] for i in bound):
         raise ValueError("property_conflicts_with_identifier_binding")
+
+
+def rebind_current_claims(engine, replacements, changes):
+    """Rebind only uniquely grounded endpoints; collective ownership stays unresolved."""
+    from .work import make_work
+    from .work_execution import (
+        materialize_skeleton,
+        merged_state,
+        plan_skeleton_work,
+        review_for,
+    )
+
+    for domain in ("properties", "relations", "relation_groups"):
+        for key, original in engine.state.get(domain, {}).items():
+            ids = [original["subject_id"], original.get("object_id"),
+                   *original.get("object_ids", [])]
+            if not set(replacements).intersection(ids):
+                continue
+            row = {**original, "verification": None, "calibration": None, "state": "candidate"}
+            members = replacements.get(row["subject_id"])
+            if members and len(members) != 1:
+                row.update(state="unresolved", reason="ambiguous_subject_members")
+                changes[domain][key] = row
+                continue
+            if members:
+                row["subject_id"] = members[0]
+                if domain == "properties":
+                    member = changes["entities"][members[0]]
+                    if row["field_id"] not in member["field_ids"]:
+                        member = {**member, "field_ids": [*member["field_ids"], row["field_id"]]}
+                        changes["entities"][members[0]] = member
+            objects = row.get("object_ids", [row.get("object_id")])
+            expanded = list(dict.fromkeys(m for obj in objects if obj
+                                          for m in replacements.get(obj, [obj])))
+            target = domain
+            if domain == "relations" and len(expanded) > 1:
+                changes[domain][key] = None
+                row.pop("object_id")
+                row.update(object_ids=expanded, participation="unknown", selection="unspecified",
+                           timing="unspecified", timing_state="candidate",
+                           timing_reason="时间待核对",
+                           ordered_object_ids=None, order_evidence=[])
+                target = "relation_groups"
+            elif domain == "relations":
+                row["object_id"] = expanded[0]
+            elif domain == "relation_groups":
+                row.update(object_ids=expanded, ordered_object_ids=None, order_evidence=[],
+                           timing="unspecified", timing_state="candidate")
+            review_for(engine, changes, target, row)
+    state = merged_state(engine.state, changes)
+    new_entities = {key: row for key, row in changes.get("entities", {}).items()
+                    if row and key not in engine.state["entities"]}
+    affected = plan_skeleton_work(
+        engine, commit=False, phase="semantic", kind="relation_alignment", state=state,
+        delta={"entities": new_entities, "hints": changes.get("hints", {})},
+    )
+    for domain, rows in affected.items():
+        changes[domain].update(rows)
+    drafts = materialize_skeleton(engine, commit=False, state=state,
+                                  delta={"entities": new_entities})
+    for domain, rows in drafts.items():
+        changes[domain].update(rows)
+    state = merged_state(engine.state, changes)
+    for entity in new_entities.values():
+        planned = engine.state["cursor"]["main"].get("planned_steps", [])
+        for marker, kind in (("semantic:entities", "entity_review"),
+                             ("deterministic", "entity_calibration")):
+            if marker in planned:
+                work = make_work(kind, {"entity_id": entity["id"]}, state,
+                                 engine.catalog, engine.execution_policy)
+                changes["work"][work["id"]] = work
+        for field_id in entity["field_ids"]:
+            work = make_work("property_alignment", {"subject_id": entity["id"],
+                                                       "field_id": field_id}, state,
+                             engine.catalog, engine.execution_policy, phase="semantic")
+            changes["work"][work["id"]] = work
+    for key, work in engine.state.get("work", {}).items():
+        if not set(replacements).intersection(work["dependencies"]["entity_ids"]):
+            continue
+        if work["phase"] == "skeleton":
+            continue
+        if work["kind"] in {"evidence_review", "group_interpretation"}:
+            domain = work["input"].get("domain", "relation_groups")
+            assertion = state.get(domain, {}).get(
+                work["input"].get("assertion_id", work["input"].get("group_id")))
+            if not assertion or assertion.get("reason") == "ambiguous_subject_members":
+                changes["work"][key] = {**work, "status": "waiting",
+                                        "reason_code": "ambiguous_subject_members"}

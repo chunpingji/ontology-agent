@@ -6,21 +6,23 @@ from copy import deepcopy
 from .evidence_gate import (
     _related_hints,
     assertion_dependency_hash,
-    precheck_assertion,
+    check_candidate_structure,
+    route_semantic_review,
+    semantic_acceptance,
     try_rule_seed,
 )
 from .observations import property_value
 from .ontology import legal_property, model_menu
 from .planning import (
     admit_relation_work,
+    build_source_index,
     collect_relation_seeds,
     context_window,
     resolve_reference_cues,
 )
 from .protocols import stage_schema
-from .referents import validate_bound_property
 from .source import Window, identity, quote_for_reference, reference, references_cover
-from .work import dependency_hash, endpoints, make_work, unique_refs
+from .work import dependency_hash, endpoints, make_work, unique_refs, work_id
 
 
 def gate_state(engine):
@@ -39,21 +41,6 @@ def merged_state(state, changes):
     return result
 
 
-def acceptance(state, row, verdict):
-    if verdict != "accepted":
-        return verdict
-    ids = [
-        row["subject_id"],
-        *row.get("object_ids", []),
-        *([row["object_id"]] if row.get("object_id") else []),
-    ]
-    if any(state.get("entities", {}).get(key, {}).get("state") != "accepted" for key in ids):
-        return "unresolved"
-    if "object_ids" in row and row.get("participation") == "unknown":
-        return "unresolved"
-    return "accepted"
-
-
 def invalidate_changes(engine, changes):
     if not engine.state.get("work"):
         return
@@ -62,7 +49,7 @@ def invalidate_changes(engine, changes):
     # Assertion edits invalidate the corresponding current review, never all work.
     for domain in ("properties", "relations", "relation_groups"):
         for key in changes.get(domain, {}):
-            review_key = identity("work", "evidence_review", [domain, key])
+            review_key = work_id("evidence_review", {"domain": domain, "assertion_id": key})
             if review_key in engine.state.get("work", {}):
                 affected.add(review_key)
     for key in affected:
@@ -86,8 +73,21 @@ def invalidate_changes(engine, changes):
         fingerprint = dependency_hash(
             old["kind"], data, after, engine.catalog, engine.execution_policy
         )
-        if fingerprint != old["dependency_hash"]:
-            ready = make_work(old["kind"], data, after, engine.catalog, engine.execution_policy)
+        if old["kind"].endswith("calibration"):
+            if fingerprint != old["dependency_hash"]:
+                changes.setdefault("work", {})[key] = make_work(
+                    old["kind"], data, after, engine.catalog, engine.execution_policy,
+                    phase="deterministic",
+                )
+                domain = data.get("domain", "entities")
+                oid = data.get("entity_id", data.get("assertion_id"))
+                row = after.get(domain, {}).get(oid)
+                if row:
+                    changes.setdefault(domain, {})[oid] = {**row, "calibration": None}
+            continue
+        if fingerprint != old["dependency_hash"] and old["phase"] != "skeleton":
+            ready = make_work(old["kind"], data, after, engine.catalog,
+                              engine.execution_policy, phase=old["phase"])
             missing = any(
                 eid not in after.get("entities", {}) for eid in old["dependencies"]["entity_ids"]
             )
@@ -112,6 +112,7 @@ def invalidate_changes(engine, changes):
                             "state": "unresolved",
                             "reason": "相关证据或端点解释已变化，待重新核对",
                             "verification": None,
+                            "calibration": None,
                         }
                         if domain == "relation_groups":
                             changes[domain][oid]["timing_state"] = "unresolved"
@@ -142,7 +143,7 @@ def invalidate_changes(engine, changes):
                     verification = (row or {}).get("verification") or {}
                     if not row or not verification.get("semantic_verdict"):
                         continue
-                    verdict = acceptance(after, row, verification["semantic_verdict"])
+                    verdict = semantic_acceptance(after, row, verification["semantic_verdict"])
                     updated = {**row, "state": verdict}
                     if domain == "relation_groups":
                         updated["timing_state"] = (
@@ -195,16 +196,21 @@ def upsert_work(state, rows):
     return changes
 
 
-def plan_graph_work(engine):
-    state, policy = engine.state, engine.execution_policy
-    delta = {domain: state.get(domain, {}) for domain in ("entities", "fields", "hints")}
-    seeds = collect_relation_seeds(
+def plan_skeleton_work(
+    engine, *, commit=True, phase="skeleton", delta=None, kind=None, state=None,
+    include_references=True,
+):
+    index = build_source_index(engine.ir, state) if state is not None else engine.source_index
+    state, policy = state if state is not None else engine.state, engine.execution_policy
+    delta = delta or {domain: state.get(domain, {}) for domain in ("entities", "fields", "hints")}
+    seeds = [] if kind == "property_alignment" else collect_relation_seeds(
         engine.ir,
         engine.catalog,
         state,
         delta,
-        engine.source_index,
+        index,
         policy,
+        include_references=include_references,
     )
     ranking = (
         engine.rank_pairs
@@ -217,8 +223,11 @@ def plan_graph_work(engine):
         else None
     )
     rows = admit_relation_work(seeds, state, engine.catalog, policy, ranking)
-    for subject in state["entities"].values():
-        if not subject.get("class_iri"):
+    if phase != "skeleton":
+        rows = [make_work(r["kind"], r["input"], state, engine.catalog, policy,
+                          phase=phase, status=r["status"], reason=r["reason_code"]) for r in rows]
+    for subject in (delta.get("entities", {}).values() if kind != "relation_alignment" else []):
+        if not subject or subject.get("refined_member_ids") or not subject.get("class_iri"):
             continue
         for field_id in subject.get("field_ids", []):
             field = state.get("fields", {}).get(field_id)
@@ -230,19 +239,154 @@ def plan_graph_work(engine):
                 state,
                 engine.catalog,
                 policy,
+                phase=phase,
             )
-            if subject["state"] != "accepted":
-                row.update(status="waiting", reason_code="type_or_constraint_unresolved")
             if field.get("missing"):
                 row.update(status="done", reason_code="missing_source_value")
             rows.append(row)
-    engine.commit(
-        {
-            "work": upsert_work(state, rows),
-            "observations": engine.source_index.scope_changes,
-            "reference_cues": engine.source_index.cue_changes,
-        }
-    )
+    changes = {
+        "work": upsert_work(state, rows),
+        "observations": index.scope_changes,
+        "reference_cues": index.cue_changes,
+    }
+    if commit:
+        engine.commit(changes)
+    return changes
+
+
+def materialize_skeleton(engine, *, commit=True, state=None, delta=None):
+    changes = defaultdict(dict)
+    state = state or engine.state
+    for subject in (delta or state)["entities"].values():
+        for field_id in subject.get("field_ids", []):
+            field = state.get("fields", {}).get(field_id)
+            if not field or field.get("missing"):
+                continue
+            key = identity("property", subject["id"], "unmapped", field_id, "whole")
+            if not any(row["subject_id"] == subject["id"] and row["field_id"] == field_id
+                       for row in state.get("properties", {}).values()):
+                changes["properties"][key] = {
+                    "id": key, "subject_id": subject["id"], "field_id": field_id,
+                    "predicate_iri": None, "alignment_class_iri": subject.get("class_iri"),
+                    "label": field.get("label") or "原文字段", "value": field["value"],
+                    "source_value": field["value"], "source_unit": None,
+                    "source_unit_evidence": [], "value_component": "whole",
+                    "value_evidence": field["value_evidence"], "evidence": field["evidence"],
+                    "state": "candidate", "reason": "谓词待对齐", "calibration": None,
+                    "verification": None,
+                }
+    for hint in (delta or state).get("hints", {}).values():
+        objects = hint.get("object_ids", [hint.get("object_id")])
+        subject = hint.get("subject_id")
+        if (subject not in state["entities"] or not objects or not hint.get("evidence")
+                or any(key not in state["entities"] for key in objects)):
+            continue
+        grouped = len(objects) > 1
+        domain = "relation_groups" if grouped else "relations"
+        key = identity("relation_draft", hint["id"], subject, objects, "unmapped")
+        if key in state.get(domain, {}):
+            continue
+        row = {"id": key, "subject_id": subject, "predicate_iri": None,
+               "origin_ids": [hint["id"]], "label": hint["label"],
+               "alignment_class_iri": state["entities"][subject].get("class_iri"),
+               "evidence": hint["evidence"], "state": "candidate", "reason": "谓词待对齐",
+               "polarity": hint.get("polarity", "uncertain"),
+               "conditions": hint.get("conditions", []), "calibration": None,
+               "verification": None}
+        if grouped:
+            row.update(object_ids=objects, participation="unknown", selection="unspecified",
+                       timing="unspecified", timing_state="candidate", timing_reason="时间待核对",
+                       ordered_object_ids=None, order_evidence=[])
+        else:
+            row["object_id"] = objects[0]
+        changes[domain][key] = row
+    if commit:
+        engine.commit(dict(changes))
+    return dict(changes)
+
+
+def plan_graph_work(engine):
+    return plan_skeleton_work(engine)
+
+
+def plan_semantic_work(engine, step, *, commit=True):
+    state, rows = engine.state, []
+    changes = defaultdict(dict)
+    if step == "referents":
+        from .referents import referent_groups
+
+        for window in engine.windows:
+            for group_id, _, entities in referent_groups(engine, window):
+                rows.append(make_work("referent_alignment",
+                                      {"group_id": group_id,
+                                       "mention_ids": [e["id"] for e in entities]},
+                                      state, engine.catalog, engine.execution_policy))
+    elif step == "entities":
+        for entity in state["entities"].values():
+            if entity.get("refined_member_ids") or entity.get("role") == "document_root":
+                continue
+            row = make_work("entity_review", {"entity_id": entity["id"]}, state,
+                            engine.catalog, engine.execution_policy)
+            if not entity.get("class_iri") or entity.get("referent_unresolved"):
+                row.update(status="waiting", reason_code="type_or_referent_unresolved")
+            rows.append(row)
+    elif step == "coreference":
+        return plan_coreference_work(engine, commit=commit)
+    else:
+        # Refinement creates only affected alignment tasks, never replans the full skeleton.
+        for domain in ("properties", "relations", "relation_groups"):
+            for assertion in state.get(domain, {}).values():
+                if assertion.get("reason") in {
+                    "ambiguous_subject_members", "referent_alignment_failed",
+                }:
+                    continue
+                review_for(engine, changes, domain, assertion)
+    changes["work"].update(upsert_work(state, rows))
+    if commit:
+        engine.commit(dict(changes))
+    return dict(changes)
+
+
+def plan_calibration_work(engine, *, commit=True):
+    rows = []
+    for domain in ("entities", "properties", "relations", "relation_groups"):
+        for row in engine.state.get(domain, {}).values():
+            kind = "entity_calibration" if domain == "entities" else "assertion_calibration"
+            data = {"entity_id": row["id"]} if domain == "entities" else {
+                "domain": domain, "assertion_id": row["id"],
+            }
+            rows.append(make_work(kind, data, engine.state, engine.catalog,
+                                  engine.execution_policy))
+    changes = {"work": upsert_work(engine.state, rows)}
+    if commit:
+        engine.commit(changes)
+    return changes
+
+
+def calibrate_work(engine, rows, base_window):
+    from .deterministic import calibrate, calibration_input_hash
+
+    changes = defaultdict(dict)
+    cursor = engine.state["cursor"]["main"]
+    changes["cursor"]["main"] = {**cursor, "stage": (
+        "identifier_check" if rows[0]["kind"] == "entity_calibration" else "literal_normalization")}
+    for work in rows:
+        domain = work["input"].get("domain", "entities")
+        key = work["input"].get("entity_id", work["input"].get("assertion_id"))
+        row = engine.state.get(domain, {}).get(key)
+        if row is None:
+            complete_work(changes, work, status="waiting", reason="missing_calibration_input")
+            continue
+        previous = row.get("calibration")
+        value = (previous if previous and previous["input_hash"] == calibration_input_hash(
+            domain, row, engine.catalog) else calibrate(domain, row, engine.catalog))
+        changes[domain][key] = {**row, "calibration": value}
+        error = any(c["status"] == "error" for c in value["checks"].values())
+        work = {**work, "retryable": False if error else work["retryable"]}
+        complete_work(changes, work, status="failed" if error else "done",
+                      reason="calibration_tool_error" if error else None, outputs=[key])
+    engine.commit(dict(changes))
+
 
 
 def scoped_identifier_clues(engine):
@@ -259,6 +403,19 @@ def scoped_identifier_clues(engine):
         for item in binding.get("identifiers", []):
             if item.get("quote") and item.get("value") == item["quote"]["text"]:
                 identifiers[item["property_iri"]].append(item)
+        # Complete ontology-declared keys can locate a comparison without an
+        # external mapping. Values remain source-bound clues, never an identity
+        # verdict; composite keys must include every scope component.
+        available = {p.iri for p in card.properties if p.constraint_status == "resolved"}
+        for group in card.identity_key_groups:
+            required = sorted(set(group))
+            if not required or not set(required) <= available or any(
+                len(identifiers[p]) != 1 for p in required
+            ):
+                continue
+            values = tuple((p, identifiers[p][0]["value"]) for p in required)
+            bucket = ("ontology_key", card.iri, tuple(required), values)
+            buckets[bucket][entity["id"]] = [identifiers[p][0]["quote"] for p in required]
         work = engine.state.get("referent_work", {}).get(binding.get("group_id"), {})
         for capability in work.get("key_context", {}).get("lookup_capabilities", []):
             namespace = capability.get("identifier_namespace")
@@ -280,7 +437,7 @@ def scoped_identifier_clues(engine):
     return buckets.values()
 
 
-def plan_coreference_work(engine):
+def plan_coreference_work(engine, *, commit=True):
     state, policy = engine.state, engine.execution_policy
     cues = resolve_reference_cues(engine.ir, state, engine.source_index, policy)
     pairs, observations = {}, {}
@@ -335,9 +492,11 @@ def plan_coreference_work(engine):
                 policy,
             )
         )
-    engine.commit(
-        {"work": upsert_work(state, rows), "reference_cues": cues, "observations": observations}
-    )
+    changes = {"work": upsert_work(state, rows), "reference_cues": cues,
+               "observations": observations}
+    if commit:
+        engine.commit(changes)
+    return changes
 
 
 def complete_work(changes, row, *, status="done", reason=None, outputs=()):
@@ -352,10 +511,13 @@ def complete_work(changes, row, *, status="done", reason=None, outputs=()):
 
 def review_for(engine, changes, domain, assertion):
     changes.setdefault(domain, {})[assertion["id"]] = assertion
+    if engine.state["cursor"]["main"]["phase"] == "skeleton":
+        return
     state = merged_state(engine.state, changes)
     kind = (
         "group_interpretation"
-        if domain == "relation_groups" and assertion["participation"] == "unknown"
+        if (domain == "relation_groups" and assertion["participation"] == "unknown"
+            and assertion.get("predicate_iri"))
         else "evidence_review"
     )
     data = (
@@ -368,6 +530,12 @@ def review_for(engine, changes, domain, assertion):
     )
     work = make_work(kind, data, state, engine.catalog, engine.execution_policy)
     changes.setdefault("work", {})[work["id"]] = work
+    if "deterministic" in engine.state["cursor"]["main"].get("planned_steps", []):
+        calibration = make_work(
+            "assertion_calibration", {"domain": domain, "assertion_id": assertion["id"]},
+            state, engine.catalog, engine.execution_policy,
+        )
+        changes["work"][calibration["id"]] = calibration
 
 
 def work_context(engine, rows, base_window):
@@ -406,6 +574,15 @@ def work_context(engine, rows, base_window):
         for entity in entities
         if entity.get("referent")
     }
+    # Row labels and condition cells are source context for relation ownership.
+    # Keeping only row zero loses labels such as the operation's batch/phase.
+    relation_rows = {
+        (tuple(unit.table_path), unit.row_index)
+        for ref in [*refs, *(entity["referent"] for entity in entities if entity.get("referent"))]
+        if (unit := engine.ir.unit(ref["source_id"])).table_path
+    } if rows[0]["kind"] in {
+        "relation_alignment", "evidence_review", "group_interpretation",
+    } else set()
     refs.extend(
         reference(engine.ir, unit.evidence_id, 0, len(unit.text))
         for unit in engine.ir.evidence_units
@@ -416,6 +593,8 @@ def work_context(engine, rows, base_window):
             or unit.table_path
             and tuple(unit.table_path) in tables
             and unit.row_index == 0
+            or unit.table_path
+            and (tuple(unit.table_path), unit.row_index) in relation_rows
         )
     )
     empty = Window(base_window.id if base_window else "work", [], [], [])
@@ -507,6 +686,7 @@ def align_properties(engine, rows, base_window, selected_predicates=None):
         field = engine.state["fields"][row["input"]["field_id"]]
         proposed = answer.properties[engine.field_alias(field["id"], window)]
         output_ids, seen = list(row.get("output_ids", [])), set()
+        mapping_errors = []
         conflicting = {
             mapping.predicate_iri
             for mapping in proposed.mappings
@@ -541,18 +721,18 @@ def align_properties(engine, rows, base_window, selected_predicates=None):
                     mapping,
                     window=window,
                     ir=engine.ir,
-                    confirmed=subject["state"] == "accepted",
                 )
-                validate_bound_property(subject, field, mapping, component)
                 prop = next(p for p in card["properties"] if p["iri"] == mapping.predicate_iri)
-                key = identity(
-                    "property",
-                    subject["id"],
-                    mapping.predicate_iri,
-                    field["id"],
-                    mapping.value_component,
-                    component["evidence"],
+                draft = next((p for p in engine.state.get("properties", {}).values()
+                              if p["subject_id"] == subject["id"] and p["field_id"] == field["id"]
+                              and p.get("predicate_iri") in (None, mapping.predicate_iri)
+                              and p["id"] not in output_ids), None)
+                key = draft["id"] if draft else identity(
+                    "property", subject["id"], mapping.predicate_iri, field["id"],
+                    mapping.value_component, component["evidence"],
                 )
+                unit_ref = (window.resolve(engine.ir, mapping.unit_quote)
+                            if mapping.unit_quote else None)
                 assertion = {
                     "id": key,
                     "subject_id": subject["id"],
@@ -561,7 +741,9 @@ def align_properties(engine, rows, base_window, selected_predicates=None):
                     "label": prop["label"],
                     "value": component["value"],
                     "source_value": field["value"],
-                    "source_unit": component["unit"],
+                    "source_unit": unit_ref["text"] if unit_ref else None,
+                    "source_unit_evidence": [unit_ref] if unit_ref else [],
+                    "calibration": None,
                     "value_component": mapping.value_component,
                     "value_evidence": component["evidence"],
                     "field_id": field["id"],
@@ -574,6 +756,10 @@ def align_properties(engine, rows, base_window, selected_predicates=None):
                 old = engine.state.get("properties", {}).get(key)
                 if old and old.get("verification"):
                     assertion["verification"] = old["verification"]
+                failure = check_candidate_structure(engine.ir, engine.catalog,
+                                                    engine.state, assertion)
+                if failure:
+                    raise ValueError(failure["reason_code"])
                 review_for(engine, changes, "properties", assertion)
                 output_ids.append(key)
                 engine.record_field_alignment(
@@ -586,6 +772,7 @@ def align_properties(engine, rows, base_window, selected_predicates=None):
                     "mapped",
                 )
             except ValueError as exc:
+                mapping_errors.append(str(exc))
                 engine.record_field_alignment(
                     changes, window, field, subject, [mapping.predicate_iri], str(exc), "invalid"
                 )
@@ -601,7 +788,10 @@ def align_properties(engine, rows, base_window, selected_predicates=None):
             )
         processed = sorted(set(row.get("processed_predicate_iris", [])) | selected_predicates)
         updated = {**row, "processed_predicate_iris": processed}
-        if all_predicates <= set(processed):
+        if mapping_errors:
+            complete_work(changes, {**updated, "retryable": False}, status="failed",
+                          reason=mapping_errors[0], outputs=output_ids)
+        elif all_predicates <= set(processed):
             complete_work(changes, updated, outputs=output_ids)
         else:
             changes["work"][row["id"]] = {**updated, "status": "ready", "output_ids": output_ids}
@@ -615,7 +805,7 @@ def align_relations(engine, rows, base_window):
     for row in rows:
         proof = (
             None
-            if active
+            if active or engine.state["cursor"]["main"]["phase"] == "skeleton"
             else try_rule_seed(
                 engine.ir,
                 engine.catalog,
@@ -631,7 +821,7 @@ def align_relations(engine, rows, base_window):
                 "semantic_verdict": "accepted",
                 **{k: v for k, v in rule.items() if k != "evidence_refs"},
             }
-            assertion["state"] = acceptance(engine.state, assertion, "accepted")
+            assertion["state"] = semantic_acceptance(engine.state, assertion, "accepted")
             changes["relations"][assertion["id"]] = assertion
             complete_work(changes, row, outputs=[assertion["id"]])
         else:
@@ -648,11 +838,10 @@ def align_relations(engine, rows, base_window):
     predicates = {}
     for row in rows:
         seed = row["input"]
-        subject = engine.state["entities"][seed["subject_id"]]
         predicates[seed["predicate_iri"]] = next(
-            r
-            for r in model_menu(engine.catalog, [subject["class_iri"]])["classes"][0]["relations"]
-            if r["iri"] == seed["predicate_iri"]
+            r.model_dump(mode="json")
+            for card in engine.catalog.classes.values() for r in card.relations
+            if r.iri == seed["predicate_iri"]
         )
     payload = {
         "sources": window.payload()["sources"],
@@ -718,6 +907,14 @@ def align_relations(engine, rows, base_window):
             proposed.polarity,
             proposed.conditions,
         )
+        draft = next((r for r in engine.state.get(domain, {}).values()
+                      if r["subject_id"] == seed["subject_id"]
+                      and r.get("object_ids", [r.get("object_id")]) == seed["object_ids"]
+                      and r.get("predicate_iri") in (None, seed["predicate_iri"])
+                      and set(r.get("origin_ids", [])).intersection(seed["origin_ids"])), None)
+        if draft:
+            key = draft["id"]
+        order = temporal_order(proposed, seed["object_ids"], aliases, window, engine.ir)
         assertion = {
             "id": key,
             "subject_id": seed["subject_id"],
@@ -727,6 +924,8 @@ def align_relations(engine, rows, base_window):
             "state": "candidate",
             "reason": proposed.reason,
             "proposal_reason": proposed.reason,
+            "origin_ids": seed["origin_ids"],
+            "calibration": None,
             "evidence": unique_refs(
                 [*window.quotes(engine.ir, proposed.evidence), *seed["required_context_refs"]]
             ),
@@ -743,6 +942,7 @@ def align_relations(engine, rows, base_window):
                 timing=proposed.timing,
                 timing_state="candidate",
                 timing_reason="时间待独立核对",
+                **order,
             )
         else:
             assertion["object_id"] = seed["object_ids"][0]
@@ -787,10 +987,21 @@ def expand_work(engine, row, changes):
     if refs == unique_refs(current):
         return False
     data = {**row["input"], "required_context_refs": refs}
-    updated = make_work(row["kind"], data, engine.state, engine.catalog, engine.execution_policy)
+    updated = make_work(row["kind"], data, engine.state, engine.catalog, engine.execution_policy,
+                        phase=row["phase"])
     updated.update(expansion_basis_hash=row["expansion_basis_hash"], expansions_used=1)
     changes.setdefault("work", {})[row["id"]] = updated
     return True
+
+
+def temporal_order(proposal, objects, aliases, window, ir):
+    if proposal.timing != "sequential":
+        return {"ordered_object_ids": None, "order_evidence": []}
+    inverse = {alias: key for key, alias in aliases.items()}
+    if set(proposal.ordered_object_ids) != {aliases[key] for key in objects}:
+        raise ValueError("sequential_object_set_mismatch")
+    return {"ordered_object_ids": [inverse[key] for key in proposal.ordered_object_ids],
+            "order_evidence": [window.resolve(ir, quote) for quote in proposal.order_evidence]}
 
 
 def interpret_group(engine, rows, base_window):
@@ -838,25 +1049,15 @@ def interpret_group(engine, rows, base_window):
         },
     }
     schema = stage_schema(
-        "group_interpretation", source_ids=[s["source_id"] for s in window.sources]
+        "group_interpretation", source_ids=[s["source_id"] for s in window.sources],
+        entity_ids=[engine.entity_aliases(window)[key] for key in group["object_ids"]]
     )
     response = bounded_call(
         engine, "group_interpretation", [row], window, payload, schema, base_window, interpret_group
     )
     answer, batch_id = response
     if answer.verdict == "supported":
-        key = identity(
-            "relation_group",
-            group["subject_id"],
-            group["predicate_iri"],
-            sorted(group["object_ids"]),
-            answer.participation,
-            answer.selection,
-            answer.timing,
-            group["polarity"],
-            group["conditions"],
-        )
-        existing = engine.state.get("relation_groups", {}).get(key, {})
+        key = group["id"]
         updated = {
             **group,
             "id": key,
@@ -866,29 +1067,16 @@ def interpret_group(engine, rows, base_window):
             "evidence": unique_refs(
                 [
                     *group["evidence"],
-                    *existing.get("evidence", []),
                     *window.quotes(engine.ir, answer.evidence),
                 ]
             ),
             "reason": answer.reason,
             "state": "candidate",
             "verification": None,
+            "calibration": None,
+            **temporal_order(answer, group["object_ids"], engine.entity_aliases(window),
+                             window, engine.ir),
         }
-        if key != group["id"]:
-            changes["relation_groups"][group["id"]] = None
-            old_review = identity("work", "evidence_review", ["relation_groups", group["id"]])
-            if old_review in engine.state.get("work", {}):
-                changes["work"][old_review] = None
-            for work_id, work in engine.state.get("work", {}).items():
-                if group["id"] in work.get("output_ids", []) and work_id != row["id"]:
-                    changes["work"][work_id] = {
-                        **work,
-                        "output_ids": list(
-                            dict.fromkeys(
-                                key if oid == group["id"] else oid for oid in work["output_ids"]
-                            )
-                        ),
-                    }
         review_for(engine, changes, "relation_groups", updated)
         completed = make_work(
             "group_interpretation",
@@ -926,7 +1114,7 @@ def review_assertions(engine, rows, base_window):
         if active:
             semantic.append(work)
             continue
-        gate = precheck_assertion(engine.ir, engine.catalog, gate_state(engine), row)
+        gate = route_semantic_review(engine.ir, engine.catalog, gate_state(engine), row)
         action = gate["action"]
         if action == "semantic":
             semantic.append(work)
@@ -945,7 +1133,7 @@ def review_assertions(engine, rows, base_window):
             changes[domain][key] = {
                 **row,
                 "verification": verification,
-                "state": acceptance(engine.state, row, verification["semantic_verdict"]),
+                "state": semantic_acceptance(engine.state, row, verification["semantic_verdict"]),
             }
             if domain == "relation_groups":
                 changes[domain][key]["timing_state"] = (
@@ -1005,6 +1193,8 @@ def review_assertions(engine, rows, base_window):
             evidence=[quote_for_reference(window, ref)["source_id"] for ref in row["evidence"]],
         )
         if domain == "properties":
+            candidate["unit_quote"] = [quote_for_reference(window, r)
+                                       for r in row.get("source_unit_evidence", [])]
             candidate["value_quote"] = [
                 quote_for_reference(window, r) for r in row["value_evidence"]
             ]
@@ -1031,6 +1221,10 @@ def review_assertions(engine, rows, base_window):
                 "id": f"C{len(candidates) + 1}",
                 "kind": "relation_timing",
                 "timing": row["timing"],
+                "ordered_object_ids": [engine.entity_aliases(window)[key]
+                                       for key in row.get("ordered_object_ids") or []] or None,
+                "order_evidence": [quote_for_reference(window, r)
+                                   for r in row.get("order_evidence", [])],
             }
             candidates.append(timing)
             bindings[timing["id"]] = (work, domain, row, True)
@@ -1067,6 +1261,9 @@ def review_assertions(engine, rows, base_window):
         ]
         if domain == "properties":
             required.extend(engine.state["fields"][row["field_id"]]["value_evidence"])
+            required.extend(row.get("source_unit_evidence", []))
+        if timing:
+            required.extend(row.get("order_evidence", []))
         if verdict == "accepted" and (
             judgment.confidence < 0.85
             or not refs
@@ -1076,14 +1273,14 @@ def review_assertions(engine, rows, base_window):
         updated = changes[domain].get(row["id"], dict(row))
         if timing:
             updated.update(
-                timing_state=acceptance(engine.state, row, verdict),
+                timing_state=semantic_acceptance(engine.state, row, verdict),
                 source_timing_verdict=verdict,
                 timing_reason=reason,
                 timing_evidence=refs,
             )
         else:
             updated.update(
-                state=acceptance(engine.state, row, verdict),
+                state=semantic_acceptance(engine.state, row, verdict),
                 reason=reason,
                 review_evidence=refs,
                 source_verdict=verdict,
@@ -1120,8 +1317,13 @@ def review_assertions(engine, rows, base_window):
     engine.commit(dict(changes), batch_id=batch_id)
 
 
-def drain_work(engine, base_window):
+def drain_work(engine, base_window, *, phase=None, kind=None):
     cursor = engine.state["cursor"]["main"]
+    phase = phase or cursor["phase"]
+    steps = {"referents": {"referent_alignment"}, "entities": {"entity_review"},
+             "coreference": {"coreference_review"},
+             "assertions": {"property_alignment", "relation_alignment", "evidence_review",
+                            "group_interpretation"}}
     batch = next(iter(cursor.get("active_batches", {}).values()), None)
     if batch and any(t["domain"] == "work" for t in batch["targets"]):
         rows = [engine.state.get("work", {}).get(target["id"]) for target in batch["targets"]]
@@ -1146,7 +1348,9 @@ def drain_work(engine, base_window):
                 row
                 for row in engine.state.get("work", {}).values()
                 if row["status"] == "ready"
-                and (cursor.get("phase") != "coreference" or row["kind"] == "coreference_review")
+                and row["phase"] == phase
+                and (kind is None or row["kind"] == kind)
+                and (phase != "semantic" or row["kind"] in steps[cursor["semantic_step"]])
                 and (
                     base_window is None
                     or local_entities.intersection(row["dependencies"]["entity_ids"])
@@ -1162,7 +1366,7 @@ def drain_work(engine, base_window):
                     )
                 )
             ),
-            key=lambda row: row["id"],
+            key=lambda row: (row["kind"] != "property_alignment", row["id"]),
         )
         if not rows:
             return False
@@ -1179,12 +1383,23 @@ def drain_work(engine, base_window):
             ][:32]
         elif kind == "relation_alignment":
             data = first["input"]
+            # Each item already carries its own endpoints, predicate and clues.
+            # The source region is a candidate-planning boundary, not a reason
+            # to send one model request per row/subject/predicate in a section.
+            sections = {
+                engine.ir.unit(ref["source_id"]).section_node_id
+                for ref in first["dependencies"]["source_refs"]
+            }
             rows = [
                 r
                 for r in rows
                 if r["kind"] == kind
-                and all(
-                    r["input"][k] == data[k] for k in ("region_id", "subject_id", "predicate_iri")
+                and (
+                    r["input"]["region_id"] == data["region_id"]
+                    or sections.intersection(
+                        engine.ir.unit(ref["source_id"]).section_node_id
+                        for ref in r["dependencies"]["source_refs"]
+                    )
                 )
             ][: engine.execution_policy["relation_items_per_call"]]
         elif kind == "evidence_review":
@@ -1212,13 +1427,40 @@ def drain_work(engine, base_window):
                 selected.append(row)
                 size += cost
             rows = selected
+        elif kind == "entity_review":
+            entity = engine.state["entities"][first["input"]["entity_id"]]
+            from .controller import overlapping_referents
+
+            rows = [first]
+            for row in list(engine.state.get("work", {}).values()):
+                if row["kind"] != kind or row["status"] != "ready" or row is first:
+                    continue
+                other = engine.state["entities"][row["input"]["entity_id"]]
+                if other.get("window_id") == entity.get("window_id") and all(
+                    not overlapping_referents(
+                        other, engine.state["entities"][r["input"]["entity_id"]])
+                    for r in rows
+                ):
+                    rows.append(row)
+                if len(rows) == 6:
+                    break
         elif kind == "coreference_review":
             rows = [r for r in rows if r["kind"] == kind][:6]
         else:
             rows = [first]
     try:
         kind = rows[0]["kind"]
-        if kind == "coreference_review":
+        if kind == "referent_alignment":
+            from .referents import run_referent_alignment
+
+            entity = engine.state["entities"][rows[0]["input"]["mention_ids"][0]]
+            window = next(w for w in engine.windows if w.id == entity["window_id"])
+            run_referent_alignment(engine, window, work_row=rows[0])
+        elif kind == "entity_review":
+            entity = engine.state["entities"][rows[0]["input"]["entity_id"]]
+            window = next(w for w in engine.windows if w.id == entity["window_id"])
+            engine.entity_review(window, work_rows=rows)
+        elif kind == "coreference_review":
             from .coreference import review_coreferences
 
             review_coreferences(engine, work_rows=rows)
@@ -1228,6 +1470,8 @@ def drain_work(engine, base_window):
                 "relation_alignment": align_relations,
                 "evidence_review": review_assertions,
                 "group_interpretation": interpret_group,
+                "entity_calibration": calibrate_work,
+                "assertion_calibration": calibrate_work,
             }[kind](engine, rows, base_window)
     except Exception as exc:
         from app.services.llm.model_runtime import ModelCancelled
@@ -1236,12 +1480,30 @@ def drain_work(engine, base_window):
 
         if isinstance(exc, (Paused, ModelCancelled)):
             raise
-        changes = {
-            "work": {
-                row["id"]: {**row, "status": "failed", "reason_code": "technical_failure"}
-                for row in rows
-            }
-        }
-        engine.commit(changes)
-        raise
+        # Complete valid JSON can contain a local logical error. Keep the graph,
+        # clear that paid application batch and continue unrelated work.
+        local = isinstance(exc, ValueError) and not str(exc).startswith((
+            "harness_model", "harness_active_batch", "harness_paid", "HARNESS_EVIDENCE",
+        ))
+        reason = ("referent_group_budget_exceeded" if kind == "referent_alignment"
+                  and str(exc) == "HARNESS_EVIDENCE_CONTEXT_TOO_LARGE" else str(exc))
+        local = local or reason == "referent_group_budget_exceeded"
+        changes = {"work": {row["id"]: {**row, "status": "failed", "reason_code": reason,
+                                         "retryable": not local} for row in rows}}
+        if kind == "referent_alignment" and local:
+            ids = set(rows[0]["input"]["mention_ids"])
+            changes["entities"] = {key: {**engine.state["entities"][key], "state": "unresolved",
+                                         "referent_unresolved": True,
+                                         "reason": "referent_alignment_failed"} for key in ids}
+            for domain in ("properties", "relations", "relation_groups"):
+                changes[domain] = {key: {**claim, "state": "unresolved",
+                                         "reason": "referent_alignment_failed",
+                                         "verification": None, "calibration": None}
+                                   for key, claim in engine.state.get(domain, {}).items()
+                                   if ids.intersection([claim["subject_id"], claim.get("object_id"),
+                                                        *claim.get("object_ids", [])])}
+        active = engine.state["cursor"]["main"].get("active_batches", {})
+        engine.commit(changes, batch_id=next(iter(active)) if local and active else None)
+        if not local:
+            raise
     return True

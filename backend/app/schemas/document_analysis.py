@@ -810,10 +810,13 @@ class SourceArtifactResponse(SourceSelectionResponse):
     content: DocumentContent
 
 
-class RunControlRequest(ApiModel):
-    expected_revision: int = Field(ge=0)
+class PauseRunRequest(ApiModel):
     request_key: RequestKey
     reason: Reason
+
+
+class RunControlRequest(PauseRunRequest):
+    expected_revision: int = Field(ge=0)
 
 
 class DeleteRunRequest(ApiModel):

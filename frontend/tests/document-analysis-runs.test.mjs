@@ -427,7 +427,7 @@ test("a resume receipt makes the same run eligible for a fresh event subscriptio
   );
 });
 
-test("lifecycle writes carry revision CAS and operation idempotency keys", async () => {
+test("pause sends intent while resume and delete retain revision checks", async () => {
   const requests = [];
   const api = loadApi(async (url, options) => {
     requests.push({ url, options });
@@ -441,20 +441,26 @@ test("lifecycle writes carry revision CAS and operation idempotency keys", async
     "pause-key",
     "检查当前结果",
   );
+  await api.controlDocumentAnalysisRun("run-2", "resume", 9, "resume-key", "继续分析");
   await api.deleteDocumentAnalysisRun("run-2", 9, "delete-key");
 
   assert.equal(requests[0].url, "/api/document-analysis/runs/run-2/pause");
   assert.equal(requests[0].options.method, "POST");
   assert.deepEqual(JSON.parse(requests[0].options.body), {
-    expected_revision: 8,
     request_key: "pause-key",
     reason: "检查当前结果",
   });
+  assert.equal(requests[1].url, "/api/document-analysis/runs/run-2/resume");
+  assert.deepEqual(JSON.parse(requests[1].options.body), {
+    expected_revision: 9,
+    request_key: "resume-key",
+    reason: "继续分析",
+  });
   assert.equal(
-    requests[1].url,
+    requests[2].url,
     "/api/document-analysis/runs/run-2?expected_revision=9&request_key=delete-key",
   );
-  assert.equal(requests[1].options.method, "DELETE");
+  assert.equal(requests[2].options.method, "DELETE");
 });
 
 test("ranking budget controls use explicit CAS endpoints with cancellation and no implicit resume", async () => {

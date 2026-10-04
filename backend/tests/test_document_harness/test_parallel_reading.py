@@ -74,7 +74,8 @@ def test_fast_window_opens_next_slot_without_waiting_for_slow_window(tmp_path, i
     assert engine.state["cursor"]["main"]["reading_windows"] == {
         "total": 3, "saved": 3, "complete": 3, "incomplete": 0, "active": 0,
     }
-    assert not engine.state.get("work")
+    assert all(w["phase"] == "deterministic" and w["status"] == "done"
+               for w in engine.state["work"].values())
     assert any(c.get("cursor", {}).get("main", {}).get("reading_windows", {}).get("active") == 2
                for c in saved)
 
@@ -133,7 +134,7 @@ def test_failed_window_still_saves_sibling_without_dispatching_third(tmp_path, i
         engine.run()
     assert sorted(names) == ["fast", "slow"]
     assert len(calls.answers) == 2 and not calls.futures
-    assert engine.state["cursor"]["main"]["phase"] == "reading"
+    assert engine.state["cursor"]["main"]["phase"] == "discovery"
 
 
 def test_one_slot_uses_identical_pipeline_and_request_set(tmp_path, inputs):
@@ -194,7 +195,8 @@ def publish(state, delta, order):
 def test_overlapping_windows_publish_same_mentions_and_fields_in_any_order(inputs):
     ir, a, root, answer = local_case(inputs)
     b = Window("later-window", deepcopy(a.sources), deepcopy(a.fields), list(a.primary_ids))
-    deltas = [decode_local_discovery(ir, w, answer, {}, root) for w in [a, b]]
+    deltas = [decode_local_discovery(ir, w, answer, {}, root,
+    class_iris=["urn:test:Thing"]) for w in [a, b]]
     states = []
     for sequence in [deltas, list(reversed(deltas))]:
         state = {"entities": {"document": deepcopy(root)}}
@@ -211,7 +213,7 @@ def test_overlapping_windows_publish_same_mentions_and_fields_in_any_order(input
 def test_local_decode_never_mutates_shared_root_or_raw_answer(inputs):
     ir, window, root, answer = local_case(inputs)
     before = deepcopy((root, answer.model_dump()))
-    delta = decode_local_discovery(ir, window, answer, {}, root)
+    delta = decode_local_discovery(ir, window, answer, {}, root, class_iris=["urn:test:Thing"])
     assert (root, answer.model_dump()) == before
     assert delta["complete"]
     assert all(e["state"] == "candidate" for k, e in delta["changes"]["entities"].items()
@@ -225,7 +227,8 @@ def test_document_fields_are_merged_from_current_state(inputs):
     b = answer.model_copy(update={"document_field_ids": ids[1:2]})
     state = {"entities": {"document": deepcopy(root)}}
     for value in [a, b]:
-        publish(state, decode_local_discovery(ir, window, value, {}, root), {window.id: [0]})
+        publish(state, decode_local_discovery(ir, window, value, {}, root,
+        class_iris=["urn:test:Thing"]), {window.id: [0]})
     assert set(state["entities"]["document"]["field_ids"]) == {
         f["id"] for f in window.fields if f["alias"] in ids[:2]
     }
@@ -239,7 +242,8 @@ def test_third_answer_does_not_erase_conflicting_name_candidates(inputs):
     for values in [[answer, altered, answer], [altered, answer, answer]]:
         state = {"entities": {"document": deepcopy(root)}}
         for value in values:
-            publish(state, decode_local_discovery(ir, window, value, {}, root), {window.id: [0]})
+            publish(state, decode_local_discovery(ir, window, value, {}, root,
+            class_iris=["urn:test:Thing"]), {window.id: [0]})
         states.append(state)
     assert states[0] == states[1]
     entity = next(e for e in states[0]["entities"].values() if e.get("role") == "container")

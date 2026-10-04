@@ -6,7 +6,7 @@
 
 前缀：`/api/document-analysis/runs`
 
-2026-09-14 状态存储补充：新建运行冻结 `state_storage_version=4`，按[当前状态契约](../../022-semantic-graph-closure/contracts/current-state.md)继续同一运行；没有历史检查点选择参数。API 的暂停/继续、公开图投影、部分完成状态及审核契约保持不变。服务端 `work_version`、`request_version`、`ranking_version` 分别管理工作与独立账目提交，公共 `run_revision` 继续用于客户端刷新及控制操作。已有文档分析运行按其原冻结格式读取和继续；这与下文禁止恢复旧 word 端点作业是不同范围。
+2026-09-14 状态存储补充：新建运行冻结 `state_storage_version=4`，按[当前状态契约](../../022-semantic-graph-closure/contracts/current-state.md)继续同一运行；没有历史检查点选择参数。API 的暂停/继续、公开图投影、部分完成状态及审核契约保持不变。服务端 `work_version`、`request_version`、`ranking_version` 分别管理工作与独立账目提交，公共 `run_revision` 继续用于客户端刷新及需要版本校验的控制操作；暂停仅记录操作意图，不参与版本竞争。已有文档分析运行按其原冻结格式读取和继续；这与下文禁止恢复旧 word 端点作业是不同范围。
 
 本契约完全替换旧 `POST /api/document-analysis/word`。不提供双读、双写、旧 response adapter、旧 checkpoint 恢复或算法选择开关。
 
@@ -436,13 +436,13 @@ data: {"contract_version":"document-analysis-runs-v1","event_id":"event:...","re
 
 ## 8. 控制运行
 
-所有控制 body 使用：
+除暂停外，控制 body 使用：
 
 ```json
 {
   "expected_revision": 8,
   "request_key": "unique-operation-key",
-  "reason": "用户请求暂停以检查当前结果"
+  "reason": "用户请求控制运行"
 }
 ```
 
@@ -454,6 +454,16 @@ data: {"contract_version":"document-analysis-runs-v1","event_id":"event:...","re
 POST /api/document-analysis/runs/{recognition_run_id}/pause
 ```
 
+暂停 body 只表达操作意图：
+
+```json
+{
+  "request_key": "unique-pause-key",
+  "reason": "用户请求暂停以检查当前结果"
+}
+```
+
+- 暂停不提交或校验 `expected_revision` / `control_version`。服务端在既有事务锁内按当前状态记录暂停请求，后台进度更新不能使暂停意图过期。
 - 允许 `queued | running`；返回 `202`，状态可先为 running + `pause_requested=true`。
 - worker 在下一个安全 batch 边界提交 paused event/checkpoint；已提交 artifact 保留。
 - 已 paused 的同键调用幂等；finished/cancelled/deleting/deleted/expired 返回 409/410。
@@ -534,7 +544,7 @@ Success response（所有控制共用）：
 2. owner + role 在 run/status/metadata/graph/source/SSE/control/delete 全路径一致。
 3. 每个 GET 在模型、解析和写 store 上均为零调用。
 4. metadata/graph 水位自洽，partial/failed/paused/empty 组合可序列化。
-5. pause/resume/cancel/delete CAS、幂等、不可逆和 lost-worker fencing。
+5. 暂停意图不受进度版本变化影响；resume/cancel/delete CAS、控制幂等、不可逆和 lost-worker fencing。
 6. SSE durable resume、过期 cursor 和迟到 run 过滤。
 7. source selection 只接受 run-owned opaque ref；任意 path/URL/foreign ref 拒绝。
 8. 旧路由和客户端不可达；新运行不创建 ExtractionJob/旧候选/commit。

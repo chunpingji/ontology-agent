@@ -14,7 +14,7 @@ import {
   type DocumentInterpretationMeaning, type DocumentInterpretationScope, type DocumentInterpretationTask,
 } from "@/lib/api";
 import { DOCUMENT_ANALYSIS_STATUS_LABELS } from "@/lib/document-analysis";
-import { harnessCompletionMessage, harnessCosts, HARNESS_STAGES, HARNESS_WORK_STATES } from "@/lib/source-harness";
+import { harnessCompletionMessage, harnessCosts, HARNESS_STAGES, HARNESS_PHASES, HARNESS_WORK_STATES } from "@/lib/source-harness";
 import { HarnessCandidates } from "./source-harness-workspace";
 import { HarnessObservations } from "./source-harness-observations";
 import { HarnessSourcePreview } from "./source-harness-shared";
@@ -252,17 +252,19 @@ function HarnessInterpretationTaskForm({ task, onSource, onAnswer }: {
 export function HarnessProgress({ graph }: { graph: DocumentHarnessGraph }) {
   const progress = graph.progress;
   const windows = progress.reading_windows;
-  const phaseLabels = { reading: "局部阅读", entities: "实体核验", coreference: "共指核验", graph: "图谱分析", done: "本轮完成" };
+  const phaseLabels = HARNESS_PHASES;
   return <section className="space-y-3" aria-label="阅读与任务进度">
     <p className="text-sm font-medium">原文范围已处理 {progress.reading.processed_characters.toLocaleString()} / {progress.reading.total_characters.toLocaleString()} 字符</p>
     <p className="text-sm">完整覆盖 {progress.reading.complete_characters?.toLocaleString() ?? "待更新"} / {progress.reading.total_characters.toLocaleString()} 字符</p>
     <p className="text-xs text-muted-foreground">已处理包含已保存的局部结果；完整覆盖仅统计确认读完的范围，两者均按原文去重。阅读批次：已保存 {windows.saved} / {windows.total}，处理中 {windows.active}，覆盖完整 {windows.complete}，覆盖不完整 {windows.incomplete}。</p>
-    <p className="text-xs text-muted-foreground">当前阶段：{phaseLabels[progress.phase]}。阅读结果保存后，继续核验实体、共指和图谱事实。</p>
+    <p className="text-xs text-muted-foreground">当前阶段：{phaseLabels[progress.phase]}。先保存候选骨架，再核对语义，最后检查编号、字面量、单位和 SHACL。</p>
     <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs">{Object.entries(HARNESS_WORK_STATES).map(([status, label]) => <span key={status} className="text-muted-foreground">{label}<strong className="ml-2 tabular-nums text-foreground">{progress.work_counts[status as keyof typeof progress.work_counts]}</strong></span>)}</div>
     <div className="flex flex-wrap gap-x-8 gap-y-2 text-xs">{[["已完成调用", progress.completed_calls], ["已保存候选", progress.candidate_count], ["已采信事实", progress.fact_count]].map(([label, count]) => <span key={label} className="text-muted-foreground">{label}<strong className="ml-2 text-base font-semibold tabular-nums text-foreground">{count}</strong></span>)}</div>
+    <div className="space-y-1 text-xs text-muted-foreground">{Object.entries(progress.phase_work_counts).map(([phase, counts]) => <p key={phase}>{HARNESS_PHASES[phase as keyof typeof HARNESS_PHASES]}：已处理 {counts.done} · 待处理 {counts.ready} · 未决/剪枝 {counts.waiting + counts.pruned} · 失败 {counts.failed}</p>)}</div>
+    <div className="space-y-1 text-xs text-muted-foreground">{Object.entries(progress.calibration_counts).map(([name, counts]) => <p key={name}>{{ identifier: "编号", datatype: "类型表示", unit: "单位", shacl: "SHACL" }[name as "identifier" | "datatype" | "unit" | "shacl"]}：通过 {counts.passed} · 待检查 {counts.not_run} · 不符合 {counts.invalid} · 输入不足 {counts.incomplete} · 工具失败 {counts.error}</p>)}</div>
     <p className="text-xs text-muted-foreground">已采信事实的证明来源：规则证明 {progress.rule_verified_count} · 模型核对 {progress.llm_verified_count}</p>
     {progress.candidate_scope_limited && <p className="text-xs text-amber-700 dark:text-amber-400">本轮候选范围受限，仍有未处理的候选。</p>}
-    <p className="text-xs text-muted-foreground">{harnessCompletionMessage(graph)}。阅读覆盖、任务处理和事实采信分别计数。</p>
+    <p className="text-xs text-muted-foreground">{harnessCompletionMessage(graph)}。阅读覆盖、任务处理和事实采信分别计数。已采信事实表示语义获证，确定性检查另行计数。</p>
   </section>;
 }
 
@@ -271,13 +273,15 @@ export function HarnessStageCosts({ graph }: { graph: DocumentHarnessGraph }) {
   const total = harnessCosts(costs);
   const format = (value: number | null) => value == null ? "未知" : value.toLocaleString();
   const order = Object.keys(HARNESS_STAGES);
-  const rows = [...costs].sort((a, b) => order.indexOf(a.stage) - order.indexOf(b.stage));
+  const phases = Object.keys(HARNESS_PHASES);
+  const rows = [...costs].sort((a, b) => phases.indexOf(a.phase) - phases.indexOf(b.phase)
+    || order.indexOf(a.stage) - order.indexOf(b.stage));
   return <section className="space-y-4" aria-label="各阶段模型成本">
     <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-lg font-semibold">各阶段模型成本</h3><p className="text-xs text-muted-foreground">{total.calls} 次调用 · 已测累计耗时 {total.seconds.toFixed(1)} 秒 · Token 合计 {format(total.tokens)}</p></div>
     {total.unmeasuredAttempts > 0 && <p className="text-xs text-muted-foreground">{total.unmeasuredAttempts} 次尝试缺少耗时测量，未计入已测耗时。</p>}
     {!rows.length ? <p className="rounded-md border border-dashed p-6 text-sm text-muted-foreground">尚无已记录的模型调用成本。</p> : <div className="overflow-x-auto rounded-lg border"><table className="w-full min-w-[700px] text-left text-xs">
       <thead className="bg-muted/40 text-muted-foreground"><tr>{["阶段", "模型调用", "已测耗时(秒)", "输入 Token", "输出 Token", "已测耗时占比"].map((label) => <th key={label} scope="col" className="px-4 py-3 font-normal">{label}</th>)}</tr></thead>
-      <tbody>{rows.map((cost, index) => { const share = total.seconds > 0 ? cost.seconds / total.seconds * 100 : null; return <tr key={cost.stage} className="border-t"><td className="px-4 py-3.5"><span className={`mr-2 inline-block size-1.5 rounded-full ${index < 3 ? "bg-primary" : "bg-teal-600"}`} />{HARNESS_STAGES[cost.stage] ?? cost.stage}</td><td className="px-4 py-3.5 tabular-nums">{cost.calls}</td><td className="px-4 py-3.5 tabular-nums">{cost.seconds.toFixed(1)}</td><td className="px-4 py-3.5 tabular-nums">{format(cost.input_tokens)}</td><td className="px-4 py-3.5 tabular-nums">{format(cost.output_tokens)}</td><td className="px-4 py-3.5"><div className="flex items-center gap-3"><span className="h-1.5 w-28 overflow-hidden rounded-full bg-muted"><span className={`block h-full rounded-full ${index < 3 ? "bg-primary" : "bg-teal-600"}`} style={{ width: `${share ?? 0}%` }} /></span><span className="tabular-nums">{share == null ? "—" : `${share.toFixed(0)}%`}</span></div></td></tr>; })}</tbody>
+      <tbody>{rows.map((cost, index) => { const share = total.seconds > 0 ? cost.seconds / total.seconds * 100 : null; return <tr key={`${cost.phase}:${cost.stage}`} className="border-t"><td className="px-4 py-3.5"><span className={`mr-2 inline-block size-1.5 rounded-full ${index < 3 ? "bg-primary" : "bg-teal-600"}`} />{HARNESS_PHASES[cost.phase]} · {HARNESS_STAGES[cost.stage] ?? cost.stage}</td><td className="px-4 py-3.5 tabular-nums">{cost.calls}</td><td className="px-4 py-3.5 tabular-nums">{cost.seconds.toFixed(1)}</td><td className="px-4 py-3.5 tabular-nums">{format(cost.input_tokens)}</td><td className="px-4 py-3.5 tabular-nums">{format(cost.output_tokens)}</td><td className="px-4 py-3.5"><div className="flex items-center gap-3"><span className="h-1.5 w-28 overflow-hidden rounded-full bg-muted"><span className={`block h-full rounded-full ${index < 3 ? "bg-primary" : "bg-teal-600"}`} style={{ width: `${share ?? 0}%` }} /></span><span className="tabular-nums">{share == null ? "—" : `${share.toFixed(0)}%`}</span></div></td></tr>; })}</tbody>
     </table></div>}
     <p className="text-xs leading-relaxed text-muted-foreground">按实际调用累计，含重试；已测耗时不等于整轮运行时间。缺失的 Token 显示“未知”，不计为 0；占比仅表示已测模型请求耗时。</p>
   </section>;

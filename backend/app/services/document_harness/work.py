@@ -15,7 +15,7 @@ from .source import identity
 
 DEFAULT_POLICY = {
     "schema": "harness-pruning/1",
-    "flow": "local_reading",
+    "flow": "four_stage",
     "reading_concurrency": 2,
     "weak_candidates_per_subject_predicate_region": 4,
     "weak_candidates_per_region": 64,
@@ -33,6 +33,10 @@ WorkKind = Literal[
     "evidence_review",
     "group_interpretation",
     "coreference_review",
+    "entity_review",
+    "referent_alignment",
+    "entity_calibration",
+    "assertion_calibration",
 ]
 WorkStatus = Literal["ready", "waiting", "pruned", "done", "failed"]
 
@@ -48,6 +52,8 @@ class WorkItem(BaseModel):
     model_config = ConfigDict(extra="forbid")
     id: str
     kind: WorkKind
+    phase: Literal["skeleton", "semantic", "deterministic"]
+    retryable: bool = True
     status: WorkStatus
     input: dict
     dependencies: dict
@@ -63,6 +69,12 @@ class WorkItem(BaseModel):
 
     @model_validator(mode="after")
     def closed_input(self):
+        allowed_phases = (
+            {"skeleton", "semantic"} if self.kind in {"property_alignment", "relation_alignment"}
+            else {"deterministic"} if self.kind.endswith("calibration") else {"semantic"}
+        )
+        if self.phase not in allowed_phases:
+            raise ValueError("harness_work_phase_invalid")
         fields = {
             "property_alignment": {"subject_id", "field_id"},
             "relation_alignment": {
@@ -73,13 +85,16 @@ class WorkItem(BaseModel):
             "evidence_review": {"domain", "assertion_id"},
             "group_interpretation": {"group_id"},
             "coreference_review": {"left_mention_id", "right_mention_id", "clue_refs"},
+            "entity_review": {"entity_id"},
+            "referent_alignment": {"group_id", "mention_ids"},
+            "entity_calibration": {"entity_id"},
+            "assertion_calibration": {"domain", "assertion_id"},
         }[self.kind]
         if (not fields <= self.input.keys()
                 or self.input.keys() - fields - {"required_context_refs"}):
             raise ValueError("harness_work_input_shape_invalid")
-        if self.kind == "evidence_review" and self.input["domain"] not in {
-            "properties", "relations", "relation_groups",
-        }:
+        if (self.kind in {"evidence_review", "assertion_calibration"}
+                and self.input["domain"] not in {"properties", "relations", "relation_groups"}):
             raise ValueError("harness_work_assertion_domain_invalid")
         WorkDependencies.model_validate(self.dependencies)
         return self
@@ -107,13 +122,15 @@ def unique_refs(refs):
 
 
 def endpoints(kind, data, state):
-    if kind in {"evidence_review", "group_interpretation"}:
+    if kind in {"evidence_review", "group_interpretation", "assertion_calibration"}:
         domain = data.get("domain", "relation_groups")
         data = state.get(domain, {}).get(data.get("assertion_id", data.get("group_id")), {})
     return list(
         dict.fromkeys(
             key
             for key in [
+                data.get("entity_id"),
+                *data.get("mention_ids", []),
                 data.get("subject_id"),
                 data.get("object_id"),
                 *data.get("object_ids", []),
@@ -129,7 +146,7 @@ def dependencies(kind, data, state):
     from .evidence_gate import _related_hints
 
     row = data
-    if kind in {"evidence_review", "group_interpretation"}:
+    if kind in {"evidence_review", "group_interpretation", "assertion_calibration"}:
         row = state.get(data.get("domain", "relation_groups"), {}).get(
             data.get("assertion_id", data.get("group_id")),
             {},
@@ -152,6 +169,12 @@ def dependencies(kind, data, state):
 def dependency_hash(kind, data, state, catalog, policy):
     from .evidence_gate import _related_hints
 
+    if kind.endswith("calibration"):
+        from .deterministic import calibration_input_hash
+
+        domain = data.get("domain", "entities")
+        key = data.get("entity_id", data.get("assertion_id"))
+        return calibration_input_hash(domain, state.get(domain, {}).get(key, {}), catalog)
     deps = dependencies(kind, data, state)
     endpoint_fields = (
         "referent",
@@ -176,7 +199,7 @@ def dependency_hash(kind, data, state, catalog, policy):
         }
     }
     assertion = None
-    if kind in {"evidence_review", "group_interpretation"}:
+    if kind in {"evidence_review", "group_interpretation", "assertion_calibration"}:
         row = state.get(data.get("domain", "relation_groups"), {}).get(
             data.get("assertion_id", data.get("group_id")),
             {},
@@ -194,6 +217,10 @@ def dependency_hash(kind, data, state, catalog, policy):
                 "participation",
                 "selection",
                 "timing",
+                "ordered_object_ids",
+                "order_evidence",
+                "source_unit",
+                "source_unit_evidence",
             )
         }
     return digest(
@@ -229,7 +256,9 @@ def dependency_hash(kind, data, state, catalog, policy):
     )
 
 
-def work_id(kind, data):
+def work_id(kind, data, phase=None):
+    phase = phase or ("skeleton" if kind.endswith("alignment") and kind != "referent_alignment"
+                      else "deterministic" if kind.endswith("calibration") else "semantic")
     if kind == "relation_alignment":
         parts = [
             data["subject_id"],
@@ -243,17 +272,25 @@ def work_id(kind, data):
         parts = [data["subject_id"], data["field_id"]]
     elif kind == "coreference_review":
         parts = sorted([data["left_mention_id"], data["right_mention_id"]])
+    elif kind in {"entity_review", "entity_calibration"}:
+        parts = [data["entity_id"]]
+    elif kind == "referent_alignment":
+        parts = [data["group_id"], sorted(data["mention_ids"])]
     else:
         parts = [
             data.get("domain", "relation_groups"),
             data.get("assertion_id", data.get("group_id")),
         ]
-    return identity("work", kind, parts)
+    return identity("work", phase, kind, parts)
 
 
-def make_work(kind, data, state, catalog, policy, *, status="ready", reason=None):
+def make_work(kind, data, state, catalog, policy, *, status="ready", reason=None, phase=None):
     data = {key: value for key, value in data.items() if key not in {"window_id", "score"}}
-    key = work_id(kind, data)
+    alignment_phase = state.get("cursor", {}).get("main", {}).get("phase", "skeleton")
+    phase = phase or (alignment_phase if kind in {"property_alignment", "relation_alignment"}
+                      and alignment_phase in {"skeleton", "semantic"}
+                      else "deterministic" if kind.endswith("calibration") else "semantic")
+    key = work_id(kind, data, phase)
     fingerprint = dependency_hash(kind, data, state, catalog, policy)
     previous = state.get("work", {}).get(key)
     if previous and (
@@ -264,6 +301,7 @@ def make_work(kind, data, state, catalog, policy, *, status="ready", reason=None
     return WorkItem(
         id=key,
         kind=kind,
+        phase=phase,
         input=deepcopy(data),
         status=status,
         reason_code=reason,

@@ -51,6 +51,7 @@ from app.schemas.document_analysis import (
     HarnessResponse,
     HarnessSnapshot,
     MetadataArtifactResponse,
+    PauseRunRequest,
     ReportDocumentSourceResponse,
     RunControlRequest,
     RunControlResponse,
@@ -886,7 +887,7 @@ def _control_response(
     *,
     action: str,
     recognition_run_id: UUID,
-    request: RunControlRequest,
+    request: RunControlRequest | PauseRunRequest,
     identity: Identity,
     db: Session,
     background_tasks: BackgroundTasks,
@@ -897,7 +898,9 @@ def _control_response(
         updated, replay = app.control(
             run,
             action=action,
-            expected_revision=request.expected_revision,
+            expected_revision=(
+                request.expected_revision if isinstance(request, RunControlRequest) else None
+            ),
             request_key=request.request_key,
             reason=request.reason,
             role=identity.role,
@@ -924,7 +927,7 @@ def _control_response(
 @router.post("/runs/{recognition_run_id}/pause", response_model=RunControlResponse)
 def pause_document_analysis_run(
     recognition_run_id: UUID,
-    request: RunControlRequest,
+    request: PauseRunRequest,
     background_tasks: BackgroundTasks,
     identity: Identity = Depends(get_current_user),
     db: Session = Depends(get_db),
